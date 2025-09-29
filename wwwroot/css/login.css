@@ -1,6 +1,6 @@
 /* Login Page Styles */
 .login-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #f6811a 0%, #f44a17 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -42,8 +42,8 @@
 
 .logo-icon {
     font-size: 2.5rem;
-    color: #667eea;
-    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: #f6811a;
+    background: linear-gradient(45deg, #f6811a, #f44a17);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -53,7 +53,7 @@
     font-size: 2rem;
     font-weight: 700;
     margin: 0;
-    background: linear-gradient(45deg, #667eea, #764ba2);
+    background: linear-gradient(45deg, #f6811a, #f44a17);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -81,7 +81,7 @@
 }
 
 .input-group-text {
-    background: linear-gradient(45deg, #667eea, #764ba2);
+    background: linear-gradient(45deg, #f6811a, #f44a17);
     color: white;
     border: none;
     width: 50px;
@@ -100,7 +100,7 @@
 
 .form-control:focus {
     background: white;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(246, 129, 26, 0.25);
     border: none;
 }
 
@@ -127,16 +127,16 @@
     font-weight: 600;
     border: none;
     border-radius: 10px;
-    background: linear-gradient(45deg, #667eea, #764ba2);
+    background: linear-gradient(45deg, #f6811a, #f44a17);
     color: white;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(246, 129, 26, 0.3);
 }
 
 .btn-login:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    background: linear-gradient(45deg, #5a6fd8, #6b42a0);
+    box-shadow: 0 6px 20px rgba(246, 129, 26, 0.4);
+    background: linear-gradient(45deg, #e56c14, #dc4015);
 }
 
 .btn-login:active {
