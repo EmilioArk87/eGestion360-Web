@@ -1,0 +1,236 @@
+@{
+    ViewData["Title"] = "Contactanos";
+}
+
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold text-primary mb-3">
+                <i class="fas fa-envelope me-3"></i>Contactanos
+            </h1>
+            <p class="lead text-muted">Estamos aquí para ayudarte. Ponte en contacto con nosotros</p>
+        </div>
+    </div>
+
+    <div class="row g-5">
+        <!-- Contact Information -->
+        <div class="col-lg-6">
+            <h2 class="fw-bold text-primary mb-4">Información de Contacto</h2>
+            
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 3rem; height: 3rem;">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Dirección</h5>
+                                    <p class="text-muted mb-0">
+                                        Av. Tecnología 123, Piso 5<br>
+                                        Ciudad Empresarial, CP 12345<br>
+                                        País
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 3rem; height: 3rem;">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Teléfono</h5>
+                                    <p class="text-muted mb-0">+1 (234) 567-890</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 3rem; height: 3rem;">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Email</h5>
+                                    <p class="text-muted mb-0">info@siptech.com</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 3rem; height: 3rem;">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">Horarios de Atención</h5>
+                                    <p class="text-muted mb-0">
+                                        Lunes a Viernes: 8:00 AM - 6:00 PM<br>
+                                        Sábados: 9:00 AM - 2:00 PM<br>
+                                        Soporte 24/7 disponible
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Media -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <h5 class="fw-bold mb-3">Síguenos en Redes Sociales</h5>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="#" class="btn btn-primary btn-sm">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="btn btn-info btn-sm">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-primary btn-sm">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="#" class="btn btn-danger btn-sm">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold text-primary mb-4">Envíanos un Mensaje</h2>
+                    
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="firstName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label">Apellido *</label>
+                                <input type="text" class="form-control" id="lastName" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="company" class="form-label">Empresa</label>
+                                <input type="text" class="form-control" id="company">
+                            </div>
+                            <div class="col-12">
+                                <label for="subject" class="form-label">Asunto *</label>
+                                <select class="form-select" id="subject" required>
+                                    <option value="">Seleccionar asunto...</option>
+                                    <option value="info">Información General</option>
+                                    <option value="demo">Solicitar Demo</option>
+                                    <option value="support">Soporte Técnico</option>
+                                    <option value="partnership">Asociaciones</option>
+                                    <option value="other">Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="message" class="form-label">Mensaje *</label>
+                                <textarea class="form-control" id="message" rows="5" required 
+                                          placeholder="Describe tu consulta o proyecto..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="privacy" required>
+                                    <label class="form-check-label" for="privacy">
+                                        Acepto la <a href="#" class="text-primary">política de privacidad</a> y el tratamiento de mis datos *
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-paper-plane me-2"></i>Enviar Mensaje
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="text-center fw-bold text-primary mb-4">Preguntas Frecuentes</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faq1">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse1" aria-expanded="false">
+                                    ¿Qué es eGestion360?
+                                </button>
+                            </h2>
+                            <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    eGestion360 es un sistema integral de gestión web que permite a las empresas 
+                                    administrar sus procesos, datos y recursos de manera eficiente y segura.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faq2">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse2" aria-expanded="false">
+                                    ¿Ofrecen soporte técnico?
+                                </button>
+                            </h2>
+                            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Sí, ofrecemos soporte técnico 24/7 para todos nuestros clientes, incluyendo 
+                                    asistencia por teléfono, email y chat en vivo.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faq3">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse3" aria-expanded="false">
+                                    ¿Puedo solicitar una demostración?
+                                </button>
+                            </h2>
+                            <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Por supuesto. Puedes solicitar una demostración gratuita seleccionando 
+                                    "Solicitar Demo" en el formulario de contacto o llamándonos directamente.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

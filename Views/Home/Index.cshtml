@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Inicio";
+}
+
+<!-- Hero Section -->
+<div class="hero-section bg-primary text-white py-5 mb-5 rounded">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-chart-line me-3"></i>eGestion360
+                </h1>
+                <p class="lead mb-4">
+                    Sistema de Gestión Web integral que revoluciona la forma en que manejas tu información empresarial. 
+                    Desarrollado con tecnología de vanguardia por SIP Tecnología.
+                </p>
+                <div class="d-flex gap-3">
+                    @if (Context.Session.GetString("UserId") != null)
+                    {
+                        <span class="btn btn-success btn-lg">
+                            <i class="fas fa-check-circle me-2"></i>Bienvenido, @Context.Session.GetString("Username")
+                        </span>
+                    }
+                    else
+                    {
+                        <a class="btn btn-light btn-lg" asp-controller="Account" asp-action="Login">
+                            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                        </a>
+                    }
+                    <a class="btn btn-outline-light btn-lg" asp-controller="Home" asp-action="About">
+                        <i class="fas fa-info-circle me-2"></i>Conoce más
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="fas fa-desktop" style="font-size: 8rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-4">
+            <h2 class="display-5 fw-bold text-primary">Características Principales</h2>
+            <p class="lead text-muted">Descubre todo lo que eGestion360 puede hacer por tu empresa</p>
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-chart-bar fa-lg"></i>
+                    </div>
+                    <h5 class="fw-bold">Análisis de Datos</h5>
+                    <p class="text-muted">Obtén insights valiosos de tu información con herramientas de análisis avanzadas.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-shield-alt fa-lg"></i>
+                    </div>
+                    <h5 class="fw-bold">Seguridad</h5>
+                    <p class="text-muted">Protección de datos de nivel empresarial con encriptación y autenticación segura.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-mobile-alt fa-lg"></i>
+                    </div>
+                    <h5 class="fw-bold">Responsive</h5>
+                    <p class="text-muted">Accede desde cualquier dispositivo con una interfaz adaptativa y moderna.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-cogs fa-lg"></i>
+                    </div>
+                    <h5 class="fw-bold">Personalizable</h5>
+                    <p class="text-muted">Adapta el sistema a las necesidades específicas de tu organización.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="row bg-light rounded py-5 mb-5">
+        <div class="col-12 text-center mb-4">
+            <h3 class="fw-bold text-primary">eGestion360 en Números</h3>
+        </div>
+        <div class="col-6 col-md-3 text-center">
+            <div class="statistic-number text-primary fw-bold" style="font-size: 2.5rem;">50+</div>
+            <div class="text-muted">Empresas Confiando</div>
+        </div>
+        <div class="col-6 col-md-3 text-center">
+            <div class="statistic-number text-success fw-bold" style="font-size: 2.5rem;">99.9%</div>
+            <div class="text-muted">Tiempo Activo</div>
+        </div>
+        <div class="col-6 col-md-3 text-center">
+            <div class="statistic-number text-info fw-bold" style="font-size: 2.5rem;">24/7</div>
+            <div class="text-muted">Soporte Técnico</div>
+        </div>
+        <div class="col-6 col-md-3 text-center">
+            <div class="statistic-number text-warning fw-bold" style="font-size: 2.5rem;">5★</div>
+            <div class="text-muted">Satisfacción</div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body py-5">
+                    <h3 class="fw-bold mb-3">¿Listo para transformar tu gestión?</h3>
+                    <p class="lead mb-4">Únete a las empresas que ya confían en eGestion360 para optimizar sus procesos.</p>
+                    <a class="btn btn-light btn-lg" asp-controller="Home" asp-action="Contact">
+                        <i class="fas fa-envelope me-2"></i>Contáctanos Hoy
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
