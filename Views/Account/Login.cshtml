@@ -55,9 +55,14 @@
                     </label>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-login">
-                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/" class="btn btn-cancel" data-bs-toggle="tooltip" data-bs-placement="top" title="cancelar / ir a inicio">
+                        <i class="fas fa-times"></i>
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-login flex-grow-1">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                </div>
             </form>
 
             <div class="login-footer">
@@ -69,6 +74,15 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Initialize Bootstrap tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 </body>
 </html>
