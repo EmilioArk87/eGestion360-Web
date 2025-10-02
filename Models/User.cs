@@ -21,5 +21,9 @@ namespace eGestion360Web.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         
         public bool IsActive { get; set; } = true;
+        
+        public int? CompanyId { get; set; }
+        
+        public Company? Company { get; set; }
     }
 }
