@@ -17,6 +17,9 @@
 <body class="login-body">
     <div class="login-container">
         <div class="login-card">
+            <a href="@Url.Action("Index", "Home")" class="btn btn-cancel" title="Cancelar e ir a inicio" data-bs-toggle="tooltip" data-bs-placement="left">
+                <i class="fas fa-home"></i>
+            </a>
             <div class="login-header">
                 <div class="logo-container">
                     <i class="fas fa-chart-line logo-icon"></i>
@@ -69,6 +72,13 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 </body>
 </html>
