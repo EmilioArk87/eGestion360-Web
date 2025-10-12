@@ -1,0 +1,271 @@
+@page
+@model ProductsModel
+@{
+    ViewData["Title"] = "Otros Productos";
+}
+
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold text-primary mb-3">
+                <i class="fas fa-box me-3"></i>Otros Productos
+            </h1>
+            <p class="lead text-muted">Descubre nuestra gama completa de soluciones tecnológicas</p>
+        </div>
+    </div>
+
+    <!-- Featured Products -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <h4 class="fw-bold mb-0">eGestion360 Pro</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-primary mb-3">Sistema de Gestión Avanzado</h5>
+                    <p class="text-muted mb-4">
+                        Versión premium de nuestro sistema de gestión con funcionalidades avanzadas 
+                        para empresas grandes y medianas.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Panel de control avanzado</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Informes personalizados</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Integración con APIs</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Soporte prioritario</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Usuarios ilimitados</li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-primary">Más Información</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <i class="fas fa-mobile-alt fa-2x mb-2"></i>
+                    <h4 class="fw-bold mb-0">SIP Mobile</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-success mb-3">Aplicación Móvil</h5>
+                    <p class="text-muted mb-4">
+                        Accede a tu sistema de gestión desde cualquier lugar con nuestra aplicación 
+                        móvil nativa para iOS y Android.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Interfaz nativa</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Sincronización en tiempo real</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Modo offline</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Notificaciones push</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Biometría de seguridad</li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-success">Descargar App</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card-header bg-info text-white text-center py-3">
+                    <i class="fas fa-cloud fa-2x mb-2"></i>
+                    <h4 class="fw-bold mb-0">SIP Cloud</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-info mb-3">Solución en la Nube</h5>
+                    <p class="text-muted mb-4">
+                        Migra tu infraestructura a la nube con nuestra plataforma segura y escalable, 
+                        diseñada para el crecimiento empresarial.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Escalabilidad automática</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Backup automático</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Seguridad enterprise</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>99.99% uptime</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Soporte 24/7</li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-info">Conocer Más</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card-header bg-secondary text-white text-center py-3">
+                    <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                    <h4 class="fw-bold mb-0">SIP Security</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-secondary mb-3">Suite de Seguridad</h5>
+                    <p class="text-muted mb-4">
+                        Protege tu empresa con nuestra suite completa de herramientas de seguridad 
+                        cibernética y monitoreo de amenazas.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Firewall avanzado</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Detección de intrusos</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Análisis de vulnerabilidades</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Monitoreo 24/7</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Respuesta a incidentes</li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-secondary">Evaluar Seguridad</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                    <h4 class="fw-bold mb-0">SIP Analytics</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-danger mb-3">Inteligencia de Negocios</h5>
+                    <p class="text-muted mb-4">
+                        Transforma tus datos en insights accionables con herramientas avanzadas 
+                        de análisis y visualización de datos.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Dashboard interactivos</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Machine Learning</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Predicciones avanzadas</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Reportes automáticos</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Integración de datos</li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-danger">Ver Demo</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <i class="fas fa-cogs fa-2x mb-2"></i>
+                    <h4 class="fw-bold mb-0">SIP Integration</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3">Plataforma de Integración</h5>
+                    <p class="text-muted mb-4">
+                        Conecta todos tus sistemas y aplicaciones empresariales con nuestra 
+                        plataforma de integración robusta y flexible.
+                    </p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>APIs RESTful</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Webhooks automáticos</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Conectores preconfigurados</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Flujos de trabajo</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Monitoreo de integración</li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="#" class="btn btn-dark">Explorar APIs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center fw-bold text-primary mb-4">Comparación de Productos</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Características</th>
+                            <th>eGestion360</th>
+                            <th>eGestion360 Pro</th>
+                            <th>SIP Cloud</th>
+                            <th>Suite Completa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th class="text-start">Usuarios</th>
+                            <td>Hasta 10</td>
+                            <td>Ilimitados</td>
+                            <td>Escalable</td>
+                            <td>Ilimitados</td>
+                        </tr>
+                        <tr>
+                            <th class="text-start">Almacenamiento</th>
+                            <td>5 GB</td>
+                            <td>100 GB</td>
+                            <td>Ilimitado</td>
+                            <td>Ilimitado</td>
+                        </tr>
+                        <tr>
+                            <th class="text-start">Soporte</th>
+                            <td>Email</td>
+                            <td>24/7</td>
+                            <td>24/7 Premium</td>
+                            <td>Dedicado</td>
+                        </tr>
+                        <tr>
+                            <th class="text-start">Integraciones</th>
+                            <td>Básicas</td>
+                            <td>Avanzadas</td>
+                            <td>Todas</td>
+                            <td>Todas</td>
+                        </tr>
+                        <tr>
+                            <th class="text-start">Precio/mes</th>
+                            <td class="fw-bold text-success">$49</td>
+                            <td class="fw-bold text-primary">$149</td>
+                            <td class="fw-bold text-info">$299</td>
+                            <td class="fw-bold text-secondary">Contactar</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body text-center py-5">
+                    <h3 class="fw-bold mb-3">¿No estás seguro qué producto necesitas?</h3>
+                    <p class="lead mb-4">Nuestro equipo de expertos puede ayudarte a elegir la solución perfecta para tu empresa.</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                                <a asp-page="/Contact" class="btn btn-light btn-lg">
+                                    <i class="fas fa-comments me-2"></i>Consultar Experto
+                                </a>
+                                <a href="#" class="btn btn-outline-light btn-lg">
+                                    <i class="fas fa-calendar me-2"></i>Agendar Demo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+}
+</style>
