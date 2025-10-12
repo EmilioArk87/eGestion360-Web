@@ -23,6 +23,9 @@ namespace eGestion360Web.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            // Set current year for footer
+            ViewBag.CurrentYear = DateTime.Now.Year;
+
             return View();
         }
 
