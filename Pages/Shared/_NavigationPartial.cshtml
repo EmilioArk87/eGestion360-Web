@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container">
-        <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
+        <a class="navbar-brand fw-bold" asp-page="/Index">
             <i class="fas fa-chart-line me-2"></i>eGestion360
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
@@ -10,26 +10,26 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")" 
-                       asp-area="" asp-controller="Home" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Index" ? "active" : "")" 
+                       asp-page="/Index">
                         <i class="fas fa-home me-1"></i>Inicio
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Products" ? "active" : "")" 
-                       asp-area="" asp-controller="Home" asp-action="Products">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Products" ? "active" : "")" 
+                       asp-page="/Products">
                         <i class="fas fa-box me-1"></i>Otros productos
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Contact" ? "active" : "")" 
-                       asp-area="" asp-controller="Home" asp-action="Contact">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Contact" ? "active" : "")" 
+                       asp-page="/Contact">
                         <i class="fas fa-envelope me-1"></i>Contactanos
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "About" ? "active" : "")" 
-                       asp-area="" asp-controller="Home" asp-action="About">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/About" ? "active" : "")" 
+                       asp-page="/About">
                         <i class="fas fa-info-circle me-1"></i>Acerca de nosotros...
                     </a>
                 </li>
@@ -45,7 +45,7 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>Perfil</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Logout">
+                            <li><a class="dropdown-item" asp-page="/Logout" asp-page-handler="Logout">
                                 <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                         </ul>
                     </li>
@@ -53,7 +53,7 @@
                 else
                 {
                     <li class="nav-item">
-                        <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">
+                        <a class="nav-link" asp-page="/Login">
                             <i class="fas fa-sign-in-alt me-1"></i>Iniciar sesión
                         </a>
                     </li>

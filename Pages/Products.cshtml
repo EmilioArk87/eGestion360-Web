@@ -1,3 +1,5 @@
+@page
+@model ProductsModel
 @{
     ViewData["Title"] = "Otros Productos";
 }
@@ -238,7 +240,7 @@
                     <div class="row justify-content-center">
                         <div class="col-md-6">
                             <div class="d-grid gap-3 d-md-flex justify-content-md-center">
-                                <a asp-controller="Home" asp-action="Contact" class="btn btn-light btn-lg">
+                                <a asp-page="/Contact" class="btn btn-light btn-lg">
                                     <i class="fas fa-comments me-2"></i>Consultar Experto
                                 </a>
                                 <a href="#" class="btn btn-outline-light btn-lg">
