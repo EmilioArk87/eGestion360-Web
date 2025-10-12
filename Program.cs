@@ -20,11 +20,11 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Initialize database
+// Initialize database - Apply migrations automatically
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
+    context.Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.
