@@ -1,7 +1,7 @@
 @model eGestion360Web.Models.LoginViewModel
 @{
     ViewData["Title"] = "Iniciar Sesión";
-    Layout = null; // Login page doesn't use the main layout
+    Layout = null; // La página de login no usa el layout principal
 }
 
 <!DOCTYPE html>
@@ -64,18 +64,32 @@
                     </button>
                 </div>
             </form>
-
-            <div class="login-footer">
-                <p>&copy; @ViewBag.CurrentYear - eGestion360 by SIP Tecnología</p>
-            </div>
         </div>
     </div>
+
+    <footer class="bg-dark text-light py-4 mt-5" style="position: fixed; bottom: 0; width: 100%; left: 0;">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-chart-line me-2"></i>eGestion360</h5>
+                    <p class="mb-0">Sistema de Gestión Web desarrollado por SIP Tecnología</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; @DateTime.Now.Year - SIP Tecnología - Todos los derechos reservados</p>
+                    <small class="text-muted">
+                        <a href="#" class="text-muted me-3"><i class="fas fa-envelope me-1"></i>info@siptech.com</a>
+                        <a href="#" class="text-muted"><i class="fas fa-phone me-1"></i>+1 234 567 890</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
-        // Initialize Bootstrap tooltips
+        // Inicializar tooltips de Bootstrap
         document.addEventListener('DOMContentLoaded', function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

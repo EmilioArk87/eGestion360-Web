@@ -1,4 +1,4 @@
-/* Login Page Styles */
+/* Estilos de la Página de Login */
 .login-body {
     background: linear-gradient(135deg, #f6811a 0%, #f44a17 100%);
     min-height: 100vh;
@@ -6,6 +6,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-bottom: 200px; /* Espacio para el pie de página fijo */
 }
 
 .login-container {
@@ -169,25 +170,13 @@
     transform: translateY(0);
 }
 
-.login-footer {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.login-footer p {
-    color: #666;
-    font-size: 0.8rem;
-    margin: 0;
-}
-
 .text-danger {
     font-size: 0.85rem;
     margin-top: 5px;
     display: block;
 }
 
-/* Responsive adjustments */
+/* Ajustes responsivos */
 @media (max-width: 480px) {
     .login-card {
         padding: 30px 20px;

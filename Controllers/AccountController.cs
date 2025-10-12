@@ -17,14 +17,11 @@ namespace eGestion360Web.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            // If user is already logged in, redirect to home
+            // Si el usuario ya ha iniciado sesión, redirigir al inicio
             if (HttpContext.Session.GetString("UserId") != null)
             {
                 return RedirectToAction("Index", "Home");
             }
-
-            // Set current year for footer
-            ViewBag.CurrentYear = DateTime.Now.Year;
 
             return View();
         }
@@ -40,7 +37,7 @@ namespace eGestion360Web.Controllers
 
                 if (user != null)
                 {
-                    // Store user info in session
+                    // Almacenar información del usuario en la sesión
                     HttpContext.Session.SetString("UserId", user.Id.ToString());
                     HttpContext.Session.SetString("Username", user.Username);
                     HttpContext.Session.SetString("Email", user.Email);
