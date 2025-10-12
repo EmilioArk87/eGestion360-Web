@@ -22,7 +22,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Custom Styles for eGestion360 */
+/* Estilos personalizados para eGestion360 */
 .hero-section {
   background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   border-radius: 15px !important;
@@ -87,7 +87,7 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive improvements */
+/* Mejoras responsivas */
 @media (max-width: 768px) {
   .display-4 {
     font-size: 2.5rem;
@@ -102,7 +102,7 @@ body {
   }
 }
 
-/* Animation classes */
+/* Clases de animación */
 .fade-in {
   animation: fadeIn 0.8s ease-in;
 }
@@ -118,7 +118,7 @@ body {
   }
 }
 
-/* Footer enhancements */
+/* Mejoras del pie de página */
 footer {
   background: #343a40 !important;
 }
