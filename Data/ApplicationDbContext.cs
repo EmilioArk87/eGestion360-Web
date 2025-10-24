@@ -16,9 +16,10 @@ namespace eGestion360Web.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure User entity
+            // Configure User entity to map to 'usuarios' table
             modelBuilder.Entity<User>(entity =>
             {
+                entity.ToTable("usuarios"); // Map to 'usuarios' table instead of 'Users'
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
@@ -27,18 +28,7 @@ namespace eGestion360Web.Data
                 entity.HasIndex(e => e.Email).IsUnique();
             });
 
-            // Seed data
-            modelBuilder.Entity<User>().HasData(
-                new User
-                {
-                    Id = 1,
-                    Username = "admin",
-                    Email = "admin@siptech.com",
-                    Password = "admin123", // In production, this should be hashed
-                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                    IsActive = true
-                }
-            );
+            // Note: Seed data removed as we're now using an existing 'usuarios' table
         }
     }
 }
