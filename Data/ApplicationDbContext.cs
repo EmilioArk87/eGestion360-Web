@@ -19,6 +19,7 @@ namespace eGestion360Web.Data
             // Configure User entity
             modelBuilder.Entity<User>(entity =>
             {
+                entity.ToTable("usuarios");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
