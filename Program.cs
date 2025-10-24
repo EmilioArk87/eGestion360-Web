@@ -20,11 +20,21 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Initialize database
+// Initialize database - use migrations for SQL Server
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        // Try to apply any pending migrations
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // Log the error but continue - database might already be initialized
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "Could not apply migrations. Database may already exist or be inaccessible.");
+    }
 }
 
 // Configure the HTTP request pipeline.
