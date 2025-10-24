@@ -15,6 +15,15 @@
                         <i class="fas fa-home me-1"></i>Inicio
                     </a>
                 </li>
+                @if (Context.Session.GetString("UserId") != null)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/MainMenu" ? "active" : "")" 
+                           asp-page="/MainMenu">
+                            <i class="fas fa-th-large me-1"></i>Menú Principal
+                        </a>
+                    </li>
+                }
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Products" ? "active" : "")" 
                        asp-page="/Products">
