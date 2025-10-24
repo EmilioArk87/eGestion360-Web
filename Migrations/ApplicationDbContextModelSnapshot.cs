@@ -59,7 +59,7 @@ namespace eGestion360Web.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("usuarios", (string)null);
 
                     b.HasData(
                         new
@@ -70,6 +70,15 @@ namespace eGestion360Web.Migrations
                             IsActive = true,
                             Password = "admin123",
                             Username = "admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "demo@siptech.com",
+                            IsActive = true,
+                            Password = "demo123",
+                            Username = "demo"
                         });
                 });
 #pragma warning restore 612, 618

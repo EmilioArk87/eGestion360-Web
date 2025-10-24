@@ -46,7 +46,7 @@ namespace eGestion360Web.Pages
         {
             if (ModelState.IsValid)
             {
-                var user = await _context.Users
+                var user = await _context.usuarios
                     .FirstOrDefaultAsync(u => u.Username == Username && u.Password == Password && u.IsActive);
 
                 if (user != null)

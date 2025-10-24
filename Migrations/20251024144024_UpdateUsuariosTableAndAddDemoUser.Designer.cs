@@ -12,8 +12,8 @@ using eGestion360Web.Data;
 namespace eGestion360Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251024034620_InitialSqlServerMigration")]
-    partial class InitialSqlServerMigration
+    [Migration("20251024144024_UpdateUsuariosTableAndAddDemoUser")]
+    partial class UpdateUsuariosTableAndAddDemoUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -62,7 +62,7 @@ namespace eGestion360Web.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("usuarios", (string)null);
 
                     b.HasData(
                         new
@@ -73,6 +73,15 @@ namespace eGestion360Web.Migrations
                             IsActive = true,
                             Password = "admin123",
                             Username = "admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "demo@siptech.com",
+                            IsActive = true,
+                            Password = "demo123",
+                            Username = "demo"
                         });
                 });
 #pragma warning restore 612, 618
