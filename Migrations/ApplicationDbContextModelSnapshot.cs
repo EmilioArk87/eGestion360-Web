@@ -65,7 +65,7 @@ namespace eGestion360Web.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 24, 3, 43, 44, 312, DateTimeKind.Local).AddTicks(9284),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@siptech.com",
                             IsActive = true,
                             Password = "admin123",

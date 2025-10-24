@@ -35,7 +35,7 @@ namespace eGestion360Web.Data
                     Username = "admin",
                     Email = "admin@siptech.com",
                     Password = "admin123", // In production, this should be hashed
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                     IsActive = true
                 }
             );

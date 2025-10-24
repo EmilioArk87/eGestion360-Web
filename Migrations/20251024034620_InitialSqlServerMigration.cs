@@ -31,7 +31,7 @@ namespace eGestion360Web.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "CreatedAt", "Email", "IsActive", "Password", "Username" },
-                values: new object[] { 1, new DateTime(2025, 10, 24, 3, 43, 44, 312, DateTimeKind.Local).AddTicks(9284), "admin@siptech.com", true, "admin123", "admin" });
+                values: new object[] { 1, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@siptech.com", true, "admin123", "admin" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",

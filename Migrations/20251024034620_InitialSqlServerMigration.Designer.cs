@@ -12,7 +12,7 @@ using eGestion360Web.Data;
 namespace eGestion360Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251024034345_InitialSqlServerMigration")]
+    [Migration("20251024034620_InitialSqlServerMigration")]
     partial class InitialSqlServerMigration
     {
         /// <inheritdoc />
@@ -68,7 +68,7 @@ namespace eGestion360Web.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 24, 3, 43, 44, 312, DateTimeKind.Local).AddTicks(9284),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@siptech.com",
                             IsActive = true,
                             Password = "admin123",
