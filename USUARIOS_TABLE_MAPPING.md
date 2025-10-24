@@ -19,7 +19,7 @@ The application expects the `usuarios` table to have the following columns:
 | Id | int (Primary Key, Identity) | Unique user identifier |
 | Username | nvarchar(50) | Username for login (unique) |
 | Email | nvarchar(100) | User email address (unique) |
-| Password | nvarchar(255) | User password (plain text - should be hashed in production) |
+| Password | nvarchar(255) | User password (⚠️ currently stored as plain text) |
 | CreatedAt | datetime2 | Account creation date |
 | IsActive | bit | Whether the user account is active |
 
@@ -51,6 +51,13 @@ To test the changes:
 4. Navigate to `/Login`
 5. Try logging in with a user from the `usuarios` table
 
-## Security Note
+## Security Warning
 
-⚠️ **WARNING**: The current implementation stores passwords in plain text. For production use, passwords should be hashed using a secure algorithm like bcrypt or PBKDF2.
+⚠️ **CRITICAL SECURITY ISSUE**: The current implementation stores passwords in plain text, which is a serious security vulnerability.
+
+**This must be fixed immediately** by implementing proper password hashing:
+- Use ASP.NET Core Identity with built-in password hashing
+- Or implement bcrypt, PBKDF2, or Argon2 password hashing
+- Never store passwords in plain text in any environment (development, testing, or production)
+
+This is a known issue inherited from the existing database structure. Implementing password hashing should be the next priority after this change.
