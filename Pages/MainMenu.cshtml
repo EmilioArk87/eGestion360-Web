@@ -1,0 +1,174 @@
+@page
+@model MainMenuModel
+@{
+    ViewData["Title"] = "Menú Principal";
+}
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="fas fa-user-circle fa-2x me-3"></i>
+                <div>
+                    <h4 class="alert-heading mb-1">Bienvenido, @Model.Username!</h4>
+                    <p class="mb-0">Has iniciado sesión exitosamente en eGestion360</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-th-large me-2"></i>Menú Principal</h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Gestión de Usuarios -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Gestión de Usuarios</h5>
+                    <p class="card-text text-muted mb-4">Administra usuarios, permisos y roles del sistema</p>
+                    <a href="#" class="btn btn-primary w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventario -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-boxes fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Inventario</h5>
+                    <p class="card-text text-muted mb-4">Control de productos, stock y movimientos</p>
+                    <a href="#" class="btn btn-success w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ventas -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Ventas</h5>
+                    <p class="card-text text-muted mb-4">Registro y seguimiento de ventas realizadas</p>
+                    <a href="#" class="btn btn-info w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reportes -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-chart-bar fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Reportes</h5>
+                    <p class="card-text text-muted mb-4">Genera reportes y análisis de datos</p>
+                    <a href="#" class="btn btn-warning w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-cog fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Configuración</h5>
+                    <p class="card-text text-muted mb-4">Ajustes generales del sistema</p>
+                    <a href="#" class="btn btn-secondary w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Soporte -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-life-ring fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Soporte</h5>
+                    <p class="card-text text-muted mb-4">Centro de ayuda y asistencia técnica</p>
+                    <a href="#" class="btn btn-danger w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2"><i class="fas fa-info-circle me-2"></i>Información del Sistema</h5>
+                            <p class="text-muted mb-0">
+                                <strong>Usuario:</strong> @Model.Username<br>
+                                <strong>Email:</strong> @Model.Email<br>
+                                <strong>Última conexión:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                            <a asp-page="/Logout" asp-page-handler="Logout" class="btn btn-outline-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .menu-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .menu-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .menu-card:hover .menu-icon {
+            transform: scale(1.1);
+        }
+    </style>
+}

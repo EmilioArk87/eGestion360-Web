@@ -33,10 +33,10 @@ namespace eGestion360Web.Pages
 
         public IActionResult OnGet()
         {
-            // Si el usuario ya ha iniciado sesión, redirigir al inicio
+            // Si el usuario ya ha iniciado sesión, redirigir al menú principal
             if (HttpContext.Session.GetString("UserId") != null)
             {
-                return RedirectToPage("/Index");
+                return RedirectToPage("/MainMenu");
             }
 
             return Page();
@@ -56,7 +56,7 @@ namespace eGestion360Web.Pages
                     HttpContext.Session.SetString("Username", user.Username);
                     HttpContext.Session.SetString("Email", user.Email);
 
-                    return RedirectToPage("/Index");
+                    return RedirectToPage("/MainMenu");
                 }
                 else
                 {
