@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
+using eGestion360Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 // Add Entity Framework with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

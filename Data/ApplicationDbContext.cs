@@ -16,19 +16,24 @@ namespace eGestion360Web.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure User entity to map to 'usuarios' table
+            // Configure User entity to map to existing 'Users' table.
             modelBuilder.Entity<User>(entity =>
             {
-                entity.ToTable("usuarios"); // Map to 'usuarios' table instead of 'Users'
+                entity.ToTable("Users");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
-                entity.HasIndex(e => e.Username).IsUnique();
-                entity.HasIndex(e => e.Email).IsUnique();
-            });
+                entity.Property(e => e.Id).HasColumnName("Id");
+                entity.Property(e => e.Username).HasColumnName("Username").IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Email).HasColumnName("Email").IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Password).HasColumnName("Password").IsRequired().HasMaxLength(255);
+                entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt");
+                entity.Property(e => e.IsActive).HasColumnName("IsActive").IsRequired();
+                entity.Property(e => e.RequirePasswordChange).HasColumnName("RequirePasswordChange").IsRequired().HasDefaultValue(false);
 
-            // Note: Seed data removed as we're now using an existing 'usuarios' table
+                // Ignored for the legacy Users schema used by this version.
+                entity.Ignore(e => e.PasswordHash);
+                entity.Ignore(e => e.PasswordSalt);
+                entity.Ignore(e => e.PasswordAlgorithm);
+            });
         }
     }
 }

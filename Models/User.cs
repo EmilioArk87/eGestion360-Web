@@ -13,13 +13,22 @@ namespace eGestion360Web.Models
         [Required]
         [StringLength(100)]
         public string Email { get; set; } = string.Empty;
-        
+
         [Required]
         [StringLength(255)]
         public string Password { get; set; } = string.Empty;
         
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public byte[]? PasswordHash { get; set; }
+
+        public byte[]? PasswordSalt { get; set; }
+
+        [StringLength(20)]
+        public string? PasswordAlgorithm { get; set; }
         
         public bool IsActive { get; set; } = true;
+
+        public bool RequirePasswordChange { get; set; }
+
+        public DateTime CreatedAt { get; set; }
     }
 }
