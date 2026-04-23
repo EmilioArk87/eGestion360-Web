@@ -1,0 +1,86 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Empresas.DetailsModel
+@{
+    ViewData["Title"] = "Detalles de la Empresa";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Empresas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Detalles</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="fas fa-building me-2"></i>@Model.Empresa.RazonSocial</h2>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Código</dt>
+                <dd class="col-sm-9"><code>@Model.Empresa.Codigo</code></dd>
+
+                <dt class="col-sm-3">Razón Social</dt>
+                <dd class="col-sm-9">@Model.Empresa.RazonSocial</dd>
+
+                <dt class="col-sm-3">Nombre Comercial</dt>
+                <dd class="col-sm-9">@(Model.Empresa.NombreComercial ?? "-")</dd>
+
+                <dt class="col-sm-3">Identificador Fiscal</dt>
+                <dd class="col-sm-9">@(Model.Empresa.IdentificadorFiscal ?? "-")</dd>
+
+                <dt class="col-sm-3">País (ISO)</dt>
+                <dd class="col-sm-9">@Model.Empresa.PaisIso</dd>
+
+                <dt class="col-sm-3">Moneda (ISO)</dt>
+                <dd class="col-sm-9">@Model.Empresa.MonedaIso</dd>
+
+                <dt class="col-sm-3">Zona horaria</dt>
+                <dd class="col-sm-9">@Model.Empresa.ZonaHoraria</dd>
+
+                <dt class="col-sm-3">Estado</dt>
+                <dd class="col-sm-9">
+                    @if (Model.Empresa.Activa)
+                    {
+                        <span class="badge bg-success">Activa</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactiva</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-3">Fecha de activación</dt>
+                <dd class="col-sm-9">@Model.Empresa.FechaActivacion.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                @if (Model.Empresa.FechaBaja.HasValue)
+                {
+                    <dt class="col-sm-3">Fecha de baja</dt>
+                    <dd class="col-sm-9">@Model.Empresa.FechaBaja.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+                }
+
+                <dt class="col-sm-3">Creado por</dt>
+                <dd class="col-sm-9">@Model.Empresa.CreadoPor <span class="text-muted">— @Model.Empresa.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</span></dd>
+
+                @if (!string.IsNullOrEmpty(Model.Empresa.ModificadoPor))
+                {
+                    <dt class="col-sm-3">Modificado por</dt>
+                    <dd class="col-sm-9">@Model.Empresa.ModificadoPor <span class="text-muted">— @(Model.Empresa.FechaModificacion?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span></dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <a asp-page="Edit" asp-route-id="@Model.Empresa.IdEmpresa" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Editar
+        </a>
+        <a asp-page="Delete" asp-route-id="@Model.Empresa.IdEmpresa" class="btn btn-outline-danger">
+            <i class="fas fa-trash me-2"></i>Eliminar
+        </a>
+        <a asp-page="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver al listado
+        </a>
+    </div>
+</div>

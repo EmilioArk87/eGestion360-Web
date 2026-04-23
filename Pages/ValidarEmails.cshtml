@@ -1,0 +1,374 @@
+@page "/ValidarEmails"
+@model eGestion360Web.Pages.ValidarEmailsModel
+@{
+    ViewData["Title"] = "Validar y Probar Emails";
+}
+
+<div class="container-fluid">
+    <!-- ENCABEZADO -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body bg-primary text-white">
+                    <h1 class="h3 mb-0">📧 Validar y Probar Sistema de Emails</h1>
+                    <p class="mb-0">Herramientas completas para validar el envío de correos electrónicos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENSAJE DE RESULTADO -->
+    @if (!string.IsNullOrEmpty(Model.MensajeResultado))
+    {
+        <div class="alert @(Model.PruebaExitosa ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+            @Html.Raw(Model.MensajeResultado)
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- CONFIGURACIÓN ACTUAL -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> Configuración Actual</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.ConfiguracionActual != null)
+                    {
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Perfil:</strong></td>
+                                <td>@Model.ConfiguracionActual.ProfileName</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>@Model.ConfiguracionActual.FromEmail</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Servidor:</strong></td>
+                                <td>@Model.ConfiguracionActual.SmtpHost:@Model.ConfiguracionActual.SmtpPort</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SSL:</strong></td>
+                                <td>
+                                    @if (Model.ConfiguracionActual.UseSsl)
+                                    {
+                                        <span class="text-success"><i class="fas fa-lock"></i> Habilitado</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-warning"><i class="fas fa-unlock"></i> Deshabilitado</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Estado:</strong></td>
+                                <td>
+                                    @if (Model.ConfiguracionActual.IsConfigured)
+                                    {
+                                        <span class="badge bg-success">✅ Configurado</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">⚠️ Pendiente</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Emails Enviados:</strong></td>
+                                <td>@Model.ConfiguracionActual.TestEmailsSent</td>
+                            </tr>
+                            @if (Model.ConfiguracionActual.LastTestedAt.HasValue)
+                            {
+                                <tr>
+                                    <td><strong>Última Prueba:</strong></td>
+                                    <td>@Model.ConfiguracionActual.LastTestedAt.Value.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3 text-muted">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>No hay configuración activa</p>
+                            <a href="/ConfigurarHostinger" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i> Configurar Email
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- ESTADO RÁPIDO -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-tachometer-alt"></i> Estado Rápido</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="h4 mb-0">@Model.ConfiguracionesDisponibles.Sum(c => c.TestEmailsSent)</div>
+                            <small class="text-muted">Total Enviados</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h4 mb-0">@Model.ConfiguracionesDisponibles.Count(c => c.IsActive)</div>
+                            <small class="text-muted">Configuraciones Activas</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h4 mb-0">@Model.ConfiguracionesDisponibles.Count(c => c.IsConfigured)</div>
+                            <small class="text-muted">Completamente Configuradas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRUEBAS DE EMAIL -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-paper-plane"></i> Pruebas de Email</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- Email Destino -->
+                        <div class="mb-3">
+                            <label asp-for="TestForm.EmailDestino" class="form-label">📧 Email de Destino para Pruebas</label>
+                            <input asp-for="TestForm.EmailDestino" class="form-control" placeholder="tu-email@ejemplo.com" />
+                            <div asp-validation-for="TestForm.EmailDestino" class="text-danger"></div>
+                            <div class="form-text">
+                                Introduce tu email para recibir las pruebas de envío.
+                            </div>
+                        </div>
+
+                        <!-- Botones de Prueba -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <button type="submit" asp-page-handler="EnviarPruebaSimple" class="btn btn-success w-100">
+                                    <i class="fas fa-paper-plane"></i> Prueba Simple
+                                </button>
+                                <small class="text-muted">Envía un email básico de prueba</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <button type="submit" asp-page-handler="PruebaCompleta" class="btn btn-primary w-100">
+                                    <i class="fas fa-rocket"></i> Prueba Completa
+                                </button>
+                                <small class="text-muted">Envía múltiples tipos de email</small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- RESULTADOS DE PRUEBAS -->
+            @if (Model.ResultadosPruebas.Any())
+            {
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> Resultados de Pruebas Recientes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Destino</th>
+                                        <th>Resultado</th>
+                                        <th>Fecha</th>
+                                        <th>Configuración</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var resultado in Model.ResultadosPruebas.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@resultado.TipoPrueba</td>
+                                            <td>@resultado.EmailDestino</td>
+                                            <td>
+                                                @if (resultado.Exitoso)
+                                                {
+                                                    <span class="badge bg-success">✅ Exitoso</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">❌ Fallido</span>
+                                                }
+                                            </td>
+                                            <td>@resultado.FechaHora.ToString("dd/MM HH:mm")</td>
+                                            <td><small>@resultado.ConfiguracionUsada</small></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- CONFIGURACIONES DISPONIBLES -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-server"></i> Todas las Configuraciones</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.ConfiguracionesDisponibles.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Perfil</th>
+                                        <th>Email</th>
+                                        <th>Servidor</th>
+                                        <th>Estado</th>
+                                        <th>Emails Enviados</th>
+                                        <th>Última Prueba</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var config in Model.ConfiguracionesDisponibles.OrderByDescending(c => c.IsDefault).ThenByDescending(c => c.IsActive))
+                                    {
+                                        <tr class="@(config.IsDefault ? "table-success" : "") @(!config.IsActive ? "table-warning" : "")">
+                                            <td>
+                                                <strong>@config.ProfileName</strong>
+                                                @if (config.IsDefault)
+                                                {
+                                                    <span class="badge bg-success">Por Defecto</span>
+                                                }
+                                            </td>
+                                            <td>@config.FromEmail</td>
+                                            <td>@config.SmtpHost:@config.SmtpPort</td>
+                                            <td>
+                                                @if (config.IsConfigured && config.IsActive)
+                                                {
+                                                    <span class="badge bg-success">✅ OK</span>
+                                                }
+                                                else if (config.IsActive)
+                                                {
+                                                    <span class="badge bg-warning">⚠️ Pendiente</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">❌ Inactivo</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">@config.TestEmailsSent</span>
+                                            </td>
+                                            <td>
+                                                @if (config.LastTestedAt.HasValue)
+                                                {
+                                                    @config.LastTestedAt.Value.ToString("dd/MM/yyyy")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Nunca</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (config.IsActive && config.IsConfigured)
+                                                {
+                                                    <form method="post" asp-page-handler="ValidarConfiguracion" class="d-inline">
+                                                        <input type="hidden" name="configId" value="@config.Id" />
+                                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                            <i class="fas fa-check-circle"></i> Probar
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                                                        <i class="fas fa-ban"></i> No disponible
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No hay configuraciones de email disponibles</p>
+                            <a href="/ConfigurarHostinger" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Configuración
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INFORMACIÓN ÚTIL -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Guía de Validación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-search"></i> Verificaciones Básicas</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Configuración activa existe</li>
+                                <li><i class="fas fa-check text-success"></i> Contraseñas encriptadas</li>
+                                <li><i class="fas fa-check text-success"></i> Servidor SMTP accesible</li>
+                                <li><i class="fas fa-check text-success"></i> Credenciales válidas</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-paper-plane"></i> Pruebas de Envío</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-envelope"></i> Email simple</li>
+                                <li><i class="fas fa-key"></i> Reset de contraseña</li>
+                                <li><i class="fas fa-check-circle"></i> Confirmaciones</li>
+                                <li><i class="fas fa-code"></i> HTML avanzado</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-tools"></i> Herramientas Adicionales</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-chart-bar"></i> <a href="/sql_scripts/consultas_email_stats.sql">Ver estadísticas SQL</a></li>
+                                <li><i class="fas fa-file-alt"></i> Revisar logs de aplicación</li>
+                                <li><i class="fas fa-shield-alt"></i> <a href="/EncryptPasswords">Encriptar contraseñas</a></li>
+                                <li><i class="fas fa-cog"></i> <a href="/ConfigurarHostinger">Gestionar configuraciones</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        // Auto-refresh de estadísticas cada 30 segundos
+        setInterval(function() {
+            // Recargar solo las estadísticas sin afectar el formulario
+            fetch(window.location.href + '?handler=RefreshStats')
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizar estadísticas si hay una implementación AJAX
+                })
+                .catch(error => console.log('Error refrescando estadísticas:', error));
+        }, 30000);
+    </script>
+}

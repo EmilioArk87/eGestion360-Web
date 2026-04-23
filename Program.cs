@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
+using eGestion360Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,27 @@ builder.Services.AddRazorPages();
 // Add Entity Framework with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add Password Service
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+// Add Encryption Service (for email passwords)
+builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+
+// Add Email Configuration Service
+builder.Services.AddScoped<IEmailConfigurationService, EmailConfigurationService>();
+
+// Add Email Service
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Add Email Manager Service
+builder.Services.AddScoped<EmailManagerService>();
+
+// Add Password Reset Service
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+
+// Add KPI Service
+builder.Services.AddScoped<KpiService>();
 
 // Add session support
 builder.Services.AddSession(options =>

@@ -1,0 +1,45 @@
+@page
+@model eGestion360Web.Pages.Flota.Gastos.Seguros.IndexModel
+@{ ViewData["Title"] = "Pólizas de Seguros"; }
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Gastos/Index">Gastos Periódicos</a></li>
+            <li class="breadcrumb-item active">Seguros</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><h2 class="mb-1"><i class="fas fa-shield-alt me-2" style="color:#20c997;"></i>Pólizas de Seguros</h2><p class="text-muted mb-0">Seguros por vehículo — costo diario prorateado</p></div>
+        <a asp-page="Create" class="btn text-white" style="background-color:#20c997;"><i class="fas fa-plus me-2"></i>Nueva Póliza</a>
+    </div>
+    @if (TempData["Mensaje"] != null) { <div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>@TempData["Mensaje"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div> }
+    <div class="card border-0 shadow-sm"><div class="card-body p-0"><div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light"><tr><th>Vehículo</th><th>Nº Póliza</th><th>Aseguradora</th><th>Cobertura</th><th>Desde</th><th>Hasta</th><th class="text-end">Prima Total</th><th class="text-end fw-bold">Costo/día</th><th>Moneda</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody>
+                @if (!Model.Polizas.Any())
+                { <tr><td colspan="10" class="text-center text-muted py-5"><i class="fas fa-shield-alt fa-2x mb-2 d-block text-secondary"></i>No hay pólizas registradas.</td></tr> }
+                else
+                {
+                    var hoy = DateOnly.FromDateTime(DateTime.Today);
+                    foreach (var p in Model.Polizas)
+                    {
+                        var vigente = p.FechaInicio <= hoy && p.FechaFin >= hoy;
+                        <tr class="@(vigente?"":"text-muted")">
+                            <td><strong>@p.Vehiculo?.Placa</strong></td><td><code>@p.NoPoliza</code></td><td>@p.Aseguradora</td>
+                            <td><span class="badge bg-info">@p.TipoCobertura</span></td>
+                            <td>@p.FechaInicio.ToString("dd/MM/yyyy")</td><td>@p.FechaFin.ToString("dd/MM/yyyy")</td>
+                            <td class="text-end">@p.PrimaTotal.ToString("N2")</td>
+                            <td class="text-end fw-bold" style="color:#20c997;">@(p.CostoDiario?.ToString("N2") ?? "-")</td>
+                            <td>@p.Moneda</td>
+                            <td class="text-end"><a asp-page="Edit" asp-route-id="@p.IdPolizaSeguro" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div></div></div>
+    <div class="mt-4"><a asp-page="/Flota/Gastos/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a Gastos</a></div>
+</div>

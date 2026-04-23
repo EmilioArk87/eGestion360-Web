@@ -1,0 +1,154 @@
+@page
+@model eGestion360Web.Pages.ResetCodesHistoryModel
+@{
+    ViewData["Title"] = "Historial Códigos Reset";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <h2>📊 Historial de Códigos de Reset de Contraseña</h2>
+    
+    <div class="alert alert-warning">
+        <strong>⚠️ SOLO PARA ADMINISTRADORES - ELIMINAR EN PRODUCCIÓN</strong>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h3 class="text-success">@Model.ActiveCodes</h3>
+                    <p class="mb-0">Códigos Activos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h3 class="text-warning">@Model.ExpiredCodes</h3>
+                    <p class="mb-0">Códigos Expirados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <h3 class="text-info">@Model.UsedCodes</h3>
+                    <p class="mb-0">Códigos Utilizados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de códigos -->
+    @if (Model.ResetCodes.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5>📋 Últimos 50 Códigos de Reset (Orden: Más Recientes)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Código</th>
+                                <th>Creado</th>
+                                <th>Expira</th>
+                                <th>Estado</th>
+                                <th>IP</th>
+                                <th>Usado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var code in Model.ResetCodes)
+                            {
+                                <tr>
+                                    <td>@code.Id</td>
+                                    <td>
+                                        <strong>@code.User.Username</strong>
+                                        <br><small class="text-muted">(ID: @code.UserId)</small>
+                                    </td>
+                                    <td>
+                                        @code.Email
+                                        @if (code.Email.ToLower() != code.User.Email.ToLower())
+                                        {
+                                            <br><small class="text-warning">⚠️ Email diferente</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <code class="fs-6">@code.Code</code>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            @code.CreatedAt.ToString("dd/MM/yyyy")<br>
+                                            @code.CreatedAt.ToString("HH:mm:ss")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="@(code.ExpiresAt < DateTime.UtcNow ? "text-danger" : "text-success")">
+                                            @code.ExpiresAt.ToString("dd/MM/yyyy")<br>
+                                            @code.ExpiresAt.ToString("HH:mm:ss")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        @if (code.IsUsed)
+                                        {
+                                            <span class="badge bg-info">Utilizado</span>
+                                        }
+                                        else if (code.ExpiresAt < DateTime.UtcNow)
+                                        {
+                                            <span class="badge bg-danger">Expirado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>@(code.IpAddress ?? "N/A")</small>
+                                    </td>
+                                    <td>
+                                        @if (code.IsUsed && code.UsedAt.HasValue)
+                                        {
+                                            <small class="text-muted">
+                                                @code.UsedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            No se encontraron códigos de reset en el historial.
+        </div>
+    }
+
+    <!-- Enlaces de navegación -->
+    <div class="mt-4">
+        <a href="/ForgotPassword" class="btn btn-primary">
+            <i class="fas fa-key"></i> Solicitar Reset
+        </a>
+        <a href="/DebugUsers" class="btn btn-info">
+            <i class="fas fa-users"></i> Ver Usuarios
+        </a>
+        <a href="/Login" class="btn btn-secondary">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </a>
+    </div>
+</div>

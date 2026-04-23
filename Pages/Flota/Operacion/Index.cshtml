@@ -1,0 +1,90 @@
+@page
+@model eGestion360Web.Pages.Flota.Operacion.IndexModel
+@{
+    ViewData["Title"] = "Operación Diaria";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item active">Operación Diaria</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1"><i class="fas fa-calendar-day me-2" style="color:#0d6efd;"></i>Operación Diaria</h2>
+            <p class="text-muted mb-0">Registro diario de kilómetros, combustible y salarios</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Odómetro diario -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem; background-color:#0d6efd;">
+                        <i class="fas fa-tachometer-alt fa-lg"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Odómetro Diario</h6>
+                    <p class="text-muted small mb-3">KM inicial y final por vehículo</p>
+                    <a asp-page="/Flota/Operacion/OdometroDiario/Index" class="btn btn-sm w-100 text-white" style="background-color:#0d6efd;">
+                        <i class="fas fa-arrow-right me-1"></i>Registrar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Combustible -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-gas-pump fa-lg"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Cargas de Combustible</h6>
+                    <p class="text-muted small mb-3">Facturas de combustible por vehículo</p>
+                    <a asp-page="/Flota/Operacion/CargasCombustible/Index" class="btn btn-sm btn-danger w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Registrar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salarios -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-money-bill-wave fa-lg"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Salarios Diarios</h6>
+                    <p class="text-muted small mb-3">Pago diario a conductores y personal</p>
+                    <a asp-page="/Flota/Operacion/SalariosDiarios/Index" class="btn btn-sm btn-success w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Registrar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+        <a asp-page="/Flota/Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a Flota
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .menu-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 0.4rem 1rem rgba(0,0,0,.12) !important; }
+    </style>
+}

@@ -1,0 +1,123 @@
+@page
+@model eGestion360Web.Pages.Flota.Catalogos.Vehiculos.IndexModel
+@{
+    ViewData["Title"] = "Vehículos";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Catalogos/Index">Catálogos Flota</a></li>
+            <li class="breadcrumb-item active">Vehículos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-truck me-2" style="color:#6610f2;"></i>Vehículos</h2>
+            <p class="text-muted mb-0">Listado de unidades de la flota</p>
+        </div>
+        <a asp-page="Create" class="btn text-white" style="background-color:#6610f2;">
+            <i class="fas fa-plus me-2"></i>Nuevo Vehículo
+        </a>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input asp-for="Search" class="form-control" placeholder="Buscar por placa, número interno, marca o modelo..." />
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a asp-page="Index" class="btn btn-outline-secondary">Limpiar</a>
+                }
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Placa</th>
+                            <th>Nº Interno</th>
+                            <th>Tipo</th>
+                            <th>Marca / Modelo</th>
+                            <th>Año</th>
+                            <th>Combustible</th>
+                            <th>Ruta</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Vehiculos.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-5">
+                                    <i class="fas fa-truck fa-2x mb-2 d-block text-secondary"></i>
+                                    No hay vehículos registrados.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var v in Model.Vehiculos)
+                            {
+                                <tr>
+                                    <td><strong>@v.Placa</strong></td>
+                                    <td>@(v.NumeroInterno ?? "-")</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">@(v.TipoVehiculo?.Nombre ?? "-")</span>
+                                    </td>
+                                    <td>@($"{v.Marca} {v.Modelo}".Trim())</td>
+                                    <td>@(v.Anio?.ToString() ?? "-")</td>
+                                    <td><code>@v.TipoCombustible</code></td>
+                                    <td>@(v.Ruta?.Nombre ?? "-")</td>
+                                    <td class="text-center">
+                                        @if (v.Activo)
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-page="Edit" asp-route-id="@v.IdVehiculo"
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-page="Delete" asp-route-id="@v.IdVehiculo"
+                                           class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-page="/Flota/Catalogos/Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a Catálogos
+        </a>
+    </div>
+</div>

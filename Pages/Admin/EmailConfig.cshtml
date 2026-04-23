@@ -1,0 +1,448 @@
+@page "/admin/email-config"
+@model eGestion360Web.Pages.Admin.EmailConfigModel
+
+@{
+    ViewData["Title"] = "Configuración de Email";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-envelope"></i> Configuración de Email Corporativo</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#configModal" onclick="clearForm()">
+            <i class="fas fa-plus"></i> Nueva Configuración
+        </button>
+    </div>
+
+    <!-- Mensajes de éxito y error -->
+    @if(TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    
+    @if(TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Estadísticas del sistema -->
+    @if(Model.Stats != null && Model.Stats.Count > 0)
+    {
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="card text-center" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                    <div class="card-body">
+                        <h5 class="card-title">@Model.Stats["TotalConfigurations"]</h5>
+                        <p class="card-text">Total</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;">
+                    <div class="card-body">
+                        <h5 class="card-title">@Model.Stats["ActiveConfigurations"]</h5>
+                        <p class="card-text">Activas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center" style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white;">
+                    <div class="card-body">
+                        <h5 class="card-title">@Model.Stats["TotalTestEmailsSent"]</h5>
+                        <p class="card-text">Pruebas</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card" style="background: @(Model.Stats["SystemStatus"].ToString() == "Operativo" ? "linear-gradient(135deg, #a8edea, #fed6e3)" : "#fff3cd");">
+                    <div class="card-body">
+                        <h6 class="card-title">Estado del Sistema</h6>
+                        <h5 style="color: @(Model.Stats["SystemStatus"].ToString() == "Operativo" ? "#155724" : "#856404");">
+                            @Model.Stats["SystemStatus"]
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Lista de configuraciones -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-server"></i> Configuraciones SMTP</h5>
+        </div>
+        <div class="card-body">
+            @if(Model.Configurations != null && Model.Configurations.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Proveedor</th>
+                                <th>Email</th>
+                                <th>Servidor</th>
+                                <th>Estado</th>
+                                <th>Pruebas</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var config in Model.Configurations)
+                            {
+                                <tr class="@(config.IsDefault ? "table-success" : "")">
+                                    <td>
+                                        @config.ProfileName
+                                        @if(config.IsDefault)
+                                        {
+                                            <span class="badge bg-success ms-2">Predeterminado</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background: @GetProviderColor(config.Provider);">
+                                            @config.Provider
+                                        </span>
+                                    </td>
+                                    <td>@config.FromEmail</td>
+                                    <td>@config.SmtpHost:@config.SmtpPort</td>
+                                    <td>
+                                        @if(config.IsActive)
+                                        {
+                                            <span class="badge bg-success">Activa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactiva</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@config.TestEmailsSent enviados</small>
+                                        @if(config.LastTestedAt.HasValue)
+                                        {
+                                            <br><small class="text-muted">Último: @config.LastTestedAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editConfig(@config.Id)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success" onclick="testConfig(@config.Id)">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                            @if(!config.IsDefault)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="setDefault(@config.Id)">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-sm @(config.IsActive ? "btn-outline-secondary" : "btn-outline-success")" onclick="toggleActive(@config.Id)">
+                                                <i class="fas @(config.IsActive ? "fa-pause" : "fa-play")"></i>
+                                            </button>
+                                            @if(!config.IsDefault)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@config.Id)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-envelope-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay configuraciones de email registradas.</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#configModal" onclick="clearForm()">
+                        Crear primera configuración
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para configuración -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="configForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Configuración de Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="configId" name="ConfigId" value="0" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre del Perfil *</label>
+                            <input type="text" class="form-control" id="profileName" name="Configuration.ProfileName" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Proveedor *</label>
+                            <select class="form-select" id="provider" name="Configuration.Provider" required onchange="updateProviderDefaults()">
+                                <option value="">Seleccionar proveedor</option>
+                                <option value="Gmail">Gmail</option>
+                                <option value="Outlook">Outlook / Hotmail</option>
+                                <option value="SMTP">SMTP Personalizado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Email Remitente *</label>
+                            <input type="email" class="form-control" id="fromEmail" name="Configuration.FromEmail" required onchange="autoConfigureSipTecnologia()" />
+                            <small class="form-text text-muted">Ejemplo: egaray@siptecnologia.xyz</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre Remitente *</label>
+                            <input type="text" class="form-control" id="fromName" name="Configuration.FromName" required />
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Servidor SMTP *</label>
+                            <input type="text" class="form-control" id="smtpHost" name="Configuration.SmtpHost" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Puerto *</label>
+                            <input type="number" class="form-control" id="smtpPort" name="Configuration.SmtpPort" required />
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Usuario / Email *</label>
+                            <input type="text" class="form-control" id="username" name="Configuration.Username" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contraseña *</label>
+                            <input type="password" class="form-control" id="plainPassword" name="PlainPassword" required />
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="useSsl" name="Configuration.UseSsl" checked />
+                                <label class="form-check-label" for="useSsl">
+                                    Usar SSL/TLS (Recomendado)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isDefault" name="Configuration.IsDefault" />
+                                <label class="form-check-label" for="isDefault">
+                                    Establecer como configuración predeterminada
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function clearForm() {
+            document.getElementById('configForm').reset();
+            document.getElementById('configId').value = '0';
+            document.querySelector('.modal-title').textContent = 'Nueva Configuración de Email';
+        }
+
+        function updateProviderDefaults() {
+            const provider = document.getElementById('provider').value;
+            const hostField = document.getElementById('smtpHost');
+            const portField = document.getElementById('smtpPort');
+            const sslField = document.getElementById('useSsl');
+            
+            switch(provider) {
+                case 'Gmail':
+                    hostField.value = 'smtp.gmail.com';
+                    portField.value = '587';
+                    sslField.checked = true;
+                    break;
+                case 'Outlook':
+                    hostField.value = 'smtp-mail.outlook.com';
+                    portField.value = '587';
+                    sslField.checked = true;
+                    break;
+                default:
+                    // SMTP personalizado - no cambiar valores existentes
+                    if (!hostField.value) {
+                        portField.value = '587';
+                        sslField.checked = true;
+                    }
+                    break;
+            }
+        }
+
+        function autoConfigureSipTecnologia() {
+            const email = document.getElementById('fromEmail').value.toLowerCase();
+            
+            if (email === 'egaray@siptecnologia.xyz') {
+                // Autoconfigurar para SIP Tecnología
+                document.getElementById('fromName').value = 'eGestion360 - SIP Tecnología';
+                document.getElementById('profileName').value = 'SIP Tecnología - eGaray';
+                document.getElementById('provider').value = 'SMTP';
+                document.getElementById('smtpHost').value = 'mail.siptecnologia.xyz';
+                document.getElementById('smtpPort').value = '587';
+                document.getElementById('useSsl').checked = true;
+                document.getElementById('username').value = email;
+                document.getElementById('isDefault').checked = true;
+                
+                // Mostrar mensaje informativo
+                alert('✅ Configuración automática aplicada para SIP Tecnología.\n\n' +
+                      '📧 Email: ' + email + '\n' +
+                      '🌐 Servidor: mail.siptecnologia.xyz:587\n' +
+                      '🔒 SSL: Habilitado\n\n' +
+                      'Solo falta ingresar la contraseña de email.');
+            }
+        }
+
+        function editConfig(configId) {
+            // Esta función se implementaría para cargar los datos de la configuración
+            console.log('Editando configuración', configId);
+        }
+
+        async function testConfig(configId) {
+            const button = event.target.closest('button');
+            const originalContent = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/email-config?handler=test&configId=${configId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if(result.success) {
+                    alert('✅ Email de prueba enviado exitosamente a ' + 
+                          (configId === 'sip' ? 'egaray@siptecnologia.xyz' : 'la dirección configurada'));
+                    location.reload();
+                } else {
+                    alert('❌ Error enviando email de prueba: ' + (result.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            } finally {
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            }
+        }
+
+        async function setDefault(configId) {
+            if(confirm('¿Establecer esta configuración como predeterminada?')) {
+                try {
+                    const response = await fetch(`/admin/email-config?handler=setdefault&configId=${configId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if(result.success) {
+                        location.reload();
+                    } else {
+                        alert('❌ Error estableciendo configuración predeterminada: ' + (result.error || 'Error desconocido'));
+                    }
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        }
+
+        async function toggleActive(configId) {
+            try {
+                const response = await fetch(`/admin/email-config?handler=toggleactive&configId=${configId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if(result.success) {
+                    location.reload();
+                } else {
+                    alert('❌ Error cambiando estado de la configuración: ' + (result.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function deleteConfig(configId) {
+            if(confirm('¿Está seguro de eliminar esta configuración?\nEsta acción no se puede deshacer.')) {
+                try {
+                    const response = await fetch(`/admin/email-config?handler=delete&configId=${configId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if(result.success) {
+                        location.reload();
+                    } else {
+                        alert('❌ Error eliminando configuración: ' + (result.error || 'Error desconocido'));
+                    }
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        }
+    </script>
+}
+
+@functions {
+    private string GetProviderColor(string provider)
+    {
+        return provider switch
+        {
+            "Gmail" => "#ea4335",
+            "Outlook" => "#0078d4",
+            "SMTP" => "#6c757d",
+            _ => "#17a2b8"
+        };
+    }
+}

@@ -1,0 +1,140 @@
+@page
+@model eGestion360Web.Pages.Flota.Catalogos.IndexModel
+@{
+    ViewData["Title"] = "Catálogos - Flota";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active">Catálogos Flota</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1"><i class="fas fa-list-alt me-2" style="color:#0d6efd;"></i>Catálogos Flota</h2>
+            <p class="text-muted">Administración de catálogos maestros del módulo de flota</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Vehículos -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem; background-color: #6610f2;">
+                        <i class="fas fa-truck fa-lg"></i>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2">Vehículos</h6>
+                    <p class="card-text text-muted small mb-3">Placa, marca, modelo, tipo y ruta</p>
+                    <a asp-page="/Flota/Catalogos/Vehiculos/Index" class="btn btn-sm w-100 text-white" style="background-color: #6610f2;">
+                        <i class="fas fa-arrow-right me-1"></i>Gestionar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tipos de Vehículo -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem; background-color: #6610f2;">
+                        <i class="fas fa-tags fa-lg"></i>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2">Tipos de Vehículo</h6>
+                    <p class="card-text text-muted small mb-3">Bus, camión, pick-up, auto, etc.</p>
+                    <a asp-page="/Flota/Catalogos/TiposVehiculo/Index" class="btn btn-sm w-100 text-white" style="background-color: #6610f2;">
+                        <i class="fas fa-arrow-right me-1"></i>Gestionar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rutas -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem; background-color: #0d6efd;">
+                        <i class="fas fa-route fa-lg"></i>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2">Rutas</h6>
+                    <p class="card-text text-muted small mb-3">Rutas o zonas de operación</p>
+                    <a asp-page="/Flota/Catalogos/Rutas/Index" class="btn btn-sm w-100 text-white" style="background-color: #0d6efd;">
+                        <i class="fas fa-arrow-right me-1"></i>Gestionar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem; background-color: #0d6efd;">
+                        <i class="fas fa-id-badge fa-lg"></i>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2">Personal</h6>
+                    <p class="card-text text-muted small mb-3">Conductores, cobradores, mecánicos</p>
+                    <a asp-page="/Flota/Catalogos/Personas/Index" class="btn btn-sm w-100 text-white" style="background-color: #0d6efd;">
+                        <i class="fas fa-arrow-right me-1"></i>Gestionar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Talleres -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-wrench fa-lg"></i>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2">Talleres</h6>
+                    <p class="card-text text-muted small mb-3">Proveedores de mantenimiento</p>
+                    <a asp-page="/Flota/Catalogos/Talleres/Index" class="btn btn-sm btn-secondary w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Gestionar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorías de Repuesto -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4rem; height: 4rem;">
+                        <i class="fas fa-cogs fa-lg"></i>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2">Categorías Repuesto</h6>
+                    <p class="card-text text-muted small mb-3">Clasificación de repuestos y llantas</p>
+                    <a asp-page="/Flota/Catalogos/CategoriasRepuesto/Index" class="btn btn-sm btn-secondary w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Gestionar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="mt-4">
+        <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver al Menú Principal
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .menu-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 0.4rem 1rem rgba(0,0,0,.12) !important; }
+    </style>
+}

@@ -1,0 +1,19 @@
+@page
+@model eGestion360Web.Pages.ResetAdminModel
+@{
+    ViewData["Title"] = "Reset Admin Password";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <h2>Reset Password Admin</h2>
+    
+    <div class="alert @(Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger")">
+        @Model.Message
+    </div>
+
+    <div class="mt-4">
+        <a href="/Login" class="btn btn-primary">Ir al Login</a>
+        <a href="/DebugUsers" class="btn btn-info">Ver Usuarios Debug</a>
+    </div>
+</div>

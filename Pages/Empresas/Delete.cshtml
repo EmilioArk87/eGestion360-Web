@@ -1,0 +1,50 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Empresas.DeleteModel
+@{
+    ViewData["Title"] = "Eliminar Empresa";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Empresas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4 text-danger"><i class="fas fa-trash me-2"></i>Eliminar Empresa</h2>
+
+    <div class="alert alert-warning" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ¿Estás seguro de que deseas eliminar esta empresa? Se marcará como eliminada y dejará de aparecer en el listado.
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Código</dt>
+                <dd class="col-sm-9"><code>@Model.Empresa.Codigo</code></dd>
+
+                <dt class="col-sm-3">Razón Social</dt>
+                <dd class="col-sm-9">@Model.Empresa.RazonSocial</dd>
+
+                <dt class="col-sm-3">Nombre Comercial</dt>
+                <dd class="col-sm-9">@(Model.Empresa.NombreComercial ?? "-")</dd>
+
+                <dt class="col-sm-3">Identificador Fiscal</dt>
+                <dd class="col-sm-9">@(Model.Empresa.IdentificadorFiscal ?? "-")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form method="post" class="mt-4 d-flex gap-2">
+        <input type="hidden" asp-for="Empresa.IdEmpresa" />
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash me-2"></i>Sí, eliminar
+        </button>
+        <a asp-page="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-2"></i>Cancelar
+        </a>
+    </form>
+</div>

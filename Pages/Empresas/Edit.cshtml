@@ -1,0 +1,41 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Empresas.EditModel
+@{
+    ViewData["Title"] = "Editar Empresa";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Empresas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Editar</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="fas fa-edit me-2"></i>Editar Empresa</h2>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post">
+                <input type="hidden" asp-for="Empresa.IdEmpresa" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                @Html.Partial("_EmpresaForm", Model.Empresa, new ViewDataDictionary(ViewData) { TemplateInfo = { HtmlFieldPrefix = "Empresa" } })
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar cambios
+                    </button>
+                    <a asp-page="Index" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

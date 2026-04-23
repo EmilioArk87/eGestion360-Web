@@ -1,0 +1,93 @@
+@model eGestion360Web.Models.Empresa
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Codigo" class="form-label"></label>
+        <input asp-for="Codigo" class="form-control" />
+        <span asp-validation-for="Codigo" class="text-danger"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="RazonSocial" class="form-label"></label>
+        <input asp-for="RazonSocial" class="form-control" />
+        <span asp-validation-for="RazonSocial" class="text-danger"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="NombreComercial" class="form-label"></label>
+        <input asp-for="NombreComercial" class="form-control" />
+        <span asp-validation-for="NombreComercial" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="IdentificadorFiscal" class="form-label"></label>
+        <input asp-for="IdentificadorFiscal" class="form-control" />
+        <span asp-validation-for="IdentificadorFiscal" class="text-danger"></span>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="PaisIso" class="form-label"></label>
+        <select asp-for="PaisIso" asp-items="ViewBag.Paises" class="form-select">
+            <option value="">-- Seleccione --</option>
+        </select>
+        <span asp-validation-for="PaisIso" class="text-danger"></span>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="MonedaIso" class="form-label"></label>
+        <select asp-for="MonedaIso" asp-items="ViewBag.Monedas" class="form-select">
+            <option value="">-- Seleccione --</option>
+        </select>
+        <span asp-validation-for="MonedaIso" class="text-danger"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="ZonaHoraria" class="form-label"></label>
+        <select asp-for="ZonaHoraria" class="form-select">
+            <optgroup label="América del Norte">
+                <option value="Pacific/Honolulu">(UTC-10:00) Hawaii</option>
+                <option value="America/Anchorage">(UTC-09:00) Alaska</option>
+                <option value="America/Los_Angeles">(UTC-08:00) Hora del Pacífico (EE.UU. y Canadá)</option>
+                <option value="America/Denver">(UTC-07:00) Hora de las Montañas (EE.UU. y Canadá)</option>
+                <option value="America/Phoenix">(UTC-07:00) Arizona</option>
+                <option value="America/Chicago">(UTC-06:00) Hora Central (EE.UU. y Canadá)</option>
+                <option value="America/New_York">(UTC-05:00) Hora del Este (EE.UU. y Canadá)</option>
+            </optgroup>
+            <optgroup label="América Central">
+                <option value="America/Guatemala">(UTC-06:00) América Central</option>
+                <option value="America/Mexico_City">(UTC-06:00) Ciudad de México, Monterrey</option>
+                <option value="America/Havana">(UTC-05:00) La Habana</option>
+            </optgroup>
+            <optgroup label="América del Sur">
+                <option value="America/Bogota">(UTC-05:00) Bogotá, Lima, Quito</option>
+                <option value="America/Caracas">(UTC-04:00) Caracas</option>
+                <option value="America/La_Paz">(UTC-04:00) La Paz</option>
+                <option value="America/Manaus">(UTC-04:00) Manaos</option>
+                <option value="America/Santiago">(UTC-04:00) Santiago</option>
+                <option value="America/Asuncion">(UTC-04:00) Asunción</option>
+                <option value="America/St_Johns">(UTC-03:30) Terranova</option>
+                <option value="America/Sao_Paulo">(UTC-03:00) Brasilia, São Paulo</option>
+                <option value="America/Argentina/Buenos_Aires">(UTC-03:00) Ciudad de Buenos Aires</option>
+                <option value="America/Montevideo">(UTC-03:00) Montevideo</option>
+            </optgroup>
+            <optgroup label="Europa">
+                <option value="UTC">(UTC+00:00) Tiempo Universal Coordinado</option>
+                <option value="Europe/London">(UTC+00:00) Dublín, Edimburgo, Lisboa, Londres</option>
+                <option value="Europe/Paris">(UTC+01:00) Bruselas, Copenhague, Madrid, París</option>
+                <option value="Europe/Helsinki">(UTC+02:00) Helsinki, Kiev, Riga, Sofía, Tallin, Vilna</option>
+                <option value="Europe/Istanbul">(UTC+03:00) Estambul</option>
+                <option value="Europe/Moscow">(UTC+03:00) Moscú, San Petersburgo</option>
+            </optgroup>
+            <optgroup label="Asia y Pacífico">
+                <option value="Asia/Dubai">(UTC+04:00) Abu Dabi, Mascate</option>
+                <option value="Asia/Karachi">(UTC+05:00) Islamabad, Karachi</option>
+                <option value="Asia/Kolkata">(UTC+05:30) Chennai, Kolkata, Mumbai, Nueva Delhi</option>
+                <option value="Asia/Bangkok">(UTC+07:00) Bangkok, Hanói, Yakarta</option>
+                <option value="Asia/Shanghai">(UTC+08:00) Beijing, Hong Kong, Singapur</option>
+                <option value="Asia/Tokyo">(UTC+09:00) Osaka, Sapporo, Tokio</option>
+                <option value="Australia/Sydney">(UTC+10:00) Canberra, Melbourne, Sídney</option>
+            </optgroup>
+        </select>
+        <span asp-validation-for="ZonaHoraria" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <div class="form-check form-switch">
+            <input asp-for="Activa" class="form-check-input" role="switch" />
+            <label asp-for="Activa" class="form-check-label"></label>
+        </div>
+    </div>
+</div>

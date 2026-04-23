@@ -15,11 +15,13 @@ namespace eGestion360Web.Models
         public string Email { get; set; } = string.Empty;
         
         [Required]
-        [StringLength(255)]
+        [StringLength(500)]
         public string Password { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public bool IsActive { get; set; } = true;
+
+        public bool RequirePasswordChange { get; set; } = false;
     }
 }

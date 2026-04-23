@@ -1,0 +1,76 @@
+@page
+@model eGestion360Web.Pages.DebugUsersModel
+@{
+    ViewData["Title"] = "Debug - Usuarios en Base de Datos";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <h2>Debug - Usuarios en Base de Datos</h2>
+    <div class="alert alert-warning">
+        <strong>⚠️ SOLO PARA DEBUG - ELIMINAR EN PRODUCCIÓN</strong>
+    </div>
+
+    @if (Model.Users.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Password (Primeros 50 chars)</th>
+                        <th>IsActive</th>
+                        <th>CreatedAt</th>
+                        <th>Tipo de Password</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td>@user.Id</td>
+                            <td>@user.Username</td>
+                            <td>@user.Email</td>
+                            <td>
+                                <code>@(user.Password.Length > 50 ? user.Password.Substring(0, 50) + "..." : user.Password)</code>
+                            </td>
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Inactivo</span>
+                                }
+                            </td>
+                            <td>@user.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                @if (user.Password.StartsWith("$2"))
+                                {
+                                    <span class="badge bg-success">BCrypt Hash</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Texto Plano</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No se encontraron usuarios en la base de datos.
+        </div>
+    }
+
+    <div class="mt-4">
+        <a href="/Login" class="btn btn-primary">Volver al Login</a>
+    </div>
+</div>

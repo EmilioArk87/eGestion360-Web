@@ -1,0 +1,7 @@
+{
+  "dotnet.defaultSolution": "eGestion360-Web.sln",
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "files.exclude": {
+    "**/.vs": true
+  }
+}

@@ -22,6 +22,2647 @@ namespace eGestion360Web.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("eGestion360Web.Models.EmailConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FromEmail")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FromName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastTestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ProfileName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("SmtpHost")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TestEmailsSent")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("UseSsl")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileName")
+                        .IsUnique();
+
+                    b.HasIndex("Provider");
+
+                    b.HasIndex("IsActive", "IsDefault");
+
+                    b.ToTable("EmailConfigurations");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Empresa", b =>
+                {
+                    b.Property<int>("IdEmpresa")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdEmpresa"));
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("bit")
+                        .HasColumnName("activa");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("codigo");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateTime>("FechaActivacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_activacion");
+
+                    b.Property<DateTime?>("FechaBaja")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_baja");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<string>("IdentificadorFiscal")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("identificador_fiscal");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("MonedaIso")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda_iso");
+
+                    b.Property<string>("NombreComercial")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("nombre_comercial");
+
+                    b.Property<string>("PaisIso")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)")
+                        .HasColumnName("pais_iso");
+
+                    b.Property<string>("RazonSocial")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("razon_social");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<string>("ZonaHoraria")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("zona_horaria");
+
+                    b.HasKey("IdEmpresa");
+
+                    b.ToTable("empresas");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.CargaCombustible", b =>
+                {
+                    b.Property<int>("IdCargaCombustible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_carga_combustible");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdCargaCombustible"));
+
+                    b.Property<decimal>("Cantidad")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("cantidad");
+
+                    b.Property<int?>("ConductorIdPersona")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<TimeOnly?>("Hora")
+                        .HasColumnType("time")
+                        .HasColumnName("hora");
+
+                    b.Property<int?>("IdConductor")
+                        .HasColumnType("int")
+                        .HasColumnName("id_conductor");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int>("IdVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    b.Property<decimal?>("KmOdometro")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_odometro");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda");
+
+                    b.Property<string>("NoFactura")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("no_factura");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("observaciones");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("precio_unitario");
+
+                    b.Property<string>("Proveedor")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("proveedor");
+
+                    b.Property<string>("TipoCombustible")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("tipo_combustible");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<decimal>("Total")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total");
+
+                    b.Property<string>("UnidadMedida")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasColumnName("unidad_medida");
+
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdCargaCombustible");
+
+                    b.HasIndex("ConductorIdPersona");
+
+                    b.HasIndex("VehiculoIdVehiculo");
+
+                    b.ToTable("cargas_combustible");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.CategoriaRepuesto", b =>
+                {
+                    b.Property<int>("IdCategoriaRepuesto")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_categoria_repuesto");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdCategoriaRepuesto"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("nombre");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.HasKey("IdCategoriaRepuesto");
+
+                    b.ToTable("categorias_repuesto");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.GastoRepuesto", b =>
+                {
+                    b.Property<int>("IdGastoRepuesto")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_gasto_repuesto");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdGastoRepuesto"));
+
+                    b.Property<decimal>("Cantidad")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("cantidad");
+
+                    b.Property<int?>("CategoriaRepuestoIdCategoriaRepuesto")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdCategoriaRepuesto")
+                        .HasColumnType("int")
+                        .HasColumnName("id_categoria_repuesto");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int>("IdVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    b.Property<decimal?>("KmOdometro")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_odometro");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda");
+
+                    b.Property<string>("NoFactura")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("no_factura");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("observaciones");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("precio_unitario");
+
+                    b.Property<string>("Proveedor")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("proveedor");
+
+                    b.Property<decimal>("Subtotal")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("subtotal");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdGastoRepuesto");
+
+                    b.HasIndex("CategoriaRepuestoIdCategoriaRepuesto");
+
+                    b.HasIndex("VehiculoIdVehiculo");
+
+                    b.ToTable("gastos_repuestos");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.OdometroDiario", b =>
+                {
+                    b.Property<int>("IdOdometroDiario")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_odometro_diario");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdOdometroDiario"));
+
+                    b.Property<int?>("ConductorIdPersona")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int?>("IdConductor")
+                        .HasColumnType("int")
+                        .HasColumnName("id_conductor");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int?>("IdRuta")
+                        .HasColumnType("int")
+                        .HasColumnName("id_ruta");
+
+                    b.Property<int>("IdVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    b.Property<decimal>("KmFinal")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_final");
+
+                    b.Property<decimal>("KmInicial")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_inicial");
+
+                    b.Property<decimal>("KmRecorridos")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_recorridos");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("observaciones");
+
+                    b.Property<int?>("RutaIdRuta")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdOdometroDiario");
+
+                    b.HasIndex("ConductorIdPersona");
+
+                    b.HasIndex("RutaIdRuta");
+
+                    b.HasIndex("VehiculoIdVehiculo");
+
+                    b.ToTable("odometro_diario");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.OrdenMantenimiento", b =>
+                {
+                    b.Property<int>("IdOrdenMantenimiento")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_orden_mantenimiento");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdOrdenMantenimiento"));
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int>("IdTaller")
+                        .HasColumnType("int")
+                        .HasColumnName("id_taller");
+
+                    b.Property<int>("IdVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    b.Property<decimal?>("KmOdometro")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_odometro");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda");
+
+                    b.Property<decimal>("MontoManoObra")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("monto_mano_obra");
+
+                    b.Property<decimal>("MontoOtros")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("monto_otros");
+
+                    b.Property<decimal>("MontoRepuestos")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("monto_repuestos");
+
+                    b.Property<string>("NoFactura")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("no_factura");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("observaciones");
+
+                    b.Property<int?>("TallerIdTaller")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoMantenimiento")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("tipo_mantenimiento");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<decimal>("Total")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total");
+
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdOrdenMantenimiento");
+
+                    b.HasIndex("TallerIdTaller");
+
+                    b.HasIndex("VehiculoIdVehiculo");
+
+                    b.ToTable("ordenes_mantenimiento");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.Persona", b =>
+                {
+                    b.Property<int>("IdPersona")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_persona");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdPersona"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Apellidos")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("apellidos");
+
+                    b.Property<string>("Cargo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("cargo");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Documento")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("documento");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("email");
+
+                    b.Property<DateOnly?>("FechaBaja")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_baja");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateOnly?>("FechaIngreso")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_ingreso");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("MonedaTarifa")
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda_tarifa");
+
+                    b.Property<string>("Nombres")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("nombres");
+
+                    b.Property<decimal?>("TarifaDiaria")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("tarifa_diaria");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("telefono");
+
+                    b.Property<string>("TipoDocumento")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("tipo_documento");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.HasKey("IdPersona");
+
+                    b.ToTable("personas");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.PolizaSeguro", b =>
+                {
+                    b.Property<int>("IdPolizaSeguro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_poliza_seguro");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdPolizaSeguro"));
+
+                    b.Property<string>("Aseguradora")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("aseguradora");
+
+                    b.Property<decimal?>("CostoDiario")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("costo_diario");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateOnly>("FechaFin")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_fin");
+
+                    b.Property<DateOnly>("FechaInicio")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_inicio");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int>("IdVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda");
+
+                    b.Property<string>("NoPoliza")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("no_poliza");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("observaciones");
+
+                    b.Property<decimal>("PrimaTotal")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("prima_total");
+
+                    b.Property<string>("TipoCobertura")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("tipo_cobertura");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdPolizaSeguro");
+
+                    b.HasIndex("VehiculoIdVehiculo");
+
+                    b.ToTable("polizas_seguros");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.Ruta", b =>
+                {
+                    b.Property<int>("IdRuta")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_ruta");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdRuta"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("codigo");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<decimal?>("DistanciaKm")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("distancia_km");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("nombre");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.HasKey("IdRuta");
+
+                    b.ToTable("rutas");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.SalarioDiario", b =>
+                {
+                    b.Property<int>("IdSalarioDiario")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_salario_diario");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdSalarioDiario"));
+
+                    b.Property<string>("Cargo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("cargo");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int>("IdPersona")
+                        .HasColumnType("int")
+                        .HasColumnName("id_persona");
+
+                    b.Property<int>("IdVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("moneda");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("monto");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("observaciones");
+
+                    b.Property<int?>("PersonaIdPersona")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdSalarioDiario");
+
+                    b.HasIndex("PersonaIdPersona");
+
+                    b.HasIndex("VehiculoIdVehiculo");
+
+                    b.ToTable("salarios_diarios");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.Taller", b =>
+                {
+                    b.Property<int>("IdTaller")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_taller");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdTaller"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("codigo");
+
+                    b.Property<string>("Contacto")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("contacto");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasColumnName("direccion");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("nombre");
+
+                    b.Property<string>("Rtn")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("rtn");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("telefono");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.HasKey("IdTaller");
+
+                    b.ToTable("talleres");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.TipoVehiculo", b =>
+                {
+                    b.Property<int>("IdTipoVehiculo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_tipo_vehiculo");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdTipoVehiculo"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("codigo");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("nombre");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.HasKey("IdTipoVehiculo");
+
+                    b.ToTable("tipos_vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.Vehiculo", b =>
+                {
+                    b.Property<int>("IdVehiculo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_vehiculo");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdVehiculo"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<short?>("Anio")
+                        .HasColumnType("smallint")
+                        .HasColumnName("anio");
+
+                    b.Property<int?>("Capacidad")
+                        .HasColumnType("int")
+                        .HasColumnName("capacidad");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("color");
+
+                    b.Property<string>("CreadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("creado_por");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit")
+                        .HasColumnName("eliminado");
+
+                    b.Property<DateOnly?>("FechaAlta")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_alta");
+
+                    b.Property<DateOnly?>("FechaBaja")
+                        .HasColumnType("date")
+                        .HasColumnName("fecha_baja");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<DateTime?>("FechaEliminado")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_eliminado");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_modificacion");
+
+                    b.Property<int>("IdEmpresa")
+                        .HasColumnType("int")
+                        .HasColumnName("id_empresa");
+
+                    b.Property<int?>("IdRuta")
+                        .HasColumnType("int")
+                        .HasColumnName("id_ruta");
+
+                    b.Property<int>("IdTipoVehiculo")
+                        .HasColumnType("int")
+                        .HasColumnName("id_tipo_vehiculo");
+
+                    b.Property<decimal>("KmInicial")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("km_inicial");
+
+                    b.Property<string>("Marca")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("marca");
+
+                    b.Property<string>("Modelo")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("modelo");
+
+                    b.Property<string>("ModificadoPor")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("modificado_por");
+
+                    b.Property<string>("NumeroInterno")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("numero_interno");
+
+                    b.Property<string>("Placa")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("placa");
+
+                    b.Property<int?>("RutaIdRuta")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoCombustible")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("tipo_combustible");
+
+                    b.Property<int?>("TipoVehiculoIdTipoVehiculo")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("TokenConcurrencia")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("token_concurrencia");
+
+                    b.Property<string>("Vin")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("vin");
+
+                    b.HasKey("IdVehiculo");
+
+                    b.HasIndex("RutaIdRuta");
+
+                    b.HasIndex("TipoVehiculoIdTipoVehiculo");
+
+                    b.ToTable("vehiculos");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Pais", b =>
+                {
+                    b.Property<string>("CodigoIso")
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)")
+                        .HasColumnName("codigo_iso");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("nombre");
+
+                    b.HasKey("CodigoIso");
+
+                    b.ToTable("paises");
+
+                    b.HasData(
+                        new
+                        {
+                            CodigoIso = "AF",
+                            Activo = true,
+                            Nombre = "Afganistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "AL",
+                            Activo = true,
+                            Nombre = "Albania"
+                        },
+                        new
+                        {
+                            CodigoIso = "DE",
+                            Activo = true,
+                            Nombre = "Alemania"
+                        },
+                        new
+                        {
+                            CodigoIso = "AD",
+                            Activo = true,
+                            Nombre = "Andorra"
+                        },
+                        new
+                        {
+                            CodigoIso = "AO",
+                            Activo = true,
+                            Nombre = "Angola"
+                        },
+                        new
+                        {
+                            CodigoIso = "AG",
+                            Activo = true,
+                            Nombre = "Antigua y Barbuda"
+                        },
+                        new
+                        {
+                            CodigoIso = "SA",
+                            Activo = true,
+                            Nombre = "Arabia Saudita"
+                        },
+                        new
+                        {
+                            CodigoIso = "DZ",
+                            Activo = true,
+                            Nombre = "Argelia"
+                        },
+                        new
+                        {
+                            CodigoIso = "AR",
+                            Activo = true,
+                            Nombre = "Argentina"
+                        },
+                        new
+                        {
+                            CodigoIso = "AM",
+                            Activo = true,
+                            Nombre = "Armenia"
+                        },
+                        new
+                        {
+                            CodigoIso = "AU",
+                            Activo = true,
+                            Nombre = "Australia"
+                        },
+                        new
+                        {
+                            CodigoIso = "AT",
+                            Activo = true,
+                            Nombre = "Austria"
+                        },
+                        new
+                        {
+                            CodigoIso = "AZ",
+                            Activo = true,
+                            Nombre = "Azerbaiyán"
+                        },
+                        new
+                        {
+                            CodigoIso = "BS",
+                            Activo = true,
+                            Nombre = "Bahamas"
+                        },
+                        new
+                        {
+                            CodigoIso = "BH",
+                            Activo = true,
+                            Nombre = "Baréin"
+                        },
+                        new
+                        {
+                            CodigoIso = "BD",
+                            Activo = true,
+                            Nombre = "Bangladés"
+                        },
+                        new
+                        {
+                            CodigoIso = "BB",
+                            Activo = true,
+                            Nombre = "Barbados"
+                        },
+                        new
+                        {
+                            CodigoIso = "BE",
+                            Activo = true,
+                            Nombre = "Bélgica"
+                        },
+                        new
+                        {
+                            CodigoIso = "BZ",
+                            Activo = true,
+                            Nombre = "Belice"
+                        },
+                        new
+                        {
+                            CodigoIso = "BJ",
+                            Activo = true,
+                            Nombre = "Benín"
+                        },
+                        new
+                        {
+                            CodigoIso = "BY",
+                            Activo = true,
+                            Nombre = "Bielorrusia"
+                        },
+                        new
+                        {
+                            CodigoIso = "BO",
+                            Activo = true,
+                            Nombre = "Bolivia"
+                        },
+                        new
+                        {
+                            CodigoIso = "BA",
+                            Activo = true,
+                            Nombre = "Bosnia y Herzegovina"
+                        },
+                        new
+                        {
+                            CodigoIso = "BW",
+                            Activo = true,
+                            Nombre = "Botsuana"
+                        },
+                        new
+                        {
+                            CodigoIso = "BR",
+                            Activo = true,
+                            Nombre = "Brasil"
+                        },
+                        new
+                        {
+                            CodigoIso = "BN",
+                            Activo = true,
+                            Nombre = "Brunéi"
+                        },
+                        new
+                        {
+                            CodigoIso = "BG",
+                            Activo = true,
+                            Nombre = "Bulgaria"
+                        },
+                        new
+                        {
+                            CodigoIso = "BF",
+                            Activo = true,
+                            Nombre = "Burkina Faso"
+                        },
+                        new
+                        {
+                            CodigoIso = "BI",
+                            Activo = true,
+                            Nombre = "Burundi"
+                        },
+                        new
+                        {
+                            CodigoIso = "BT",
+                            Activo = true,
+                            Nombre = "Bután"
+                        },
+                        new
+                        {
+                            CodigoIso = "CV",
+                            Activo = true,
+                            Nombre = "Cabo Verde"
+                        },
+                        new
+                        {
+                            CodigoIso = "KH",
+                            Activo = true,
+                            Nombre = "Camboya"
+                        },
+                        new
+                        {
+                            CodigoIso = "CM",
+                            Activo = true,
+                            Nombre = "Camerún"
+                        },
+                        new
+                        {
+                            CodigoIso = "CA",
+                            Activo = true,
+                            Nombre = "Canadá"
+                        },
+                        new
+                        {
+                            CodigoIso = "QA",
+                            Activo = true,
+                            Nombre = "Catar"
+                        },
+                        new
+                        {
+                            CodigoIso = "TD",
+                            Activo = true,
+                            Nombre = "Chad"
+                        },
+                        new
+                        {
+                            CodigoIso = "CL",
+                            Activo = true,
+                            Nombre = "Chile"
+                        },
+                        new
+                        {
+                            CodigoIso = "CN",
+                            Activo = true,
+                            Nombre = "China"
+                        },
+                        new
+                        {
+                            CodigoIso = "CY",
+                            Activo = true,
+                            Nombre = "Chipre"
+                        },
+                        new
+                        {
+                            CodigoIso = "CO",
+                            Activo = true,
+                            Nombre = "Colombia"
+                        },
+                        new
+                        {
+                            CodigoIso = "KM",
+                            Activo = true,
+                            Nombre = "Comoras"
+                        },
+                        new
+                        {
+                            CodigoIso = "CG",
+                            Activo = true,
+                            Nombre = "Congo"
+                        },
+                        new
+                        {
+                            CodigoIso = "CD",
+                            Activo = true,
+                            Nombre = "Congo (RDC)"
+                        },
+                        new
+                        {
+                            CodigoIso = "KP",
+                            Activo = true,
+                            Nombre = "Corea del Norte"
+                        },
+                        new
+                        {
+                            CodigoIso = "KR",
+                            Activo = true,
+                            Nombre = "Corea del Sur"
+                        },
+                        new
+                        {
+                            CodigoIso = "CI",
+                            Activo = true,
+                            Nombre = "Costa de Marfil"
+                        },
+                        new
+                        {
+                            CodigoIso = "CR",
+                            Activo = true,
+                            Nombre = "Costa Rica"
+                        },
+                        new
+                        {
+                            CodigoIso = "HR",
+                            Activo = true,
+                            Nombre = "Croacia"
+                        },
+                        new
+                        {
+                            CodigoIso = "CU",
+                            Activo = true,
+                            Nombre = "Cuba"
+                        },
+                        new
+                        {
+                            CodigoIso = "DK",
+                            Activo = true,
+                            Nombre = "Dinamarca"
+                        },
+                        new
+                        {
+                            CodigoIso = "DJ",
+                            Activo = true,
+                            Nombre = "Yibuti"
+                        },
+                        new
+                        {
+                            CodigoIso = "DM",
+                            Activo = true,
+                            Nombre = "Dominica"
+                        },
+                        new
+                        {
+                            CodigoIso = "EC",
+                            Activo = true,
+                            Nombre = "Ecuador"
+                        },
+                        new
+                        {
+                            CodigoIso = "EG",
+                            Activo = true,
+                            Nombre = "Egipto"
+                        },
+                        new
+                        {
+                            CodigoIso = "SV",
+                            Activo = true,
+                            Nombre = "El Salvador"
+                        },
+                        new
+                        {
+                            CodigoIso = "AE",
+                            Activo = true,
+                            Nombre = "Emiratos Árabes Unidos"
+                        },
+                        new
+                        {
+                            CodigoIso = "ER",
+                            Activo = true,
+                            Nombre = "Eritrea"
+                        },
+                        new
+                        {
+                            CodigoIso = "SK",
+                            Activo = true,
+                            Nombre = "Eslovaquia"
+                        },
+                        new
+                        {
+                            CodigoIso = "SI",
+                            Activo = true,
+                            Nombre = "Eslovenia"
+                        },
+                        new
+                        {
+                            CodigoIso = "ES",
+                            Activo = true,
+                            Nombre = "España"
+                        },
+                        new
+                        {
+                            CodigoIso = "US",
+                            Activo = true,
+                            Nombre = "Estados Unidos"
+                        },
+                        new
+                        {
+                            CodigoIso = "EE",
+                            Activo = true,
+                            Nombre = "Estonia"
+                        },
+                        new
+                        {
+                            CodigoIso = "ET",
+                            Activo = true,
+                            Nombre = "Etiopía"
+                        },
+                        new
+                        {
+                            CodigoIso = "PH",
+                            Activo = true,
+                            Nombre = "Filipinas"
+                        },
+                        new
+                        {
+                            CodigoIso = "FI",
+                            Activo = true,
+                            Nombre = "Finlandia"
+                        },
+                        new
+                        {
+                            CodigoIso = "FJ",
+                            Activo = true,
+                            Nombre = "Fiyi"
+                        },
+                        new
+                        {
+                            CodigoIso = "FR",
+                            Activo = true,
+                            Nombre = "Francia"
+                        },
+                        new
+                        {
+                            CodigoIso = "GA",
+                            Activo = true,
+                            Nombre = "Gabón"
+                        },
+                        new
+                        {
+                            CodigoIso = "GM",
+                            Activo = true,
+                            Nombre = "Gambia"
+                        },
+                        new
+                        {
+                            CodigoIso = "GE",
+                            Activo = true,
+                            Nombre = "Georgia"
+                        },
+                        new
+                        {
+                            CodigoIso = "GH",
+                            Activo = true,
+                            Nombre = "Ghana"
+                        },
+                        new
+                        {
+                            CodigoIso = "GD",
+                            Activo = true,
+                            Nombre = "Granada"
+                        },
+                        new
+                        {
+                            CodigoIso = "GR",
+                            Activo = true,
+                            Nombre = "Grecia"
+                        },
+                        new
+                        {
+                            CodigoIso = "GT",
+                            Activo = true,
+                            Nombre = "Guatemala"
+                        },
+                        new
+                        {
+                            CodigoIso = "GN",
+                            Activo = true,
+                            Nombre = "Guinea"
+                        },
+                        new
+                        {
+                            CodigoIso = "GQ",
+                            Activo = true,
+                            Nombre = "Guinea Ecuatorial"
+                        },
+                        new
+                        {
+                            CodigoIso = "GW",
+                            Activo = true,
+                            Nombre = "Guinea-Bisáu"
+                        },
+                        new
+                        {
+                            CodigoIso = "GY",
+                            Activo = true,
+                            Nombre = "Guyana"
+                        },
+                        new
+                        {
+                            CodigoIso = "HT",
+                            Activo = true,
+                            Nombre = "Haití"
+                        },
+                        new
+                        {
+                            CodigoIso = "HN",
+                            Activo = true,
+                            Nombre = "Honduras"
+                        },
+                        new
+                        {
+                            CodigoIso = "HU",
+                            Activo = true,
+                            Nombre = "Hungría"
+                        },
+                        new
+                        {
+                            CodigoIso = "IN",
+                            Activo = true,
+                            Nombre = "India"
+                        },
+                        new
+                        {
+                            CodigoIso = "ID",
+                            Activo = true,
+                            Nombre = "Indonesia"
+                        },
+                        new
+                        {
+                            CodigoIso = "IQ",
+                            Activo = true,
+                            Nombre = "Irak"
+                        },
+                        new
+                        {
+                            CodigoIso = "IR",
+                            Activo = true,
+                            Nombre = "Irán"
+                        },
+                        new
+                        {
+                            CodigoIso = "IE",
+                            Activo = true,
+                            Nombre = "Irlanda"
+                        },
+                        new
+                        {
+                            CodigoIso = "IS",
+                            Activo = true,
+                            Nombre = "Islandia"
+                        },
+                        new
+                        {
+                            CodigoIso = "MH",
+                            Activo = true,
+                            Nombre = "Islas Marshall"
+                        },
+                        new
+                        {
+                            CodigoIso = "SB",
+                            Activo = true,
+                            Nombre = "Islas Salomón"
+                        },
+                        new
+                        {
+                            CodigoIso = "IL",
+                            Activo = true,
+                            Nombre = "Israel"
+                        },
+                        new
+                        {
+                            CodigoIso = "IT",
+                            Activo = true,
+                            Nombre = "Italia"
+                        },
+                        new
+                        {
+                            CodigoIso = "JM",
+                            Activo = true,
+                            Nombre = "Jamaica"
+                        },
+                        new
+                        {
+                            CodigoIso = "JP",
+                            Activo = true,
+                            Nombre = "Japón"
+                        },
+                        new
+                        {
+                            CodigoIso = "JO",
+                            Activo = true,
+                            Nombre = "Jordania"
+                        },
+                        new
+                        {
+                            CodigoIso = "KZ",
+                            Activo = true,
+                            Nombre = "Kazajistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "KE",
+                            Activo = true,
+                            Nombre = "Kenia"
+                        },
+                        new
+                        {
+                            CodigoIso = "KG",
+                            Activo = true,
+                            Nombre = "Kirguistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "KI",
+                            Activo = true,
+                            Nombre = "Kiribati"
+                        },
+                        new
+                        {
+                            CodigoIso = "KW",
+                            Activo = true,
+                            Nombre = "Kuwait"
+                        },
+                        new
+                        {
+                            CodigoIso = "LA",
+                            Activo = true,
+                            Nombre = "Laos"
+                        },
+                        new
+                        {
+                            CodigoIso = "LS",
+                            Activo = true,
+                            Nombre = "Lesoto"
+                        },
+                        new
+                        {
+                            CodigoIso = "LV",
+                            Activo = true,
+                            Nombre = "Letonia"
+                        },
+                        new
+                        {
+                            CodigoIso = "LB",
+                            Activo = true,
+                            Nombre = "Líbano"
+                        },
+                        new
+                        {
+                            CodigoIso = "LR",
+                            Activo = true,
+                            Nombre = "Liberia"
+                        },
+                        new
+                        {
+                            CodigoIso = "LY",
+                            Activo = true,
+                            Nombre = "Libia"
+                        },
+                        new
+                        {
+                            CodigoIso = "LI",
+                            Activo = true,
+                            Nombre = "Liechtenstein"
+                        },
+                        new
+                        {
+                            CodigoIso = "LT",
+                            Activo = true,
+                            Nombre = "Lituania"
+                        },
+                        new
+                        {
+                            CodigoIso = "LU",
+                            Activo = true,
+                            Nombre = "Luxemburgo"
+                        },
+                        new
+                        {
+                            CodigoIso = "MK",
+                            Activo = true,
+                            Nombre = "Macedonia del Norte"
+                        },
+                        new
+                        {
+                            CodigoIso = "MG",
+                            Activo = true,
+                            Nombre = "Madagascar"
+                        },
+                        new
+                        {
+                            CodigoIso = "MY",
+                            Activo = true,
+                            Nombre = "Malasia"
+                        },
+                        new
+                        {
+                            CodigoIso = "MW",
+                            Activo = true,
+                            Nombre = "Malaui"
+                        },
+                        new
+                        {
+                            CodigoIso = "MV",
+                            Activo = true,
+                            Nombre = "Maldivas"
+                        },
+                        new
+                        {
+                            CodigoIso = "ML",
+                            Activo = true,
+                            Nombre = "Malí"
+                        },
+                        new
+                        {
+                            CodigoIso = "MT",
+                            Activo = true,
+                            Nombre = "Malta"
+                        },
+                        new
+                        {
+                            CodigoIso = "MA",
+                            Activo = true,
+                            Nombre = "Marruecos"
+                        },
+                        new
+                        {
+                            CodigoIso = "MU",
+                            Activo = true,
+                            Nombre = "Mauricio"
+                        },
+                        new
+                        {
+                            CodigoIso = "MR",
+                            Activo = true,
+                            Nombre = "Mauritania"
+                        },
+                        new
+                        {
+                            CodigoIso = "MX",
+                            Activo = true,
+                            Nombre = "México"
+                        },
+                        new
+                        {
+                            CodigoIso = "FM",
+                            Activo = true,
+                            Nombre = "Micronesia"
+                        },
+                        new
+                        {
+                            CodigoIso = "MD",
+                            Activo = true,
+                            Nombre = "Moldavia"
+                        },
+                        new
+                        {
+                            CodigoIso = "MC",
+                            Activo = true,
+                            Nombre = "Mónaco"
+                        },
+                        new
+                        {
+                            CodigoIso = "MN",
+                            Activo = true,
+                            Nombre = "Mongolia"
+                        },
+                        new
+                        {
+                            CodigoIso = "ME",
+                            Activo = true,
+                            Nombre = "Montenegro"
+                        },
+                        new
+                        {
+                            CodigoIso = "MZ",
+                            Activo = true,
+                            Nombre = "Mozambique"
+                        },
+                        new
+                        {
+                            CodigoIso = "MM",
+                            Activo = true,
+                            Nombre = "Myanmar"
+                        },
+                        new
+                        {
+                            CodigoIso = "NA",
+                            Activo = true,
+                            Nombre = "Namibia"
+                        },
+                        new
+                        {
+                            CodigoIso = "NR",
+                            Activo = true,
+                            Nombre = "Nauru"
+                        },
+                        new
+                        {
+                            CodigoIso = "NP",
+                            Activo = true,
+                            Nombre = "Nepal"
+                        },
+                        new
+                        {
+                            CodigoIso = "NI",
+                            Activo = true,
+                            Nombre = "Nicaragua"
+                        },
+                        new
+                        {
+                            CodigoIso = "NE",
+                            Activo = true,
+                            Nombre = "Níger"
+                        },
+                        new
+                        {
+                            CodigoIso = "NG",
+                            Activo = true,
+                            Nombre = "Nigeria"
+                        },
+                        new
+                        {
+                            CodigoIso = "NO",
+                            Activo = true,
+                            Nombre = "Noruega"
+                        },
+                        new
+                        {
+                            CodigoIso = "NZ",
+                            Activo = true,
+                            Nombre = "Nueva Zelanda"
+                        },
+                        new
+                        {
+                            CodigoIso = "OM",
+                            Activo = true,
+                            Nombre = "Omán"
+                        },
+                        new
+                        {
+                            CodigoIso = "PK",
+                            Activo = true,
+                            Nombre = "Pakistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "PW",
+                            Activo = true,
+                            Nombre = "Palaos"
+                        },
+                        new
+                        {
+                            CodigoIso = "PA",
+                            Activo = true,
+                            Nombre = "Panamá"
+                        },
+                        new
+                        {
+                            CodigoIso = "PG",
+                            Activo = true,
+                            Nombre = "Papúa Nueva Guinea"
+                        },
+                        new
+                        {
+                            CodigoIso = "PY",
+                            Activo = true,
+                            Nombre = "Paraguay"
+                        },
+                        new
+                        {
+                            CodigoIso = "NL",
+                            Activo = true,
+                            Nombre = "Países Bajos"
+                        },
+                        new
+                        {
+                            CodigoIso = "PE",
+                            Activo = true,
+                            Nombre = "Perú"
+                        },
+                        new
+                        {
+                            CodigoIso = "PL",
+                            Activo = true,
+                            Nombre = "Polonia"
+                        },
+                        new
+                        {
+                            CodigoIso = "PT",
+                            Activo = true,
+                            Nombre = "Portugal"
+                        },
+                        new
+                        {
+                            CodigoIso = "GB",
+                            Activo = true,
+                            Nombre = "Reino Unido"
+                        },
+                        new
+                        {
+                            CodigoIso = "CF",
+                            Activo = true,
+                            Nombre = "República Centroafricana"
+                        },
+                        new
+                        {
+                            CodigoIso = "CZ",
+                            Activo = true,
+                            Nombre = "República Checa"
+                        },
+                        new
+                        {
+                            CodigoIso = "DO",
+                            Activo = true,
+                            Nombre = "República Dominicana"
+                        },
+                        new
+                        {
+                            CodigoIso = "RW",
+                            Activo = true,
+                            Nombre = "Ruanda"
+                        },
+                        new
+                        {
+                            CodigoIso = "RO",
+                            Activo = true,
+                            Nombre = "Rumanía"
+                        },
+                        new
+                        {
+                            CodigoIso = "RU",
+                            Activo = true,
+                            Nombre = "Rusia"
+                        },
+                        new
+                        {
+                            CodigoIso = "WS",
+                            Activo = true,
+                            Nombre = "Samoa"
+                        },
+                        new
+                        {
+                            CodigoIso = "KN",
+                            Activo = true,
+                            Nombre = "San Cristóbal y Nieves"
+                        },
+                        new
+                        {
+                            CodigoIso = "SM",
+                            Activo = true,
+                            Nombre = "San Marino"
+                        },
+                        new
+                        {
+                            CodigoIso = "VC",
+                            Activo = true,
+                            Nombre = "San Vicente y las Granadinas"
+                        },
+                        new
+                        {
+                            CodigoIso = "LC",
+                            Activo = true,
+                            Nombre = "Santa Lucía"
+                        },
+                        new
+                        {
+                            CodigoIso = "ST",
+                            Activo = true,
+                            Nombre = "Santo Tomé y Príncipe"
+                        },
+                        new
+                        {
+                            CodigoIso = "SN",
+                            Activo = true,
+                            Nombre = "Senegal"
+                        },
+                        new
+                        {
+                            CodigoIso = "RS",
+                            Activo = true,
+                            Nombre = "Serbia"
+                        },
+                        new
+                        {
+                            CodigoIso = "SC",
+                            Activo = true,
+                            Nombre = "Seychelles"
+                        },
+                        new
+                        {
+                            CodigoIso = "SL",
+                            Activo = true,
+                            Nombre = "Sierra Leona"
+                        },
+                        new
+                        {
+                            CodigoIso = "SG",
+                            Activo = true,
+                            Nombre = "Singapur"
+                        },
+                        new
+                        {
+                            CodigoIso = "SY",
+                            Activo = true,
+                            Nombre = "Siria"
+                        },
+                        new
+                        {
+                            CodigoIso = "SO",
+                            Activo = true,
+                            Nombre = "Somalia"
+                        },
+                        new
+                        {
+                            CodigoIso = "LK",
+                            Activo = true,
+                            Nombre = "Sri Lanka"
+                        },
+                        new
+                        {
+                            CodigoIso = "SZ",
+                            Activo = true,
+                            Nombre = "Suazilandia"
+                        },
+                        new
+                        {
+                            CodigoIso = "ZA",
+                            Activo = true,
+                            Nombre = "Sudáfrica"
+                        },
+                        new
+                        {
+                            CodigoIso = "SS",
+                            Activo = true,
+                            Nombre = "Sudán del Sur"
+                        },
+                        new
+                        {
+                            CodigoIso = "SD",
+                            Activo = true,
+                            Nombre = "Sudán"
+                        },
+                        new
+                        {
+                            CodigoIso = "SE",
+                            Activo = true,
+                            Nombre = "Suecia"
+                        },
+                        new
+                        {
+                            CodigoIso = "CH",
+                            Activo = true,
+                            Nombre = "Suiza"
+                        },
+                        new
+                        {
+                            CodigoIso = "SR",
+                            Activo = true,
+                            Nombre = "Surinam"
+                        },
+                        new
+                        {
+                            CodigoIso = "TH",
+                            Activo = true,
+                            Nombre = "Tailandia"
+                        },
+                        new
+                        {
+                            CodigoIso = "TZ",
+                            Activo = true,
+                            Nombre = "Tanzania"
+                        },
+                        new
+                        {
+                            CodigoIso = "TJ",
+                            Activo = true,
+                            Nombre = "Tayikistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "TL",
+                            Activo = true,
+                            Nombre = "Timor Oriental"
+                        },
+                        new
+                        {
+                            CodigoIso = "TG",
+                            Activo = true,
+                            Nombre = "Togo"
+                        },
+                        new
+                        {
+                            CodigoIso = "TO",
+                            Activo = true,
+                            Nombre = "Tonga"
+                        },
+                        new
+                        {
+                            CodigoIso = "TT",
+                            Activo = true,
+                            Nombre = "Trinidad y Tobago"
+                        },
+                        new
+                        {
+                            CodigoIso = "TN",
+                            Activo = true,
+                            Nombre = "Túnez"
+                        },
+                        new
+                        {
+                            CodigoIso = "TM",
+                            Activo = true,
+                            Nombre = "Turkmenistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "TR",
+                            Activo = true,
+                            Nombre = "Turquía"
+                        },
+                        new
+                        {
+                            CodigoIso = "TV",
+                            Activo = true,
+                            Nombre = "Tuvalu"
+                        },
+                        new
+                        {
+                            CodigoIso = "UA",
+                            Activo = true,
+                            Nombre = "Ucrania"
+                        },
+                        new
+                        {
+                            CodigoIso = "UG",
+                            Activo = true,
+                            Nombre = "Uganda"
+                        },
+                        new
+                        {
+                            CodigoIso = "UY",
+                            Activo = true,
+                            Nombre = "Uruguay"
+                        },
+                        new
+                        {
+                            CodigoIso = "UZ",
+                            Activo = true,
+                            Nombre = "Uzbekistán"
+                        },
+                        new
+                        {
+                            CodigoIso = "VU",
+                            Activo = true,
+                            Nombre = "Vanuatu"
+                        },
+                        new
+                        {
+                            CodigoIso = "VE",
+                            Activo = true,
+                            Nombre = "Venezuela"
+                        },
+                        new
+                        {
+                            CodigoIso = "VN",
+                            Activo = true,
+                            Nombre = "Vietnam"
+                        },
+                        new
+                        {
+                            CodigoIso = "YE",
+                            Activo = true,
+                            Nombre = "Yemen"
+                        },
+                        new
+                        {
+                            CodigoIso = "ZM",
+                            Activo = true,
+                            Nombre = "Zambia"
+                        },
+                        new
+                        {
+                            CodigoIso = "ZW",
+                            Activo = true,
+                            Nombre = "Zimbabue"
+                        });
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.PasswordResetCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Email", "Code", "IsUsed");
+
+                    b.ToTable("PasswordResetCodes");
+                });
+
             modelBuilder.Entity("eGestion360Web.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -43,8 +2684,11 @@ namespace eGestion360Web.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("RequirePasswordChange")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -69,8 +2713,125 @@ namespace eGestion360Web.Migrations
                             Email = "admin@siptech.com",
                             IsActive = true,
                             Password = "admin123",
+                            RequirePasswordChange = false,
                             Username = "admin"
                         });
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.CargaCombustible", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.Persona", "Conductor")
+                        .WithMany()
+                        .HasForeignKey("ConductorIdPersona");
+
+                    b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoIdVehiculo");
+
+                    b.Navigation("Conductor");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.GastoRepuesto", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.CategoriaRepuesto", "CategoriaRepuesto")
+                        .WithMany()
+                        .HasForeignKey("CategoriaRepuestoIdCategoriaRepuesto");
+
+                    b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoIdVehiculo");
+
+                    b.Navigation("CategoriaRepuesto");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.OdometroDiario", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.Persona", "Conductor")
+                        .WithMany()
+                        .HasForeignKey("ConductorIdPersona");
+
+                    b.HasOne("eGestion360Web.Models.Flota.Ruta", "Ruta")
+                        .WithMany()
+                        .HasForeignKey("RutaIdRuta");
+
+                    b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoIdVehiculo");
+
+                    b.Navigation("Conductor");
+
+                    b.Navigation("Ruta");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.OrdenMantenimiento", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.Taller", "Taller")
+                        .WithMany()
+                        .HasForeignKey("TallerIdTaller");
+
+                    b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoIdVehiculo");
+
+                    b.Navigation("Taller");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.PolizaSeguro", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoIdVehiculo");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.SalarioDiario", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.Persona", "Persona")
+                        .WithMany()
+                        .HasForeignKey("PersonaIdPersona");
+
+                    b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoIdVehiculo");
+
+                    b.Navigation("Persona");
+
+                    b.Navigation("Vehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.Flota.Vehiculo", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.Flota.Ruta", "Ruta")
+                        .WithMany()
+                        .HasForeignKey("RutaIdRuta");
+
+                    b.HasOne("eGestion360Web.Models.Flota.TipoVehiculo", "TipoVehiculo")
+                        .WithMany()
+                        .HasForeignKey("TipoVehiculoIdTipoVehiculo");
+
+                    b.Navigation("Ruta");
+
+                    b.Navigation("TipoVehiculo");
+                });
+
+            modelBuilder.Entity("eGestion360Web.Models.PasswordResetCode", b =>
+                {
+                    b.HasOne("eGestion360Web.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

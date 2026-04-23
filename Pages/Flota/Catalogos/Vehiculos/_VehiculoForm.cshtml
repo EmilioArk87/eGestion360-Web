@@ -1,0 +1,92 @@
+@model eGestion360Web.Models.Flota.Vehiculo
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Placa" class="form-label fw-semibold"></label>
+        <input asp-for="Placa" class="form-control text-uppercase" placeholder="Ej: ABC-1234" />
+        <span asp-validation-for="Placa" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="NumeroInterno" class="form-label fw-semibold"></label>
+        <input asp-for="NumeroInterno" class="form-control" placeholder="Ej: 001" />
+        <span asp-validation-for="NumeroInterno" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="IdTipoVehiculo" class="form-label fw-semibold"></label>
+        <select asp-for="IdTipoVehiculo" asp-items="ViewBag.TiposVehiculo" class="form-select">
+            <option value="">-- Seleccione --</option>
+        </select>
+        <span asp-validation-for="IdTipoVehiculo" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Marca" class="form-label fw-semibold"></label>
+        <input asp-for="Marca" class="form-control" placeholder="Ej: Mercedes-Benz" />
+        <span asp-validation-for="Marca" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Modelo" class="form-label fw-semibold"></label>
+        <input asp-for="Modelo" class="form-control" placeholder="Ej: Sprinter 516" />
+        <span asp-validation-for="Modelo" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Anio" class="form-label fw-semibold"></label>
+        <input asp-for="Anio" class="form-control" type="number" min="1950" max="2100" placeholder="Ej: 2022" />
+        <span asp-validation-for="Anio" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="TipoCombustible" class="form-label fw-semibold"></label>
+        <select asp-for="TipoCombustible" class="form-select">
+            <option value="DIESEL">Diesel</option>
+            <option value="GASOLINA_REGULAR">Gasolina Regular</option>
+            <option value="GASOLINA_SUPERIOR">Gasolina Superior</option>
+            <option value="GNV">Gas Natural (GNV)</option>
+            <option value="ELECTRICO">Eléctrico</option>
+        </select>
+        <span asp-validation-for="TipoCombustible" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Capacidad" class="form-label fw-semibold"></label>
+        <input asp-for="Capacidad" class="form-control" type="number" min="1" placeholder="Ej: 45 pasajeros" />
+        <span asp-validation-for="Capacidad" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="IdRuta" class="form-label fw-semibold"></label>
+        <select asp-for="IdRuta" asp-items="ViewBag.Rutas" class="form-select">
+            <option value="">-- Sin ruta asignada --</option>
+        </select>
+        <span asp-validation-for="IdRuta" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="KmInicial" class="form-label fw-semibold"></label>
+        <div class="input-group">
+            <input asp-for="KmInicial" class="form-control" type="number" min="0" step="0.01" />
+            <span class="input-group-text">km</span>
+        </div>
+        <span asp-validation-for="KmInicial" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="FechaAlta" class="form-label fw-semibold"></label>
+        <input asp-for="FechaAlta" class="form-control" type="date" />
+        <span asp-validation-for="FechaAlta" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Vin" class="form-label fw-semibold"></label>
+        <input asp-for="Vin" class="form-control text-uppercase" placeholder="Número de chasis / VIN" />
+        <span asp-validation-for="Vin" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Color" class="form-label fw-semibold"></label>
+        <input asp-for="Color" class="form-control" placeholder="Ej: Amarillo" />
+        <span asp-validation-for="Color" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check mb-2">
+            <input asp-for="Activo" class="form-check-input" type="checkbox" />
+            <label asp-for="Activo" class="form-check-label fw-semibold"></label>
+        </div>
+    </div>
+</div>

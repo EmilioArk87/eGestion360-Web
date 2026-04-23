@@ -1,0 +1,46 @@
+@page
+@model eGestion360Web.Pages.Flota.Gastos.Mantenimiento.CreateModel
+@{ ViewData["Title"] = "Nueva Orden de Mantenimiento"; }
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Gastos/Index">Gastos Periódicos</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Mantenimiento</a></li>
+            <li class="breadcrumb-item active">Nueva</li>
+        </ol>
+    </nav>
+    <div class="mb-4"><h2 class="mb-1"><i class="fas fa-wrench me-2 text-secondary"></i>Nueva Orden de Mantenimiento</h2></div>
+    <form method="post">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4"><label asp-for="Item.IdVehiculo" class="form-label fw-semibold"></label><select asp-for="Item.IdVehiculo" asp-items="ViewBag.Vehiculos" class="form-select"><option value="">-- Seleccione --</option></select><span asp-validation-for="Item.IdVehiculo" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="Item.IdTaller" class="form-label fw-semibold"></label><select asp-for="Item.IdTaller" asp-items="ViewBag.Talleres" class="form-select"><option value="">-- Seleccione --</option></select><span asp-validation-for="Item.IdTaller" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="Item.Fecha" class="form-label fw-semibold"></label><input asp-for="Item.Fecha" type="date" class="form-control" /></div>
+                    <div class="col-md-4"><label asp-for="Item.NoFactura" class="form-label fw-semibold"></label><input asp-for="Item.NoFactura" class="form-control" /><span asp-validation-for="Item.NoFactura" class="text-danger small"></span></div>
+                    <div class="col-md-4"><label asp-for="Item.TipoMantenimiento" class="form-label fw-semibold"></label><select asp-for="Item.TipoMantenimiento" class="form-select"><option value="PREVENTIVO">Preventivo</option><option value="CORRECTIVO">Correctivo</option><option value="REVISION">Revisión</option></select></div>
+                    <div class="col-md-4"><label asp-for="Item.KmOdometro" class="form-label fw-semibold"></label><div class="input-group"><input asp-for="Item.KmOdometro" type="number" step="0.01" class="form-control" /><span class="input-group-text">km</span></div></div>
+                    <div class="col-12"><label asp-for="Item.Descripcion" class="form-label fw-semibold"></label><textarea asp-for="Item.Descripcion" class="form-control" rows="2"></textarea><span asp-validation-for="Item.Descripcion" class="text-danger small"></span></div>
+                    <div class="col-md-3"><label asp-for="Item.MontoManoObra" class="form-label fw-semibold"></label><input asp-for="Item.MontoManoObra" type="number" step="0.01" min="0" class="form-control montoInput" /></div>
+                    <div class="col-md-3"><label asp-for="Item.MontoRepuestos" class="form-label fw-semibold"></label><input asp-for="Item.MontoRepuestos" type="number" step="0.01" min="0" class="form-control montoInput" /></div>
+                    <div class="col-md-3"><label asp-for="Item.MontoOtros" class="form-label fw-semibold"></label><input asp-for="Item.MontoOtros" type="number" step="0.01" min="0" class="form-control montoInput" /></div>
+                    <div class="col-md-3"><label class="form-label fw-semibold">Total</label><input type="text" id="totalMant" class="form-control bg-light fw-bold" readonly /></div>
+                    <div class="col-md-3"><label asp-for="Item.Moneda" class="form-label fw-semibold"></label><select asp-for="Item.Moneda" class="form-select"><option value="HNL">HNL</option><option value="USD">USD</option></select></div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary"><i class="fas fa-save me-2"></i>Guardar</button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function calcMant() { document.getElementById('totalMant').value = (Array.from(document.querySelectorAll('.montoInput')).reduce((s,i)=>s+(parseFloat(i.value)||0),0)).toFixed(2); }
+        document.querySelectorAll('.montoInput').forEach(i=>i.addEventListener('input',calcMant));
+    </script>
+}

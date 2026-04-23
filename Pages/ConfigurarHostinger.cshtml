@@ -1,0 +1,275 @@
+@page "/ConfigurarHostinger"
+@model eGestion360Web.Pages.ConfigurarHostingerModel
+@{
+    ViewData["Title"] = "Configurar Email Hostinger.es";
+}
+
+<div class="container-fluid">
+    <!-- ENCABEZADO -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body bg-primary text-white">
+                    <h1 class="h3 mb-0">📧 Configurar Email Hostinger.es</h1>
+                    <p class="mb-0">Configure el envío de correos electrónicos usando los servidores SMTP de Hostinger.es</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENSAJE DE RESULTADO -->
+    @if (!string.IsNullOrEmpty(Model.MensajeResultado))
+    {
+        <div class="alert @(Model.ConfiguracionExitosa ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+            @Html.Raw(Model.MensajeResultado)
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        @if (Model.ConfiguracionExitosa && Model.NuevaConfiguracionId.HasValue)
+        {
+            <div class="alert alert-info fade show" role="alert">
+                <h5 class="alert-heading">🔐 Próximos Pasos Importantes:</h5>
+                <hr>
+                <ol>
+                    <li><strong>Encriptar Contraseñas:</strong> Ve a <a href="/EncryptPasswords" class="alert-link">Encriptar Contraseñas</a></li>
+                    <li><strong>Probar Configuración:</strong> Envía un email de prueba</li>
+                    <li><strong>Verificar Funcionalidad:</strong> Prueba el reset de contraseñas</li>
+                </ol>
+                <p class="mb-0">
+                    <strong>ID de Configuración:</strong> @Model.NuevaConfiguracionId
+                </p>
+            </div>
+        }
+    }
+
+    <div class="row">
+        <!-- FORMULARIO DE CONFIGURACIÓN -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">🚀 Nueva Configuración</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- Email Usuario -->
+                        <div class="mb-3">
+                            <label asp-for="FormData.EmailUsuario" class="form-label">📧 Email de Usuario</label>
+                            <input asp-for="FormData.EmailUsuario" class="form-control" placeholder="miempresa@midominio.com" />
+                            <div asp-validation-for="FormData.EmailUsuario" class="text-danger"></div>
+                            <div class="form-text">
+                                Email de tu cuenta de Hostinger.es que usarás para enviar correos.
+                            </div>
+                        </div>
+
+                        <!-- Contraseña -->
+                        <div class="mb-3">
+                            <label asp-for="FormData.Contraseña" class="form-label">🔑 Contraseña</label>
+                            <div class="input-group">
+                                <input asp-for="FormData.Contraseña" class="form-control" type="password" />
+                                <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+                                    <i class="fas fa-eye" id="toggleIcon"></i>
+                                </button>
+                            </div>
+                            <div asp-validation-for="FormData.Contraseña" class="text-danger"></div>
+                            <div class="form-text">
+                                Contraseña de tu cuenta de email de Hostinger.es.
+                            </div>
+                        </div>
+
+                        <!-- Nombre Remitente -->
+                        <div class="mb-3">
+                            <label asp-for="FormData.NombreRemitente" class="form-label">👤 Nombre del Remitente</label>
+                            <input asp-for="FormData.NombreRemitente" class="form-control" placeholder="Mi Empresa - Sistema" />
+                            <div asp-validation-for="FormData.NombreRemitente" class="text-danger"></div>
+                            <div class="form-text">
+                                Nombre que aparecerá como remitente en los correos enviados.
+                            </div>
+                        </div>
+
+                        <!-- Nombre Perfil -->
+                        <div class="mb-3">
+                            <label asp-for="FormData.NombrePerfil" class="form-label">🏷️ Nombre del Perfil</label>
+                            <input asp-for="FormData.NombrePerfil" class="form-control" />
+                            <div class="form-text">
+                                Nombre para identificar esta configuración internamente.
+                            </div>
+                        </div>
+
+                        <!-- Configuraciones Avanzadas -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">⚙️ Configuraciones Avanzadas</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label asp-for="FormData.Puerto" class="form-label">🔧 Puerto SMTP</label>
+                                        <select asp-for="FormData.Puerto" class="form-select">
+                                            <option value="587">587 (STARTTLS) - Recomendado</option>
+                                            <option value="465">465 (SSL)</option>
+                                            <option value="25">25 (Sin encriptación)</option>
+                                        </select>
+                                        <div asp-validation-for="FormData.Puerto" class="text-danger"></div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check mt-4">
+                                            <input asp-for="FormData.UsarSSL" class="form-check-input" type="checkbox" />
+                                            <label asp-for="FormData.UsarSSL" class="form-check-label">
+                                                🔒 Usar SSL/TLS
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-check">
+                                    <input asp-for="FormData.EstablecerPorDefecto" class="form-check-input" type="checkbox" />
+                                    <label asp-for="FormData.EstablecerPorDefecto" class="form-check-label">
+                                        ⭐ Establecer como configuración por defecto
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                💾 Configurar Hostinger Email
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONFIGURACIONES EXISTENTES -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📋 Configuraciones Existing de Hostinger</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.ConfiguracionesExistentes.Any())
+                    {
+                        @foreach (var config in Model.ConfiguracionesExistentes)
+                        {
+                            <div class="card mb-3 @(config.IsDefault ? "border-success" : "border-secondary")">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title">
+                                                @config.ProfileName
+                                                @if (config.IsDefault)
+                                                {
+                                                    <span class="badge bg-success">Por Defecto</span>
+                                                }
+                                                @if (!config.IsActive)
+                                                {
+                                                    <span class="badge bg-warning">Inactivo</span>
+                                                }
+                                            </h6>
+                                            <div class="small text-muted">
+                                                <div><i class="fas fa-envelope"></i> @config.FromEmail</div>
+                                                <div><i class="fas fa-user"></i> @config.FromName</div>
+                                                <div><i class="fas fa-server"></i> @config.SmtpHost:@config.SmtpPort</div>
+                                                <div><i class="fas fa-calendar"></i> @config.CreatedAt.ToString("dd/MM/yyyy")</div>
+                                                @if (config.LastTestedAt.HasValue)
+                                                {
+                                                    <div><i class="fas fa-check-circle"></i> Último test: @config.LastTestedAt.Value.ToString("dd/MM/yyyy")</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="btn-group-vertical" role="group">
+                                            @if (!config.IsDefault)
+                                            {
+                                                <form method="post" asp-page-handler="EstablecerPorDefecto" class="d-inline">
+                                                    <input type="hidden" name="configId" value="@config.Id" />
+                                                    <button type="submit" class="btn btn-outline-success btn-sm" onclick="return confirm('¿Establecer como configuración por defecto?')">
+                                                        <i class="fas fa-star"></i> Por Defecto
+                                                    </button>
+                                                </form>
+                                            }
+                                            
+                                            <form method="post" asp-page-handler="EliminarConfiguracion" class="d-inline">
+                                                <input type="hidden" name="configId" value="@config.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Eliminar esta configuración?')" @(config.IsDefault ? "disabled" : "")>
+                                                    <i class="fas fa-trash"></i> Eliminar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p>No hay configuraciones de Hostinger</p>
+                            <small>Configure su primera cuenta de Hostinger.es usando el formulario de la izquierda.</small>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- INFORMACIÓN ÚTIL -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">💡 Información de Hostinger.es</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>📋 Configuraciones Recomendadas:</strong>
+                            <ul class="mb-3">
+                                <li><strong>Servidor:</strong> smtp.hostinger.com</li>
+                                <li><strong>Puerto 587:</strong> STARTTLS (Recomendado)</li>
+                                <li><strong>Puerto 465:</strong> SSL/TLS</li>
+                                <li><strong>Autenticación:</strong> Requerida</li>
+                            </ul>
+
+                            <strong>🔐 Seguridad:</strong>
+                            <ul class="mb-3">
+                                <li>Las contraseñas se encriptan automáticamente</li>
+                                <li>Se recomienda usar SSL/TLS</li>
+                                <li>Verifique que su cuenta de Hostinger permita SMTP</li>
+                            </ul>
+
+                            <strong>🛠️ Solución de Problemas:</strong>
+                            <ul class="mb-0">
+                                <li>Verifique sus credenciales en el panel de Hostinger</li>
+                                <li>Algunos ISPs bloquean el puerto 25</li>
+                                <li>Use puertos 587 o 465 para mejor compatibilidad</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT PARA MOSTRAR/OCULTAR CONTRASEÑA -->
+<script>
+    function togglePassword() {
+        const passwordField = document.querySelector('input[name="FormData.Contraseña"]');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+</script>
+
+<!-- VALIDACIÓN DEL LADO DEL CLIENTE -->
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

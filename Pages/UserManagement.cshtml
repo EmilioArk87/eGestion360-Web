@@ -1,0 +1,97 @@
+@page
+@model UserManagementModel
+@{
+    ViewData["Title"] = "Gestión de Usuario";
+}
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Gestión de Usuario</li>
+                </ol>
+            </nav>
+            <h2 class="mb-1"><i class="fas fa-user-cog me-2"></i>Gestión de Usuario</h2>
+            <p class="text-muted">Administra los datos de tu cuenta</p>
+        </div>
+    </div>
+
+    @if (TempData["UserManagementMessage"] != null)
+    {
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["UserManagementMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-3"><i class="fas fa-id-card me-2"></i>Datos de la cuenta</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <strong>Usuario:</strong> @Model.Username
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <strong>Email:</strong> @Model.Email
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-key fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Cambiar Contraseña</h5>
+                    <p class="card-text text-muted mb-4">Actualiza tu contraseña de acceso al sistema</p>
+                    <a asp-page="/ChangePassword" class="btn btn-primary w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Menú Principal
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .menu-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .menu-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .menu-card:hover .menu-icon {
+            transform: scale(1.1);
+        }
+    </style>
+}

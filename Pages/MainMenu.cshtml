@@ -127,6 +127,83 @@
         </div>
     </div>
 
+    <!-- Sección de Administración -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="mb-4"><i class="fas fa-tools me-2"></i>Administración</h3>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Mantenimiento de Empresas -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-building fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Empresas</h5>
+                    <p class="card-text text-muted mb-4">Alta, baja y modificación de empresas registradas</p>
+                    <a asp-page="/Empresas/Index" class="btn btn-primary w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración de Email -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-envelope-open-text fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Email Corporativo</h5>
+                    <p class="card-text text-muted mb-4">Configura SMTP y gestiona notificaciones</p>
+                    <a href="/admin/email-config" class="btn btn-dark w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Configurar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset de Contraseñas -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-key fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Reset Contraseñas</h5>
+                    <p class="card-text text-muted mb-4">Gestiona códigos de recuperación</p>
+                    <a href="/ForgotPassword" class="btn btn-warning w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs del Sistema -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 5rem; height: 5rem;">
+                        <i class="fas fa-list-alt fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-3">Logs del Sistema</h5>
+                    <p class="card-text text-muted mb-4">Monitoreo y auditoría del sistema</p>
+                    <a href="#" class="btn btn-info w-100">
+                        <i class="fas fa-arrow-right me-2"></i>Ver Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row mt-5">
         <div class="col-12">
             <div class="card border-0 bg-light">

@@ -1,0 +1,96 @@
+@page
+@model eGestion360Web.Pages.Flota.Operacion.OdometroDiario.CreateModel
+@{
+    ViewData["Title"] = "Registrar Odómetro";
+}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Operacion/Index">Operación Diaria</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Odómetro</a></li>
+            <li class="breadcrumb-item active">Nuevo</li>
+        </ol>
+    </nav>
+    <div class="mb-4">
+        <h2 class="mb-1"><i class="fas fa-plus me-2" style="color:#0d6efd;"></i>Registrar Odómetro</h2>
+    </div>
+    <form method="post">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Item.IdVehiculo" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdVehiculo" asp-items="ViewBag.Vehiculos" class="form-select">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                        <span asp-validation-for="Item.IdVehiculo" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.Fecha" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Fecha" type="date" class="form-control" />
+                        <span asp-validation-for="Item.Fecha" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.IdRuta" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdRuta" asp-items="ViewBag.Rutas" class="form-select">
+                            <option value="">-- Sin ruta --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.KmInicial" class="form-label fw-semibold"></label>
+                        <div class="input-group">
+                            <input asp-for="Item.KmInicial" type="number" step="0.01" min="0" class="form-control" id="kmInicial" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                        <span asp-validation-for="Item.KmInicial" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.KmFinal" class="form-label fw-semibold"></label>
+                        <div class="input-group">
+                            <input asp-for="Item.KmFinal" type="number" step="0.01" min="0" class="form-control" id="kmFinal" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                        <span asp-validation-for="Item.KmFinal" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">KM Recorridos</label>
+                        <div class="input-group">
+                            <input type="text" id="kmRecorridos" class="form-control bg-light" readonly placeholder="Auto-calculado" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.IdConductor" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdConductor" asp-items="ViewBag.Conductores" class="form-select">
+                            <option value="">-- Opcional --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Item.Observaciones" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Observaciones" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Guardar
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function calcKm() {
+            const ini = parseFloat(document.getElementById('kmInicial').value) || 0;
+            const fin = parseFloat(document.getElementById('kmFinal').value) || 0;
+            document.getElementById('kmRecorridos').value = (fin - ini).toFixed(2);
+        }
+        document.getElementById('kmInicial').addEventListener('input', calcKm);
+        document.getElementById('kmFinal').addEventListener('input', calcKm);
+    </script>
+}
