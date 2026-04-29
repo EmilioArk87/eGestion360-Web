@@ -6,33 +6,26 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
 
-namespace eGestion360Web.Pages
+namespace eGestion360Web.Pages.Admin
 {
-    public class UserManagementModel : PageModel
+    public class ResetPasswordModel : PageModel
     {
         private readonly ApplicationDbContext _context;
         private readonly IPasswordService _passwordService;
-        private readonly ILogger<UserManagementModel> _logger;
+        private readonly ILogger<ResetPasswordModel> _logger;
 
-        public UserManagementModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<UserManagementModel> logger)
+        public ResetPasswordModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<ResetPasswordModel> logger)
         {
             _context = context;
             _passwordService = passwordService;
             _logger = logger;
         }
 
-        // Datos del usuario en sesión
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public bool IsAdmin { get; set; }
-
-        // Lista de usuarios (solo admin)
         public List<User> Users { get; set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string? Search { get; set; }
 
-        // Campos para reset de contraseña
         [BindProperty]
         [Required(ErrorMessage = "La nueva contraseña es requerida")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
@@ -50,11 +43,10 @@ namespace eGestion360Web.Pages
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            CargarSesion();
+            if (!AuthHelper.IsAdmin(HttpContext))
+                return RedirectToPage("/MainMenu");
 
-            if (IsAdmin)
-                await CargarUsuarios();
-
+            await CargarUsuarios();
             return Page();
         }
 
@@ -65,11 +57,6 @@ namespace eGestion360Web.Pages
 
             if (!AuthHelper.IsAdmin(HttpContext))
                 return RedirectToPage("/MainMenu");
-
-            CargarSesion();
-
-            // Limpiar errores de validación de campos no relevantes al POST de reset
-            ModelState.Remove(nameof(Search));
 
             if (!ModelState.IsValid)
             {
@@ -90,18 +77,12 @@ namespace eGestion360Web.Pages
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Admin {Admin} reseteó la contraseña de {Username} (ID:{UserId}). RequireChange={RequireChange}",
-                Username, user.Username, user.Id, RequireChange);
+            var adminUser = HttpContext.Session.GetString("Username") ?? "admin";
+            _logger.LogInformation("Admin {Admin} reseteó la contraseña del usuario {Username} (ID:{UserId}). RequireChange={RequireChange}",
+                adminUser, user.Username, user.Id, RequireChange);
 
             TempData["SuccessMessage"] = $"Contraseña de '{user.Username}' actualizada correctamente.";
-            return RedirectToPage(new { search = Search });
-        }
-
-        private void CargarSesion()
-        {
-            Username = HttpContext.Session.GetString("Username") ?? "Usuario";
-            Email = HttpContext.Session.GetString("Email") ?? "";
-            IsAdmin = AuthHelper.IsAdmin(HttpContext);
+            return RedirectToPage();
         }
 
         private async Task CargarUsuarios()
