@@ -45,6 +45,36 @@
                         </div>
 
                         <div class="mb-3">
+                            <label asp-for="Role" class="form-label fw-semibold"></label>
+                            <select asp-for="Role" class="form-select">
+                                <option value="empresa_user">Usuario de empresa</option>
+                                <option value="empresa_admin">Administrador de empresa</option>
+                                <option value="admin">Superadmin del sistema</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger small"></span>
+                        </div>
+
+                        @if (Model.Empresas.Any())
+                        {
+                            <div class="mb-3">
+                                <label asp-for="EmpresaId" class="form-label fw-semibold"></label>
+                                <select asp-for="EmpresaId" asp-items="Model.Empresas" class="form-select"></select>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" asp-for="EmpresaId" />
+                        }
+
+                        @if (Model.EmpresaRoles.Any())
+                        {
+                            <div class="mb-3">
+                                <label asp-for="EmpresaRolId" class="form-label fw-semibold"></label>
+                                <select asp-for="EmpresaRolId" asp-items="Model.EmpresaRoles" class="form-select"></select>
+                            </div>
+                        }
+
+                        <div class="mb-3">
                             <div class="form-check form-switch">
                                 <input asp-for="IsActive" class="form-check-input" />
                                 <label asp-for="IsActive" class="form-check-label">Activo</label>

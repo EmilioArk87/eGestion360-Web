@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using eGestion360Web.Data;
 
@@ -11,9 +12,11 @@ using eGestion360Web.Data;
 namespace eGestion360Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429050435_AddMultiTenant")]
+    partial class AddMultiTenant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -329,6 +332,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("cantidad");
 
+                    b.Property<int?>("ConductorIdPersona")
+                        .HasColumnType("int");
+
                     b.Property<string>("CreadoPor")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -430,11 +436,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(10)")
                         .HasColumnName("unidad_medida");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdCargaCombustible");
 
-                    b.HasIndex("IdConductor");
+                    b.HasIndex("ConductorIdPersona");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("cargas_combustible");
                 });
@@ -518,6 +527,9 @@ namespace eGestion360Web.Migrations
                     b.Property<decimal>("Cantidad")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("cantidad");
+
+                    b.Property<int?>("CategoriaRepuestoIdCategoriaRepuesto")
+                        .HasColumnType("int");
 
                     b.Property<string>("CreadoPor")
                         .IsRequired()
@@ -609,11 +621,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdGastoRepuesto");
 
-                    b.HasIndex("IdCategoriaRepuesto");
+                    b.HasIndex("CategoriaRepuestoIdCategoriaRepuesto");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("gastos_repuestos");
                 });
@@ -626,6 +641,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnName("id_odometro_diario");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdOdometroDiario"));
+
+                    b.Property<int?>("ConductorIdPersona")
+                        .HasColumnType("int");
 
                     b.Property<string>("CreadoPor")
                         .IsRequired()
@@ -692,6 +710,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("RutaIdRuta")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("TokenConcurrencia")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -699,13 +720,16 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdOdometroDiario");
 
-                    b.HasIndex("IdConductor");
+                    b.HasIndex("ConductorIdPersona");
 
-                    b.HasIndex("IdRuta");
+                    b.HasIndex("RutaIdRuta");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("odometro_diario");
                 });
@@ -801,6 +825,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("TallerIdTaller")
+                        .HasColumnType("int");
+
                     b.Property<string>("TipoMantenimiento")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -819,11 +846,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdOrdenMantenimiento");
 
-                    b.HasIndex("IdTaller");
+                    b.HasIndex("TallerIdTaller");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("ordenes_mantenimiento");
                 });
@@ -1038,9 +1068,12 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdPolizaSeguro");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("polizas_seguros");
                 });
@@ -1195,6 +1228,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("PersonaIdPersona")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("TokenConcurrencia")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1202,11 +1238,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdSalarioDiario");
 
-                    b.HasIndex("IdPersona");
+                    b.HasIndex("PersonaIdPersona");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("salarios_diarios");
                 });
@@ -1475,11 +1514,17 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("placa");
 
+                    b.Property<int?>("RutaIdRuta")
+                        .HasColumnType("int");
+
                     b.Property<string>("TipoCombustible")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)")
                         .HasColumnName("tipo_combustible");
+
+                    b.Property<int?>("TipoVehiculoIdTipoVehiculo")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("TokenConcurrencia")
                         .IsConcurrencyToken()
@@ -1495,9 +1540,9 @@ namespace eGestion360Web.Migrations
 
                     b.HasKey("IdVehiculo");
 
-                    b.HasIndex("IdRuta");
+                    b.HasIndex("RutaIdRuta");
 
-                    b.HasIndex("IdTipoVehiculo");
+                    b.HasIndex("TipoVehiculoIdTipoVehiculo");
 
                     b.ToTable("vehiculos");
                 });
@@ -4048,14 +4093,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Persona", "Conductor")
                         .WithMany()
-                        .HasForeignKey("IdConductor")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ConductorIdPersona");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Conductor");
 
@@ -4066,15 +4108,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.CategoriaRepuesto", "CategoriaRepuesto")
                         .WithMany()
-                        .HasForeignKey("IdCategoriaRepuesto")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("CategoriaRepuestoIdCategoriaRepuesto");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("CategoriaRepuesto");
 
@@ -4085,19 +4123,15 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Persona", "Conductor")
                         .WithMany()
-                        .HasForeignKey("IdConductor")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ConductorIdPersona");
 
                     b.HasOne("eGestion360Web.Models.Flota.Ruta", "Ruta")
                         .WithMany()
-                        .HasForeignKey("IdRuta")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("RutaIdRuta");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Conductor");
 
@@ -4110,15 +4144,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Taller", "Taller")
                         .WithMany()
-                        .HasForeignKey("IdTaller")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("TallerIdTaller");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Taller");
 
@@ -4129,9 +4159,7 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Vehiculo");
                 });
@@ -4140,15 +4168,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Persona", "Persona")
                         .WithMany()
-                        .HasForeignKey("IdPersona")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("PersonaIdPersona");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Persona");
 
@@ -4159,14 +4183,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Ruta", "Ruta")
                         .WithMany()
-                        .HasForeignKey("IdRuta")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("RutaIdRuta");
 
                     b.HasOne("eGestion360Web.Models.Flota.TipoVehiculo", "TipoVehiculo")
                         .WithMany()
-                        .HasForeignKey("IdTipoVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("TipoVehiculoIdTipoVehiculo");
 
                     b.Navigation("Ruta");
 

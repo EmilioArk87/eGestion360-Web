@@ -23,5 +23,17 @@ namespace eGestion360Web.Models
         public bool IsActive { get; set; } = true;
 
         public bool RequirePasswordChange { get; set; } = false;
+
+        [Required]
+        [StringLength(20)]
+        public string Role { get; set; } = "user";
+
+        public int? EmpresaId { get; set; }
+
+        public int? EmpresaRolId { get; set; }
+
+        public Empresa? Empresa { get; set; }
+
+        public EmpresaRol? EmpresaRol { get; set; }
     }
 }

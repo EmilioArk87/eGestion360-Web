@@ -15,6 +15,10 @@ namespace eGestion360Web.Data
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<EmailConfiguration> EmailConfigurations { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
+        public DbSet<Modulo> Modulos { get; set; }
+        public DbSet<EmpresaModulo> EmpresaModulos { get; set; }
+        public DbSet<EmpresaRol> EmpresaRoles { get; set; }
+        public DbSet<EmpresaRolPermiso> EmpresaRolPermisos { get; set; }
         public DbSet<Pais> Paises { get; set; }
         public DbSet<Moneda> Monedas { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
@@ -40,9 +44,180 @@ namespace eGestion360Web.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Username).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Password).IsRequired().HasMaxLength(500); // Updated to 500 for BCrypt
+                entity.Property(e => e.Password).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(20).HasDefaultValue("user");
                 entity.HasIndex(e => e.Username).IsUnique();
                 entity.HasIndex(e => e.Email).IsUnique();
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.EmpresaId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(e => e.EmpresaRol)
+                      .WithMany(r => r.Usuarios)
+                      .HasForeignKey(e => e.EmpresaRolId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            // Configure Modulo entity
+            modelBuilder.Entity<Modulo>(entity =>
+            {
+                entity.HasKey(e => e.IdModulo);
+                entity.Property(e => e.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Codigo).IsUnique();
+            });
+
+            // Seed Modulos
+            modelBuilder.Entity<Modulo>().HasData(
+                new Modulo { IdModulo = 1, Codigo = "flota",      Nombre = "Control de Flota",  Descripcion = "Gestión de vehículos, operación, gastos y KPIs",    Icono = "fa-truck",        Orden = 1, Activo = true },
+                new Modulo { IdModulo = 2, Codigo = "inventario", Nombre = "Inventario",         Descripcion = "Control de productos, stock y movimientos",          Icono = "fa-boxes",        Orden = 2, Activo = true },
+                new Modulo { IdModulo = 3, Codigo = "ventas",     Nombre = "Ventas",             Descripcion = "Registro y seguimiento de ventas realizadas",        Icono = "fa-shopping-cart", Orden = 3, Activo = true },
+                new Modulo { IdModulo = 4, Codigo = "reportes",   Nombre = "Reportes",           Descripcion = "Generación de reportes y análisis de datos",         Icono = "fa-chart-bar",    Orden = 4, Activo = true }
+            );
+
+            // Configure EmpresaModulo entity
+            modelBuilder.Entity<EmpresaModulo>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdModulo }).IsUnique();
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Modulo)
+                      .WithMany(m => m.EmpresaModulos)
+                      .HasForeignKey(e => e.IdModulo)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure EmpresaRol entity
+            modelBuilder.Entity<EmpresaRol>(entity =>
+            {
+                entity.HasKey(e => e.IdRol);
+                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(50);
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure Flota FK relationships (Id prefix doesn't match EF convention)
+            modelBuilder.Entity<Vehiculo>(entity =>
+            {
+                entity.HasOne(v => v.TipoVehiculo)
+                      .WithMany()
+                      .HasForeignKey(v => v.IdTipoVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(v => v.Ruta)
+                      .WithMany()
+                      .HasForeignKey(v => v.IdRuta)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<CargaCombustible>(entity =>
+            {
+                entity.HasOne(c => c.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(c => c.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Conductor)
+                      .WithMany()
+                      .HasForeignKey(c => c.IdConductor)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<GastoRepuesto>(entity =>
+            {
+                entity.HasOne(g => g.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(g => g.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(g => g.CategoriaRepuesto)
+                      .WithMany()
+                      .HasForeignKey(g => g.IdCategoriaRepuesto)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<OdometroDiario>(entity =>
+            {
+                entity.HasOne(o => o.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(o => o.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(o => o.Ruta)
+                      .WithMany()
+                      .HasForeignKey(o => o.IdRuta)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
+                entity.HasOne(o => o.Conductor)
+                      .WithMany()
+                      .HasForeignKey(o => o.IdConductor)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<OrdenMantenimiento>(entity =>
+            {
+                entity.HasOne(o => o.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(o => o.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(o => o.Taller)
+                      .WithMany()
+                      .HasForeignKey(o => o.IdTaller)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PolizaSeguro>(entity =>
+            {
+                entity.HasOne(p => p.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<SalarioDiario>(entity =>
+            {
+                entity.HasOne(s => s.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(s => s.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.Persona)
+                      .WithMany()
+                      .HasForeignKey(s => s.IdPersona)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure EmpresaRolPermiso entity (PK compuesto)
+            modelBuilder.Entity<EmpresaRolPermiso>(entity =>
+            {
+                entity.HasKey(e => new { e.IdRol, e.IdModulo });
+
+                entity.HasOne(e => e.Rol)
+                      .WithMany(r => r.Permisos)
+                      .HasForeignKey(e => e.IdRol)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Modulo)
+                      .WithMany(m => m.RolPermisos)
+                      .HasForeignKey(e => e.IdModulo)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Configure PasswordResetCode entity

@@ -1,0 +1,188 @@
+@page
+@model eGestion360Web.Pages.Flota.Catalogos.Personas.IndexModel
+@{
+    ViewData["Title"] = "Personal";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item active">Personal</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-id-badge me-2" style="color:#0d6efd;"></i>Personal</h2>
+            <p class="text-muted mb-0">Conductores, cobradores, mecánicos y supervisores</p>
+        </div>
+        <a asp-page="Create" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Nuevo Registro
+        </a>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filtros -->
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input asp-for="Search" class="form-control"
+                               placeholder="Buscar por nombre, apellido o documento..." />
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <select asp-for="FiltroCargo" class="form-select">
+                        <option value="">— Todos los cargos —</option>
+                        <option value="CONDUCTOR">Conductor</option>
+                        <option value="COBRADOR">Cobrador</option>
+                        <option value="MECANICO">Mecánico</option>
+                        <option value="SUPERVISOR">Supervisor</option>
+                        <option value="OTRO">Otro</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select asp-for="FiltroEstado" class="form-select">
+                        <option value="">— Todos —</option>
+                        <option value="1">Activos</option>
+                        <option value="0">Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Buscar
+                    </button>
+                    @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.FiltroCargo) || !string.IsNullOrWhiteSpace(Model.FiltroEstado))
+                    {
+                        <a asp-page="Index" class="btn btn-outline-secondary ms-1">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabla -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre completo</th>
+                            <th>Documento</th>
+                            <th class="text-center">Cargo</th>
+                            <th>Teléfono</th>
+                            <th>Tarifa diaria</th>
+                            <th>Ingreso</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Personas.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5">
+                                    <i class="fas fa-users fa-2x mb-2 d-block text-secondary"></i>
+                                    No hay personal registrado.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var p in Model.Personas)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center fw-bold"
+                                                 style="width:2rem;height:2rem;min-width:2rem;font-size:.75rem;">
+                                                @p.Nombres.Substring(0,1).ToUpper()@p.Apellidos.Substring(0,1).ToUpper()
+                                            </div>
+                                            <div>
+                                                <strong>@p.Apellidos</strong>, @p.Nombres
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <span class="badge bg-light text-dark border me-1">@p.TipoDocumento</span>
+                                        @p.Documento
+                                    </td>
+                                    <td class="text-center">
+                                        @{
+                                            var (badgeColor, cargoLabel) = p.Cargo switch {
+                                                "CONDUCTOR"  => ("bg-primary",   "Conductor"),
+                                                "COBRADOR"   => ("bg-info",      "Cobrador"),
+                                                "MECANICO"   => ("bg-warning text-dark", "Mecánico"),
+                                                "SUPERVISOR" => ("bg-success",   "Supervisor"),
+                                                _            => ("bg-secondary", "Otro")
+                                            };
+                                        }
+                                        <span class="badge @badgeColor">@cargoLabel</span>
+                                    </td>
+                                    <td>@(p.Telefono ?? "—")</td>
+                                    <td>
+                                        @if (p.TarifaDiaria.HasValue)
+                                        {
+                                            <span>@p.TarifaDiaria.Value.ToString("N2") @p.MonedaTarifa</span>
+                                        }
+                                        else { <span class="text-muted">—</span> }
+                                    </td>
+                                    <td class="text-muted small">
+                                        @(p.FechaIngreso?.ToString("dd/MM/yyyy") ?? "—")
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @(p.Activo ? "bg-success" : "bg-secondary")">
+                                            @(p.Activo ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-page="Edit" asp-route-id="@p.IdPersona"
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="post" asp-page-handler="Toggle" class="d-inline">
+                                            <input type="hidden" name="id" value="@p.IdPersona" />
+                                            <input type="hidden" name="activo" value="@(!p.Activo)" />
+                                            <button type="submit"
+                                                    class="btn btn-sm @(p.Activo ? "btn-outline-danger" : "btn-outline-success")"
+                                                    title="@(p.Activo ? "Desactivar" : "Activar")">
+                                                <i class="fas @(p.Activo ? "fa-user-slash" : "fa-user-check")"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (Model.Personas.Any())
+        {
+            <div class="card-footer bg-white text-muted small py-2 px-3">
+                @Model.Personas.Count registro(s) encontrado(s)
+            </div>
+        }
+    </div>
+
+    <div class="mt-4">
+        <a asp-page="/Flota/Catalogos/Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a Catálogos
+        </a>
+    </div>
+</div>

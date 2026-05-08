@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using eGestion360Web.Data;
@@ -47,28 +48,60 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         [Display(Name = "Solicitar cambio de contraseña al ingresar")]
         public bool RequirePasswordChange { get; set; } = false;
 
-        public IActionResult OnGet()
+        [BindProperty]
+        [Required(ErrorMessage = "El rol es requerido")]
+        [Display(Name = "Rol del sistema")]
+        public string Role { get; set; } = "empresa_user";
+
+        [BindProperty]
+        [Display(Name = "Empresa")]
+        public int? EmpresaId { get; set; }
+
+        [BindProperty]
+        [Display(Name = "Rol de empresa")]
+        public int? EmpresaRolId { get; set; }
+
+        public List<SelectListItem> Empresas    { get; set; } = new();
+        public List<SelectListItem> EmpresaRoles { get; set; } = new();
+
+        public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))        return RedirectToPage("/MainMenu");
+            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
+
+            // empresa_admin solo puede crear usuarios para su empresa
+            if (AuthHelper.IsEmpresaAdmin(HttpContext))
+                EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
+
+            await CargarListasAsync();
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))        return RedirectToPage("/MainMenu");
+            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
-            if (!ModelState.IsValid) return Page();
+            // empresa_admin solo puede crear en su empresa
+            if (AuthHelper.IsEmpresaAdmin(HttpContext))
+                EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
+
+            if (!ModelState.IsValid)
+            {
+                await CargarListasAsync();
+                return Page();
+            }
 
             if (await _context.Users.AnyAsync(u => u.Username == Username.Trim()))
             {
                 ModelState.AddModelError(nameof(Username), "Ese nombre de usuario ya está en uso.");
+                await CargarListasAsync();
                 return Page();
             }
             if (await _context.Users.AnyAsync(u => u.Email == Email.Trim().ToLowerInvariant()))
             {
                 ModelState.AddModelError(nameof(Email), "Ese email ya está registrado.");
+                await CargarListasAsync();
                 return Page();
             }
 
@@ -79,6 +112,9 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 Password              = _passwordService.HashPassword(Password),
                 IsActive              = IsActive,
                 RequirePasswordChange = RequirePasswordChange,
+                Role                  = Role.ToLowerInvariant(),
+                EmpresaId             = EmpresaId,
+                EmpresaRolId          = EmpresaRolId,
                 CreatedAt             = DateTime.UtcNow
             };
 
@@ -87,6 +123,29 @@ namespace eGestion360Web.Pages.Admin.Usuarios
 
             TempData["SuccessMessage"] = $"Usuario '{user.Username}' creado correctamente.";
             return RedirectToPage("/UserManagement");
+        }
+
+        private async Task CargarListasAsync()
+        {
+            if (AuthHelper.IsAdmin(HttpContext))
+            {
+                Empresas = await _context.Empresas
+                    .Where(e => !e.Eliminado && e.Activa)
+                    .OrderBy(e => e.RazonSocial)
+                    .Select(e => new SelectListItem(e.RazonSocial, e.IdEmpresa.ToString()))
+                    .ToListAsync();
+                Empresas.Insert(0, new SelectListItem("— Sin empresa (superadmin) —", ""));
+            }
+
+            if (EmpresaId.HasValue)
+            {
+                EmpresaRoles = await _context.EmpresaRoles
+                    .Where(r => r.IdEmpresa == EmpresaId && r.Activo)
+                    .OrderBy(r => r.Nombre)
+                    .Select(r => new SelectListItem(r.Nombre, r.IdRol.ToString()))
+                    .ToListAsync();
+                EmpresaRoles.Insert(0, new SelectListItem("— Sin rol específico —", ""));
+            }
         }
     }
 }

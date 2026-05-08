@@ -53,7 +53,6 @@
                             <th>Código</th>
                             <th>Razón Social</th>
                             <th>Nombre Comercial</th>
-                            <th>Identificador Fiscal</th>
                             <th>País</th>
                             <th>Moneda</th>
                             <th class="text-center">Estado</th>
@@ -76,9 +75,13 @@
                             {
                                 <tr>
                                     <td><code>@empresa.Codigo</code></td>
-                                    <td><strong>@empresa.RazonSocial</strong></td>
-                                    <td>@(empresa.NombreComercial ?? "-")</td>
-                                    <td>@(empresa.IdentificadorFiscal ?? "-")</td>
+                                    <td>
+                                        <strong>@empresa.RazonSocial</strong>
+                                        @if (!string.IsNullOrEmpty(empresa.NombreComercial))
+                                        {
+                                            <br /><small class="text-muted">@empresa.NombreComercial</small>
+                                        }
+                                    </td>
                                     <td>@empresa.PaisIso</td>
                                     <td>@empresa.MonedaIso</td>
                                     <td class="text-center">
@@ -92,13 +95,22 @@
                                         }
                                     </td>
                                     <td class="text-end">
-                                        <a asp-page="Details" asp-route-id="@empresa.IdEmpresa" class="btn btn-sm btn-outline-info" title="Detalles">
-                                            <i class="fas fa-eye"></i>
+                                        <a asp-page="/Admin/EmpresaModulos/Index"
+                                           asp-route-empresaId="@empresa.IdEmpresa"
+                                           class="btn btn-sm btn-outline-dark" title="Módulos contratados">
+                                            <i class="fas fa-puzzle-piece me-1"></i>Módulos
                                         </a>
-                                        <a asp-page="Edit" asp-route-id="@empresa.IdEmpresa" class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <a asp-page="/Admin/EmpresaRoles/Index"
+                                           asp-route-empresaId="@empresa.IdEmpresa"
+                                           class="btn btn-sm btn-outline-warning" title="Roles y permisos">
+                                            <i class="fas fa-user-tag me-1"></i>Roles
+                                        </a>
+                                        <a asp-page="Edit" asp-route-id="@empresa.IdEmpresa"
+                                           class="btn btn-sm btn-outline-primary" title="Editar empresa">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a asp-page="Delete" asp-route-id="@empresa.IdEmpresa" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <a asp-page="Delete" asp-route-id="@empresa.IdEmpresa"
+                                           class="btn btn-sm btn-outline-danger" title="Eliminar">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </td>

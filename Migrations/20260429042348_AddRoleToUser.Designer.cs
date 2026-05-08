@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using eGestion360Web.Data;
 
@@ -11,9 +12,11 @@ using eGestion360Web.Data;
 namespace eGestion360Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429042348_AddRoleToUser")]
+    partial class AddRoleToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -205,117 +208,6 @@ namespace eGestion360Web.Migrations
                     b.ToTable("empresas");
                 });
 
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaModulo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit")
-                        .HasColumnName("activo");
-
-                    b.Property<DateTime>("FechaActivacion")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("fecha_activacion");
-
-                    b.Property<DateTime?>("FechaVencimiento")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("fecha_vencimiento");
-
-                    b.Property<int>("IdEmpresa")
-                        .HasColumnType("int")
-                        .HasColumnName("id_empresa");
-
-                    b.Property<int>("IdModulo")
-                        .HasColumnType("int")
-                        .HasColumnName("id_modulo");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdModulo");
-
-                    b.HasIndex("IdEmpresa", "IdModulo")
-                        .IsUnique();
-
-                    b.ToTable("empresa_modulos");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaRol", b =>
-                {
-                    b.Property<int>("IdRol")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id_rol");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdRol"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit")
-                        .HasColumnName("activo");
-
-                    b.Property<string>("Descripcion")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasColumnName("descripcion");
-
-                    b.Property<bool>("EsAdmin")
-                        .HasColumnType("bit")
-                        .HasColumnName("es_admin");
-
-                    b.Property<int>("IdEmpresa")
-                        .HasColumnType("int")
-                        .HasColumnName("id_empresa");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("nombre");
-
-                    b.HasKey("IdRol");
-
-                    b.HasIndex("IdEmpresa");
-
-                    b.ToTable("empresa_roles");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaRolPermiso", b =>
-                {
-                    b.Property<int>("IdRol")
-                        .HasColumnType("int")
-                        .HasColumnName("id_rol");
-
-                    b.Property<int>("IdModulo")
-                        .HasColumnType("int")
-                        .HasColumnName("id_modulo");
-
-                    b.Property<bool>("PuedeCrear")
-                        .HasColumnType("bit")
-                        .HasColumnName("puede_crear");
-
-                    b.Property<bool>("PuedeEditar")
-                        .HasColumnType("bit")
-                        .HasColumnName("puede_editar");
-
-                    b.Property<bool>("PuedeEliminar")
-                        .HasColumnType("bit")
-                        .HasColumnName("puede_eliminar");
-
-                    b.Property<bool>("PuedeVer")
-                        .HasColumnType("bit")
-                        .HasColumnName("puede_ver");
-
-                    b.HasKey("IdRol", "IdModulo");
-
-                    b.HasIndex("IdModulo");
-
-                    b.ToTable("empresa_rol_permisos");
-                });
-
             modelBuilder.Entity("eGestion360Web.Models.Flota.CargaCombustible", b =>
                 {
                     b.Property<int>("IdCargaCombustible")
@@ -328,6 +220,9 @@ namespace eGestion360Web.Migrations
                     b.Property<decimal>("Cantidad")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("cantidad");
+
+                    b.Property<int?>("ConductorIdPersona")
+                        .HasColumnType("int");
 
                     b.Property<string>("CreadoPor")
                         .IsRequired()
@@ -430,11 +325,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(10)")
                         .HasColumnName("unidad_medida");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdCargaCombustible");
 
-                    b.HasIndex("IdConductor");
+                    b.HasIndex("ConductorIdPersona");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("cargas_combustible");
                 });
@@ -518,6 +416,9 @@ namespace eGestion360Web.Migrations
                     b.Property<decimal>("Cantidad")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("cantidad");
+
+                    b.Property<int?>("CategoriaRepuestoIdCategoriaRepuesto")
+                        .HasColumnType("int");
 
                     b.Property<string>("CreadoPor")
                         .IsRequired()
@@ -609,11 +510,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdGastoRepuesto");
 
-                    b.HasIndex("IdCategoriaRepuesto");
+                    b.HasIndex("CategoriaRepuestoIdCategoriaRepuesto");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("gastos_repuestos");
                 });
@@ -626,6 +530,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnName("id_odometro_diario");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdOdometroDiario"));
+
+                    b.Property<int?>("ConductorIdPersona")
+                        .HasColumnType("int");
 
                     b.Property<string>("CreadoPor")
                         .IsRequired()
@@ -692,6 +599,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("RutaIdRuta")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("TokenConcurrencia")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -699,13 +609,16 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdOdometroDiario");
 
-                    b.HasIndex("IdConductor");
+                    b.HasIndex("ConductorIdPersona");
 
-                    b.HasIndex("IdRuta");
+                    b.HasIndex("RutaIdRuta");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("odometro_diario");
                 });
@@ -801,6 +714,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("TallerIdTaller")
+                        .HasColumnType("int");
+
                     b.Property<string>("TipoMantenimiento")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -819,11 +735,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdOrdenMantenimiento");
 
-                    b.HasIndex("IdTaller");
+                    b.HasIndex("TallerIdTaller");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("ordenes_mantenimiento");
                 });
@@ -1038,9 +957,12 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdPolizaSeguro");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("polizas_seguros");
                 });
@@ -1195,6 +1117,9 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("PersonaIdPersona")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("TokenConcurrencia")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1202,11 +1127,14 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("rowversion")
                         .HasColumnName("token_concurrencia");
 
+                    b.Property<int?>("VehiculoIdVehiculo")
+                        .HasColumnType("int");
+
                     b.HasKey("IdSalarioDiario");
 
-                    b.HasIndex("IdPersona");
+                    b.HasIndex("PersonaIdPersona");
 
-                    b.HasIndex("IdVehiculo");
+                    b.HasIndex("VehiculoIdVehiculo");
 
                     b.ToTable("salarios_diarios");
                 });
@@ -1475,11 +1403,17 @@ namespace eGestion360Web.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("placa");
 
+                    b.Property<int?>("RutaIdRuta")
+                        .HasColumnType("int");
+
                     b.Property<string>("TipoCombustible")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)")
                         .HasColumnName("tipo_combustible");
+
+                    b.Property<int?>("TipoVehiculoIdTipoVehiculo")
+                        .HasColumnType("int");
 
                     b.Property<byte[]>("TokenConcurrencia")
                         .IsConcurrencyToken()
@@ -1495,100 +1429,11 @@ namespace eGestion360Web.Migrations
 
                     b.HasKey("IdVehiculo");
 
-                    b.HasIndex("IdRuta");
+                    b.HasIndex("RutaIdRuta");
 
-                    b.HasIndex("IdTipoVehiculo");
+                    b.HasIndex("TipoVehiculoIdTipoVehiculo");
 
                     b.ToTable("vehiculos");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.Modulo", b =>
-                {
-                    b.Property<int>("IdModulo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id_modulo");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdModulo"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit")
-                        .HasColumnName("activo");
-
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("codigo");
-
-                    b.Property<string>("Descripcion")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)")
-                        .HasColumnName("descripcion");
-
-                    b.Property<string>("Icono")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("icono");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("nombre");
-
-                    b.Property<int>("Orden")
-                        .HasColumnType("int")
-                        .HasColumnName("orden");
-
-                    b.HasKey("IdModulo");
-
-                    b.HasIndex("Codigo")
-                        .IsUnique();
-
-                    b.ToTable("modulos");
-
-                    b.HasData(
-                        new
-                        {
-                            IdModulo = 1,
-                            Activo = true,
-                            Codigo = "flota",
-                            Descripcion = "Gestión de vehículos, operación, gastos y KPIs",
-                            Icono = "fa-truck",
-                            Nombre = "Control de Flota",
-                            Orden = 1
-                        },
-                        new
-                        {
-                            IdModulo = 2,
-                            Activo = true,
-                            Codigo = "inventario",
-                            Descripcion = "Control de productos, stock y movimientos",
-                            Icono = "fa-boxes",
-                            Nombre = "Inventario",
-                            Orden = 2
-                        },
-                        new
-                        {
-                            IdModulo = 3,
-                            Activo = true,
-                            Codigo = "ventas",
-                            Descripcion = "Registro y seguimiento de ventas realizadas",
-                            Icono = "fa-shopping-cart",
-                            Nombre = "Ventas",
-                            Orden = 3
-                        },
-                        new
-                        {
-                            IdModulo = 4,
-                            Activo = true,
-                            Codigo = "reportes",
-                            Descripcion = "Generación de reportes y análisis de datos",
-                            Icono = "fa-chart-bar",
-                            Nombre = "Reportes",
-                            Orden = 4
-                        });
                 });
 
             modelBuilder.Entity("eGestion360Web.Models.Moneda", b =>
@@ -3938,12 +3783,6 @@ namespace eGestion360Web.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int?>("EmpresaId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("EmpresaRolId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -3957,10 +3796,8 @@ namespace eGestion360Web.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("user");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -3971,10 +3808,6 @@ namespace eGestion360Web.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
-
-                    b.HasIndex("EmpresaId");
-
-                    b.HasIndex("EmpresaRolId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -3995,67 +3828,15 @@ namespace eGestion360Web.Migrations
                         });
                 });
 
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaModulo", b =>
-                {
-                    b.HasOne("eGestion360Web.Models.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("IdEmpresa")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eGestion360Web.Models.Modulo", "Modulo")
-                        .WithMany("EmpresaModulos")
-                        .HasForeignKey("IdModulo")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Empresa");
-
-                    b.Navigation("Modulo");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaRol", b =>
-                {
-                    b.HasOne("eGestion360Web.Models.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("IdEmpresa")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Empresa");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaRolPermiso", b =>
-                {
-                    b.HasOne("eGestion360Web.Models.Modulo", "Modulo")
-                        .WithMany("RolPermisos")
-                        .HasForeignKey("IdModulo")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eGestion360Web.Models.EmpresaRol", "Rol")
-                        .WithMany("Permisos")
-                        .HasForeignKey("IdRol")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Modulo");
-
-                    b.Navigation("Rol");
-                });
-
             modelBuilder.Entity("eGestion360Web.Models.Flota.CargaCombustible", b =>
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Persona", "Conductor")
                         .WithMany()
-                        .HasForeignKey("IdConductor")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ConductorIdPersona");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Conductor");
 
@@ -4066,15 +3847,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.CategoriaRepuesto", "CategoriaRepuesto")
                         .WithMany()
-                        .HasForeignKey("IdCategoriaRepuesto")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("CategoriaRepuestoIdCategoriaRepuesto");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("CategoriaRepuesto");
 
@@ -4085,19 +3862,15 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Persona", "Conductor")
                         .WithMany()
-                        .HasForeignKey("IdConductor")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ConductorIdPersona");
 
                     b.HasOne("eGestion360Web.Models.Flota.Ruta", "Ruta")
                         .WithMany()
-                        .HasForeignKey("IdRuta")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("RutaIdRuta");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Conductor");
 
@@ -4110,15 +3883,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Taller", "Taller")
                         .WithMany()
-                        .HasForeignKey("IdTaller")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("TallerIdTaller");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Taller");
 
@@ -4129,9 +3898,7 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Vehiculo");
                 });
@@ -4140,15 +3907,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Persona", "Persona")
                         .WithMany()
-                        .HasForeignKey("IdPersona")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("PersonaIdPersona");
 
                     b.HasOne("eGestion360Web.Models.Flota.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("VehiculoIdVehiculo");
 
                     b.Navigation("Persona");
 
@@ -4159,14 +3922,11 @@ namespace eGestion360Web.Migrations
                 {
                     b.HasOne("eGestion360Web.Models.Flota.Ruta", "Ruta")
                         .WithMany()
-                        .HasForeignKey("IdRuta")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("RutaIdRuta");
 
                     b.HasOne("eGestion360Web.Models.Flota.TipoVehiculo", "TipoVehiculo")
                         .WithMany()
-                        .HasForeignKey("IdTipoVehiculo")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("TipoVehiculoIdTipoVehiculo");
 
                     b.Navigation("Ruta");
 
@@ -4182,37 +3942,6 @@ namespace eGestion360Web.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.User", b =>
-                {
-                    b.HasOne("eGestion360Web.Models.Empresa", "Empresa")
-                        .WithMany()
-                        .HasForeignKey("EmpresaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("eGestion360Web.Models.EmpresaRol", "EmpresaRol")
-                        .WithMany("Usuarios")
-                        .HasForeignKey("EmpresaRolId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Empresa");
-
-                    b.Navigation("EmpresaRol");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.EmpresaRol", b =>
-                {
-                    b.Navigation("Permisos");
-
-                    b.Navigation("Usuarios");
-                });
-
-            modelBuilder.Entity("eGestion360Web.Models.Modulo", b =>
-                {
-                    b.Navigation("EmpresaModulos");
-
-                    b.Navigation("RolPermisos");
                 });
 #pragma warning restore 612, 618
         }

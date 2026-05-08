@@ -5,6 +5,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace eGestion360Web.Pages
 {
@@ -97,11 +98,52 @@ namespace eGestion360Web.Pages
 
                     if (isPasswordValid)
                     {
-                        // Almacenar información del usuario en la sesión
-                        HttpContext.Session.SetString("UserId", user.Id.ToString());
+                        var role = AuthHelper.ResolveRole(user.Role);
+
+                        HttpContext.Session.SetString("UserId",   user.Id.ToString());
                         HttpContext.Session.SetString("Username", user.Username);
-                        HttpContext.Session.SetString("Email", user.Email);
-                        HttpContext.Session.SetString("Role", AuthHelper.ResolveRole(user.Username));
+                        HttpContext.Session.SetString("Email",    user.Email);
+                        HttpContext.Session.SetString("Role",     role);
+
+                        // Cargar datos de tenant si el usuario pertenece a una empresa
+                        if (user.EmpresaId.HasValue)
+                        {
+                            var modulos = await _context.EmpresaModulos
+                                .Where(em => em.IdEmpresa == user.EmpresaId && em.Activo)
+                                .Include(em => em.Modulo)
+                                .Where(em => em.Modulo.Activo)
+                                .Select(em => em.Modulo.Codigo)
+                                .ToListAsync();
+
+                            Dictionary<string, HashSet<string>> permisos = new();
+
+                            if (user.EmpresaRolId.HasValue)
+                            {
+                                var rolPermisos = await _context.EmpresaRolPermisos
+                                    .Where(p => p.IdRol == user.EmpresaRolId)
+                                    .Include(p => p.Modulo)
+                                    .ToListAsync();
+
+                                foreach (var p in rolPermisos)
+                                {
+                                    var set = new HashSet<string>();
+                                    if (p.PuedeVer)      set.Add("ver");
+                                    if (p.PuedeCrear)    set.Add("crear");
+                                    if (p.PuedeEditar)   set.Add("editar");
+                                    if (p.PuedeEliminar) set.Add("eliminar");
+                                    permisos[p.Modulo.Codigo] = set;
+                                }
+                            }
+                            else if (role == AuthHelper.EmpresaAdminRole)
+                            {
+                                // empresa_admin tiene todos los permisos sobre sus módulos
+                                foreach (var m in modulos)
+                                    permisos[m] = new HashSet<string> { "ver", "crear", "editar", "eliminar" };
+                            }
+
+                            AuthHelper.SetSesionTenant(HttpContext, user.EmpresaId.Value,
+                                user.EmpresaRolId, modulos, permisos);
+                        }
 
                         return RedirectToPage("/MainMenu");
                     }
