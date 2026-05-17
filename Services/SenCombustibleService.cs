@@ -82,7 +82,7 @@ public class SenCombustibleService
                 """;
             AddParam(existsCmd, "@id", idEmpresa);
             AddParam(existsCmd, "@fv", fechaVigencia);
-            var exists = (int)await existsCmd.ExecuteScalarAsync(ct)! > 0;
+            var exists = Convert.ToInt32(await existsCmd.ExecuteScalarAsync(ct)) > 0;
 
             if (exists) continue;
 

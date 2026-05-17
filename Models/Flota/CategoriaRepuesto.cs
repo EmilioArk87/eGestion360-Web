@@ -24,6 +24,10 @@ namespace eGestion360Web.Models.Flota
         [Column("descripcion")]
         public string? Descripcion { get; set; }
 
+        [Display(Name = "Es Llanta")]
+        [Column("es_llanta")]
+        public bool EsLlanta { get; set; }
+
         [Display(Name = "Activa")]
         [Column("activo")]
         public bool Activo { get; set; } = true;

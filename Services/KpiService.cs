@@ -30,12 +30,26 @@ namespace eGestion360Web.Services
                 .Where(c => c.IdEmpresa == idEmpresa && !c.Eliminado
                          && c.Fecha >= fechaDesde && c.Fecha <= fechaHasta)
                 .GroupBy(c => c.IdVehiculo)
-                .Select(g => new { g.Key, Total = g.Sum(c => c.Total) })
-                .ToDictionaryAsync(x => x.Key, x => x.Total, ct);
+                .Select(g => new
+                {
+                    g.Key,
+                    Total  = g.Sum(c => c.Total),
+                    Litros = g.Sum(c => c.UnidadMedida == "GAL" ? c.Cantidad * 3.78541m : c.Cantidad)
+                })
+                .ToDictionaryAsync(x => x.Key, x => x, ct);
 
             var repuestosPorVehiculo = await _db.GastosRepuesto
                 .Where(r => r.IdEmpresa == idEmpresa && !r.Eliminado
-                         && r.Fecha >= fechaDesde && r.Fecha <= fechaHasta)
+                         && r.Fecha >= fechaDesde && r.Fecha <= fechaHasta
+                         && !r.CategoriaRepuesto!.EsLlanta)
+                .GroupBy(r => r.IdVehiculo)
+                .Select(g => new { g.Key, Total = g.Sum(r => r.Subtotal) })
+                .ToDictionaryAsync(x => x.Key, x => x.Total, ct);
+
+            var llantasPorVehiculo = await _db.GastosRepuesto
+                .Where(r => r.IdEmpresa == idEmpresa && !r.Eliminado
+                         && r.Fecha >= fechaDesde && r.Fecha <= fechaHasta
+                         && r.CategoriaRepuesto!.EsLlanta)
                 .GroupBy(r => r.IdVehiculo)
                 .Select(g => new { g.Key, Total = g.Sum(r => r.Subtotal) })
                 .ToDictionaryAsync(x => x.Key, x => x.Total, ct);
@@ -79,8 +93,10 @@ namespace eGestion360Web.Services
                     Placa              = v.Placa,
                     NombreRuta         = v.Ruta?.Nombre,
                     KmTotal            = kmPorVehiculo.GetValueOrDefault(v.IdVehiculo),
-                    CostoCombustible   = combustiblePorVehiculo.GetValueOrDefault(v.IdVehiculo),
+                    CostoCombustible   = combustiblePorVehiculo.GetValueOrDefault(v.IdVehiculo)?.Total   ?? 0,
+                    LitrosCombustible  = combustiblePorVehiculo.GetValueOrDefault(v.IdVehiculo)?.Litros  ?? 0,
                     CostoRepuestos     = repuestosPorVehiculo.GetValueOrDefault(v.IdVehiculo),
+                    CostoLlantas       = llantasPorVehiculo.GetValueOrDefault(v.IdVehiculo),
                     CostoSalarios      = salariosPorVehiculo.GetValueOrDefault(v.IdVehiculo),
                     CostoSeguros       = segurosPorVehiculo.GetValueOrDefault(v.IdVehiculo),
                     CostoMantenimiento = mantenimientoPorVehiculo.GetValueOrDefault(v.IdVehiculo),

@@ -207,8 +207,6 @@ namespace eGestion360Web.Services
                 var config = await _context.EmailConfigurations.FindAsync(configurationId);
                 if (config == null) return false;
 
-                // Crear un email de prueba
-                var testSubject = "Prueba de Configuración SMTP - eGestion360";
                 var testContent = GenerateTestEmailContent(config);
 
                 // Intentar enviar (esto requerirá implementar el envío en EmailService)

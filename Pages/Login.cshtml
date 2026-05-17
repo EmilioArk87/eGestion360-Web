@@ -33,14 +33,6 @@
                 </div>
             }
 
-            @if (ViewData["Debug"] != null)
-            {
-                <div class="alert alert-info" role="alert">
-                    <strong>Debug Info:</strong><br>
-                    @ViewData["Debug"]
-                </div>
-            }
-            
             <form method="post" method="post" class="login-form">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 

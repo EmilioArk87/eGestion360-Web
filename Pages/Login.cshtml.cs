@@ -56,43 +56,29 @@ namespace eGestion360Web.Pages
 
                 if (user != null)
                 {
-                    // Debug: Agregar información para diagnóstico
-                    ViewData["Debug"] = $"Usuario encontrado: {user.Username}, Password DB longitud: {user.Password?.Length}, Password ingresado: {Password}";
-
                     bool isPasswordValid = false;
 
-                    // Verificar si la contraseña está hasheada (empieza con $2a$, $2b$, o $2y$)
-                    if (user.Password.StartsWith("$2"))
+                    if (user.Password?.StartsWith("$2") == true)
                     {
-                        // Contraseña hasheada - usar verificación bcrypt
-                        ViewData["Debug"] += $" | Hash: {user.Password}";
                         try
                         {
                             isPasswordValid = _passwordService.VerifyPassword(Password, user.Password);
-                            ViewData["Debug"] += $" | BCrypt Verify Result: {isPasswordValid}";
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            ViewData["Debug"] += $" | BCrypt Error: {ex.Message}";
+                            // hash inválido, isPasswordValid queda false
                         }
                     }
                     else
                     {
-                        // Contraseña en texto plano - verificar directamente y luego hashear
                         if (user.Password == Password)
                         {
                             isPasswordValid = true;
-                            ViewData["Debug"] += " | Método: Texto plano - COINCIDE";
-                            
-                            // Actualizar automáticamente la contraseña a formato hasheado
+
+                            // Migrar contraseña en texto plano a BCrypt
                             user.Password = _passwordService.HashPassword(Password);
                             _context.Users.Update(user);
                             await _context.SaveChangesAsync();
-                            ViewData["Debug"] += " | Actualizada a BCrypt";
-                        }
-                        else
-                        {
-                            ViewData["Debug"] += $" | Método: Texto plano - NO COINCIDE ('{user.Password}' != '{Password}')";
                         }
                     }
 
@@ -148,11 +134,6 @@ namespace eGestion360Web.Pages
                         return RedirectToPage("/MainMenu");
                     }
                 }
-                else
-                {
-                    ViewData["Debug"] = $"No se encontró usuario con username/email: {Username}";
-                }
-                
                 // Si llega aquí, las credenciales son incorrectas
                 ModelState.AddModelError("", "Usuario o contraseña incorrectos.");
             }

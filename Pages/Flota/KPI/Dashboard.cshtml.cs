@@ -17,13 +17,20 @@ namespace eGestion360Web.Pages.Flota.KPI
         [BindProperty(SupportsGet = true)]
         public DateOnly FechaHasta { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public decimal TipoCambio { get; set; } = 25.90m;
+
         public List<KpiResumenVehiculo> Resultados { get; set; } = new();
 
         public decimal KmTotalFlota       => Resultados.Sum(r => r.KmTotal);
         public decimal CostoTotalFlota    => Resultados.Sum(r => r.CostoTotal);
         public decimal LkmPromedio        => KmTotalFlota > 0 ? Math.Round(CostoTotalFlota / KmTotalFlota, 4) : 0;
+        public decimal DxkmPromedio       => TipoCambio > 0 ? Math.Round(LkmPromedio / TipoCambio, 4) : 0;
         public decimal TotalCombustible   => Resultados.Sum(r => r.CostoCombustible);
+        public decimal TotalLitrosFlota   => Resultados.Sum(r => r.LitrosCombustible);
+        public decimal LtskmFlota         => KmTotalFlota > 0 ? Math.Round(TotalLitrosFlota / KmTotalFlota, 4) : 0;
         public decimal TotalRepuestos     => Resultados.Sum(r => r.CostoRepuestos);
+        public decimal TotalLlantas       => Resultados.Sum(r => r.CostoLlantas);
         public decimal TotalSalarios      => Resultados.Sum(r => r.CostoSalarios);
         public decimal TotalSeguros       => Resultados.Sum(r => r.CostoSeguros);
         public decimal TotalMantenimiento => Resultados.Sum(r => r.CostoMantenimiento);

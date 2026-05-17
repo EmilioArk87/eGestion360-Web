@@ -111,6 +111,8 @@ namespace eGestion360Web.Data
             // Configure Flota FK relationships (Id prefix doesn't match EF convention)
             modelBuilder.Entity<Vehiculo>(entity =>
             {
+                entity.Property(v => v.KmInicial).HasPrecision(18, 2);
+
                 entity.HasOne(v => v.TipoVehiculo)
                       .WithMany()
                       .HasForeignKey(v => v.IdTipoVehiculo)
@@ -125,6 +127,11 @@ namespace eGestion360Web.Data
 
             modelBuilder.Entity<CargaCombustible>(entity =>
             {
+                entity.Property(c => c.Cantidad).HasPrecision(18, 2);
+                entity.Property(c => c.KmOdometro).HasPrecision(18, 2);
+                entity.Property(c => c.PrecioUnitario).HasPrecision(18, 2);
+                entity.Property(c => c.Total).HasPrecision(18, 2);
+
                 entity.HasOne(c => c.Vehiculo)
                       .WithMany()
                       .HasForeignKey(c => c.IdVehiculo)
@@ -139,6 +146,11 @@ namespace eGestion360Web.Data
 
             modelBuilder.Entity<GastoRepuesto>(entity =>
             {
+                entity.Property(g => g.Cantidad).HasPrecision(18, 2);
+                entity.Property(g => g.KmOdometro).HasPrecision(18, 2);
+                entity.Property(g => g.PrecioUnitario).HasPrecision(18, 2);
+                entity.Property(g => g.Subtotal).HasPrecision(18, 2);
+
                 entity.HasOne(g => g.Vehiculo)
                       .WithMany()
                       .HasForeignKey(g => g.IdVehiculo)
@@ -152,6 +164,10 @@ namespace eGestion360Web.Data
 
             modelBuilder.Entity<OdometroDiario>(entity =>
             {
+                entity.Property(o => o.KmFinal).HasPrecision(18, 2);
+                entity.Property(o => o.KmInicial).HasPrecision(18, 2);
+                entity.Property(o => o.KmRecorridos).HasPrecision(18, 2);
+
                 entity.HasOne(o => o.Vehiculo)
                       .WithMany()
                       .HasForeignKey(o => o.IdVehiculo)
@@ -172,6 +188,12 @@ namespace eGestion360Web.Data
 
             modelBuilder.Entity<OrdenMantenimiento>(entity =>
             {
+                entity.Property(o => o.KmOdometro).HasPrecision(18, 2);
+                entity.Property(o => o.MontoManoObra).HasPrecision(18, 2);
+                entity.Property(o => o.MontoOtros).HasPrecision(18, 2);
+                entity.Property(o => o.MontoRepuestos).HasPrecision(18, 2);
+                entity.Property(o => o.Total).HasPrecision(18, 2);
+
                 entity.HasOne(o => o.Vehiculo)
                       .WithMany()
                       .HasForeignKey(o => o.IdVehiculo)
@@ -183,8 +205,20 @@ namespace eGestion360Web.Data
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<Ruta>(entity =>
+            {
+                entity.Property(r => r.DistanciaKm).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Persona>(entity =>
+            {
+                entity.Property(p => p.TarifaDiaria).HasPrecision(18, 2);
+            });
+
             modelBuilder.Entity<PolizaSeguro>(entity =>
             {
+                entity.Property(p => p.CostoDiario).HasPrecision(18, 2);
+
                 entity.HasOne(p => p.Vehiculo)
                       .WithMany()
                       .HasForeignKey(p => p.IdVehiculo)
@@ -193,6 +227,8 @@ namespace eGestion360Web.Data
 
             modelBuilder.Entity<SalarioDiario>(entity =>
             {
+                entity.Property(s => s.Monto).HasPrecision(18, 2);
+
                 entity.HasOne(s => s.Vehiculo)
                       .WithMany()
                       .HasForeignKey(s => s.IdVehiculo)

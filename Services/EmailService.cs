@@ -168,8 +168,8 @@ namespace eGestion360Web.Services
             {
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(
-                    _configuration["EmailSettings:FromName"], 
-                    _configuration["EmailSettings:FromEmail"]
+                    _configuration["EmailSettings:FromName"],
+                    _configuration["EmailSettings:FromEmail"] ?? string.Empty
                 ));
                 message.To.Add(new MailboxAddress(toName, toEmail));
                 message.Subject = subject;
@@ -183,8 +183,8 @@ namespace eGestion360Web.Services
                 {
                     await client.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
                     await client.AuthenticateAsync(
-                        _configuration["EmailSettings:Username"], 
-                        _configuration["EmailSettings:Password"]
+                        _configuration["EmailSettings:Username"] ?? string.Empty,
+                        _configuration["EmailSettings:Password"] ?? string.Empty
                     );
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
@@ -205,8 +205,8 @@ namespace eGestion360Web.Services
             {
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(
-                    _configuration["EmailSettings:FromName"], 
-                    _configuration["EmailSettings:FromEmail"]
+                    _configuration["EmailSettings:FromName"],
+                    _configuration["EmailSettings:FromEmail"] ?? string.Empty
                 ));
                 message.To.Add(new MailboxAddress(toName, toEmail));
                 message.Subject = subject;
@@ -231,10 +231,10 @@ namespace eGestion360Web.Services
                     else
                         secureOptions = SecureSocketOptions.None;
 
-                    await client.ConnectAsync(smtpHost, smtpPort, secureOptions);
+                    await client.ConnectAsync(smtpHost ?? string.Empty, smtpPort, secureOptions);
                     await client.AuthenticateAsync(
-                        _configuration["EmailSettings:Username"],
-                        _configuration["EmailSettings:Password"]
+                        _configuration["EmailSettings:Username"] ?? string.Empty,
+                        _configuration["EmailSettings:Password"] ?? string.Empty
                     );
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);

@@ -38,6 +38,11 @@
                            value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Tipo de cambio (L/$)</label>
+                    <input type="number" name="TipoCambio" class="form-control form-control-sm" style="width:100px"
+                           min="1" step="0.01" value="@Model.TipoCambio.ToString("F2")" />
+                </div>
+                <div class="col-auto">
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-search me-1"></i>Calcular
                     </button>
@@ -79,7 +84,16 @@
                     <div class="card-body">
                         <p class="text-muted mb-1 small">L/KM Promedio Flota</p>
                         <h2 class="fw-bold text-primary mb-0">L @Fmt(Model.LkmPromedio)</h2>
-                        <small class="text-muted">Costo total / KM totales</small>
+                        <small class="text-muted">Lempiras por kilómetro</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1 small">$/KM Promedio Flota</p>
+                        <h2 class="fw-bold text-info mb-0">$ @Fmt(Model.DxkmPromedio)</h2>
+                        <small class="text-muted">Dólares por kilómetro · TC: @Model.TipoCambio.ToString("F2")</small>
                     </div>
                 </div>
             </div>
@@ -98,15 +112,6 @@
                         <p class="text-muted mb-1 small">Costo Total Flota</p>
                         <h2 class="fw-bold text-danger mb-0">L @Fmt(Model.CostoTotalFlota)</h2>
                         <small class="text-muted">Todos los componentes</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <p class="text-muted mb-1 small">Vehículos con actividad</p>
-                        <h2 class="fw-bold mb-0">@Model.Resultados.Count</h2>
-                        <small class="text-muted">En el período seleccionado</small>
                     </div>
                 </div>
             </div>
@@ -141,6 +146,13 @@
                                 Repuestos @pct(Model.TotalRepuestos)%
                             </div>
                         }
+                        @if (Model.TotalLlantas > 0)
+                        {
+                            <div class="progress-bar" style="width:@pct(Model.TotalLlantas)%; background-color:#6f4e37;"
+                                 title="Llantas">
+                                Llantas @pct(Model.TotalLlantas)%
+                            </div>
+                        }
                         @if (Model.TotalMantenimiento > 0)
                         {
                             <div class="progress-bar bg-secondary" style="width:@pct(Model.TotalMantenimiento)%"
@@ -160,6 +172,7 @@
                         <span><span class="badge bg-warning text-dark">&nbsp;</span> Combustible: L @Fmt(Model.TotalCombustible)</span>
                         <span><span class="badge bg-success">&nbsp;</span> Salarios: L @Fmt(Model.TotalSalarios)</span>
                         <span><span class="badge bg-info">&nbsp;</span> Repuestos: L @Fmt(Model.TotalRepuestos)</span>
+                        <span><span class="badge" style="background-color:#6f4e37;">&nbsp;</span> Llantas: L @Fmt(Model.TotalLlantas)</span>
                         <span><span class="badge bg-secondary">&nbsp;</span> Mantenimiento: L @Fmt(Model.TotalMantenimiento)</span>
                         <span><span class="badge bg-danger">&nbsp;</span> Seguros: L @Fmt(Model.TotalSeguros)</span>
                     </div>
@@ -182,12 +195,15 @@
                                 <th>Ruta</th>
                                 <th class="text-end">KM</th>
                                 <th class="text-end">Combustible (L)</th>
+                                <th class="text-end">Lts/KM</th>
                                 <th class="text-end">Salarios (L)</th>
                                 <th class="text-end">Repuestos (L)</th>
+                                <th class="text-end">Llantas (L)</th>
                                 <th class="text-end">Mant. (L)</th>
                                 <th class="text-end">Seguros (L)</th>
                                 <th class="text-end fw-bold">Total (L)</th>
-                                <th class="text-end fw-bold">L/KM</th>
+                                <th class="text-end fw-bold text-primary">L/KM</th>
+                                <th class="text-end fw-bold text-info">$/KM</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -207,13 +223,22 @@
                                     <td class="text-muted">@(r.NombreRuta ?? "—")</td>
                                     <td class="text-end">@FmtKm(r.KmTotal)</td>
                                     <td class="text-end">@Fmt(r.CostoCombustible)</td>
+                                    <td class="text-end @(r.KmTotal == 0 ? "text-muted" : "")">
+                                        @(r.KmTotal > 0 ? Fmt(r.LitrosPorKm) : "—")
+                                    </td>
                                     <td class="text-end">@Fmt(r.CostoSalarios)</td>
                                     <td class="text-end">@Fmt(r.CostoRepuestos)</td>
+                                    <td class="text-end">@Fmt(r.CostoLlantas)</td>
                                     <td class="text-end">@Fmt(r.CostoMantenimiento)</td>
                                     <td class="text-end">@Fmt(r.CostoSeguros)</td>
                                     <td class="text-end fw-bold">@Fmt(r.CostoTotal)</td>
-                                    <td class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "")">
-                                        @(r.KmTotal > 0 ? $"L {Fmt(r.LempirasPorKm)}" : "Sin KM")
+                                    <td class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "text-primary")">
+                                        @(r.KmTotal > 0 ? $"L {Fmt(r.LempirasPorKm)}" : "—")
+                                    </td>
+                                    <td class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "text-info")">
+                                        @(r.KmTotal > 0 && Model.TipoCambio > 0
+                                            ? $"$ {Fmt(Math.Round(r.LempirasPorKm / Model.TipoCambio, 4))}"
+                                            : "—")
                                     </td>
                                 </tr>
                             }
@@ -223,12 +248,15 @@
                                 <td colspan="2">TOTAL FLOTA</td>
                                 <td class="text-end">@FmtKm(Model.KmTotalFlota)</td>
                                 <td class="text-end">@Fmt(Model.TotalCombustible)</td>
+                                <td class="text-end">@Fmt(Model.LtskmFlota)</td>
                                 <td class="text-end">@Fmt(Model.TotalSalarios)</td>
                                 <td class="text-end">@Fmt(Model.TotalRepuestos)</td>
+                                <td class="text-end">@Fmt(Model.TotalLlantas)</td>
                                 <td class="text-end">@Fmt(Model.TotalMantenimiento)</td>
                                 <td class="text-end">@Fmt(Model.TotalSeguros)</td>
                                 <td class="text-end">@Fmt(Model.CostoTotalFlota)</td>
-                                <td class="text-end">L @Fmt(Model.LkmPromedio)</td>
+                                <td class="text-end text-primary">L @Fmt(Model.LkmPromedio)</td>
+                                <td class="text-end text-info">$ @Fmt(Model.DxkmPromedio)</td>
                             </tr>
                         </tfoot>
                     </table>

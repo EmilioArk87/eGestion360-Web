@@ -1,0 +1,85 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Flota.Catalogos.CategoriasRepuesto.EditModel
+@{
+    ViewData["Title"] = "Editar Categoría de Repuesto";
+    string color = "#fd7e14";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/MantenimientoDatos/Index">Mantenimiento de Datos</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Categorías de Repuesto</a></li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+
+    <div class="mb-4">
+        <h2 class="mb-1">
+            <i class="fas fa-edit me-2" style="color:@color;"></i>Editar Categoría de Repuesto
+        </h2>
+        <p class="text-muted mb-0">Modifique los datos de la categoría</p>
+    </div>
+
+    <form method="post">
+        <input type="hidden" asp-for="Item.IdCategoriaRepuesto" />
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="Item.Nombre" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Nombre" class="form-control" maxlength="100" />
+                        <span asp-validation-for="Item.Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6 d-flex align-items-start gap-4 pt-4 mt-1">
+                        <div class="form-check form-switch">
+                            <input asp-for="Item.EsLlanta" class="form-check-input" role="switch" />
+                            <label asp-for="Item.EsLlanta" class="form-check-label">
+                                Clasificar como <strong>Llanta</strong>
+                            </label>
+                            <div class="form-text">
+                                Los gastos de esta categoría aparecerán como
+                                <em>Llantas</em> en el reporte KPI.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Item.Descripcion" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Item.Descripcion" class="form-control" rows="2"
+                                  maxlength="500"></textarea>
+                        <span asp-validation-for="Item.Descripcion" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input asp-for="Item.Activo" class="form-check-input" role="switch" />
+                            <label asp-for="Item.Activo" class="form-check-label fw-semibold">Activa</label>
+                            <div class="form-text">
+                                Las categorías inactivas no aparecen en el formulario de Nuevo Gasto de Repuesto.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                <button type="submit" class="btn text-white" style="background-color:@color;">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
