@@ -14,14 +14,19 @@
         </ol>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="mb-1"><i class="fas fa-tachometer-alt me-2" style="color:#0d6efd;"></i>Odómetro Diario</h2>
             <p class="text-muted mb-0">Registro de kilómetros inicial y final por vehículo</p>
         </div>
-        <a asp-page="Create" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Nuevo Registro
-        </a>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nuevo Registro
+            </a>
+            <a asp-page="/Flota/Operacion/Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
     </div>
 
     @if (TempData["Mensaje"] != null)
@@ -35,15 +40,26 @@
     <form method="get" class="card border-0 shadow-sm mb-3">
         <div class="card-body">
             <div class="row g-2 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label small fw-semibold">Fecha desde</label>
                     <input type="date" name="Desde" value="@Model.Desde?.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label small fw-semibold">Fecha hasta</label>
                     <input type="date" name="Hasta" value="@Model.Hasta?.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
-                <div class="col-md-4 d-flex gap-2">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Placa</label>
+                    <input type="text" name="Placa" value="@Model.Placa" list="placasList"
+                           class="form-control" placeholder="Escriba para filtrar..." autocomplete="off" />
+                    <datalist id="placasList">
+                        @foreach (var p in Model.Placas)
+                        {
+                            <option value="@p"></option>
+                        }
+                    </datalist>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-outline-primary flex-grow-1">Filtrar</button>
                     <a asp-page="Index" class="btn btn-outline-secondary">Limpiar</a>
                 </div>
@@ -54,7 +70,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
+                <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="15">
                     <thead class="table-light">
                         <tr>
                             <th>Fecha</th>
@@ -94,7 +110,7 @@
                                     </td>
                                 </tr>
                             }
-                            <tr class="table-light fw-bold">
+                            <tr class="table-light fw-bold no-paginate">
                                 <td colspan="5" class="text-end">Total período:</td>
                                 <td class="text-end text-primary">@Model.Registros.Sum(r => r.KmRecorridos).ToString("N2") km</td>
                                 <td></td>
@@ -106,9 +122,4 @@
         </div>
     </div>
 
-    <div class="mt-4">
-        <a asp-page="/Flota/Operacion/Index" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a Operación Diaria
-        </a>
-    </div>
 </div>

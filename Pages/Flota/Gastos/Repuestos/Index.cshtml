@@ -10,12 +10,15 @@
             <li class="breadcrumb-item active">Repuestos</li>
         </ol>
     </nav>
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="mb-1"><i class="fas fa-cogs me-2 text-warning"></i>Repuestos & Llantas</h2>
             <p class="text-muted mb-0">Compras de repuestos y llantas por vehículo</p>
         </div>
-        <a asp-page="Create" class="btn btn-warning text-white"><i class="fas fa-plus me-2"></i>Nuevo Gasto</a>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn btn-warning text-white"><i class="fas fa-plus me-2"></i>Nuevo Gasto</a>
+            <a asp-page="/Flota/Gastos/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+        </div>
     </div>
     @if (TempData["Mensaje"] != null)
     {
@@ -33,7 +36,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
+                <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="15">
                     <thead class="table-light">
                         <tr><th>Fecha</th><th>Vehículo</th><th>Categoría</th><th>Descripción</th><th>Nº Factura</th><th class="text-end fw-bold">Subtotal</th><th>Moneda</th><th class="text-end">Acciones</th></tr>
                     </thead>
@@ -57,12 +60,11 @@
                                     <td class="text-end"><a asp-page="Edit" asp-route-id="@r.IdGastoRepuesto" class="btn btn-sm btn-outline-warning"><i class="fas fa-edit"></i></a></td>
                                 </tr>
                             }
-                            <tr class="table-light fw-bold"><td colspan="5" class="text-end">Total:</td><td class="text-end text-warning">@Model.Registros.Sum(r => r.Subtotal).ToString("N2")</td><td colspan="2"></td></tr>
+                            <tr class="table-light fw-bold no-paginate"><td colspan="5" class="text-end">Total:</td><td class="text-end text-warning">@Model.Registros.Sum(r => r.Subtotal).ToString("N2")</td><td colspan="2"></td></tr>
                         }
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="mt-4"><a asp-page="/Flota/Gastos/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a Gastos</a></div>
 </div>

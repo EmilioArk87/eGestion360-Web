@@ -7,11 +7,16 @@
 }
 
 <div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <h1><i class="fas fa-envelope"></i> Configuración de Email Corporativo</h1>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#configModal" onclick="clearForm()">
-            <i class="fas fa-plus"></i> Nueva Configuración
-        </button>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#configModal" onclick="clearForm()">
+                <i class="fas fa-plus"></i> Nueva Configuración
+            </button>
+            <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
     </div>
 
     <!-- Mensajes de éxito y error -->
@@ -81,7 +86,7 @@
             @if(Model.Configurations != null && Model.Configurations.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover paginated-table" data-page-size="15">
                         <thead>
                             <tr>
                                 <th>Nombre</th>

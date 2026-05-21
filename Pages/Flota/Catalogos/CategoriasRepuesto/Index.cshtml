@@ -15,16 +15,21 @@
         </ol>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="mb-1">
                 <i class="fas fa-cogs me-2" style="color:@color;"></i>Categorías de Repuesto
             </h2>
             <p class="text-muted mb-0">Clasificación de repuestos y llantas por empresa</p>
         </div>
-        <a asp-page="Create" class="btn text-white" style="background-color:@color;">
-            <i class="fas fa-plus me-2"></i>Nueva Categoría
-        </a>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn text-white" style="background-color:@color;">
+                <i class="fas fa-plus me-2"></i>Nueva Categoría
+            </a>
+            <a asp-page="/Flota/MantenimientoDatos/Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
     </div>
 
     @if (TempData["Mensaje"] != null)
@@ -52,7 +57,7 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
+                <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="15">
                     <thead class="table-light">
                         <tr>
                             <th>Nombre</th>
@@ -119,9 +124,4 @@
         </div>
     </div>
 
-    <div class="mt-4">
-        <a asp-page="/Flota/MantenimientoDatos/Index" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a Mantenimiento de Datos
-        </a>
-    </div>
 </div>

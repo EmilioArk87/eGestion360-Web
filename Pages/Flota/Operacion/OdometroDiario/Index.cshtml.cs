@@ -14,7 +14,9 @@ namespace eGestion360Web.Pages.Flota.Operacion.OdometroDiario
 
         [BindProperty(SupportsGet = true)] public DateOnly? Desde { get; set; }
         [BindProperty(SupportsGet = true)] public DateOnly? Hasta { get; set; }
+        [BindProperty(SupportsGet = true)] public string? Placa { get; set; }
         public List<Models.Flota.OdometroDiario> Registros { get; set; } = new();
+        public List<string> Placas { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -24,10 +26,25 @@ namespace eGestion360Web.Pages.Flota.Operacion.OdometroDiario
             Hasta ??= DateOnly.FromDateTime(DateTime.Today);
 
             int idEmpresa = GetIdEmpresa();
-            Registros = await _db.OdometrosDiarios
+
+            Placas = await _db.Vehiculos
+                .Where(v => v.IdEmpresa == idEmpresa && v.Placa != null)
+                .OrderBy(v => v.Placa)
+                .Select(v => v.Placa!)
+                .ToListAsync();
+
+            var query = _db.OdometrosDiarios
                 .Include(o => o.Vehiculo)
                 .Include(o => o.Ruta)
-                .Where(o => o.IdEmpresa == idEmpresa && o.Fecha >= Desde && o.Fecha <= Hasta)
+                .Where(o => o.IdEmpresa == idEmpresa && o.Fecha >= Desde && o.Fecha <= Hasta);
+
+            if (!string.IsNullOrWhiteSpace(Placa))
+            {
+                var like = $"%{Placa.Trim()}%";
+                query = query.Where(o => EF.Functions.Like(o.Vehiculo!.Placa, like));
+            }
+
+            Registros = await query
                 .OrderByDescending(o => o.Fecha).ThenBy(o => o.Vehiculo!.Placa)
                 .ToListAsync();
 
