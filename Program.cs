@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Eventos;
+using eGestion360Web.Services.Facturacion;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,25 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 // Add KPI Service
 builder.Services.AddScoped<KpiService>();
+
+// ── Bus de eventos / Outbox (Fase 0 Sprint 2) ──────────────────────────────
+// HttpContextAccessor: el publisher necesita el username de sesión para auditoría.
+builder.Services.AddHttpContextAccessor();
+
+// Publisher: scoped (comparte DbContext con el caller para commit atómico).
+builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+
+// Registro de handlers. Cada módulo agregará sus propios handlers acá.
+// LoggingDomainEventHandler es el smoke-test: acepta TODOS los eventos y los loguea.
+builder.Services.AddScoped<IDomainEventHandler, LoggingDomainEventHandler>();
+
+// Worker que reclama y despacha eventos pendientes del outbox.
+builder.Services.AddHostedService<OutboxDispatcherBackgroundService>();
+
+// ── Facturación (Fase 1 Sprint 3 + 4) ──────────────────────────────────────
+builder.Services.AddScoped<IFacturacionService, FacturacionService>();
+builder.Services.AddScoped<IPagoService, PagoService>();
+builder.Services.AddScoped<INotaService, NotaService>();
 
 // Add session support
 builder.Services.AddSession(options =>

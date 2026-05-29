@@ -1,0 +1,73 @@
+@page
+@model eGestion360Web.Pages.Catalogos.IndexModel
+@{
+    ViewData["Title"] = "Catálogos";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Catálogos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-book me-2"></i>Catálogos transversales</h2>
+            <p class="text-muted mb-0">Maestros compartidos por todos los módulos del ERP</p>
+        </div>
+        <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    <div class="row g-4">
+        @{
+            var cards = new[]
+            {
+                new { Page = "/Catalogos/Clientes/Index",    Title = "Clientes",            Desc = "Catálogo de clientes y su información fiscal",       Icon = "fa-user-tie",   Color = "#0d6efd", Ready = true },
+                new { Page = "/Catalogos/Proveedores/Index", Title = "Proveedores",         Desc = "Catálogo de proveedores y datos de pago",            Icon = "fa-truck-loading", Color = "#fd7e14", Ready = false },
+                new { Page = "/Catalogos/Productos/Index",   Title = "Productos / Servicios", Desc = "Bienes y servicios facturables, precios e impuestos", Icon = "fa-boxes-stacked", Color = "#198754", Ready = false },
+                new { Page = "/Catalogos/Impuestos/Index",   Title = "Impuestos",           Desc = "ISV, retenciones y otros tributos configurables",    Icon = "fa-percent",    Color = "#dc3545", Ready = false },
+                new { Page = "/Catalogos/FormasPago/Index",  Title = "Formas de pago",      Desc = "Efectivo, cheque, transferencia, tarjeta",           Icon = "fa-money-bill", Color = "#20c997", Ready = false },
+                new { Page = "/Catalogos/CondicionesPago/Index", Title = "Condiciones de pago", Desc = "Contado, crédito 15/30/60 días, planes de cuotas", Icon = "fa-calendar-check", Color = "#6610f2", Ready = false },
+                new { Page = "/Catalogos/TiposCambio/Index", Title = "Tipos de cambio",     Desc = "Histórico de cotizaciones HNL/USD y otras divisas",  Icon = "fa-exchange-alt", Color = "#6c757d", Ready = false },
+            };
+        }
+        @foreach (var c in cards)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 menu-card">
+                    <div class="card-body text-center p-4">
+                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 5rem; height: 5rem; background-color: @c.Color;">
+                            <i class="fas @c.Icon fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">@c.Title</h5>
+                        <p class="card-text text-muted mb-4">@c.Desc</p>
+                        @if (c.Ready)
+                        {
+                            <a asp-page="@c.Page" class="btn w-100 text-white" style="background-color: @c.Color;">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                                <i class="fas fa-clock me-2"></i>Próximamente
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .menu-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12) !important; }
+    </style>
+}

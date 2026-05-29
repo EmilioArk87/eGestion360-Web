@@ -1,0 +1,207 @@
+@page
+@model eGestion360Web.Pages.Facturacion.Pagos.CreateModel
+@{
+    ViewData["Title"] = "Nuevo Pago";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Facturacion/Index">Facturación</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Pagos</a></li>
+            <li class="breadcrumb-item active">Nuevo</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <h2 class="mb-0"><i class="fas fa-money-check-alt me-2"></i>Registrar pago</h2>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <form method="post" id="frm-pago">
+        <div asp-validation-summary="All" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light"><strong>Cabecera</strong></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Cliente</label>
+                        <select asp-for="Input.IdCliente" asp-items="ViewBag.Clientes as Microsoft.AspNetCore.Mvc.Rendering.SelectList" id="cliente" class="form-select" required>
+                            <option value="">— Seleccionar —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Fecha</label>
+                        <input asp-for="Input.Fecha" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Serie</label>
+                        <input asp-for="Input.Serie" class="form-control" maxlength="20" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Forma de pago</label>
+                        <select asp-for="Input.IdFormaPago" asp-items="ViewBag.FormasPago as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select" required>
+                            <option value="">— Seleccionar —</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Monto del pago</label>
+                        <input asp-for="Input.Monto" id="monto" type="number" step="0.01" min="0.01" class="form-control" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Moneda</label>
+                        <input asp-for="Input.Moneda" class="form-control" maxlength="3" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tipo cambio</label>
+                        <input asp-for="Input.TipoCambio" type="number" step="0.00000001" min="0" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Referencia</label>
+                        <input asp-for="Input.Referencia" class="form-control" maxlength="100" placeholder="N° cheque, voucher..." />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Observaciones</label>
+                        <input asp-for="Input.Observaciones" class="form-control" maxlength="500" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>Aplicación a facturas pendientes</strong>
+                <span class="badge bg-info" id="info-aplicado">Aplicado: 0.00 / 0.00 · Saldo favor: 0.00</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle" id="tbl-facturas">
+                        <thead class="table-light small">
+                            <tr>
+                                <th style="width: 50px;"><input type="checkbox" id="chk-all" /></th>
+                                <th>Documento</th>
+                                <th>Emisión</th>
+                                <th>Vence</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">Saldo</th>
+                                <th class="text-end" style="width: 180px;">A aplicar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-facturas">
+                            <tr><td colspan="7" class="text-center text-muted py-4">Seleccione un cliente para ver sus facturas pendientes.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check me-2"></i>Registrar pago
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        let FACTURAS = [];
+
+        document.getElementById('cliente').addEventListener('change', async () => {
+            const id = document.getElementById('cliente').value;
+            const tbody = document.getElementById('tbody-facturas');
+            if (!id) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Seleccione un cliente.</td></tr>';
+                FACTURAS = [];
+                return;
+            }
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            try {
+                const r = await fetch(`?handler=FacturasPendientes&idCliente=${id}`);
+                FACTURAS = await r.json();
+                renderFacturas();
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Error cargando facturas.</td></tr>';
+            }
+        });
+
+        function renderFacturas() {
+            const tbody = document.getElementById('tbody-facturas');
+            if (!FACTURAS.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">El cliente no tiene facturas de crédito pendientes.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = FACTURAS.map((f, i) => `
+                <tr data-id="${f.id}" data-saldo="${f.saldo}">
+                    <td><input type="checkbox" class="chk-fac" /></td>
+                    <td><code>${f.doc}</code></td>
+                    <td>${(f.fecha||'').substring(0,10)}</td>
+                    <td>${(f.vence||'').substring(0,10) || '—'}</td>
+                    <td class="text-end">${Number(f.total).toFixed(2)}</td>
+                    <td class="text-end fw-bold">${Number(f.saldo).toFixed(2)} <small class="text-muted">${f.moneda}</small></td>
+                    <td>
+                        <input type="hidden" name="Input.Aplicaciones[${i}].IdFactura" value="${f.id}" />
+                        <input type="number" step="0.01" min="0" max="${f.saldo}" value="0"
+                               class="form-control form-control-sm text-end fld-aplicar"
+                               name="Input.Aplicaciones[${i}].Monto" />
+                    </td>
+                </tr>
+            `).join('');
+
+            tbody.querySelectorAll('.chk-fac').forEach((chk, i) => {
+                chk.addEventListener('change', () => {
+                    const tr = chk.closest('tr');
+                    const saldo = parseFloat(tr.dataset.saldo);
+                    const inp = tr.querySelector('.fld-aplicar');
+                    inp.value = chk.checked ? saldo.toFixed(2) : '0';
+                    autoDistribuir();
+                    recalcAplicado();
+                });
+            });
+            tbody.querySelectorAll('.fld-aplicar').forEach(inp => {
+                inp.addEventListener('input', recalcAplicado);
+            });
+            document.getElementById('chk-all').addEventListener('change', (e) => {
+                tbody.querySelectorAll('.chk-fac').forEach(c => { c.checked = e.target.checked; c.dispatchEvent(new Event('change')); });
+            });
+            recalcAplicado();
+        }
+
+        function autoDistribuir() {
+            // Si el usuario marca varias facturas, distribuir el monto del pago en orden
+            const monto = parseFloat(document.getElementById('monto').value || '0');
+            if (monto <= 0) return;
+            let restante = monto;
+            document.querySelectorAll('#tbody-facturas tr').forEach(tr => {
+                const chk = tr.querySelector('.chk-fac');
+                if (!chk || !chk.checked) return;
+                const saldo = parseFloat(tr.dataset.saldo);
+                const aplicar = Math.min(saldo, restante);
+                tr.querySelector('.fld-aplicar').value = aplicar.toFixed(2);
+                restante -= aplicar;
+                if (restante < 0) restante = 0;
+            });
+        }
+
+        function recalcAplicado() {
+            let total = 0;
+            document.querySelectorAll('#tbody-facturas .fld-aplicar').forEach(inp => {
+                total += parseFloat(inp.value || '0');
+            });
+            const monto = parseFloat(document.getElementById('monto').value || '0');
+            const sf = Math.max(0, monto - total);
+            const info = document.getElementById('info-aplicado');
+            info.textContent = `Aplicado: ${total.toFixed(2)} / ${monto.toFixed(2)} · Saldo favor: ${sf.toFixed(2)}`;
+            info.className = (total > monto)
+                ? 'badge bg-danger'
+                : (sf > 0 ? 'badge bg-warning text-dark' : 'badge bg-success');
+        }
+        document.getElementById('monto').addEventListener('input', () => { autoDistribuir(); recalcAplicado(); });
+    </script>
+}

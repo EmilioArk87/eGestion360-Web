@@ -1,0 +1,43 @@
+@page
+@model eGestion360Web.Pages.Catalogos.Clientes.CreateModel
+@{
+    ViewData["Title"] = "Nuevo Cliente";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Clientes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Nuevo</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <h2 class="mb-0"><i class="fas fa-user-plus me-2"></i>Nuevo Cliente</h2>
+        <a asp-page="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <partial name="_ClienteForm" model="Model.Cliente" />
+                <hr class="my-4" />
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

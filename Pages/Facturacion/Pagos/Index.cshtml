@@ -1,0 +1,143 @@
+@page
+@model eGestion360Web.Pages.Facturacion.Pagos.IndexModel
+@{
+    ViewData["Title"] = "Pagos";
+    string Badge(string s) => s switch
+    {
+        "recibido"               => "bg-info text-dark",
+        "parcialmente_aplicado"  => "bg-warning text-dark",
+        "aplicado"               => "bg-success",
+        "anulado"                => "bg-danger",
+        _                         => "bg-light text-dark"
+    };
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Facturacion/Index">Facturación</a></li>
+            <li class="breadcrumb-item active">Pagos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-hand-holding-usd me-2"></i>Pagos recibidos</h2>
+            <p class="text-muted mb-0">Recibos y aplicación a facturas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Nuevo Pago</a>
+            <a asp-page="/Facturacion/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+        </div>
+    </div>
+
+    @if (TempData["PagosMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["PagosMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-3 mb-3">
+        @foreach (var st in new[] { "recibido", "parcialmente_aplicado", "aplicado", "anulado" })
+        {
+            var n = Model.ConteoPorEstado.TryGetValue(st, out var c) ? c : 0;
+            <div class="col">
+                <a asp-page="Index" asp-route-estado="@st" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body py-3">
+                            <span class="badge @Badge(st) mb-2 text-uppercase">@st</span>
+                            <h3 class="mb-0">@n.ToString("N0")</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Buscar</label>
+                    <input asp-for="Search" class="form-control form-control-sm" placeholder="Recibo, cliente, referencia..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Estado</label>
+                    <select asp-for="Estado" class="form-select form-select-sm">
+                        <option value="">— Todos —</option>
+                        <option value="recibido">recibido</option>
+                        <option value="parcialmente_aplicado">parcialmente_aplicado</option>
+                        <option value="aplicado">aplicado</option>
+                        <option value="anulado">anulado</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Desde</label>
+                    <input asp-for="Desde" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Hasta</label>
+                    <input asp-for="Hasta" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-filter"></i></button>
+                    <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Recibo</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Forma</th>
+                            <th>Referencia</th>
+                            <th>Estado</th>
+                            <th class="text-end">Monto</th>
+                            <th class="text-end">Saldo favor</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Pagos.Any())
+                        {
+                            <tr><td colspan="9" class="text-center text-muted py-4">Sin pagos.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var p in Model.Pagos)
+                            {
+                                <tr>
+                                    <td><code>@p.Serie-@(p.Numero?.ToString("D6") ?? "—")</code></td>
+                                    <td>@p.Fecha.ToString("yyyy-MM-dd")</td>
+                                    <td><strong>@p.Cliente.RazonSocial</strong><br /><small class="text-muted">@p.Cliente.Codigo</small></td>
+                                    <td>@p.FormaPago.Nombre</td>
+                                    <td>@p.Referencia</td>
+                                    <td><span class="badge @Badge(p.Estado)">@p.Estado</span></td>
+                                    <td class="text-end"><strong>@p.Monto.ToString("N2")</strong> <small class="text-muted">@p.Moneda</small></td>
+                                    <td class="text-end @(p.SaldoFavor > 0 ? "text-warning fw-bold" : "")">@p.SaldoFavor.ToString("N2")</td>
+                                    <td class="text-end">
+                                        <a asp-page="Details" asp-route-id="@p.IdPago" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                                        @if (p.SaldoFavor > 0 && p.Estado != "anulado")
+                                        {
+                                            <a asp-page="Aplicar" asp-route-id="@p.IdPago" class="btn btn-sm btn-outline-success"><i class="fas fa-link"></i></a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

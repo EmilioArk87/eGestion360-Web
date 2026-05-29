@@ -1,0 +1,68 @@
+@model eGestion360Web.Models.Catalogos.Cliente
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Codigo" class="form-label"></label>
+        <input asp-for="Codigo" class="form-control" maxlength="30" />
+        <span asp-validation-for="Codigo" class="text-danger"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="RazonSocial" class="form-label"></label>
+        <input asp-for="RazonSocial" class="form-control" maxlength="200" />
+        <span asp-validation-for="RazonSocial" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-8">
+        <label asp-for="NombreComercial" class="form-label"></label>
+        <input asp-for="NombreComercial" class="form-control" maxlength="150" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Tipo" class="form-label"></label>
+        <select asp-for="Tipo" class="form-select">
+            <option value="natural">Natural</option>
+            <option value="juridica">Jurídica</option>
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="IdentificadorFiscal" class="form-label"></label>
+        <input asp-for="IdentificadorFiscal" class="form-control" maxlength="50" placeholder="RTN" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Telefono" class="form-label"></label>
+        <input asp-for="Telefono" class="form-control" maxlength="30" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" maxlength="100" type="email" />
+    </div>
+
+    <div class="col-md-8">
+        <label asp-for="Direccion" class="form-label"></label>
+        <input asp-for="Direccion" class="form-control" maxlength="300" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Ciudad" class="form-label"></label>
+        <input asp-for="Ciudad" class="form-control" maxlength="100" />
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="MonedaIsoDefault" class="form-label"></label>
+        <select asp-for="MonedaIsoDefault" asp-items="ViewBag.Monedas as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select"></select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="IdCondicionPagoDefault" class="form-label"></label>
+        <select asp-for="IdCondicionPagoDefault" asp-items="ViewBag.CondicionesPago as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select">
+            <option value="">— Sin condición por defecto —</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="LimiteCredito" class="form-label"></label>
+        <input asp-for="LimiteCredito" class="form-control" type="number" step="0.01" min="0" />
+    </div>
+
+    <div class="col-12 form-check ms-2 mt-2">
+        <input asp-for="Activo" class="form-check-input" />
+        <label asp-for="Activo" class="form-check-label"></label>
+    </div>
+</div>

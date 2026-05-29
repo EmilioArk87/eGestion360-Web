@@ -1,0 +1,128 @@
+@page
+@model eGestion360Web.Pages.Catalogos.Clientes.IndexModel
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Clientes</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-user-tie me-2"></i>Clientes</h2>
+            <p class="text-muted mb-0">Catálogo de clientes de la empresa</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nuevo Cliente
+            </a>
+            <a asp-page="/Catalogos/Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ClientesMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["ClientesMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input asp-for="Search" class="form-control" placeholder="Buscar por código, razón social, nombre comercial o RTN..." />
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a asp-page="Index" class="btn btn-outline-secondary">Limpiar</a>
+                }
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="15">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Razón Social</th>
+                            <th>RTN</th>
+                            <th>Teléfono / Email</th>
+                            <th>Condición</th>
+                            <th class="text-end">Límite crédito</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Clientes.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                    No hay clientes registrados.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var c in Model.Clientes)
+                            {
+                                <tr>
+                                    <td><code>@c.Codigo</code></td>
+                                    <td>
+                                        <strong>@c.RazonSocial</strong>
+                                        @if (!string.IsNullOrEmpty(c.NombreComercial))
+                                        {
+                                            <br /><small class="text-muted">@c.NombreComercial</small>
+                                        }
+                                    </td>
+                                    <td>@c.IdentificadorFiscal</td>
+                                    <td>
+                                        @c.Telefono
+                                        @if (!string.IsNullOrEmpty(c.Email))
+                                        {
+                                            <br /><small class="text-muted">@c.Email</small>
+                                        }
+                                    </td>
+                                    <td>@(c.CondicionPagoDefault?.Nombre ?? "—")</td>
+                                    <td class="text-end">@c.LimiteCredito.ToString("N2")</td>
+                                    <td class="text-center">
+                                        @if (c.Activo)
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-page="Edit" asp-route-id="@c.IdCliente" class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-page="Delete" asp-route-id="@c.IdCliente" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

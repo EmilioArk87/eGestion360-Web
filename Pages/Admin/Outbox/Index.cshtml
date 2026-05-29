@@ -1,0 +1,169 @@
+@page
+@model eGestion360Web.Pages.Admin.Outbox.IndexModel
+@{
+    ViewData["Title"] = "Outbox / Bus de eventos";
+    string BadgeForStatus(string s) => s switch
+    {
+        "pending"    => "bg-secondary",
+        "processing" => "bg-info text-dark",
+        "processed"  => "bg-success",
+        "failed"     => "bg-warning text-dark",
+        "dead"       => "bg-danger",
+        _            => "bg-light text-dark"
+    };
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Outbox / Bus de eventos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-stream me-2"></i>Bus de eventos (Outbox)</h2>
+            <p class="text-muted mb-0">Monitoreo y gestión de eventos de dominio publicados por los módulos</p>
+        </div>
+        <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    @if (TempData["OutboxMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["OutboxMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Resumen por status *@
+    <div class="row g-3 mb-3">
+        @foreach (var st in new[] { "pending", "processing", "processed", "failed", "dead" })
+        {
+            var n = Model.ConteoPorStatus.TryGetValue(st, out var c) ? c : 0;
+            <div class="col">
+                <a asp-page="Index" asp-route-status="@st" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body py-3">
+                            <span class="badge @BadgeForStatus(st) mb-2 text-uppercase">@st</span>
+                            <h3 class="mb-0">@n.ToString("N0")</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    @* Filtros *@
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Estado</label>
+                    <select asp-for="Status" class="form-select form-select-sm">
+                        <option value="">— Todos —</option>
+                        <option value="pending">pending</option>
+                        <option value="processing">processing</option>
+                        <option value="processed">processed</option>
+                        <option value="failed">failed</option>
+                        <option value="dead">dead</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Tipo de evento (contains)</label>
+                    <input asp-for="EventType" class="form-control form-control-sm" placeholder="factura.emitida" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">ID Empresa</label>
+                    <input asp-for="EmpresaId" class="form-control form-control-sm" type="number" />
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-filter me-1"></i>Filtrar
+                    </button>
+                    <a asp-page="Index" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+                    <form method="post" asp-page-handler="ResetDead" class="d-inline ms-auto"
+                          onsubmit="return confirm('¿Reactivar todos los eventos en estado dead?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-redo me-1"></i>Reactivar dead
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Empresa</th>
+                            <th>Tipo</th>
+                            <th>Agregado</th>
+                            <th>Ocurrió</th>
+                            <th>Estado</th>
+                            <th class="text-end">Intentos</th>
+                            <th>Próximo intento</th>
+                            <th>Worker</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Eventos.Any())
+                        {
+                            <tr><td colspan="10" class="text-center text-muted py-4">No hay eventos que coincidan con el filtro.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var e in Model.Eventos)
+                            {
+                                <tr>
+                                    <td><code>@e.IdEvento</code></td>
+                                    <td>@e.IdEmpresa</td>
+                                    <td><code>@e.EventType</code></td>
+                                    <td><span class="text-muted">@e.AggregateType/</span>@e.AggregateId</td>
+                                    <td>@e.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td><span class="badge @BadgeForStatus(e.Status)">@e.Status</span></td>
+                                    <td class="text-end">@e.Intentos / @e.MaxIntentos</td>
+                                    <td>@(e.ProximoIntentoEn?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</td>
+                                    <td><small class="text-muted">@(e.WorkerId ?? "—")</small></td>
+                                    <td class="text-end">
+                                        <a asp-page="Details" asp-route-id="@e.IdEvento" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <small class="text-muted">@Model.Total eventos · página @Model.Pagina de @Model.TotalPages</small>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.Pagina <= 1 ? "disabled" : "")">
+                            <a class="page-link" asp-page="Index"
+                               asp-route-status="@Model.Status" asp-route-eventType="@Model.EventType"
+                               asp-route-empresaId="@Model.EmpresaId" asp-route-pagina="@(Model.Pagina - 1)">Anterior</a>
+                        </li>
+                        <li class="page-item @(Model.Pagina >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-page="Index"
+                               asp-route-status="@Model.Status" asp-route-eventType="@Model.EventType"
+                               asp-route-empresaId="@Model.EmpresaId" asp-route-pagina="@(Model.Pagina + 1)">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Models;
+using eGestion360Web.Models.Catalogos;
+using eGestion360Web.Models.Eventos;
+using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Models.Flota;
 
 namespace eGestion360Web.Data
@@ -33,6 +36,27 @@ namespace eGestion360Web.Data
         public DbSet<PolizaSeguro> PolizasSeguros { get; set; }
         public DbSet<SalarioDiario> SalariosDiarios { get; set; }
         public DbSet<Taller> Talleres { get; set; }
+
+        // Catálogos transversales (Fase 0)
+        public DbSet<Cliente> Clientes { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
+        public DbSet<ProductoServicio> ProductosServicios { get; set; }
+        public DbSet<Impuesto> Impuestos { get; set; }
+        public DbSet<FormaPago> FormasPago { get; set; }
+        public DbSet<CondicionPago> CondicionesPago { get; set; }
+        public DbSet<CondicionPagoCuota> CondicionesPagoCuotas { get; set; }
+        public DbSet<TipoCambio> TiposCambio { get; set; }
+
+        // Outbox de eventos de dominio (Fase 0)
+        public DbSet<DomainEvent> DomainEvents { get; set; }
+
+        // Facturación (Fase 1)
+        public DbSet<Factura> Facturas { get; set; }
+        public DbSet<FacturaDetalle> FacturaDetalles { get; set; }
+        public DbSet<FacturaSecuencia> FacturaSecuencias { get; set; }
+        public DbSet<Pago> Pagos { get; set; }
+        public DbSet<PagoAplicacion> PagoAplicaciones { get; set; }
+        public DbSet<Nota> Notas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,10 +97,14 @@ namespace eGestion360Web.Data
 
             // Seed Modulos
             modelBuilder.Entity<Modulo>().HasData(
-                new Modulo { IdModulo = 1, Codigo = "flota",      Nombre = "Control de Flota",  Descripcion = "Gestión de vehículos, operación, gastos y KPIs",    Icono = "fa-truck",        Orden = 1, Activo = true },
-                new Modulo { IdModulo = 2, Codigo = "inventario", Nombre = "Inventario",         Descripcion = "Control de productos, stock y movimientos",          Icono = "fa-boxes",        Orden = 2, Activo = true },
-                new Modulo { IdModulo = 3, Codigo = "ventas",     Nombre = "Ventas",             Descripcion = "Registro y seguimiento de ventas realizadas",        Icono = "fa-shopping-cart", Orden = 3, Activo = true },
-                new Modulo { IdModulo = 4, Codigo = "reportes",   Nombre = "Reportes",           Descripcion = "Generación de reportes y análisis de datos",         Icono = "fa-chart-bar",    Orden = 4, Activo = true }
+                new Modulo { IdModulo = 1, Codigo = "flota",       Nombre = "Control de Flota",   Descripcion = "Gestión de vehículos, operación, gastos y KPIs",   Icono = "fa-truck",         Orden = 1, Activo = true },
+                new Modulo { IdModulo = 2, Codigo = "inventario",  Nombre = "Inventario",          Descripcion = "Control de productos, stock y movimientos",         Icono = "fa-boxes",         Orden = 2, Activo = true },
+                new Modulo { IdModulo = 3, Codigo = "ventas",      Nombre = "Ventas",              Descripcion = "Registro y seguimiento de ventas realizadas",       Icono = "fa-shopping-cart", Orden = 3, Activo = true },
+                new Modulo { IdModulo = 4, Codigo = "reportes",    Nombre = "Reportes",            Descripcion = "Generación de reportes y análisis de datos",        Icono = "fa-chart-bar",     Orden = 4, Activo = true },
+                new Modulo { IdModulo = 5, Codigo = "catalogos",   Nombre = "Catálogos",           Descripcion = "Clientes, proveedores, productos, impuestos, formas y condiciones de pago", Icono = "fa-book", Orden = 5, Activo = true },
+                new Modulo { IdModulo = 6, Codigo = "facturacion", Nombre = "Facturación",         Descripcion = "Emisión de facturas contado/crédito, notas de crédito/débito, CxC",         Icono = "fa-file-invoice-dollar", Orden = 6, Activo = true },
+                new Modulo { IdModulo = 7, Codigo = "bancos",      Nombre = "Bancos",              Descripcion = "Cuentas bancarias, depósitos, cheques y conciliación",                       Icono = "fa-university",    Orden = 7, Activo = true },
+                new Modulo { IdModulo = 8, Codigo = "contabilidad",Nombre = "Contabilidad",        Descripcion = "Plan de cuentas, asientos, libros y estados financieros (opcional por empresa)", Icono = "fa-calculator", Orden = 8, Activo = true }
             );
 
             // Configure EmpresaModulo entity
@@ -666,6 +694,254 @@ namespace eGestion360Web.Data
                 new Pais { CodigoIso = "ZM", Nombre = "Zambia" },
                 new Pais { CodigoIso = "ZW", Nombre = "Zimbabue" }
             );
+
+            // ─────────────────────────────────────────────────────────────────
+            // Catálogos transversales (Fase 0) — todos multitenant por id_empresa
+            // ─────────────────────────────────────────────────────────────────
+
+            modelBuilder.Entity<Cliente>(entity =>
+            {
+                entity.HasKey(e => e.IdCliente);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo }).IsUnique();
+                entity.HasIndex(e => new { e.IdEmpresa, e.RazonSocial });
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.CondicionPagoDefault)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdCondicionPagoDefault)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<Proveedor>(entity =>
+            {
+                entity.HasKey(e => e.IdProveedor);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo }).IsUnique();
+                entity.HasIndex(e => new { e.IdEmpresa, e.RazonSocial });
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.CondicionPagoDefault)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdCondicionPagoDefault)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<Impuesto>(entity =>
+            {
+                entity.HasKey(e => e.IdImpuesto);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo }).IsUnique();
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ProductoServicio>(entity =>
+            {
+                entity.HasKey(e => e.IdProducto);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo }).IsUnique();
+                entity.HasIndex(e => new { e.IdEmpresa, e.Descripcion });
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ImpuestoDefault)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdImpuestoDefault)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<FormaPago>(entity =>
+            {
+                entity.HasKey(e => e.IdFormaPago);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo }).IsUnique();
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<CondicionPago>(entity =>
+            {
+                entity.HasKey(e => e.IdCondicionPago);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo }).IsUnique();
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<CondicionPagoCuota>(entity =>
+            {
+                entity.HasKey(e => e.IdCuota);
+                entity.HasIndex(e => new { e.IdCondicionPago, e.NumeroCuota }).IsUnique();
+
+                entity.HasOne(e => e.CondicionPago)
+                      .WithMany(c => c.Cuotas)
+                      .HasForeignKey(e => e.IdCondicionPago)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<TipoCambio>(entity =>
+            {
+                entity.HasKey(e => e.IdTipoCambio);
+                entity.HasIndex(e => new { e.IdEmpresa, e.MonedaOrigen, e.MonedaDestino, e.Fecha }).IsUnique();
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ─────────────────────────────────────────────────────────────────
+            // Facturación (Fase 1 Sprint 3)
+            // ─────────────────────────────────────────────────────────────────
+            modelBuilder.Entity<Factura>(entity =>
+            {
+                entity.HasKey(e => e.IdFactura);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Serie, e.Numero })
+                      .IsUnique()
+                      .HasFilter("[numero] IS NOT NULL")
+                      .HasDatabaseName("UX_facturas_empresa_serie_numero");
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdCliente, e.Estado })
+                      .HasDatabaseName("IX_facturas_empresa_cliente_estado");
+                entity.HasIndex(e => new { e.IdEmpresa, e.FechaEmision })
+                      .HasDatabaseName("IX_facturas_empresa_fecha");
+
+                entity.HasOne(e => e.Empresa)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cliente)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdCliente)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.FormaPago)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdFormaPago)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(e => e.CondicionPago)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdCondicionPago)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<FacturaDetalle>(entity =>
+            {
+                entity.HasKey(e => e.IdFacturaDetalle);
+                entity.HasIndex(e => new { e.IdFactura, e.NumeroLinea })
+                      .IsUnique()
+                      .HasDatabaseName("UX_factura_detalle_factura_linea");
+
+                entity.HasOne(e => e.Factura)
+                      .WithMany(f => f.Detalle)
+                      .HasForeignKey(e => e.IdFactura)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdProducto)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(e => e.Impuesto)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdImpuesto)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<FacturaSecuencia>(entity =>
+            {
+                entity.HasKey(e => e.IdSecuencia);
+                entity.HasIndex(e => new { e.IdEmpresa, e.TipoDocumento, e.Serie })
+                      .IsUnique()
+                      .HasDatabaseName("UX_factura_secuencias_tenant_tipo_serie");
+            });
+
+            // ─────────────────────────────────────────────────────────────────
+            // Pagos y Notas (Fase 1 Sprint 4)
+            // ─────────────────────────────────────────────────────────────────
+            modelBuilder.Entity<Pago>(entity =>
+            {
+                entity.HasKey(e => e.IdPago);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Serie, e.Numero })
+                      .IsUnique()
+                      .HasFilter("[numero] IS NOT NULL")
+                      .HasDatabaseName("UX_pagos_empresa_serie_numero");
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdCliente, e.Estado })
+                      .HasDatabaseName("IX_pagos_empresa_cliente_estado");
+                entity.HasIndex(e => new { e.IdEmpresa, e.Fecha })
+                      .HasDatabaseName("IX_pagos_empresa_fecha");
+
+                entity.HasOne(e => e.Empresa).WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Cliente).WithMany().HasForeignKey(e => e.IdCliente).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.FormaPago).WithMany().HasForeignKey(e => e.IdFormaPago).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PagoAplicacion>(entity =>
+            {
+                entity.HasKey(e => e.IdAplicacion);
+                entity.HasIndex(e => e.IdFactura).HasDatabaseName("IX_pago_aplicaciones_factura");
+
+                entity.HasOne(e => e.Pago).WithMany(p => p.Aplicaciones).HasForeignKey(e => e.IdPago).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Factura).WithMany().HasForeignKey(e => e.IdFactura).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Nota>(entity =>
+            {
+                entity.HasKey(e => e.IdNota);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Tipo, e.Serie, e.Numero })
+                      .IsUnique()
+                      .HasFilter("[numero] IS NOT NULL")
+                      .HasDatabaseName("UX_notas_empresa_tipo_serie_numero");
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdFacturaOrigen })
+                      .HasDatabaseName("IX_notas_empresa_factura");
+
+                entity.HasOne(e => e.Empresa).WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Cliente).WithMany().HasForeignKey(e => e.IdCliente).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.FacturaOrigen).WithMany().HasForeignKey(e => e.IdFacturaOrigen).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ─────────────────────────────────────────────────────────────────
+            // Outbox de eventos de dominio (Fase 0 Sprint 2)
+            // ─────────────────────────────────────────────────────────────────
+            modelBuilder.Entity<DomainEvent>(entity =>
+            {
+                entity.HasKey(e => e.IdEvento);
+                entity.Property(e => e.IdEvento).ValueGeneratedOnAdd();
+
+                // Índice para el worker: trae eventos elegibles ordenados
+                entity.HasIndex(e => new { e.Status, e.ProximoIntentoEn })
+                      .HasDatabaseName("IX_domain_events_status_proximo");
+
+                // Índice para idempotencia de handlers y trazabilidad por agregado
+                entity.HasIndex(e => new { e.IdEmpresa, e.AggregateType, e.AggregateId })
+                      .HasDatabaseName("IX_domain_events_aggregate");
+
+                entity.HasIndex(e => new { e.IdEmpresa, e.EventType, e.Status })
+                      .HasDatabaseName("IX_domain_events_tenant_type_status");
+            });
 
             // Seed data
             modelBuilder.Entity<User>().HasData(

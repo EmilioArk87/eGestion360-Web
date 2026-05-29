@@ -1,0 +1,165 @@
+@page
+@model eGestion360Web.Pages.Facturacion.IndexModel
+@{
+    ViewData["Title"] = "Facturas";
+    string BadgeEstado(string s) => s switch
+    {
+        "borrador"             => "bg-secondary",
+        "emitida"              => "bg-primary",
+        "parcialmente_pagada"  => "bg-warning text-dark",
+        "pagada"               => "bg-success",
+        "anulada"              => "bg-danger",
+        _                       => "bg-light text-dark"
+    };
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Facturación</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-file-invoice-dollar me-2"></i>Facturas</h2>
+            <p class="text-muted mb-0">Emisión de facturas al contado y al crédito</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Factura
+            </a>
+            <a asp-page="/Facturacion/Pagos/Index" class="btn btn-outline-success">
+                <i class="fas fa-hand-holding-usd me-2"></i>Pagos
+            </a>
+            <a asp-page="/Facturacion/CxC/Index" class="btn btn-outline-warning">
+                <i class="fas fa-balance-scale me-2"></i>CxC
+            </a>
+            <a asp-page="/Facturacion/Notas/Index" class="btn btn-outline-info">
+                <i class="fas fa-file-medical me-2"></i>Notas
+            </a>
+            <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["FacturasMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["FacturasMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-3 mb-3">
+        @foreach (var st in new[] { "emitida", "parcialmente_pagada", "pagada", "anulada", "borrador" })
+        {
+            var n = Model.ConteoPorEstado.TryGetValue(st, out var c) ? c : 0;
+            <div class="col">
+                <a asp-page="Index" asp-route-estado="@st" class="text-decoration-none">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body py-3">
+                            <span class="badge @BadgeEstado(st) mb-2 text-uppercase">@st</span>
+                            <h3 class="mb-0">@n.ToString("N0")</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Buscar</label>
+                    <input asp-for="Search" class="form-control form-control-sm" placeholder="Serie-Número, cliente, RTN..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Estado</label>
+                    <select asp-for="Estado" class="form-select form-select-sm">
+                        <option value="">— Todos —</option>
+                        <option value="borrador">borrador</option>
+                        <option value="emitida">emitida</option>
+                        <option value="parcialmente_pagada">parcialmente_pagada</option>
+                        <option value="pagada">pagada</option>
+                        <option value="anulada">anulada</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Tipo</label>
+                    <select asp-for="TipoVenta" class="form-select form-select-sm">
+                        <option value="">— Todos —</option>
+                        <option value="contado">contado</option>
+                        <option value="credito">crédito</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Desde</label>
+                    <input asp-for="Desde" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1">Hasta</label>
+                    <input asp-for="Hasta" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-filter"></i></button>
+                    <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Doc</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Vence</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end">Saldo</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Facturas.Any())
+                        {
+                            <tr><td colspan="9" class="text-center text-muted py-4">No hay facturas que coincidan.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var f in Model.Facturas)
+                            {
+                                <tr>
+                                    <td><code>@f.Serie-@(f.Numero?.ToString("D6") ?? "—")</code></td>
+                                    <td>@f.FechaEmision.ToString("yyyy-MM-dd")</td>
+                                    <td><strong>@f.Cliente.RazonSocial</strong><br /><small class="text-muted">@f.Cliente.IdentificadorFiscal</small></td>
+                                    <td>@f.TipoVenta</td>
+                                    <td><span class="badge @BadgeEstado(f.Estado)">@f.Estado</span></td>
+                                    <td>@(f.FechaVencimiento?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                    <td class="text-end"><strong>@f.Total.ToString("N2")</strong> <small class="text-muted">@f.Moneda</small></td>
+                                    <td class="text-end">@f.SaldoPendiente.ToString("N2")</td>
+                                    <td class="text-end">
+                                        <a asp-page="Details" asp-route-id="@f.IdFactura" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                                        @if (f.Estado == "emitida")
+                                        {
+                                            <a asp-page="Anular" asp-route-id="@f.IdFactura" class="btn btn-sm btn-outline-danger"><i class="fas fa-ban"></i></a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

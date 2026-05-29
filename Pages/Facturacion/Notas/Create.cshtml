@@ -1,0 +1,113 @@
+@page
+@model eGestion360Web.Pages.Facturacion.Notas.CreateModel
+@{
+    var esNC = Model.Tipo == "credito";
+    ViewData["Title"] = esNC ? "Nueva Nota de Crédito" : "Nueva Nota de Débito";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Facturacion/Index">Facturación</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Notas</a></li>
+            <li class="breadcrumb-item active">@(esNC ? "Nueva NC" : "Nueva ND")</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <h2 class="mb-0">
+            @if (esNC) { <i class="fas fa-minus-circle me-2 text-success"></i> }
+            else { <i class="fas fa-plus-circle me-2 text-warning"></i> }
+            @ViewData["Title"]
+        </h2>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <div class="alert @(esNC ? "alert-success" : "alert-warning")">
+        @if (esNC)
+        {
+            <text>
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Nota de crédito</strong>: reduce el saldo pendiente de la factura origen.
+                Equivale a una devolución o ajuste a favor del cliente. No puede superar el saldo de la factura.
+            </text>
+        }
+        else
+        {
+            <text>
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Nota de débito</strong>: aumenta el saldo a cobrar al cliente sobre una factura existente.
+                Útil para intereses, recargos o ajustes en contra del cliente.
+            </text>
+        }
+    </div>
+
+    <form method="post" asp-route-tipo="@Model.Tipo">
+        <div asp-validation-summary="All" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <label class="form-label">Factura origen</label>
+                        <select asp-for="Input.IdFacturaOrigen" id="sel-factura" class="form-select" required>
+                            <option value="">— Seleccionar factura —</option>
+                            @foreach (var f in Model.FacturasDisponibles)
+                            {
+                                <option value="@f.Id" data-saldo="@f.Saldo" data-total="@f.Total" data-moneda="@f.Moneda">@f.Display</option>
+                            }
+                        </select>
+                        <small class="text-muted" id="info-factura">Seleccione una factura para ver su saldo.</small>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Fecha</label>
+                        <input asp-for="Input.FechaEmision" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Serie</label>
+                        <input asp-for="Input.Serie" class="form-control" maxlength="20" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Monto</label>
+                        <input asp-for="Input.Monto" type="number" step="0.01" min="0.01" class="form-control" required />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Motivo</label>
+                        <input asp-for="Input.Motivo" class="form-control" maxlength="500" required />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Observaciones</label>
+                        <textarea asp-for="Input.Observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-3 mb-4">
+            <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn @(esNC ? "btn-success" : "btn-warning")">
+                <i class="fas @(esNC ? "fa-minus-circle" : "fa-plus-circle") me-2"></i>
+                Emitir nota de @Model.Tipo
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const sel = document.getElementById('sel-factura');
+        const info = document.getElementById('info-factura');
+        sel.addEventListener('change', () => {
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt.value) { info.textContent = 'Seleccione una factura para ver su saldo.'; return; }
+            const saldo = parseFloat(opt.dataset.saldo || '0');
+            const total = parseFloat(opt.dataset.total || '0');
+            const mon = opt.dataset.moneda || '';
+            info.innerHTML = `<strong>Total:</strong> ${total.toFixed(2)} ${mon} · <strong>Saldo pendiente:</strong> ${saldo.toFixed(2)} ${mon}`;
+        });
+    </script>
+}

@@ -1,0 +1,179 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Facturacion.Pagos.DetailsModel
+@{
+    ViewData["Title"] = "Detalle de Pago";
+    string Badge(string s) => s switch
+    {
+        "recibido"               => "bg-info text-dark",
+        "parcialmente_aplicado"  => "bg-warning text-dark",
+        "aplicado"               => "bg-success",
+        "anulado"                => "bg-danger",
+        _                         => "bg-light text-dark"
+    };
+}
+
+@if (Model.Pago is null) { return; }
+@{ var p = Model.Pago; }
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Facturacion/Index">Facturación</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Pagos</a></li>
+            <li class="breadcrumb-item active">@p.Serie-@(p.Numero?.ToString("D6"))</li>
+        </ol>
+    </nav>
+
+    @if (TempData["PagosMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["PagosMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["PagosError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["PagosError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-receipt me-2"></i>
+                Recibo @p.Serie-@(p.Numero?.ToString("D6"))
+                <span class="badge @Badge(p.Estado) ms-2">@p.Estado</span>
+            </h2>
+            <p class="text-muted mb-0">Recibido el @p.Fecha.ToString("dd/MM/yyyy")</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (p.SaldoFavor > 0 && p.Estado != "anulado")
+            {
+                <a asp-page="Aplicar" asp-route-id="@p.IdPago" class="btn btn-success">
+                    <i class="fas fa-link me-2"></i>Aplicar saldo a favor
+                </a>
+            }
+            @if (p.Estado != "anulado")
+            {
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalAnular">
+                    <i class="fas fa-ban me-2"></i>Anular
+                </button>
+            }
+            <a asp-page="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+        </div>
+    </div>
+
+    @if (p.Estado == "anulado")
+    {
+        <div class="alert alert-danger">
+            <i class="fas fa-ban me-2"></i><strong>Pago anulado</strong> el @p.FechaAnulacion?.ToString("dd/MM/yyyy HH:mm") — @p.MotivoAnulacion
+        </div>
+    }
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light"><strong>Cliente y referencia</strong></div>
+                <div class="card-body">
+                    <h5>@p.Cliente.RazonSocial</h5>
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-4">Código</dt><dd class="col-sm-8"><code>@p.Cliente.Codigo</code></dd>
+                        <dt class="col-sm-4">RTN</dt><dd class="col-sm-8">@p.Cliente.IdentificadorFiscal</dd>
+                        <dt class="col-sm-4">Forma de pago</dt><dd class="col-sm-8">@p.FormaPago.Nombre</dd>
+                        <dt class="col-sm-4">Referencia</dt><dd class="col-sm-8">@(p.Referencia ?? "—")</dd>
+                        <dt class="col-sm-4">Observaciones</dt><dd class="col-sm-8">@(p.Observaciones ?? "—")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-7 text-end">Monto recibido</dt><dd class="col-5 text-end fs-5 fw-bold">@p.Monto.ToString("N2")</dd>
+                        <dt class="col-7 text-end">Aplicado</dt><dd class="col-5 text-end">@((p.Monto - p.SaldoFavor).ToString("N2"))</dd>
+                        <dt class="col-7 text-end">Saldo a favor</dt>
+                        <dd class="col-5 text-end @(p.SaldoFavor > 0 ? "text-warning fw-bold" : "")">@p.SaldoFavor.ToString("N2") @p.Moneda</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light"><strong>Aplicaciones a facturas</strong></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Factura</th>
+                            <th>Fecha emisión</th>
+                            <th>Estado factura</th>
+                            <th class="text-end">Total factura</th>
+                            <th class="text-end">Monto aplicado</th>
+                            <th class="text-end">Saldo restante</th>
+                            <th>Fecha aplicación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Aplicaciones.Any())
+                        {
+                            <tr><td colspan="7" class="text-center text-muted py-3">Este pago aún no se ha aplicado a ninguna factura (anticipo).</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var (apl, fac) in Model.Aplicaciones)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-page="/Facturacion/Details" asp-route-id="@fac.IdFactura">
+                                            <code>@fac.Serie-@(fac.Numero?.ToString("D6"))</code>
+                                        </a>
+                                    </td>
+                                    <td>@fac.FechaEmision.ToString("yyyy-MM-dd")</td>
+                                    <td>@fac.Estado</td>
+                                    <td class="text-end">@fac.Total.ToString("N2")</td>
+                                    <td class="text-end fw-bold">@apl.Monto.ToString("N2")</td>
+                                    <td class="text-end">@fac.SaldoPendiente.ToString("N2")</td>
+                                    <td>@apl.FechaAplicacion.ToString("yyyy-MM-dd HH:mm")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Anular -->
+@if (p.Estado != "anulado")
+{
+    <div class="modal fade" id="modalAnular" tabindex="-1">
+        <div class="modal-dialog">
+            <form method="post" asp-page-handler="Anular" asp-route-id="@p.IdPago">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title"><i class="fas fa-ban me-2"></i>Anular pago</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            Anular este pago revertirá las aplicaciones y devolverá el saldo a las facturas afectadas.
+                        </div>
+                        <label class="form-label">Motivo de anulación</label>
+                        <textarea name="MotivoAnulacion" class="form-control" rows="3" required minlength="5"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-ban me-2"></i>Confirmar anulación</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}

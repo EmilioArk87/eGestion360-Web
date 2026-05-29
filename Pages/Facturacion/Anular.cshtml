@@ -1,0 +1,57 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Facturacion.AnularModel
+@{
+    ViewData["Title"] = "Anular Factura";
+}
+
+@if (Model.Factura is null) { return; }
+@{ var f = Model.Factura; }
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Facturación</a></li>
+            <li class="breadcrumb-item"><a asp-page="Details" asp-route-id="@f.IdFactura">@f.Serie-@(f.Numero?.ToString("D6") ?? "—")</a></li>
+            <li class="breadcrumb-item active">Anular</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <h2 class="mb-0 text-danger"><i class="fas fa-ban me-2"></i>Anular Factura</h2>
+        <a asp-page="Details" asp-route-id="@f.IdFactura" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        Está por anular la factura <strong>@f.Serie-@(f.Numero?.ToString("D6"))</strong> a nombre de <strong>@f.Cliente.RazonSocial</strong>
+        por un total de <strong>@f.Total.ToString("N2") @f.Moneda</strong>.
+        Esta acción no se puede revertir. El número correlativo no se reutiliza y se publicará un evento <code>factura.anulada</code>.
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Motivo" class="form-label">Motivo de anulación</label>
+                    <textarea asp-for="Motivo" class="form-control" rows="4" maxlength="500" required minlength="5"
+                              placeholder="Ej: Error en el cliente, error en montos, devolución completa, etc."></textarea>
+                    <span asp-validation-for="Motivo" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-page="Details" asp-route-id="@f.IdFactura" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-ban me-2"></i>Anular factura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

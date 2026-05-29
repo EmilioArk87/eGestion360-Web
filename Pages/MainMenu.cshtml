@@ -64,6 +64,82 @@
             </div>
         }
 
+        @if (Model.TieneModulo("catalogos"))
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 menu-card">
+                    <div class="card-body text-center p-4">
+                        <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 5rem; height: 5rem;">
+                            <i class="fas fa-book fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Catálogos</h5>
+                        <p class="card-text text-muted mb-4">Clientes, proveedores, productos, impuestos y formas de pago</p>
+                        <a asp-page="/Catalogos/Index" class="btn btn-dark w-100">
+                            <i class="fas fa-arrow-right me-2"></i>Acceder
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.TieneModulo("facturacion"))
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 menu-card">
+                    <div class="card-body text-center p-4">
+                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 5rem; height: 5rem; background-color: #0d6efd;">
+                            <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Facturación</h5>
+                        <p class="card-text text-muted mb-4">Facturas, notas de crédito/débito, pagos y CxC</p>
+                        <a asp-page="/Facturacion/Index" class="btn btn-primary w-100">
+                            <i class="fas fa-arrow-right me-2"></i>Acceder
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.TieneModulo("bancos"))
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 menu-card">
+                    <div class="card-body text-center p-4">
+                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 5rem; height: 5rem; background-color: #0dcaf0;">
+                            <i class="fas fa-university fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Bancos</h5>
+                        <p class="card-text text-muted mb-4">Cuentas bancarias, depósitos, cheques y conciliación</p>
+                        <a href="#" class="btn btn-info w-100 text-white">
+                            <i class="fas fa-arrow-right me-2"></i>Próximamente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.TieneModulo("contabilidad"))
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 menu-card">
+                    <div class="card-body text-center p-4">
+                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 5rem; height: 5rem; background-color: #6f42c1;">
+                            <i class="fas fa-calculator fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Contabilidad</h5>
+                        <p class="card-text text-muted mb-4">Plan de cuentas, asientos y estados financieros</p>
+                        <a href="#" class="btn w-100 text-white" style="background-color: #6f42c1;">
+                            <i class="fas fa-arrow-right me-2"></i>Próximamente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
         @if (Model.TieneModulo("inventario"))
         {
             <div class="col-md-6 col-lg-4">
@@ -178,6 +254,23 @@
                         <p class="card-text text-muted mb-4">Catálogo de módulos disponibles</p>
                         <a asp-page="/Admin/Modulos/Index" class="btn btn-dark w-100">
                             <i class="fas fa-arrow-right me-2"></i>Gestionar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outbox / Bus de eventos -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 menu-card">
+                    <div class="card-body text-center p-4">
+                        <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 5rem; height: 5rem;">
+                            <i class="fas fa-stream fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Outbox / Bus de eventos</h5>
+                        <p class="card-text text-muted mb-4">Monitoreo de eventos de dominio publicados por los módulos</p>
+                        <a asp-page="/Admin/Outbox/Index" class="btn btn-info w-100 text-white">
+                            <i class="fas fa-arrow-right me-2"></i>Acceder
                         </a>
                     </div>
                 </div>

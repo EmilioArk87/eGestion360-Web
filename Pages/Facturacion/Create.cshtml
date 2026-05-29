@@ -1,0 +1,279 @@
+@page
+@model eGestion360Web.Pages.Facturacion.CreateModel
+@{
+    ViewData["Title"] = "Nueva Factura";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Facturación</a></li>
+            <li class="breadcrumb-item active">Nueva</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <h2 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Nueva Factura</h2>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <form method="post" id="frm-factura">
+        <div asp-validation-summary="All" class="alert alert-danger" style="display: @(ViewData.ModelState.ErrorCount > 0 ? "block" : "none")"></div>
+
+        @* ── Cabecera ─────────────────────────────────────────────────────── *@
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light"><strong>Datos de cabecera</strong></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label asp-for="Input.IdCliente" class="form-label">Cliente</label>
+                        <select asp-for="Input.IdCliente" asp-items="ViewBag.Clientes as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select" required>
+                            <option value="">— Seleccionar cliente —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.FechaEmision" class="form-label">Fecha emisión</label>
+                        <input asp-for="Input.FechaEmision" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.TipoVenta" class="form-label">Tipo</label>
+                        <select asp-for="Input.TipoVenta" id="tipoVenta" class="form-select">
+                            <option value="contado">Contado</option>
+                            <option value="credito">Crédito</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.Serie" class="form-label">Serie</label>
+                        <input asp-for="Input.Serie" class="form-control" maxlength="20" />
+                    </div>
+                    <div class="col-md-1">
+                        <label asp-for="Input.Moneda" class="form-label">Moneda</label>
+                        <input asp-for="Input.Moneda" class="form-control" maxlength="3" />
+                    </div>
+
+                    <div class="col-md-4" id="div-formaPago">
+                        <label asp-for="Input.IdFormaPago" class="form-label">Forma de pago</label>
+                        <select asp-for="Input.IdFormaPago" asp-items="ViewBag.FormasPago as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select">
+                            <option value="">— Seleccionar —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4" id="div-condicionPago" style="display:none">
+                        <label asp-for="Input.IdCondicionPago" class="form-label">Condición de pago</label>
+                        <select asp-for="Input.IdCondicionPago" asp-items="ViewBag.CondicionesPago as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select">
+                            <option value="">— Seleccionar —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Input.TipoCambio" class="form-label">Tipo cambio</label>
+                        <input asp-for="Input.TipoCambio" type="number" step="0.00000001" min="0" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Observaciones" class="form-label">Observaciones</label>
+                        <input asp-for="Input.Observaciones" class="form-control" maxlength="500" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── Detalle ──────────────────────────────────────────────────────── *@
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>Detalle</strong>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-linea">
+                    <i class="fas fa-plus me-1"></i>Añadir línea
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle" id="tbl-lineas">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th style="width: 200px;">Producto</th>
+                                <th>Descripción</th>
+                                <th style="width: 100px;" class="text-end">Cantidad</th>
+                                <th style="width: 120px;" class="text-end">Precio</th>
+                                <th style="width: 80px;" class="text-end">Desc%</th>
+                                <th style="width: 150px;">Impuesto</th>
+                                <th style="width: 110px;" class="text-end">Base</th>
+                                <th style="width: 110px;" class="text-end">Impuesto</th>
+                                <th style="width: 110px;" class="text-end">Total</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-lineas"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @* ── Totales ──────────────────────────────────────────────────────── *@
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label asp-for="Input.DescuentoGlobal" class="form-label small">Descuento global</label>
+                                <input asp-for="Input.DescuentoGlobal" type="number" step="0.01" min="0" class="form-control form-control-sm" id="descuentoGlobal" />
+                            </div>
+                            <div class="col-6">
+                                <label asp-for="Input.Retencion" class="form-label small">Retención</label>
+                                <input asp-for="Input.Retencion" type="number" step="0.01" min="0" class="form-control form-control-sm" id="retencion" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-7 text-end">Subtotal</dt><dd class="col-5 text-end" id="t-subtotal">0.00</dd>
+                            <dt class="col-7 text-end">Descuento global</dt><dd class="col-5 text-end" id="t-dglobal">0.00</dd>
+                            <dt class="col-7 text-end">Base imponible</dt><dd class="col-5 text-end" id="t-base">0.00</dd>
+                            <dt class="col-7 text-end">ISV 15%</dt><dd class="col-5 text-end" id="t-isv15">0.00</dd>
+                            <dt class="col-7 text-end">ISV 18%</dt><dd class="col-5 text-end" id="t-isv18">0.00</dd>
+                            <dt class="col-7 text-end">Exento</dt><dd class="col-5 text-end" id="t-exento">0.00</dd>
+                            <dt class="col-7 text-end">Retención</dt><dd class="col-5 text-end" id="t-ret">0.00</dd>
+                            <dt class="col-7 text-end fs-5 border-top pt-2 mt-1">TOTAL</dt>
+                            <dd class="col-5 text-end fs-5 fw-bold border-top pt-2 mt-1" id="t-total">0.00</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-check me-2"></i>Emitir factura
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // ── Catálogo de productos enviado por el server (para precargar precios/impuesto) ──
+        const PRODUCTOS = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Productos));
+        const IMPUESTOS_OPTIONS = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            ((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewData["Impuestos"]!)
+                .Select(o => new { Id = int.Parse(o.Value), Display = o.Text }).ToList()
+        ));
+
+        // Mostrar/ocultar forma vs condición según tipo de venta
+        function togglePago() {
+            const tipo = document.getElementById('tipoVenta').value;
+            document.getElementById('div-formaPago').style.display     = (tipo === 'contado') ? '' : 'none';
+            document.getElementById('div-condicionPago').style.display = (tipo === 'credito') ? '' : 'none';
+        }
+        document.getElementById('tipoVenta').addEventListener('change', togglePago);
+        togglePago();
+
+        let lineaIdx = 0;
+        function productosOptions() {
+            return '<option value="">— manual —</option>' +
+                PRODUCTOS.map(p => `<option value="${p.id}" data-precio="${p.precio}" data-imp="${p.idImpuestoDefault || ''}">${p.codigo} · ${p.descripcion}</option>`).join('');
+        }
+        function impuestosOptions() {
+            return '<option value="">— Sin impuesto —</option>' +
+                IMPUESTOS_OPTIONS.map(i => `<option value="${i.Id}">${i.Display}</option>`).join('');
+        }
+
+        function addLinea() {
+            const i = lineaIdx++;
+            const tr = document.createElement('tr');
+            tr.dataset.idx = i;
+            tr.innerHTML = `
+                <td class="text-muted">${i+1}</td>
+                <td><select name="Input.Lineas[${i}].IdProducto" class="form-select form-select-sm fld-producto">${productosOptions()}</select></td>
+                <td><input name="Input.Lineas[${i}].Descripcion" class="form-control form-control-sm fld-desc" maxlength="300" /></td>
+                <td><input name="Input.Lineas[${i}].Cantidad" type="number" step="0.0001" min="0" value="1" class="form-control form-control-sm text-end fld-cant" /></td>
+                <td><input name="Input.Lineas[${i}].PrecioUnitario" type="number" step="0.0001" min="0" value="0" class="form-control form-control-sm text-end fld-precio" /></td>
+                <td><input name="Input.Lineas[${i}].DescuentoPorc" type="number" step="0.01" min="0" max="100" value="0" class="form-control form-control-sm text-end fld-desc-porc" /></td>
+                <td><select name="Input.Lineas[${i}].IdImpuesto" class="form-select form-select-sm fld-imp">${impuestosOptions()}</select></td>
+                <td class="text-end fld-out-base">0.00</td>
+                <td class="text-end fld-out-imp">0.00</td>
+                <td class="text-end fld-out-total fw-bold">0.00</td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger btn-del" tabindex="-1"><i class="fas fa-times"></i></button></td>
+            `;
+            document.getElementById('tbody-lineas').appendChild(tr);
+            tr.querySelector('.btn-del').addEventListener('click', () => { tr.remove(); recalcAll(); });
+            tr.querySelector('.fld-producto').addEventListener('change', (ev) => {
+                const opt = ev.target.options[ev.target.selectedIndex];
+                const precio = parseFloat(opt.dataset.precio || '0');
+                const idImp  = opt.dataset.imp || '';
+                if (opt.value !== '') {
+                    tr.querySelector('.fld-desc').value = opt.textContent.split('·').slice(1).join('·').trim();
+                    tr.querySelector('.fld-precio').value = precio.toFixed(4);
+                    const sel = tr.querySelector('.fld-imp');
+                    if (idImp) sel.value = idImp;
+                }
+                recalcLinea(tr);
+            });
+            tr.querySelectorAll('.fld-cant, .fld-precio, .fld-desc-porc, .fld-imp').forEach(el => {
+                el.addEventListener('input', () => recalcLinea(tr));
+                el.addEventListener('change', () => recalcLinea(tr));
+            });
+            recalcLinea(tr);
+        }
+        document.getElementById('btn-add-linea').addEventListener('click', addLinea);
+        addLinea(); // primera línea por defecto
+
+        function parseImpuestoTasa(selectEl) {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            if (!opt || !opt.value) return 0;
+            // Extrae el "(15%)" del texto
+            const m = opt.textContent.match(/\(([0-9.]+)%\)/);
+            return m ? parseFloat(m[1]) : 0;
+        }
+
+        function recalcLinea(tr) {
+            const cant   = parseFloat(tr.querySelector('.fld-cant').value || '0');
+            const precio = parseFloat(tr.querySelector('.fld-precio').value || '0');
+            const dporc  = parseFloat(tr.querySelector('.fld-desc-porc').value || '0');
+            const tasa   = parseImpuestoTasa(tr.querySelector('.fld-imp'));
+
+            const bruto  = cant * precio;
+            const base_  = bruto * (1 - dporc/100);
+            const imp_   = base_ * tasa/100;
+            const tot    = base_ + imp_;
+            tr.querySelector('.fld-out-base').textContent  = base_.toFixed(2);
+            tr.querySelector('.fld-out-imp').textContent   = imp_.toFixed(2);
+            tr.querySelector('.fld-out-total').textContent = tot.toFixed(2);
+            recalcAll();
+        }
+
+        function recalcAll() {
+            let sub = 0, isv15 = 0, isv18 = 0, exento = 0;
+            document.querySelectorAll('#tbody-lineas tr').forEach(tr => {
+                const base_ = parseFloat(tr.querySelector('.fld-out-base').textContent || '0');
+                const imp_  = parseFloat(tr.querySelector('.fld-out-imp').textContent  || '0');
+                const tasa  = parseImpuestoTasa(tr.querySelector('.fld-imp'));
+                sub += base_;
+                if (tasa === 15) isv15 += imp_;
+                else if (tasa === 18) isv18 += imp_;
+                else if (tasa === 0) exento += base_;
+            });
+            const dglob = parseFloat(document.getElementById('descuentoGlobal').value || '0');
+            const ret   = parseFloat(document.getElementById('retencion').value || '0');
+            const base_ = Math.max(0, sub - dglob);
+            const total = base_ + isv15 + isv18 - ret;
+
+            document.getElementById('t-subtotal').textContent = sub.toFixed(2);
+            document.getElementById('t-dglobal').textContent  = dglob.toFixed(2);
+            document.getElementById('t-base').textContent     = base_.toFixed(2);
+            document.getElementById('t-isv15').textContent    = isv15.toFixed(2);
+            document.getElementById('t-isv18').textContent    = isv18.toFixed(2);
+            document.getElementById('t-exento').textContent   = exento.toFixed(2);
+            document.getElementById('t-ret').textContent      = ret.toFixed(2);
+            document.getElementById('t-total').textContent    = total.toFixed(2);
+        }
+        document.getElementById('descuentoGlobal').addEventListener('input', recalcAll);
+        document.getElementById('retencion').addEventListener('input', recalcAll);
+    </script>
+}

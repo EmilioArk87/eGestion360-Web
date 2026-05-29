@@ -1,0 +1,121 @@
+@page "{id:long}"
+@model eGestion360Web.Pages.Admin.Outbox.DetailsModel
+@{
+    ViewData["Title"] = $"Evento #{Model.Evento?.IdEvento}";
+    string BadgeForStatus(string s) => s switch
+    {
+        "pending"    => "bg-secondary",
+        "processing" => "bg-info text-dark",
+        "processed"  => "bg-success",
+        "failed"     => "bg-warning text-dark",
+        "dead"       => "bg-danger",
+        _            => "bg-light text-dark"
+    };
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Outbox</a></li>
+            <li class="breadcrumb-item active">Evento @Model.Evento?.IdEvento</li>
+        </ol>
+    </nav>
+
+    @if (TempData["OutboxMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["OutboxMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Evento != null)
+    {
+        var e = Model.Evento;
+
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h2 class="mb-1"><i class="fas fa-stream me-2"></i>Evento #@e.IdEvento</h2>
+                <code class="text-muted">@e.EventType</code>
+                <span class="badge @BadgeForStatus(e.Status) ms-2">@e.Status</span>
+            </div>
+            <a asp-page="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-light"><strong>Sobre del evento</strong></div>
+                    <div class="card-body">
+                        <dl class="row mb-0 small">
+                            <dt class="col-sm-5">Empresa</dt><dd class="col-sm-7">@e.IdEmpresa</dd>
+                            <dt class="col-sm-5">Tipo</dt><dd class="col-sm-7"><code>@e.EventType</code></dd>
+                            <dt class="col-sm-5">Agregado</dt><dd class="col-sm-7"><code>@e.AggregateType/@e.AggregateId</code></dd>
+                            <dt class="col-sm-5">Versión</dt><dd class="col-sm-7">@e.EventVersion</dd>
+                            <dt class="col-sm-5">Ocurrió en</dt><dd class="col-sm-7">@e.OccurredAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+                            <dt class="col-sm-5">Creado en</dt><dd class="col-sm-7">@e.FechaCreacion.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+                            <dt class="col-sm-5">Creado por</dt><dd class="col-sm-7">@e.CreadoPor</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-light"><strong>Estado de procesamiento</strong></div>
+                    <div class="card-body">
+                        <dl class="row mb-0 small">
+                            <dt class="col-sm-5">Estado</dt><dd class="col-sm-7"><span class="badge @BadgeForStatus(e.Status)">@e.Status</span></dd>
+                            <dt class="col-sm-5">Intentos</dt><dd class="col-sm-7">@e.Intentos / @e.MaxIntentos</dd>
+                            <dt class="col-sm-5">Bloqueado hasta</dt><dd class="col-sm-7">@(e.LockedUntil?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</dd>
+                            <dt class="col-sm-5">Worker</dt><dd class="col-sm-7">@(e.WorkerId ?? "—")</dd>
+                            <dt class="col-sm-5">Próximo intento</dt><dd class="col-sm-7">@(e.ProximoIntentoEn?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</dd>
+                            <dt class="col-sm-5">Procesado en</dt><dd class="col-sm-7">@(e.ProcessedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(e.UltimoError))
+        {
+            <div class="card border-0 shadow-sm mt-3 border-start border-danger border-4">
+                <div class="card-header bg-light"><strong class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Último error</strong></div>
+                <div class="card-body">
+                    <pre class="mb-0 small">@e.UltimoError</pre>
+                </div>
+            </div>
+        }
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-light d-flex justify-content-between">
+                <strong>Payload</strong>
+                <small class="text-muted">JSON</small>
+            </div>
+            <div class="card-body">
+                <pre class="mb-0 small" style="max-height: 400px; overflow:auto;">@Model.PayloadPretty</pre>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            @if (e.Status != "processed")
+            {
+                <form method="post" asp-page-handler="Retry" asp-route-id="@e.IdEvento"
+                      onsubmit="return confirm('¿Reencolar este evento para reintento?');">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="fas fa-redo me-2"></i>Reintentar
+                    </button>
+                </form>
+
+                <form method="post" asp-page-handler="MarkProcessed" asp-route-id="@e.IdEvento"
+                      onsubmit="return confirm('¿Marcar manualmente como procesado? Este evento NO se entregará a los handlers; úsese solo si ya se aplicó manualmente.');">
+                    <button type="submit" class="btn btn-outline-warning">
+                        <i class="fas fa-check me-2"></i>Marcar como procesado
+                    </button>
+                </form>
+            }
+        </div>
+    }
+</div>

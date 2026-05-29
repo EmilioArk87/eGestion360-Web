@@ -1,0 +1,102 @@
+@page
+@model eGestion360Web.Pages.Facturacion.CxC.IndexModel
+@{
+    ViewData["Title"] = "Cuentas por cobrar";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Facturacion/Index">Facturación</a></li>
+            <li class="breadcrumb-item active">Cuentas por cobrar</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-balance-scale me-2"></i>Cuentas por cobrar</h2>
+            <p class="text-muted mb-0">Antigüedad de saldos por cliente</p>
+        </div>
+        <a asp-page="/Facturacion/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Buscar cliente</label>
+                    <input asp-for="Search" class="form-control form-control-sm" placeholder="Nombre, código o RTN..." />
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-filter"></i></button>
+                    <a asp-page="Index" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th class="text-end text-success">Vigente</th>
+                            <th class="text-end">1-30 días</th>
+                            <th class="text-end text-warning">31-60 días</th>
+                            <th class="text-end text-warning">61-90 días</th>
+                            <th class="text-end text-danger">+90 días</th>
+                            <th class="text-end fw-bold">Total CxC</th>
+                            <th class="text-end text-info">Anticipo</th>
+                            <th class="text-end fw-bold">Neto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Estado.Any())
+                        {
+                            <tr><td colspan="9" class="text-center text-muted py-4">Sin saldos por mostrar.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var e in Model.Estado)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@e.RazonSocial</strong><br />
+                                        <small class="text-muted">@e.Codigo · @e.Rtn</small>
+                                    </td>
+                                    <td class="text-end">@e.Totales.Vigente.ToString("N2")</td>
+                                    <td class="text-end">@e.Totales.V1_30.ToString("N2")</td>
+                                    <td class="text-end">@e.Totales.V31_60.ToString("N2")</td>
+                                    <td class="text-end">@e.Totales.V61_90.ToString("N2")</td>
+                                    <td class="text-end @(e.Totales.V91Plus > 0 ? "text-danger fw-bold" : "")">@e.Totales.V91Plus.ToString("N2")</td>
+                                    <td class="text-end fw-bold">@e.Totales.Total.ToString("N2")</td>
+                                    <td class="text-end @(e.Totales.SaldoFavor > 0 ? "text-info" : "")">@e.Totales.SaldoFavor.ToString("N2")</td>
+                                    <td class="text-end fw-bold">@e.Totales.Neto.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    @if (Model.Estado.Any())
+                    {
+                        <tfoot class="table-dark">
+                            <tr>
+                                <th>TOTALES</th>
+                                <th class="text-end">@Model.TotalGeneral.Vigente.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.V1_30.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.V31_60.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.V61_90.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.V91Plus.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.Total.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.SaldoFavor.ToString("N2")</th>
+                                <th class="text-end">@Model.TotalGeneral.Neto.ToString("N2")</th>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,179 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Facturacion.DetailsModel
+@{
+    ViewData["Title"] = "Detalle de Factura";
+    string BadgeEstado(string s) => s switch
+    {
+        "borrador"             => "bg-secondary",
+        "emitida"              => "bg-primary",
+        "parcialmente_pagada"  => "bg-warning text-dark",
+        "pagada"               => "bg-success",
+        "anulada"              => "bg-danger",
+        _                       => "bg-light text-dark"
+    };
+}
+
+@if (Model.Factura is null) { return; }
+@{ var f = Model.Factura; }
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Facturación</a></li>
+            <li class="breadcrumb-item active">@f.Serie-@(f.Numero?.ToString("D6") ?? "—")</li>
+        </ol>
+    </nav>
+
+    @if (TempData["FacturasMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["FacturasMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-file-invoice-dollar me-2"></i>
+                Factura @f.Serie-@(f.Numero?.ToString("D6") ?? "—")
+                <span class="badge @BadgeEstado(f.Estado) ms-2">@f.Estado</span>
+            </h2>
+            <p class="text-muted mb-0">Emitida @f.FechaEmision.ToString("dd/MM/yyyy") · @f.TipoVenta</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (f.Estado == "emitida")
+            {
+                <a asp-page="Anular" asp-route-id="@f.IdFactura" class="btn btn-outline-danger">
+                    <i class="fas fa-ban me-2"></i>Anular
+                </a>
+            }
+            <a asp-page="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    @if (f.Estado == "anulada")
+    {
+        <div class="alert alert-danger">
+            <i class="fas fa-ban me-2"></i><strong>Factura anulada</strong> el @f.FechaAnulacion?.ToString("dd/MM/yyyy HH:mm") — @f.MotivoAnulacion
+        </div>
+    }
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light"><strong>Cliente</strong></div>
+                <div class="card-body">
+                    <h5>@f.Cliente.RazonSocial</h5>
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-3">Código</dt><dd class="col-sm-9"><code>@f.Cliente.Codigo</code></dd>
+                        <dt class="col-sm-3">RTN</dt><dd class="col-sm-9">@f.Cliente.IdentificadorFiscal</dd>
+                        <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">@f.Cliente.Telefono</dd>
+                        <dt class="col-sm-3">Email</dt><dd class="col-sm-9">@f.Cliente.Email</dd>
+                        <dt class="col-sm-3">Dirección</dt><dd class="col-sm-9">@f.Cliente.Direccion @f.Cliente.Ciudad</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light"><strong>Documento</strong></div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-5">Serie / Número</dt><dd class="col-sm-7"><code>@f.Serie-@(f.Numero?.ToString("D6") ?? "—")</code></dd>
+                        <dt class="col-sm-5">CAI</dt><dd class="col-sm-7">@(f.CaiNumero ?? "—")</dd>
+                        <dt class="col-sm-5">Tipo venta</dt><dd class="col-sm-7">@f.TipoVenta</dd>
+                        @if (f.TipoVenta == "contado" && f.FormaPago != null)
+                        {
+                            <dt class="col-sm-5">Forma de pago</dt><dd class="col-sm-7">@f.FormaPago.Nombre</dd>
+                        }
+                        @if (f.TipoVenta == "credito" && f.CondicionPago != null)
+                        {
+                            <dt class="col-sm-5">Condición</dt><dd class="col-sm-7">@f.CondicionPago.Nombre</dd>
+                            <dt class="col-sm-5">Vencimiento</dt><dd class="col-sm-7">@f.FechaVencimiento?.ToString("dd/MM/yyyy")</dd>
+                        }
+                        <dt class="col-sm-5">Moneda</dt><dd class="col-sm-7">@f.Moneda (TC: @f.TipoCambio)</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-light"><strong>Detalle</strong></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>Producto</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Desc%</th>
+                            <th>Impuesto</th>
+                            <th class="text-end">Base</th>
+                            <th class="text-end">Impuesto</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in f.Detalle.OrderBy(x => x.NumeroLinea))
+                        {
+                            <tr>
+                                <td>@d.NumeroLinea</td>
+                                <td><code>@(d.Producto?.Codigo ?? "")</code></td>
+                                <td>@d.Descripcion</td>
+                                <td class="text-end">@d.Cantidad.ToString("N4")</td>
+                                <td class="text-end">@d.PrecioUnitario.ToString("N4")</td>
+                                <td class="text-end">@d.DescuentoPorc.ToString("N2")</td>
+                                <td>@(d.Impuesto?.Nombre ?? "—") @d.ImpuestoTasa%</td>
+                                <td class="text-end">@d.BaseImponible.ToString("N2")</td>
+                                <td class="text-end">@d.MontoImpuesto.ToString("N2")</td>
+                                <td class="text-end fw-bold">@d.TotalLinea.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-7">
+            @if (!string.IsNullOrWhiteSpace(f.Observaciones))
+            {
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light"><strong>Observaciones</strong></div>
+                    <div class="card-body">@f.Observaciones</div>
+                </div>
+            }
+        </div>
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-7 text-end">Subtotal</dt><dd class="col-5 text-end">@f.Subtotal.ToString("N2")</dd>
+                        <dt class="col-7 text-end">Descuento global</dt><dd class="col-5 text-end">@f.DescuentoGlobal.ToString("N2")</dd>
+                        <dt class="col-7 text-end">Base imponible</dt><dd class="col-5 text-end">@f.BaseImponible.ToString("N2")</dd>
+                        <dt class="col-7 text-end">ISV 15%</dt><dd class="col-5 text-end">@f.Isv15.ToString("N2")</dd>
+                        <dt class="col-7 text-end">ISV 18%</dt><dd class="col-5 text-end">@f.Isv18.ToString("N2")</dd>
+                        <dt class="col-7 text-end">Exento</dt><dd class="col-5 text-end">@f.Exento.ToString("N2")</dd>
+                        <dt class="col-7 text-end">Retención</dt><dd class="col-5 text-end">@f.Retencion.ToString("N2")</dd>
+                        <dt class="col-7 text-end fs-5 border-top pt-2 mt-1">TOTAL</dt>
+                        <dd class="col-5 text-end fs-5 fw-bold border-top pt-2 mt-1">@f.Total.ToString("N2") @f.Moneda</dd>
+                        @if (f.TipoVenta == "credito")
+                        {
+                            <dt class="col-7 text-end text-warning">Saldo pendiente</dt>
+                            <dd class="col-5 text-end text-warning fw-bold">@f.SaldoPendiente.ToString("N2")</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
