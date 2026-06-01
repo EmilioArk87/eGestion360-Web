@@ -17,6 +17,13 @@
             <p class="text-muted mb-0">Costo operativo total dividido entre kilómetros recorridos por vehículo.</p>
         </div>
         <div class="col-auto">
+            <a asp-page="/Flota/KPI/Graficos"
+               asp-route-FechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+               asp-route-FechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+               asp-route-TipoCambio="@Model.TipoCambio.ToString("F2")"
+               class="btn btn-outline-primary btn-sm me-1">
+                <i class="fas fa-chart-pie me-1"></i>Ver Gráficos
+            </a>
             <a asp-page="/Flota/Index" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-arrow-left me-1"></i>Volver a Flota
             </a>

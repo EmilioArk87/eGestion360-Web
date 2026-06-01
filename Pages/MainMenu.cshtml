@@ -17,310 +17,327 @@
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-4"><i class="fas fa-th-large me-2"></i>Menú Principal</h2>
+    @if (Model.IsEmpresaAdmin)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-4"><i class="fas fa-credit-card me-2"></i>Panel de Administración</h2>
+            </div>
         </div>
-    </div>
-
-    <div class="row g-4">
-        <!-- Gestión de Usuarios (siempre visible para admins) -->
-        @if (Model.IsAdmin || Model.IsEmpresaAdmin)
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-users fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Gestión de Usuarios</h5>
-                        <p class="card-text text-muted mb-4">Administra usuarios, roles y permisos</p>
-                        <a href="/UserManagement" class="btn btn-primary w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        <!-- Módulos dinámicos según contrato -->
-        @if (Model.TieneModulo("flota"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem; background-color: #6610f2;">
-                            <i class="fas fa-truck fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Control de Flota</h5>
-                        <p class="card-text text-muted mb-4">Gestión de vehículos, operación, gastos y KPIs</p>
-                        <a asp-page="/Flota/Index" class="btn w-100 text-white" style="background-color: #6610f2;">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("catalogos"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-book fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Catálogos</h5>
-                        <p class="card-text text-muted mb-4">Clientes, proveedores, productos, impuestos y formas de pago</p>
-                        <a asp-page="/Catalogos/Index" class="btn btn-dark w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("facturacion"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem; background-color: #0d6efd;">
-                            <i class="fas fa-file-invoice-dollar fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Facturación</h5>
-                        <p class="card-text text-muted mb-4">Facturas, notas de crédito/débito, pagos y CxC</p>
-                        <a asp-page="/Facturacion/Index" class="btn btn-primary w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("bancos"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem; background-color: #0dcaf0;">
-                            <i class="fas fa-university fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Bancos</h5>
-                        <p class="card-text text-muted mb-4">Cuentas bancarias, depósitos, cheques y conciliación</p>
-                        <a href="#" class="btn btn-info w-100 text-white">
-                            <i class="fas fa-arrow-right me-2"></i>Próximamente
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("contabilidad"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem; background-color: #6f42c1;">
-                            <i class="fas fa-calculator fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Contabilidad</h5>
-                        <p class="card-text text-muted mb-4">Plan de cuentas, asientos y estados financieros</p>
-                        <a href="#" class="btn w-100 text-white" style="background-color: #6f42c1;">
-                            <i class="fas fa-arrow-right me-2"></i>Próximamente
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("inventario"))
-        {
+        <div class="row g-4">
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 shadow-sm border-0 menu-card">
                     <div class="card-body text-center p-4">
                         <div class="menu-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                              style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-boxes fa-2x"></i>
+                            <i class="fas fa-credit-card fa-2x"></i>
                         </div>
-                        <h5 class="card-title fw-bold mb-3">Inventario</h5>
-                        <p class="card-text text-muted mb-4">Control de productos, stock y movimientos</p>
+                        <h5 class="card-title fw-bold mb-3">Pago de Servicio</h5>
+                        <p class="card-text text-muted mb-4">Registra el pago de suscripción para activar tu empresa</p>
                         <a href="#" class="btn btn-success w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("ventas"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-shopping-cart fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Ventas</h5>
-                        <p class="card-text text-muted mb-4">Registro y seguimiento de ventas realizadas</p>
-                        <a href="#" class="btn btn-info w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (Model.TieneModulo("reportes"))
-        {
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-chart-bar fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Reportes</h5>
-                        <p class="card-text text-muted mb-4">Genera reportes y análisis de datos</p>
-                        <a href="#" class="btn btn-warning w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- Sección de Administración (solo superadmin) -->
-    @if (Model.IsAdmin)
-    {
-        <div class="row mt-5">
-            <div class="col-12">
-                <h3 class="mb-4"><i class="fas fa-tools me-2"></i>Administración del Sistema</h3>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <!-- Empresas -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-building fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Empresas</h5>
-                        <p class="card-text text-muted mb-4">Alta, baja y modificación de empresas</p>
-                        <a asp-page="/Empresas/Index" class="btn btn-primary w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Roles y Permisos -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-user-tag fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Roles y Permisos</h5>
-                        <p class="card-text text-muted mb-4">Crea, edita y gestiona roles por empresa</p>
-                        <a asp-page="/Admin/RolesPermisos/Index" class="btn btn-warning w-100 text-white">
-                            <i class="fas fa-arrow-right me-2"></i>Gestionar
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Módulos del sistema -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-puzzle-piece fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Módulos</h5>
-                        <p class="card-text text-muted mb-4">Catálogo de módulos disponibles</p>
-                        <a asp-page="/Admin/Modulos/Index" class="btn btn-dark w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Gestionar
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Outbox / Bus de eventos -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-stream fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Outbox / Bus de eventos</h5>
-                        <p class="card-text text-muted mb-4">Monitoreo de eventos de dominio publicados por los módulos</p>
-                        <a asp-page="/Admin/Outbox/Index" class="btn btn-info w-100 text-white">
-                            <i class="fas fa-arrow-right me-2"></i>Acceder
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Email Corporativo -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-envelope-open-text fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Email Corporativo</h5>
-                        <p class="card-text text-muted mb-4">Configura SMTP y notificaciones</p>
-                        <a href="/admin/email-config" class="btn btn-secondary w-100">
-                            <i class="fas fa-arrow-right me-2"></i>Configurar
+                            <i class="fas fa-plus me-2"></i>Agregar Pago
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     }
-
-    <!-- Sección de empresa (empresa_admin) -->
-    @if (Model.IsEmpresaAdmin && Model.EmpresaId.HasValue)
+    else
     {
-        <div class="row mt-5">
+        <div class="row mb-4">
             <div class="col-12">
-                <h3 class="mb-4"><i class="fas fa-building me-2"></i>Administración de mi empresa</h3>
+                <h2 class="mb-4"><i class="fas fa-th-large me-2"></i>Menú Principal</h2>
             </div>
         </div>
+
         <div class="row g-4">
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-user-tag fa-2x"></i>
+            <!-- Gestión de Usuarios (solo superadmin) -->
+            @if (Model.IsAdmin)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Gestión de Usuarios</h5>
+                            <p class="card-text text-muted mb-4">Administra usuarios, roles y permisos</p>
+                            <a href="/UserManagement" class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
                         </div>
-                        <h5 class="card-title fw-bold mb-3">Roles y Permisos</h5>
-                        <p class="card-text text-muted mb-4">Define roles y permisos para tus usuarios</p>
-                        <a asp-page="/Admin/EmpresaRoles/Index" asp-route-empresaId="@Model.EmpresaId"
-                           class="btn btn-warning w-100 text-white">
-                            <i class="fas fa-arrow-right me-2"></i>Gestionar
-                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- Módulos dinámicos según contrato -->
+            @if (Model.TieneModulo("flota"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem; background-color: #6610f2;">
+                                <i class="fas fa-truck fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Control de Flota</h5>
+                            <p class="card-text text-muted mb-4">Gestión de vehículos, operación, gastos y KPIs</p>
+                            <a asp-page="/Flota/Index" class="btn w-100 text-white" style="background-color: #6610f2;">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("catalogos"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-book fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Catálogos</h5>
+                            <p class="card-text text-muted mb-4">Clientes, proveedores, productos, impuestos y formas de pago</p>
+                            <a asp-page="/Catalogos/Index" class="btn btn-dark w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("facturacion"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem; background-color: #0d6efd;">
+                                <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Facturación</h5>
+                            <p class="card-text text-muted mb-4">Facturas, notas de crédito/débito, pagos y CxC</p>
+                            <a asp-page="/Facturacion/Index" class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("bancos"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem; background-color: #0dcaf0;">
+                                <i class="fas fa-university fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Bancos</h5>
+                            <p class="card-text text-muted mb-4">Cuentas bancarias, depósitos, cheques y conciliación</p>
+                            <a href="#" class="btn btn-info w-100 text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Próximamente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("contabilidad"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem; background-color: #6f42c1;">
+                                <i class="fas fa-calculator fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Contabilidad</h5>
+                            <p class="card-text text-muted mb-4">Plan de cuentas, asientos y estados financieros</p>
+                            <a href="#" class="btn w-100 text-white" style="background-color: #6f42c1;">
+                                <i class="fas fa-arrow-right me-2"></i>Próximamente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("inventario"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-boxes fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Inventario</h5>
+                            <p class="card-text text-muted mb-4">Control de productos, stock y movimientos</p>
+                            <a href="#" class="btn btn-success w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("ventas"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-shopping-cart fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Ventas</h5>
+                            <p class="card-text text-muted mb-4">Registro y seguimiento de ventas realizadas</p>
+                            <a href="#" class="btn btn-info w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TieneModulo("reportes"))
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-chart-bar fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Reportes</h5>
+                            <p class="card-text text-muted mb-4">Genera reportes y análisis de datos</p>
+                            <a href="#" class="btn btn-warning w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sección de Administración (solo superadmin) -->
+        @if (Model.IsAdmin)
+        {
+            <div class="row mt-5">
+                <div class="col-12">
+                    <h3 class="mb-4"><i class="fas fa-tools me-2"></i>Administración del Sistema</h3>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Empresas -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Empresas</h5>
+                            <p class="card-text text-muted mb-4">Alta, baja y modificación de empresas</p>
+                            <a asp-page="/Empresas/Index" class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles y Permisos -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-user-tag fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Roles y Permisos</h5>
+                            <p class="card-text text-muted mb-4">Crea, edita y gestiona roles por empresa</p>
+                            <a asp-page="/Admin/RolesPermisos/Index" class="btn btn-warning w-100 text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Gestionar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulos del sistema -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-puzzle-piece fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Módulos</h5>
+                            <p class="card-text text-muted mb-4">Catálogo de módulos disponibles</p>
+                            <a asp-page="/Admin/Modulos/Index" class="btn btn-dark w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Gestionar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outbox / Bus de eventos -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-stream fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Outbox / Bus de eventos</h5>
+                            <p class="card-text text-muted mb-4">Monitoreo de eventos de dominio publicados por los módulos</p>
+                            <a asp-page="/Admin/Outbox/Index" class="btn btn-info w-100 text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Corporativo -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-envelope-open-text fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Email Corporativo</h5>
+                            <p class="card-text text-muted mb-4">Configura SMTP y notificaciones</p>
+                            <a href="/admin/email-config" class="btn btn-secondary w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Configurar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestión de Usuarios -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Gestión de Usuarios</h5>
+                            <p class="card-text text-muted mb-4">Administra usuarios, roles y permisos</p>
+                            <a href="/UserManagement" class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
     }
 
     <div class="row mt-5">
@@ -353,16 +370,16 @@
         .menu-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
+
         .menu-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
         }
-        
+
         .menu-icon {
             transition: transform 0.3s ease;
         }
-        
+
         .menu-card:hover .menu-icon {
             transform: scale(1.1);
         }

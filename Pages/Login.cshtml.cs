@@ -86,6 +86,18 @@ namespace eGestion360Web.Pages
                     {
                         var role = AuthHelper.ResolveRole(user.Role);
 
+                        if (user.EmpresaId.HasValue && role == AuthHelper.EmpresaUserRole)
+                        {
+                            var empresa = await _context.Empresas
+                                .FirstOrDefaultAsync(e => e.IdEmpresa == user.EmpresaId.Value && !e.Eliminado);
+
+                            if (empresa == null || !empresa.Activa)
+                            {
+                                ModelState.AddModelError("", "No es posible iniciar sesión en este momento. Código: 39246");
+                                return Page();
+                            }
+                        }
+
                         HttpContext.Session.SetString("UserId",   user.Id.ToString());
                         HttpContext.Session.SetString("Username", user.Username);
                         HttpContext.Session.SetString("Email",    user.Email);

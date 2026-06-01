@@ -1,0 +1,289 @@
+@page
+@model eGestion360Web.Pages.Flota.KPI.GraficosModel
+@{
+    ViewData["Title"] = "KPI – Gráficos Costo por Kilómetro";
+    string Fmt(decimal v) => v.ToString("N2");
+
+    var activos = Model.Resultados.Where(r => r.KmTotal > 0).ToList();
+    var placas  = activos.Select(r => r.Placa).ToArray();
+    var lkm     = activos.Select(r => (double)r.LempirasPorKm).ToArray();
+    var dxkm    = activos.Select(r => Model.TipoCambio > 0 ? (double)Math.Round(r.LempirasPorKm / Model.TipoCambio, 4) : 0).ToArray();
+    var costoTotalVeh = activos.Select(r => (double)r.CostoTotal).ToArray();
+
+    var composicionLabels = new[] { "Combustible", "Salarios", "Repuestos", "Llantas", "Mantenimiento", "Seguros" };
+    var composicionData = new[]
+    {
+        (double)Model.TotalCombustible,
+        (double)Model.TotalSalarios,
+        (double)Model.TotalRepuestos,
+        (double)Model.TotalLlantas,
+        (double)Model.TotalMantenimiento,
+        (double)Model.TotalSeguros
+    };
+}
+
+<div class="container-fluid">
+
+    <!-- Encabezado -->
+    <div class="row mb-3">
+        <div class="col">
+            <h3 class="fw-bold mb-0">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>KPI — Gráficos Costo por Kilómetro (L/KM)
+            </h3>
+            <p class="text-muted mb-0">Visualización gráfica del costo operativo por kilómetro y composición de costos.</p>
+        </div>
+        <div class="col-auto">
+            <a asp-page="/Flota/KPI/Dashboard"
+               asp-route-FechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+               asp-route-FechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+               asp-route-TipoCambio="@Model.TipoCambio.ToString("F2")"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Volver a KPI
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtro de fechas -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Desde</label>
+                    <input type="date" name="FechaDesde" class="form-control form-control-sm"
+                           value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Hasta</label>
+                    <input type="date" name="FechaHasta" class="form-control form-control-sm"
+                           value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">Tipo de cambio (L/$)</label>
+                    <input type="number" name="TipoCambio" class="form-control form-control-sm" style="width:100px"
+                           min="1" step="0.01" value="@Model.TipoCambio.ToString("F2")" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-search me-1"></i>Actualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!activos.Any())
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            No hay datos de operación registrados para el período
+            <strong>@Model.FechaDesde.ToString("dd/MM/yyyy") – @Model.FechaHasta.ToString("dd/MM/yyyy")</strong>.
+        </div>
+    }
+    else
+    {
+        <!-- Gráfico 1: L/KM por vehículo -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="fas fa-car me-2 text-primary"></i>Costo por Kilómetro (L/KM) por Vehículo
+                </span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de gráfico L/KM">
+                    <button type="button" class="btn btn-primary chart-type-btn active"
+                            data-target="chartLkm" data-type="bar">
+                        <i class="fas fa-chart-bar me-1"></i>Barras
+                    </button>
+                    <button type="button" class="btn btn-outline-primary chart-type-btn"
+                            data-target="chartLkm" data-type="pie">
+                        <i class="fas fa-chart-pie me-1"></i>Pastel
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 380px;">
+                    <canvas id="chartLkm"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Composición del costo total -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="fas fa-layer-group me-2 text-success"></i>Composición del Costo Total de Flota
+                </span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de gráfico composición">
+                    <button type="button" class="btn btn-outline-success chart-type-btn"
+                            data-target="chartComposicion" data-type="bar">
+                        <i class="fas fa-chart-bar me-1"></i>Barras
+                    </button>
+                    <button type="button" class="btn btn-success chart-type-btn active"
+                            data-target="chartComposicion" data-type="pie">
+                        <i class="fas fa-chart-pie me-1"></i>Pastel
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 380px;">
+                    <canvas id="chartComposicion"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico 3: Costo total por vehículo -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="fas fa-coins me-2 text-warning"></i>Costo Total (L) por Vehículo
+                </span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de gráfico costo total">
+                    <button type="button" class="btn btn-warning chart-type-btn active"
+                            data-target="chartCostoTotal" data-type="bar">
+                        <i class="fas fa-chart-bar me-1"></i>Barras
+                    </button>
+                    <button type="button" class="btn btn-outline-warning chart-type-btn"
+                            data-target="chartCostoTotal" data-type="pie">
+                        <i class="fas fa-chart-pie me-1"></i>Pastel
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 380px;">
+                    <canvas id="chartCostoTotal"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-muted small mt-2">
+            <i class="fas fa-info-circle me-1"></i>
+            Período: <strong>@Model.FechaDesde.ToString("dd/MM/yyyy") – @Model.FechaHasta.ToString("dd/MM/yyyy")</strong>
+            · Tipo de cambio: <strong>L @Model.TipoCambio.ToString("F2") por USD</strong>
+            · L/KM promedio flota: <strong class="text-primary">L @Fmt(Model.LkmPromedio)</strong>
+        </p>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            const placas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(placas));
+            const lkm    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(lkm));
+            const dxkm   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dxkm));
+            const costoTotalVeh = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(costoTotalVeh));
+
+            const compLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(composicionLabels));
+            const compData   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(composicionData));
+
+            if (!placas || placas.length === 0) return;
+
+            // Paleta de colores
+            const paleta = [
+                '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2',
+                '#fd7e14', '#20c997', '#0dcaf0', '#6f42c1', '#d63384',
+                '#6f4e37', '#6c757d'
+            ];
+            const colorParaIndice = (i) => paleta[i % paleta.length];
+
+            // Colores fijos para composición (consistentes con la barra del Dashboard)
+            const compColors = ['#ffc107', '#198754', '#0dcaf0', '#6f4e37', '#6c757d', '#dc3545'];
+
+            const fmtMoneda = (v) => 'L ' + Number(v).toLocaleString('es-HN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Registro de instancias para destruirlas al cambiar tipo
+            const charts = {};
+
+            function buildConfig(type, labels, data, datasetLabel, colors, tooltipFmt) {
+                const isCircular = (type === 'pie' || type === 'doughnut');
+                return {
+                    type: type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: datasetLabel,
+                            data: data,
+                            backgroundColor: colors,
+                            borderColor: isCircular ? '#fff' : colors,
+                            borderWidth: isCircular ? 2 : 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: isCircular,
+                                position: 'right'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        const v = ctx.parsed.y !== undefined ? ctx.parsed.y : ctx.parsed;
+                                        return ctx.label + ': ' + (tooltipFmt ? tooltipFmt(v) : v);
+                                    }
+                                }
+                            }
+                        },
+                        scales: isCircular ? {} : {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: (v) => tooltipFmt ? tooltipFmt(v) : v }
+                            }
+                        }
+                    }
+                };
+            }
+
+            function renderChart(canvasId, type) {
+                const ctx = document.getElementById(canvasId);
+                if (!ctx) return;
+                if (charts[canvasId]) {
+                    charts[canvasId].destroy();
+                }
+                let config;
+                if (canvasId === 'chartLkm') {
+                    const colors = placas.map((_, i) => colorParaIndice(i));
+                    config = buildConfig(type, placas, lkm, 'L/KM', colors, fmtMoneda);
+                } else if (canvasId === 'chartComposicion') {
+                    config = buildConfig(type, compLabels, compData, 'Costo (L)', compColors, fmtMoneda);
+                } else if (canvasId === 'chartCostoTotal') {
+                    const colors = placas.map((_, i) => colorParaIndice(i));
+                    config = buildConfig(type, placas, costoTotalVeh, 'Costo Total (L)', colors, fmtMoneda);
+                }
+                charts[canvasId] = new Chart(ctx, config);
+            }
+
+            // Render inicial
+            renderChart('chartLkm', 'bar');
+            renderChart('chartComposicion', 'pie');
+            renderChart('chartCostoTotal', 'bar');
+
+            // Cambio de tipo de gráfico
+            document.querySelectorAll('.chart-type-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const target = this.dataset.target;
+                    const type = this.dataset.type;
+
+                    const grupo = this.closest('.btn-group');
+                    grupo.querySelectorAll('.chart-type-btn').forEach(b => {
+                        const isActive = (b === this);
+                        // detectar color base por target
+                        const colorMap = {
+                            'chartLkm': 'primary',
+                            'chartComposicion': 'success',
+                            'chartCostoTotal': 'warning'
+                        };
+                        const color = colorMap[target] || 'primary';
+                        b.classList.remove('btn-' + color, 'btn-outline-' + color, 'active');
+                        if (isActive) {
+                            b.classList.add('btn-' + color, 'active');
+                        } else {
+                            b.classList.add('btn-outline-' + color);
+                        }
+                    });
+
+                    renderChart(target, type);
+                });
+            });
+        })();
+    </script>
+}
