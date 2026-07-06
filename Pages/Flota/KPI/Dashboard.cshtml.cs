@@ -29,11 +29,14 @@ namespace eGestion360Web.Pages.Flota.KPI
         public decimal TotalCombustible   => Resultados.Sum(r => r.CostoCombustible);
         public decimal TotalLitrosFlota   => Resultados.Sum(r => r.LitrosCombustible);
         public decimal LtskmFlota         => KmTotalFlota > 0 ? Math.Round(TotalLitrosFlota / KmTotalFlota, 4) : 0;
+        public decimal KmPorLitroFlota    => TotalLitrosFlota > 0 ? Math.Round(KmTotalFlota / TotalLitrosFlota, 2) : 0;
+        public decimal KmPorGalonFlota    => TotalLitrosFlota > 0 ? Math.Round(KmTotalFlota / TotalLitrosFlota * 3.78541m, 2) : 0;
         public decimal TotalRepuestos     => Resultados.Sum(r => r.CostoRepuestos);
         public decimal TotalLlantas       => Resultados.Sum(r => r.CostoLlantas);
         public decimal TotalSalarios      => Resultados.Sum(r => r.CostoSalarios);
         public decimal TotalSeguros       => Resultados.Sum(r => r.CostoSeguros);
         public decimal TotalMantenimiento => Resultados.Sum(r => r.CostoMantenimiento);
+        public decimal TotalPeajes        => Resultados.Sum(r => r.CostoPeajes);
 
         public async Task<IActionResult> OnGetAsync()
         {

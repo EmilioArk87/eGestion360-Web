@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
@@ -20,9 +21,12 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
             Activo        = true
         };
 
-        public IActionResult OnGet()
+        public List<Cargo> Cargos { get; set; } = new();
+
+        public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
+            await CargarCargosAsync();
             return Page();
         }
 
@@ -30,7 +34,11 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            if (!ModelState.IsValid) return Page();
+            if (!ModelState.IsValid)
+            {
+                await CargarCargosAsync();
+                return Page();
+            }
 
             var empresaId = AuthHelper.IsAdmin(HttpContext)
                 ? 1
@@ -45,6 +53,18 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
 
             TempData["Mensaje"] = $"{Persona.NombreCompleto} registrado correctamente.";
             return RedirectToPage("Index");
+        }
+
+        private async Task CargarCargosAsync()
+        {
+            var empresaId = AuthHelper.IsAdmin(HttpContext)
+                ? 1
+                : (AuthHelper.GetEmpresaId(HttpContext) ?? 1);
+
+            Cargos = await _context.Cargos
+                .Where(c => c.IdEmpresa == empresaId && c.Activo && !c.Eliminado)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
         }
     }
 }

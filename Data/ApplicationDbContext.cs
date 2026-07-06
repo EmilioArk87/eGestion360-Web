@@ -26,12 +26,14 @@ namespace eGestion360Web.Data
         public DbSet<Moneda> Monedas { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
         public DbSet<TipoVehiculo> TiposVehiculo { get; set; }
+        public DbSet<Cargo> Cargos { get; set; }
         public DbSet<Ruta> Rutas { get; set; }
         public DbSet<CargaCombustible> CargasCombustible { get; set; }
         public DbSet<CategoriaRepuesto> CategoriasRepuesto { get; set; }
         public DbSet<GastoRepuesto> GastosRepuesto { get; set; }
         public DbSet<OdometroDiario> OdometrosDiarios { get; set; }
         public DbSet<OrdenMantenimiento> OrdenesMantenimiento { get; set; }
+        public DbSet<Peaje> Peajes { get; set; }
         public DbSet<Persona> Personas { get; set; }
         public DbSet<PolizaSeguro> PolizasSeguros { get; set; }
         public DbSet<SalarioDiario> SalariosDiarios { get; set; }
@@ -231,6 +233,29 @@ namespace eGestion360Web.Data
                       .WithMany()
                       .HasForeignKey(o => o.IdTaller)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Peaje>(entity =>
+            {
+                entity.Property(p => p.Monto).HasPrecision(18, 2);
+                entity.Property(p => p.KmOdometro).HasPrecision(18, 2);
+
+                entity.HasOne(p => p.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.Ruta)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdRuta)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
+                entity.HasOne(p => p.Conductor)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdConductor)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
             });
 
             modelBuilder.Entity<Ruta>(entity =>

@@ -116,6 +116,33 @@ CREATE TABLE eBD_SPD.dbo.[__EFMigrationsHistory] (
 );
 
 
+-- eBD_SPD.dbo.cargos definition
+
+-- Drop table
+
+-- DROP TABLE eBD_SPD.dbo.cargos;
+
+CREATE TABLE eBD_SPD.dbo.cargos (
+	id_cargo int IDENTITY(1,1) NOT NULL,
+	id_empresa int NOT NULL,
+	codigo varchar(30) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	nombre nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	descripcion nvarchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	activo bit DEFAULT 1 NOT NULL,
+	eliminado bit DEFAULT 0 NOT NULL,
+	fecha_eliminado datetime2(3) NULL,
+	creado_por nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	fecha_creacion datetime2(3) DEFAULT sysutcdatetime() NOT NULL,
+	modificado_por nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	fecha_modificacion datetime2(3) NULL,
+	token_concurrencia timestamp NOT NULL,
+	CONSTRAINT PK_cargos PRIMARY KEY (id_cargo),
+	CONSTRAINT FK_cargos_empresa FOREIGN KEY (id_empresa) REFERENCES eBD_SPD.dbo.empresas(id_empresa)
+);
+ CREATE UNIQUE NONCLUSTERED INDEX UX_cargos_empresa_codigo ON eBD_SPD.dbo.cargos (  id_empresa ASC  , codigo ASC  )
+	 WHERE  ([eliminado]=(0))
+
+
 -- eBD_SPD.dbo.catalogo_paises definition
 
 -- Drop table

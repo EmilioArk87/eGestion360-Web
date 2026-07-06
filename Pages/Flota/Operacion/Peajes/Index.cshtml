@@ -1,0 +1,107 @@
+@page
+@model eGestion360Web.Pages.Flota.Operacion.Peajes.IndexModel
+@{
+    ViewData["Title"] = "Peajes";
+}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Operacion/Index">Operación Diaria</a></li>
+            <li class="breadcrumb-item active">Peajes</li>
+        </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-road me-2" style="color:#20c997;"></i>Peajes</h2>
+            <p class="text-muted mb-0">Peajes pagados en los recorridos de cada vehículo</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="Create" class="btn text-white" style="background-color:#20c997;"><i class="fas fa-plus me-2"></i>Nuevo Peaje</a>
+            <a asp-page="/Flota/Operacion/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+        </div>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Fecha desde</label>
+                    <input type="date" name="Desde" value="@Model.Desde?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Fecha hasta</label>
+                    <input type="date" name="Hasta" value="@Model.Hasta?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-success flex-grow-1">Filtrar</button>
+                    <a asp-page="Index" class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="15">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Vehículo</th>
+                            <th>Ruta</th>
+                            <th>Caseta</th>
+                            <th>Nº Comprobante</th>
+                            <th class="text-end fw-bold">Monto</th>
+                            <th>Moneda</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Registros.Any())
+                        {
+                            <tr><td colspan="8" class="text-center text-muted py-5">
+                                <i class="fas fa-road fa-2x mb-2 d-block text-secondary"></i>
+                                No hay peajes en el período seleccionado.
+                            </td></tr>
+                        }
+                        else
+                        {
+                            foreach (var r in Model.Registros)
+                            {
+                                <tr>
+                                    <td>@r.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td><strong>@r.Vehiculo?.Placa</strong></td>
+                                    <td>@(r.Ruta?.Nombre ?? "—")</td>
+                                    <td>@(r.NombreCaseta ?? "—")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(r.NoComprobante) ? "—" : r.NoComprobante)</td>
+                                    <td class="text-end fw-bold" style="color:#198754;">@r.Monto.ToString("N2")</td>
+                                    <td>@r.Moneda</td>
+                                    <td class="text-end">
+                                        <a asp-page="Edit" asp-route-id="@r.IdPeaje" class="btn btn-sm btn-outline-success" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                            <tr class="table-light fw-bold no-paginate">
+                                <td colspan="5" class="text-end">Total período:</td>
+                                <td class="text-end" style="color:#198754;">@Model.Registros.Sum(r => r.Monto).ToString("N2")</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

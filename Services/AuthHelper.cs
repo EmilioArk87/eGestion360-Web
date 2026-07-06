@@ -12,7 +12,13 @@ namespace eGestion360Web.Services
         // ── Autenticación básica ──────────────────────────────────────────────
 
         public static bool IsAuthenticated(HttpContext context)
-            => !string.IsNullOrEmpty(context.Session.GetString("UserId"));
+            => !string.IsNullOrEmpty(context.Session.GetString("UserId"))
+               && !MustChangePassword(context);
+
+        /// <summary>True si el usuario inició sesión con cambio de contraseña pendiente;
+        /// bloquea el acceso al resto del sistema hasta completar el cambio.</summary>
+        public static bool MustChangePassword(HttpContext context)
+            => context.Session.GetString("MustChangePassword") == "1";
 
         // ── Nivel de rol ──────────────────────────────────────────────────────
 

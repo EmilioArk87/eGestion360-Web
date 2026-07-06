@@ -98,7 +98,7 @@ namespace eGestion360Web.Pages
             if (wasForced)
             {
                 HttpContext.Session.Clear();
-                TempData["PasswordChanged"] = "Contraseña actualizada correctamente. Inicia sesión con tu nueva contraseña.";
+                TempData["SuccessMessage"] = "Contraseña actualizada correctamente. Inicia sesión con tu nueva contraseña.";
                 return RedirectToPage("/Login");
             }
 

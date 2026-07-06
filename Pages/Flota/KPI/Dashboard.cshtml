@@ -4,6 +4,9 @@
     ViewData["Title"] = "KPI – Costo por Kilómetro";
     string Fmt(decimal v) => v.ToString("N2");
     string FmtKm(decimal v) => v.ToString("N0");
+    // 1 galón (US) = 3.78541 litros
+    const decimal LitrosPorGalon = 3.78541m;
+    decimal AGalones(decimal litros) => Math.Round(litros / LitrosPorGalon, 2);
 }
 
 <div class="container-fluid">
@@ -122,6 +125,24 @@
                     </div>
                 </div>
             </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1 small">KM/Litro Promedio Flota</p>
+                        <h2 class="fw-bold text-warning mb-0">@Fmt(Model.KmPorLitroFlota) km/L</h2>
+                        <small class="text-muted">Eficiencia de combustible</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1 small">KM/Galón Promedio Flota</p>
+                        <h2 class="fw-bold mb-0" style="color:#20c997;">@Fmt(Model.KmPorGalonFlota) km/gal</h2>
+                        <small class="text-muted">1 gal US = 3.78541 L</small>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Desglose de costos (barra proporcional) -->
@@ -174,6 +195,13 @@
                                 Seguros @pct(Model.TotalSeguros)%
                             </div>
                         }
+                        @if (Model.TotalPeajes > 0)
+                        {
+                            <div class="progress-bar" style="width:@pct(Model.TotalPeajes)%; background-color:#20c997;"
+                                 title="Peajes">
+                                Peajes @pct(Model.TotalPeajes)%
+                            </div>
+                        }
                     </div>
                     <div class="d-flex flex-wrap gap-3 small">
                         <span><span class="badge bg-warning text-dark">&nbsp;</span> Combustible: L @Fmt(Model.TotalCombustible)</span>
@@ -182,6 +210,7 @@
                         <span><span class="badge" style="background-color:#6f4e37;">&nbsp;</span> Llantas: L @Fmt(Model.TotalLlantas)</span>
                         <span><span class="badge bg-secondary">&nbsp;</span> Mantenimiento: L @Fmt(Model.TotalMantenimiento)</span>
                         <span><span class="badge bg-danger">&nbsp;</span> Seguros: L @Fmt(Model.TotalSeguros)</span>
+                        <span><span class="badge" style="background-color:#20c997;">&nbsp;</span> Peajes: L @Fmt(Model.TotalPeajes)</span>
                     </div>
                 }
             </div>
@@ -189,28 +218,75 @@
 
         <!-- Tabla por vehículo -->
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-semibold d-flex justify-content-between">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span>Detalle por vehículo</span>
-                <small class="text-muted">@Model.FechaDesde.ToString("dd/MM/yyyy") – @Model.FechaHasta.ToString("dd/MM/yyyy")</small>
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-1">
+                        <label for="kpiPageSize" class="small text-muted mb-0">Mostrar</label>
+                        <select id="kpiPageSize" class="form-select form-select-sm" style="width:auto" aria-label="Registros por página">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                id="kpiColBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <i class="fas fa-columns me-1"></i>Columnas
+                        </button>
+                        <div id="kpiColMenu" class="dropdown-menu dropdown-menu-end p-2"
+                             style="max-height:340px; overflow-y:auto; min-width:230px">
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="placa"> <span>Placa</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="ruta"> <span>Ruta</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="km"> <span>KM</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="combustible"> <span>Combustible (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="litros"> <span>Litros</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="galones"> <span>Galones</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="ltskm"> <span>Lts/KM</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="kmlitro"> <span>KM/Litro</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="kmgalon"> <span>KM/Galón</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="salarios"> <span>Salarios (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="repuestos"> <span>Repuestos (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="llantas"> <span>Llantas (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="mantenimiento"> <span>Mant. (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="seguros"> <span>Seguros (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="peajes"> <span>Peajes (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="total"> <span>Total (L)</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="lkm"> <span>L/KM</span></label>
+                            <label class="dropdown-item d-flex align-items-center gap-2 mb-0 py-1"><input class="form-check-input mt-0" type="checkbox" value="dkm"> <span>$/KM</span></label>
+                            <div class="dropdown-divider my-1"></div>
+                            <a href="#" id="kpiColReset" class="dropdown-item text-center small text-primary">Mostrar todas</a>
+                        </div>
+                    </div>
+                    <small class="text-muted">@Model.FechaDesde.ToString("dd/MM/yyyy") – @Model.FechaHasta.ToString("dd/MM/yyyy")</small>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm mb-0 align-middle">
+                    <table id="kpiTable" class="table table-hover table-sm mb-0 align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th>Placa</th>
-                                <th>Ruta</th>
-                                <th class="text-end">KM</th>
-                                <th class="text-end">Combustible (L)</th>
-                                <th class="text-end">Lts/KM</th>
-                                <th class="text-end">Salarios (L)</th>
-                                <th class="text-end">Repuestos (L)</th>
-                                <th class="text-end">Llantas (L)</th>
-                                <th class="text-end">Mant. (L)</th>
-                                <th class="text-end">Seguros (L)</th>
-                                <th class="text-end fw-bold">Total (L)</th>
-                                <th class="text-end fw-bold text-primary">L/KM</th>
-                                <th class="text-end fw-bold text-info">$/KM</th>
+                                <th data-col="placa">Placa</th>
+                                <th data-col="ruta">Ruta</th>
+                                <th data-col="km" class="text-end">KM</th>
+                                <th data-col="combustible" class="text-end">Combustible (L)</th>
+                                <th data-col="litros" class="text-end">Litros</th>
+                                <th data-col="galones" class="text-end">Galones</th>
+                                <th data-col="ltskm" class="text-end">Lts/KM</th>
+                                <th data-col="kmlitro" class="text-end">KM/Litro</th>
+                                <th data-col="kmgalon" class="text-end">KM/Galón</th>
+                                <th data-col="salarios" class="text-end">Salarios (L)</th>
+                                <th data-col="repuestos" class="text-end">Repuestos (L)</th>
+                                <th data-col="llantas" class="text-end">Llantas (L)</th>
+                                <th data-col="mantenimiento" class="text-end">Mant. (L)</th>
+                                <th data-col="seguros" class="text-end">Seguros (L)</th>
+                                <th data-col="peajes" class="text-end">Peajes (L)</th>
+                                <th data-col="total" class="text-end fw-bold">Total (L)</th>
+                                <th data-col="lkm" class="text-end fw-bold text-primary">L/KM</th>
+                                <th data-col="dkm" class="text-end fw-bold text-info">$/KM</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,23 +302,32 @@
                                 else if (r.KmTotal > 0 && peor != null && r.IdVehiculo == peor.IdVehiculo && Model.Resultados.Count > 1)
                                     rowClass = "table-danger";
                                 <tr class="@rowClass">
-                                    <td class="fw-semibold">@r.Placa</td>
-                                    <td class="text-muted">@(r.NombreRuta ?? "—")</td>
-                                    <td class="text-end">@FmtKm(r.KmTotal)</td>
-                                    <td class="text-end">@Fmt(r.CostoCombustible)</td>
-                                    <td class="text-end @(r.KmTotal == 0 ? "text-muted" : "")">
+                                    <td data-col="placa" class="fw-semibold">@r.Placa</td>
+                                    <td data-col="ruta" class="text-muted">@(r.NombreRuta ?? "—")</td>
+                                    <td data-col="km" class="text-end">@FmtKm(r.KmTotal)</td>
+                                    <td data-col="combustible" class="text-end">@Fmt(r.CostoCombustible)</td>
+                                    <td data-col="litros" class="text-end">@Fmt(r.LitrosCombustible)</td>
+                                    <td data-col="galones" class="text-end">@Fmt(AGalones(r.LitrosCombustible))</td>
+                                    <td data-col="ltskm" class="text-end @(r.KmTotal == 0 ? "text-muted" : "")">
                                         @(r.KmTotal > 0 ? Fmt(r.LitrosPorKm) : "—")
                                     </td>
-                                    <td class="text-end">@Fmt(r.CostoSalarios)</td>
-                                    <td class="text-end">@Fmt(r.CostoRepuestos)</td>
-                                    <td class="text-end">@Fmt(r.CostoLlantas)</td>
-                                    <td class="text-end">@Fmt(r.CostoMantenimiento)</td>
-                                    <td class="text-end">@Fmt(r.CostoSeguros)</td>
-                                    <td class="text-end fw-bold">@Fmt(r.CostoTotal)</td>
-                                    <td class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "text-primary")">
+                                    <td data-col="kmlitro" class="text-end @(r.LitrosCombustible == 0 ? "text-muted" : "text-warning fw-semibold")">
+                                        @(r.LitrosCombustible > 0 ? Fmt(r.KmPorLitro) : "—")
+                                    </td>
+                                    <td data-col="kmgalon" class="text-end @(r.LitrosCombustible == 0 ? "text-muted" : "fw-semibold")" style="@(r.LitrosCombustible > 0 ? "color:#20c997;" : "")">
+                                        @(r.LitrosCombustible > 0 ? Fmt(r.KmPorGalon) : "—")
+                                    </td>
+                                    <td data-col="salarios" class="text-end">@Fmt(r.CostoSalarios)</td>
+                                    <td data-col="repuestos" class="text-end">@Fmt(r.CostoRepuestos)</td>
+                                    <td data-col="llantas" class="text-end">@Fmt(r.CostoLlantas)</td>
+                                    <td data-col="mantenimiento" class="text-end">@Fmt(r.CostoMantenimiento)</td>
+                                    <td data-col="seguros" class="text-end">@Fmt(r.CostoSeguros)</td>
+                                    <td data-col="peajes" class="text-end">@Fmt(r.CostoPeajes)</td>
+                                    <td data-col="total" class="text-end fw-bold">@Fmt(r.CostoTotal)</td>
+                                    <td data-col="lkm" class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "text-primary")">
                                         @(r.KmTotal > 0 ? $"L {Fmt(r.LempirasPorKm)}" : "—")
                                     </td>
-                                    <td class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "text-info")">
+                                    <td data-col="dkm" class="text-end fw-bold @(r.KmTotal == 0 ? "text-muted" : "text-info")">
                                         @(r.KmTotal > 0 && Model.TipoCambio > 0
                                             ? $"$ {Fmt(Math.Round(r.LempirasPorKm / Model.TipoCambio, 4))}"
                                             : "—")
@@ -252,21 +337,33 @@
                         </tbody>
                         <tfoot class="table-dark fw-bold">
                             <tr>
-                                <td colspan="2">TOTAL FLOTA</td>
-                                <td class="text-end">@FmtKm(Model.KmTotalFlota)</td>
-                                <td class="text-end">@Fmt(Model.TotalCombustible)</td>
-                                <td class="text-end">@Fmt(Model.LtskmFlota)</td>
-                                <td class="text-end">@Fmt(Model.TotalSalarios)</td>
-                                <td class="text-end">@Fmt(Model.TotalRepuestos)</td>
-                                <td class="text-end">@Fmt(Model.TotalLlantas)</td>
-                                <td class="text-end">@Fmt(Model.TotalMantenimiento)</td>
-                                <td class="text-end">@Fmt(Model.TotalSeguros)</td>
-                                <td class="text-end">@Fmt(Model.CostoTotalFlota)</td>
-                                <td class="text-end text-primary">L @Fmt(Model.LkmPromedio)</td>
-                                <td class="text-end text-info">$ @Fmt(Model.DxkmPromedio)</td>
+                                <td data-col="placa">TOTAL FLOTA</td>
+                                <td data-col="ruta"></td>
+                                <td data-col="km" class="text-end">@FmtKm(Model.KmTotalFlota)</td>
+                                <td data-col="combustible" class="text-end">@Fmt(Model.TotalCombustible)</td>
+                                <td data-col="litros" class="text-end">@Fmt(Model.TotalLitrosFlota)</td>
+                                <td data-col="galones" class="text-end">@Fmt(AGalones(Model.TotalLitrosFlota))</td>
+                                <td data-col="ltskm" class="text-end">@Fmt(Model.LtskmFlota)</td>
+                                <td data-col="kmlitro" class="text-end text-warning">@Fmt(Model.KmPorLitroFlota)</td>
+                                <td data-col="kmgalon" class="text-end" style="color:#20c997;">@Fmt(Model.KmPorGalonFlota)</td>
+                                <td data-col="salarios" class="text-end">@Fmt(Model.TotalSalarios)</td>
+                                <td data-col="repuestos" class="text-end">@Fmt(Model.TotalRepuestos)</td>
+                                <td data-col="llantas" class="text-end">@Fmt(Model.TotalLlantas)</td>
+                                <td data-col="mantenimiento" class="text-end">@Fmt(Model.TotalMantenimiento)</td>
+                                <td data-col="seguros" class="text-end">@Fmt(Model.TotalSeguros)</td>
+                                <td data-col="peajes" class="text-end">@Fmt(Model.TotalPeajes)</td>
+                                <td data-col="total" class="text-end">@Fmt(Model.CostoTotalFlota)</td>
+                                <td data-col="lkm" class="text-end text-primary">L @Fmt(Model.LkmPromedio)</td>
+                                <td data-col="dkm" class="text-end text-info">$ @Fmt(Model.DxkmPromedio)</td>
                             </tr>
                         </tfoot>
                     </table>
+                </div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2 border-top">
+                    <span id="kpiPageInfo" class="small text-muted"></span>
+                    <nav aria-label="Paginación de vehículos">
+                        <ul id="kpiPager" class="pagination pagination-sm mb-0"></ul>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -277,3 +374,118 @@
         </p>
     }
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const table = document.getElementById('kpiTable');
+            if (!table) return;
+
+            const tbody      = table.querySelector('tbody');
+            const rows       = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+            const pageSizeEl = document.getElementById('kpiPageSize');
+            const pager      = document.getElementById('kpiPager');
+            const info       = document.getElementById('kpiPageInfo');
+            const colMenu    = document.getElementById('kpiColMenu');
+            const resetBtn   = document.getElementById('kpiColReset');
+
+            const CFG_KEY  = 'kpiFlotaDashboardCfg.v1';
+            const DEFAULTS = { pageSize: 15, hidden: [] };
+            const ALLOWED  = [5, 10, 15, 25, 50, 100];
+
+            // ── Config persistida en el navegador (localStorage) ──
+            let cfg = Object.assign({}, DEFAULTS);
+            try {
+                const saved = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+                if (saved && typeof saved === 'object') {
+                    if (ALLOWED.indexOf(saved.pageSize) !== -1) cfg.pageSize = saved.pageSize;
+                    if (Array.isArray(saved.hidden)) cfg.hidden = saved.hidden;
+                }
+            } catch (e) { /* config corrupta: se usa la de por defecto */ }
+
+            let currentPage = 1;
+            const save = () => { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} };
+
+            // ── Visibilidad de columnas ──
+            function applyColumns() {
+                const hidden = new Set(cfg.hidden);
+                table.querySelectorAll('[data-col]').forEach(cell => {
+                    cell.classList.toggle('d-none', hidden.has(cell.getAttribute('data-col')));
+                });
+                colMenu.querySelectorAll('input[type=checkbox]').forEach(cb => {
+                    cb.checked = !hidden.has(cb.value);
+                });
+            }
+
+            // ── Paginación (lado cliente; el total del pie siempre es de toda la flota) ──
+            const totalPages = () => Math.max(1, Math.ceil(rows.length / cfg.pageSize));
+
+            function applyPage() {
+                const tp = totalPages();
+                if (currentPage > tp) currentPage = tp;
+                if (currentPage < 1) currentPage = 1;
+                const start = (currentPage - 1) * cfg.pageSize;
+                const end   = start + cfg.pageSize;
+                rows.forEach((r, i) => r.classList.toggle('d-none', i < start || i >= end));
+                info.textContent = 'Mostrando ' + (rows.length ? start + 1 : 0) +
+                                   '–' + Math.min(end, rows.length) + ' de ' + rows.length;
+                renderPager(tp);
+            }
+
+            function pageItem(label, page, disabled, active) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (disabled ? ' disabled' : '') + (active ? ' active' : '');
+                const a = document.createElement('a');
+                a.className = 'page-link'; a.href = '#'; a.innerHTML = label;
+                a.addEventListener('click', e => {
+                    e.preventDefault();
+                    if (disabled || active) return;
+                    currentPage = page; applyPage();
+                });
+                li.appendChild(a);
+                return li;
+            }
+
+            function renderPager(tp) {
+                pager.innerHTML = '';
+                if (tp <= 1) return;
+                pager.appendChild(pageItem('&laquo;', currentPage - 1, currentPage === 1, false));
+                const win = 2;
+                let s = Math.max(1, currentPage - win), e = Math.min(tp, currentPage + win);
+                if (s > 1) {
+                    pager.appendChild(pageItem('1', 1, false, currentPage === 1));
+                    if (s > 2) pager.appendChild(pageItem('&hellip;', 0, true, false));
+                }
+                for (let p = s; p <= e; p++) pager.appendChild(pageItem(String(p), p, false, p === currentPage));
+                if (e < tp) {
+                    if (e < tp - 1) pager.appendChild(pageItem('&hellip;', 0, true, false));
+                    pager.appendChild(pageItem(String(tp), tp, false, currentPage === tp));
+                }
+                pager.appendChild(pageItem('&raquo;', currentPage + 1, currentPage === tp, false));
+            }
+
+            // ── Eventos ──
+            pageSizeEl.value = String(cfg.pageSize);
+            pageSizeEl.addEventListener('change', () => {
+                let v = parseInt(pageSizeEl.value, 10);
+                if (ALLOWED.indexOf(v) === -1) v = 15;
+                cfg.pageSize = v; currentPage = 1; save(); applyPage();
+            });
+
+            colMenu.addEventListener('change', e => {
+                if (!e.target || !e.target.matches('input[type=checkbox]')) return;
+                const set = new Set(cfg.hidden);
+                if (e.target.checked) set.delete(e.target.value); else set.add(e.target.value);
+                cfg.hidden = Array.from(set); save(); applyColumns();
+            });
+
+            if (resetBtn) resetBtn.addEventListener('click', e => {
+                e.preventDefault(); cfg.hidden = []; save(); applyColumns();
+            });
+
+            // ── Estado inicial ──
+            applyColumns();
+            applyPage();
+        })();
+    </script>
+}

@@ -40,6 +40,11 @@ namespace eGestion360Web.Pages
             // Si el usuario ya ha iniciado sesión, redirigir al menú principal
             if (HttpContext.Session.GetString("UserId") != null)
             {
+                if (AuthHelper.MustChangePassword(HttpContext))
+                {
+                    return RedirectToPage("/ChangePassword");
+                }
+
                 return RedirectToPage("/MainMenu");
             }
 
@@ -102,6 +107,14 @@ namespace eGestion360Web.Pages
                         HttpContext.Session.SetString("Username", user.Username);
                         HttpContext.Session.SetString("Email",    user.Email);
                         HttpContext.Session.SetString("Role",     role);
+
+                        // Cambio de contraseña obligatorio: no se cargan permisos ni se
+                        // permite navegar hasta que el usuario establezca su nueva clave
+                        if (user.RequirePasswordChange)
+                        {
+                            HttpContext.Session.SetString("MustChangePassword", "1");
+                            return RedirectToPage("/ChangePassword");
+                        }
 
                         // Cargar datos de tenant si el usuario pertenece a una empresa
                         if (user.EmpresaId.HasValue)

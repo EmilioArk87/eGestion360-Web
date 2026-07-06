@@ -32,6 +32,7 @@ namespace eGestion360Web.Pages.Flota.KPI
         public decimal TotalSalarios      => Resultados.Sum(r => r.CostoSalarios);
         public decimal TotalSeguros       => Resultados.Sum(r => r.CostoSeguros);
         public decimal TotalMantenimiento => Resultados.Sum(r => r.CostoMantenimiento);
+        public decimal TotalPeajes        => Resultados.Sum(r => r.CostoPeajes);
 
         public async Task<IActionResult> OnGetAsync()
         {

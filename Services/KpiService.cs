@@ -68,6 +68,13 @@ namespace eGestion360Web.Services
                 .Select(g => new { g.Key, Total = g.Sum(m => m.Total) })
                 .ToDictionaryAsync(x => x.Key, x => x.Total, ct);
 
+            var peajesPorVehiculo = await _db.Peajes
+                .Where(p => p.IdEmpresa == idEmpresa && !p.Eliminado
+                         && p.Fecha >= fechaDesde && p.Fecha <= fechaHasta)
+                .GroupBy(p => p.IdVehiculo)
+                .Select(g => new { g.Key, Total = g.Sum(p => p.Monto) })
+                .ToDictionaryAsync(x => x.Key, x => x.Total, ct);
+
             // Seguros: prorate by days of overlap within the requested period
             var polizas = await _db.PolizasSeguros
                 .Where(p => p.IdEmpresa == idEmpresa && !p.Eliminado
@@ -100,6 +107,7 @@ namespace eGestion360Web.Services
                     CostoSalarios      = salariosPorVehiculo.GetValueOrDefault(v.IdVehiculo),
                     CostoSeguros       = segurosPorVehiculo.GetValueOrDefault(v.IdVehiculo),
                     CostoMantenimiento = mantenimientoPorVehiculo.GetValueOrDefault(v.IdVehiculo),
+                    CostoPeajes        = peajesPorVehiculo.GetValueOrDefault(v.IdVehiculo),
                 })
                 .Where(r => r.TieneActividad)
                 .OrderBy(r => r.LempirasPorKm)

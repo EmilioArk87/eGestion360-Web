@@ -1,0 +1,69 @@
+@page
+@model eGestion360Web.Pages.Flota.Catalogos.TiposVehiculo.CreateModel
+@{
+    ViewData["Title"] = "Nuevo Tipo de Vehículo";
+    string color = "#fd7e14";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/MantenimientoDatos/Index">Mantenimiento de Datos</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Tipos de Vehículo</a></li>
+            <li class="breadcrumb-item active">Nuevo</li>
+        </ol>
+    </nav>
+
+    <div class="mb-4">
+        <h2 class="mb-1">
+            <i class="fas fa-plus me-2" style="color:@color;"></i>Nuevo Tipo de Vehículo
+        </h2>
+        <p class="text-muted mb-0">Complete los datos del tipo de vehículo a registrar</p>
+    </div>
+
+    <form method="post">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <label asp-for="Item.Codigo" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Codigo" class="form-control text-uppercase"
+                               placeholder="Ej: BUS" maxlength="20" />
+                        <span asp-validation-for="Item.Codigo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-9">
+                        <label asp-for="Item.Nombre" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Nombre" class="form-control"
+                               placeholder="Ej: Bus, Camión, Pick-up, Auto..." maxlength="100" />
+                        <span asp-validation-for="Item.Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Item.Descripcion" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Item.Descripcion" class="form-control" rows="2"
+                                  placeholder="Descripción breve del tipo de vehículo..."
+                                  maxlength="500"></textarea>
+                        <span asp-validation-for="Item.Descripcion" class="text-danger small"></span>
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                <button type="submit" class="btn text-white" style="background-color:@color;">
+                    <i class="fas fa-save me-2"></i>Guardar
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,102 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Flota.Operacion.Peajes.EditModel
+@{
+    ViewData["Title"] = "Editar Peaje";
+}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Operacion/Index">Operación Diaria</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Peajes</a></li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+    <div class="mb-4">
+        <h2 class="mb-1"><i class="fas fa-road me-2" style="color:#20c997;"></i>Editar Peaje</h2>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+    <form method="post">
+        <input type="hidden" asp-for="Item.IdPeaje" />
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Item.IdVehiculo" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdVehiculo" asp-items="ViewBag.Vehiculos" class="form-select">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                        <span asp-validation-for="Item.IdVehiculo" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.Fecha" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Fecha" type="date" class="form-control" />
+                        <span asp-validation-for="Item.Fecha" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.Hora" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Hora" type="time" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.IdRuta" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdRuta" asp-items="ViewBag.Rutas" class="form-select">
+                            <option value="">-- Sin ruta --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.IdConductor" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdConductor" asp-items="ViewBag.Conductores" class="form-select">
+                            <option value="">-- Sin conductor --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.NombreCaseta" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.NombreCaseta" class="form-control" placeholder="Ej: Peaje Río Blanco" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Item.Monto" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Monto" type="number" step="0.01" min="0.01" class="form-control" />
+                        <span asp-validation-for="Item.Monto" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Item.Moneda" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.Moneda" class="form-select">
+                            <option value="HNL">HNL — Lempiras</option>
+                            <option value="USD">USD — Dólares</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Item.KmOdometro" class="form-label fw-semibold"></label>
+                        <div class="input-group">
+                            <input asp-for="Item.KmOdometro" type="number" step="0.01" min="0" class="form-control" />
+                            <span class="input-group-text">km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Item.NoComprobante" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.NoComprobante" class="form-control" placeholder="Opcional" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Item.Observaciones" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Item.Observaciones" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                <button type="submit" class="btn text-white" style="background-color:#20c997;"><i class="fas fa-save me-2"></i>Guardar cambios</button>
+                <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+                <button type="submit" asp-page-handler="Delete" asp-route-id="@Model.Item.IdPeaje"
+                        class="btn btn-outline-danger ms-auto"
+                        onclick="return confirm('¿Eliminar este peaje?');">
+                    <i class="fas fa-trash me-2"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

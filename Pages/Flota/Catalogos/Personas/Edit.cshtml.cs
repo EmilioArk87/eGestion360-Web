@@ -15,6 +15,8 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         [BindProperty]
         public Persona Persona { get; set; } = null!;
 
+        public List<Cargo> Cargos { get; set; } = new();
+
         public async Task<IActionResult> OnGetAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
@@ -22,6 +24,7 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
             Persona = await _context.Personas.FirstOrDefaultAsync(p => p.IdPersona == id && !p.Eliminado)
                       ?? throw new InvalidOperationException();
 
+            await CargarCargosAsync(Persona.IdEmpresa);
             return Page();
         }
 
@@ -29,7 +32,11 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            if (!ModelState.IsValid) return Page();
+            if (!ModelState.IsValid)
+            {
+                await CargarCargosAsync(Persona.IdEmpresa);
+                return Page();
+            }
 
             var existente = await _context.Personas.FindAsync(Persona.IdPersona);
             if (existente == null) return NotFound();
@@ -53,6 +60,14 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
 
             TempData["Mensaje"] = $"{existente.NombreCompleto} actualizado correctamente.";
             return RedirectToPage("Index");
+        }
+
+        private async Task CargarCargosAsync(int idEmpresa)
+        {
+            Cargos = await _context.Cargos
+                .Where(c => c.IdEmpresa == idEmpresa && c.Activo && !c.Eliminado)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
         }
     }
 }

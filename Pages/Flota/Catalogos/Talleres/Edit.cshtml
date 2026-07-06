@@ -1,0 +1,104 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Flota.Catalogos.Talleres.EditModel
+@{
+    ViewData["Title"] = "Editar Taller";
+    string color = "#fd7e14";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota & KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/MantenimientoDatos/Index">Mantenimiento de Datos</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Talleres</a></li>
+            <li class="breadcrumb-item active">Editar</li>
+        </ol>
+    </nav>
+
+    <div class="mb-4">
+        <h2 class="mb-1">
+            <i class="fas fa-edit me-2" style="color:@color;"></i>Editar Taller
+        </h2>
+        <p class="text-muted mb-0">Modifique los datos del taller</p>
+    </div>
+
+    <form method="post">
+        <input type="hidden" asp-for="Item.IdTaller" />
+
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <label asp-for="Item.Codigo" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Codigo" class="form-control text-uppercase" maxlength="20" />
+                        <span asp-validation-for="Item.Codigo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Item.Nombre" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Nombre" class="form-control" maxlength="150" />
+                        <span asp-validation-for="Item.Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="Item.Rtn" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Rtn" class="form-control" maxlength="30" />
+                        <span asp-validation-for="Item.Rtn" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Item.Telefono" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Telefono" class="form-control" maxlength="30" />
+                        <span asp-validation-for="Item.Telefono" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Item.Email" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Email" class="form-control" type="email" maxlength="150" />
+                        <span asp-validation-for="Item.Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Item.Contacto" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Contacto" class="form-control" maxlength="100" />
+                        <span asp-validation-for="Item.Contacto" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Item.Direccion" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Item.Direccion" class="form-control" rows="2"
+                                  maxlength="250"></textarea>
+                        <span asp-validation-for="Item.Direccion" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input asp-for="Item.Activo" class="form-check-input" role="switch" />
+                            <label asp-for="Item.Activo" class="form-check-label fw-semibold">Activo</label>
+                            <div class="form-text">
+                                Los talleres inactivos no aparecen al registrar gastos de mantenimiento.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
+                <button type="submit" class="btn text-white" style="background-color:@color;">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
+                <a asp-page="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
