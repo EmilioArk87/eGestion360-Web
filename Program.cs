@@ -45,6 +45,12 @@ builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
 // LoggingDomainEventHandler es el smoke-test: acepta TODOS los eventos y los loguea.
 builder.Services.AddScoped<IDomainEventHandler, LoggingDomainEventHandler>();
 
+// Handler contable (Fase 2). DESHABILITADO por ahora: su mapeo evento→cuentas todavía
+// no está implementado (ver ConstruirAsientoAsync). Habilitarlo cuando existan el plan de
+// cuentas por empresa y las reglas de mapeo validadas contra fuente oficial. Requiere haber
+// ejecutado 2 - Script SQL/010_ct_nucleo_contable.sql.
+// builder.Services.AddScoped<IDomainEventHandler, eGestion360Web.Services.Contabilidad.ContabilidadEventHandler>();
+
 // Worker que reclama y despacha eventos pendientes del outbox.
 builder.Services.AddHostedService<OutboxDispatcherBackgroundService>();
 

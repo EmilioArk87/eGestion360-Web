@@ -100,8 +100,24 @@ Cuando se defina una modificacion de BD:
 5. Agregar una fila nueva al final con estado inicial:
    - Pendiente
 
+## Tarea 4 - Aprobacion obligatoria antes de ejecutar (widget /alerta-bd)
+
+Crear el archivo .sql en disco es texto y no requiere aprobacion. Pero **ejecutar** ese
+script (o cualquier DDL/DML) contra la BD real `eBD_SPD` **si la requiere**.
+
+Antes de ejecutar cualquier cambio en la BD:
+
+1. Clasifica los cambios en 4 colores: verde (agrega), amarillo (modifica), rojo (elimina),
+   azul (impacto en datos y estructura).
+2. Despliega el widget de aprobacion siguiendo el skill `.claude/commands/alerta-bd.md`.
+3. **Detente** y espera la aprobacion explicita del usuario en el chat. No ejecutes nada
+   ni delegues la ejecucion hasta recibirla.
+4. Con la aprobacion, ejecuta y recien ahi actualiza el estado en el indice
+   (`⏳ Pendiente` -> `✅ Aplicado`).
+
 ## Criterios de calidad
 
+- Nunca ejecutar cambios a la BD sin pasar por el widget de aprobacion (Tarea 4).
 - Mantener trazabilidad entre hallazgo -> script -> indice.
 - No sobrescribir scripts historicos ya ejecutados.
 - Mantener orden de ejecucion explicito y cronologico.

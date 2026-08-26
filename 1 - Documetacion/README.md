@@ -4,6 +4,18 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 
 ---
 
+## Estándares y Arquitectura
+
+| Documento | Descripción |
+|-----------|-------------|
+| [ESTANDARES_ERP.md](ESTANDARES_ERP.md) | Convenciones globales del ERP: stack real, arquitectura por capas, multitenant, nombres de BD, auditoría y control de cambios |
+
+## Contabilidad
+
+| Documento | Descripción |
+|-----------|-------------|
+| [PROMPT_MAESTRO_CONTABILIDAD.md](PROMPT_MAESTRO_CONTABILIDAD.md) | Prompt maestro adaptado + diseño concreto del núcleo contable (`ct_*`), integración con el outbox de eventos y fundamento legal (Honduras) |
+
 ## Flujos y Guías de Usuario
 
 | Documento | Descripción |

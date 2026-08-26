@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Models;
 using eGestion360Web.Models.Catalogos;
+using eGestion360Web.Models.Contabilidad;
 using eGestion360Web.Models.Eventos;
 using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Models.Flota;
@@ -59,6 +60,14 @@ namespace eGestion360Web.Data
         public DbSet<Pago> Pagos { get; set; }
         public DbSet<PagoAplicacion> PagoAplicaciones { get; set; }
         public DbSet<Nota> Notas { get; set; }
+
+        // Contabilidad (Fase 2) — script 010_ct_nucleo_contable.sql
+        public DbSet<CuentaContable> CuentasContables { get; set; }
+        public DbSet<EjercicioFiscal> EjerciciosFiscales { get; set; }
+        public DbSet<PeriodoContable> PeriodosContables { get; set; }
+        public DbSet<CentroCosto> CentrosCosto { get; set; }
+        public DbSet<Asiento> Asientos { get; set; }
+        public DbSet<AsientoMovimiento> AsientoMovimientos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -966,6 +975,113 @@ namespace eGestion360Web.Data
 
                 entity.HasIndex(e => new { e.IdEmpresa, e.EventType, e.Status })
                       .HasDatabaseName("IX_domain_events_tenant_type_status");
+            });
+
+            // ─────────────────────────────────────────────────────────────────
+            // Contabilidad (Fase 2) — mapea las tablas creadas por
+            // 2 - Script SQL/010_ct_nucleo_contable.sql
+            // ─────────────────────────────────────────────────────────────────
+            modelBuilder.Entity<CuentaContable>(entity =>
+            {
+                entity.HasKey(e => e.IdCuenta);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo })
+                      .IsUnique()
+                      .HasDatabaseName("UX_ct_cuentas_empresa_codigo");
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdCuentaPadre })
+                      .HasDatabaseName("IX_ct_cuentas_empresa_padre");
+
+                entity.HasOne<Empresa>().WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.CuentaPadre)
+                      .WithMany(e => e.SubCuentas)
+                      .HasForeignKey(e => e.IdCuentaPadre)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<EjercicioFiscal>(entity =>
+            {
+                entity.HasKey(e => e.IdEjercicio);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Anio })
+                      .IsUnique()
+                      .HasDatabaseName("UX_ct_ejercicios_empresa_anio");
+
+                entity.HasOne<Empresa>().WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PeriodoContable>(entity =>
+            {
+                entity.HasKey(e => e.IdPeriodo);
+                entity.HasIndex(e => new { e.IdEjercicio, e.Numero })
+                      .IsUnique()
+                      .HasDatabaseName("UX_ct_periodos_ejercicio_numero");
+
+                entity.HasOne<Empresa>().WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Ejercicio)
+                      .WithMany(e => e.Periodos)
+                      .HasForeignKey(e => e.IdEjercicio)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<CentroCosto>(entity =>
+            {
+                entity.HasKey(e => e.IdCentroCosto);
+                entity.HasIndex(e => new { e.IdEmpresa, e.Codigo })
+                      .IsUnique()
+                      .HasDatabaseName("UX_ct_centros_costo_empresa_codigo");
+
+                entity.HasOne<Empresa>().WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Asiento>(entity =>
+            {
+                entity.HasKey(e => e.IdAsiento);
+                // Idempotencia del outbox: un evento => a lo sumo un asiento por empresa
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdEventoOrigen })
+                      .IsUnique()
+                      .HasFilter("[id_evento_origen] IS NOT NULL")
+                      .HasDatabaseName("UX_ct_asientos_empresa_evento");
+                // Correlativo único de asientos ya mayorizados
+                entity.HasIndex(e => new { e.IdEmpresa, e.Numero })
+                      .IsUnique()
+                      .HasFilter("[numero] IS NOT NULL")
+                      .HasDatabaseName("UX_ct_asientos_empresa_numero");
+                entity.HasIndex(e => new { e.IdEmpresa, e.Fecha })
+                      .HasDatabaseName("IX_ct_asientos_empresa_fecha");
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdPeriodo, e.Estado })
+                      .HasDatabaseName("IX_ct_asientos_empresa_periodo_estado");
+
+                entity.HasOne<Empresa>().WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Periodo)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdPeriodo)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<AsientoMovimiento>(entity =>
+            {
+                entity.HasKey(e => e.IdMovimiento);
+                entity.HasIndex(e => new { e.IdAsiento, e.NumeroLinea })
+                      .IsUnique()
+                      .HasDatabaseName("UX_ct_mov_asiento_linea");
+                entity.HasIndex(e => e.IdAsiento)
+                      .HasDatabaseName("IX_ct_mov_asiento");
+                entity.HasIndex(e => new { e.IdEmpresa, e.IdCuenta })
+                      .HasDatabaseName("IX_ct_mov_empresa_cuenta");
+
+                entity.HasOne(e => e.Asiento)
+                      .WithMany(a => a.Movimientos)
+                      .HasForeignKey(e => e.IdAsiento)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne<Empresa>().WithMany().HasForeignKey(e => e.IdEmpresa).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Cuenta)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdCuenta)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.CentroCosto)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdCentroCosto)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
             });
 
             // Seed data
