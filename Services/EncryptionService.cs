@@ -21,10 +21,22 @@ namespace eGestion360Web.Services
             _configuration = configuration;
             _logger = logger;
             
-            // Usar una clave base del appsettings o generar una por defecto
-            var keyString = _configuration["Encryption:Key"] ?? "eGestion360-EmailCrypt-2026-SecretKey";
-            var ivString = _configuration["Encryption:IV"] ?? "eGestion360-IV16";
-            
+            // Clave e IV vienen de las variables de entorno Encryption__Key / Encryption__IV.
+            // NO poner un valor por defecto: con otra clave, Decrypt() devuelve basura en
+            // silencio y las contraseñas SMTP ya guardadas en la BD quedan irrecuperables.
+            // Mejor no arrancar que arrancar cifrando con la clave equivocada.
+            var keyString = _configuration["Encryption:Key"];
+            var ivString = _configuration["Encryption:IV"];
+
+            if (string.IsNullOrWhiteSpace(keyString) || string.IsNullOrWhiteSpace(ivString))
+            {
+                throw new InvalidOperationException(
+                    "Faltan las variables de entorno Encryption__Key y/o Encryption__IV. " +
+                    "Ver 1 - Documetacion/CONFIGURACION_SECRETOS.md. Deben coincidir exactamente " +
+                    "con las que se usaron para cifrar los datos existentes.");
+            }
+
+
             // Asegurar que la clave tenga 32 bytes (256 bits) y IV tenga 16 bytes
             _key = PadOrTruncate(Encoding.UTF8.GetBytes(keyString), 32);
             _iv = PadOrTruncate(Encoding.UTF8.GetBytes(ivString), 16);

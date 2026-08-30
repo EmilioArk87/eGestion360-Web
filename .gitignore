@@ -373,4 +373,17 @@ eGestion360.db-wal
 
 # Rider
 .idea/
-/.claude
+
+# Claude Code — se versionan las skills del proyecto, no la configuración local.
+# Tiene que ser "/.claude/*" y no "/.claude": git no desciende a un directorio
+# excluido, así que con "/.claude" la excepción de abajo nunca se aplicaría.
+/.claude/*
+!/.claude/commands/
+
+# Secretos locales — nunca versionar.
+# Ver "1 - Documetacion/CONFIGURACION_SECRETOS.md"
+appsettings.Production.json
+appsettings.Local.json
+.env
+*.env
+configurar-entorno-local.ps1

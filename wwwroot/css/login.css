@@ -105,6 +105,28 @@
     border: none;
 }
 
+/* Edge dibuja su propio ojo al mostrar la contraseña: se oculta para no duplicarlo */
+.form-control::-ms-reveal,
+.form-control::-ms-clear {
+    display: none;
+}
+
+.btn-toggle-password {
+    border: none;
+    border-radius: 0;
+    padding: 0 18px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #888;
+    transition: all 0.3s ease;
+}
+
+.btn-toggle-password:hover,
+.btn-toggle-password:focus {
+    background: white;
+    color: #f6811a;
+    box-shadow: none;
+}
+
 .form-check {
     display: flex;
     align-items: center;

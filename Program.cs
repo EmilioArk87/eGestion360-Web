@@ -12,9 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages()
     .AddMvcOptions(options => options.Filters.Add<AdminOnlyPageFilter>());
 
-// Add Entity Framework with SQL Server
+// Add Entity Framework with SQL Server.
+// La cadena ya no vive en appsettings.json: viene de la variable de entorno
+// ConnectionStrings__DefaultConnection (ver 1 - Documetacion/CONFIGURACION_SECRETOS.md).
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Falta la variable de entorno ConnectionStrings__DefaultConnection. " +
+        "Ver 1 - Documetacion/CONFIGURACION_SECRETOS.md.");
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 // Add Password Service
 builder.Services.AddScoped<IPasswordService, PasswordService>();
@@ -119,14 +130,28 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+// Forzar HTTPS sólo sirve si el hosting termina TLS. En Somee el puerto 443 acepta la
+// conexión pero el handshake falla, así que redirigir deja el portal inaccesible: todo
+// HTTP responde 307 hacia una URL que no contesta. El interruptor permite reactivarlo
+// apenas haya certificado, sin tocar código ni volver a compilar.
+var forzarHttps = app.Configuration.GetValue("Seguridad:ForzarHttps", true);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    if (forzarHttps)
+    {
+        // HSTS sin TLS operativo dejaría a los navegadores forzando HTTPS por 30 días,
+        // bloqueando el acceso incluso después de apagar la redirección.
+        app.UseHsts();
+    }
 }
 
-app.UseHttpsRedirection();
+if (forzarHttps)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();

@@ -33,7 +33,7 @@
                 </div>
             }
 
-            <form method="post" method="post" class="login-form">
+            <form method="post" class="login-form">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 
                 <div class="form-group">
@@ -51,7 +51,11 @@
                         <span class="input-group-text">
                             <i class="fas fa-lock"></i>
                         </span>
-                        <input asp-for="Password" class="form-control" placeholder="Contraseña" />
+                        <input asp-for="Password" class="form-control" id="inputPassword" placeholder="Contraseña" />
+                        <button class="btn btn-toggle-password" type="button" id="btnTogglePassword"
+                                aria-label="Mostrar contraseña" data-bs-toggle="tooltip" data-bs-placement="top" title="Mostrar contraseña">
+                            <i class="fas fa-eye" id="iconTogglePassword"></i>
+                        </button>
                     </div>
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
@@ -115,6 +119,30 @@
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Mostrar / ocultar la contraseña
+            document.getElementById('btnTogglePassword').addEventListener('click', function () {
+                var input = document.getElementById('inputPassword');
+                var icon = document.getElementById('iconTogglePassword');
+                var mostrar = input.type === 'password';
+
+                input.type = mostrar ? 'text' : 'password';
+                icon.classList.replace(mostrar ? 'fa-eye' : 'fa-eye-slash', mostrar ? 'fa-eye-slash' : 'fa-eye');
+
+                var texto = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+                this.setAttribute('aria-label', texto);
+
+                // Bootstrap 5.1 no refresca el título de un tooltip ya creado:
+                // se descarta la instancia y se crea otra con el texto nuevo.
+                var tooltip = bootstrap.Tooltip.getInstance(this);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                this.setAttribute('title', texto);
+                new bootstrap.Tooltip(this);
+
+                input.focus();
             });
         });
     </script>
