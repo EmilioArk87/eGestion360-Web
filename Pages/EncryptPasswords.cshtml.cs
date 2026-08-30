@@ -20,7 +20,7 @@ namespace eGestion360Web.Pages
         public List<string> Messages { get; set; } = new List<string>();
         public bool HasExecuted { get; set; } = false;
 
-        public async Task<IActionResult> OnGetAsync()
+        public IActionResult OnGet()
         {
             return Page();
         }

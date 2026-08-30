@@ -7,7 +7,10 @@ using eGestion360Web.Services.Facturacion;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorPages();
+// AdminOnlyPageFilter cierra el acceso anónimo a las páginas de mantenimiento
+// (/ResetAdmin, /DebugUsers, /ResetCodesHistory, config SMTP…). Ver el filtro.
+builder.Services.AddRazorPages()
+    .AddMvcOptions(options => options.Filters.Add<AdminOnlyPageFilter>());
 
 // Add Entity Framework with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -69,20 +72,49 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Initialize database - use migrations for SQL Server
+// ── Inicialización de base de datos ────────────────────────────────────────
+// OJO: context.Database.Migrate() ejecuta DDL/DML contra la BD real (eBD_SPD).
+// Por la "regla de oro" del proyecto, el esquema NO se modifica de forma
+// implícita al arrancar. Para aplicar migraciones hay que habilitarlo
+// explícitamente con "Database:AutoMigrate": true (previa aprobación /alerta-bd).
+// Por defecto solo se reporta si hay migraciones pendientes, sin tocar nada.
 using (var scope = app.Services.CreateScope())
 {
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    try
+
+    if (app.Configuration.GetValue("Database:AutoMigrate", false))
     {
-        // Try to apply any pending migrations
-        context.Database.Migrate();
+        try
+        {
+            context.Database.Migrate();
+            logger.LogInformation("Migraciones EF aplicadas correctamente.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "No se pudieron aplicar las migraciones EF.");
+        }
     }
-    catch (Exception ex)
+    else
     {
-        // Log the error but continue - database might already be initialized
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "Could not apply migrations. Database may already exist or be inaccessible.");
+        try
+        {
+            var pendientes = context.Database.GetPendingMigrations().ToList();
+            if (pendientes.Count > 0)
+            {
+                logger.LogWarning(
+                    "AutoMigrate deshabilitado. Migraciones EF pendientes ({Cantidad}): {Migraciones}",
+                    pendientes.Count, string.Join(", ", pendientes));
+            }
+            else
+            {
+                logger.LogInformation("Base de datos al día: no hay migraciones EF pendientes.");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "No se pudo consultar el estado de las migraciones EF.");
+        }
     }
 }
 

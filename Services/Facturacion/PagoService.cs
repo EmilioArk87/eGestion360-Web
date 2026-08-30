@@ -214,7 +214,7 @@ namespace eGestion360Web.Services.Facturacion
             if (pago.Estado == PagoEstado.Anulado) return new AplicarPagoResult(false, 0, new[] { "El pago está anulado." });
             if (pago.SaldoFavor <= 0) return new AplicarPagoResult(false, 0, new[] { "El pago no tiene saldo a favor." });
 
-            var aplicaciones = input.Aplicaciones.Where(a => a.Monto > 0).ToList();
+            var aplicaciones = input.Aplicaciones?.Where(a => a.Monto > 0).ToList() ?? new List<AplicacionInput>();
             decimal totalAplicar = aplicaciones.Sum(a => a.Monto);
 
             if (totalAplicar > pago.SaldoFavor)

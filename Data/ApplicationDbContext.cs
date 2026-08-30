@@ -280,6 +280,7 @@ namespace eGestion360Web.Data
             modelBuilder.Entity<PolizaSeguro>(entity =>
             {
                 entity.Property(p => p.CostoDiario).HasPrecision(18, 2);
+                entity.Property(p => p.PrimaTotal).HasPrecision(18, 2);
 
                 entity.HasOne(p => p.Vehiculo)
                       .WithMany()
