@@ -47,13 +47,28 @@
                             <label asp-for="Password" class="form-label fw-semibold"></label>
                             <div class="input-group">
                                 <input asp-for="Password" class="form-control" id="inputPassword"
-                                       placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+                                       placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
                                 <button class="btn btn-outline-secondary" type="button" id="btnToggle">
                                     <i class="fas fa-eye" id="iconToggle"></i>
                                 </button>
                             </div>
                             <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <input asp-for="ConfirmPassword" class="form-control"
+                                       placeholder="Repetir la contraseña" autocomplete="new-password" />
+                                <button class="btn btn-outline-secondary" type="button" data-toggle-password="ConfirmPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <partial name="_PasswordChecklist"
+                                 model='new PasswordChecklistModel("Password", "ConfirmPassword", "Username", "Email")' />
 
                         <div class="mb-3">
                             <label asp-for="Role" class="form-label fw-semibold"></label>
@@ -120,6 +135,8 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/password-checklist.js" asp-append-version="true"></script>
+    <script src="~/js/toggle-password.js" asp-append-version="true"></script>
     <script>
         document.getElementById('btnToggle').addEventListener('click', function () {
             var input = document.getElementById('inputPassword');

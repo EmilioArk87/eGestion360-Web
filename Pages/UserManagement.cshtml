@@ -210,13 +210,16 @@
                             <label asp-for="NewPassword" class="form-label fw-semibold"></label>
                             <div class="input-group">
                                 <input asp-for="NewPassword" class="form-control" id="inputNewPassword"
-                                       placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+                                       placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
                                 <button class="btn btn-outline-secondary" type="button" id="btnTogglePassword">
                                     <i class="fas fa-eye" id="iconTogglePassword"></i>
                                 </button>
                             </div>
                             <span asp-validation-for="NewPassword" class="text-danger small"></span>
                         </div>
+
+                        <partial name="_PasswordChecklist"
+                                 model='new PasswordChecklistModel("inputNewPassword")' />
 
                         <div class="form-check form-switch">
                             <input asp-for="RequireChange" class="form-check-input" />
@@ -246,6 +249,7 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/password-checklist.js" asp-append-version="true"></script>
     <script>
         document.getElementById('modalReset')?.addEventListener('show.bs.modal', function (event) {
             var btn = event.relatedTarget;

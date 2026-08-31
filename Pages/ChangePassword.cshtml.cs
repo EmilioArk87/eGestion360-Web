@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
+using eGestion360Web.Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace eGestion360Web.Pages
@@ -23,7 +24,7 @@ namespace eGestion360Web.Pages
 
         [BindProperty]
         [Required(ErrorMessage = "La nueva contraseña es requerida")]
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres")]
+        [PasswordSeguro]
         [DataType(DataType.Password)]
         [Display(Name = "Nueva contraseña")]
         public string NewPassword { get; set; } = string.Empty;
@@ -87,6 +88,15 @@ namespace eGestion360Web.Pages
             if (BCrypt.Net.BCrypt.Verify(NewPassword, user.Password))
             {
                 ModelState.AddModelError(nameof(NewPassword), "La nueva contraseña debe ser distinta a la actual.");
+                return Page();
+            }
+
+            // El atributo [PasswordSeguro] no alcanza a mirar el usuario ni el email
+            // porque este modelo no los expone: se comprueban acá, ya con el usuario cargado.
+            var errorPolitica = PasswordPolicy.Validar(NewPassword, user.Username, user.Email);
+            if (errorPolitica != null)
+            {
+                ModelState.AddModelError(nameof(NewPassword), errorPolitica);
                 return Page();
             }
 

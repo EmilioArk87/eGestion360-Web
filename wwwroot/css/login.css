@@ -24,9 +24,30 @@
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
-    padding: 40px;
+    /* El padding se encoge en pantallas angostas en vez de robarle ancho útil
+       al formulario. */
+    padding: clamp(24px, 5vw, 40px);
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Variante ancha para los formularios con más campos —cambiar contraseña lleva
+   tres campos y el checklist—, que en 400px quedaban apretados. */
+.login-card--ancha {
+    max-width: 640px;
+}
+
+/* Para páginas cuyo contenido puede superar el alto de la ventana: el footer
+   deja de ser fijo y va en el flujo, así no tapa el final del formulario. */
+.login-body--flujo {
+    display: block;
+    min-height: 0;
+    padding-bottom: 0;
+}
+
+.login-body--flujo .login-footer {
+    position: static !important;
+    margin-top: 0;
 }
 
 .login-header {

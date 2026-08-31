@@ -35,10 +35,17 @@ namespace eGestion360Web.Pages.Admin.Usuarios
 
         [BindProperty]
         [Required(ErrorMessage = "La contraseña es requerida")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
+        [PasswordSeguro(nameof(Username), nameof(Email))]
         [DataType(DataType.Password)]
         [Display(Name = "Contraseña")]
         public string Password { get; set; } = string.Empty;
+
+        [BindProperty]
+        [Required(ErrorMessage = "Debe confirmar la contraseña")]
+        [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden")]
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirmar contraseña")]
+        public string ConfirmPassword { get; set; } = string.Empty;
 
         [BindProperty]
         [Display(Name = "Activo")]

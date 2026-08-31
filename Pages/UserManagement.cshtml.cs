@@ -35,7 +35,7 @@ namespace eGestion360Web.Pages
         // Campos para reset de contraseña
         [BindProperty]
         [Required(ErrorMessage = "La nueva contraseña es requerida")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
+        [PasswordSeguro]
         [DataType(DataType.Password)]
         public string NewPassword { get; set; } = string.Empty;
 
@@ -81,6 +81,16 @@ namespace eGestion360Web.Pages
             if (user == null)
             {
                 TempData["ErrorMessage"] = "Usuario no encontrado.";
+                await CargarUsuarios();
+                return Page();
+            }
+
+            // La comprobación contra el usuario y el email va acá porque son los del
+            // usuario destino, que recién se conoce una vez cargado.
+            var errorPolitica = PasswordPolicy.Validar(NewPassword, user.Username, user.Email);
+            if (errorPolitica != null)
+            {
+                ModelState.AddModelError(nameof(NewPassword), errorPolitica);
                 await CargarUsuarios();
                 return Page();
             }

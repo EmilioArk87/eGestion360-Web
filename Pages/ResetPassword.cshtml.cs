@@ -44,7 +44,7 @@ namespace eGestion360Web.Pages
 
         [BindProperty]
         [Required(ErrorMessage = "La nueva contraseña es requerida")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
+        [PasswordSeguro(nameof(Email))]
         [DataType(DataType.Password)]
         [Display(Name = "Nueva Contraseña")]
         public string NewPassword { get; set; } = string.Empty;

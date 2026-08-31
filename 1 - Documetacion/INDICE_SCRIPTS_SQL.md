@@ -23,7 +23,8 @@ Regla de nombre: NNN_descripcion_corta.sql (NNN incremental de 3 digitos).
 |---|---|---|---|---|
 | 009 | 009_integracion_almacen_contable.sql | Integracion contable del almacen de repuestos (bandera activo_contable + precision monto) | 2026-08-06 | Pendiente |
 | 010 | 010_ct_nucleo_contable.sql | Nucleo del modulo contable: ct_cuentas, ct_ejercicios, ct_periodos, ct_centros_costo, ct_asientos, ct_asiento_movimientos | 2026-08-06 | Pendiente |
-| 011 | NNN_descripcion_corta.sql | Plantilla para proximo cambio | YYYY-MM-DD | Pendiente |
+| 011 | 011_configurar_correo_notificaciones.sql | Alta del perfil SMTP notificaciones@siptecnologia.somee.com en EmailConfigurations (tabla que lee la app) y saneamiento de contrasenas en claro en la tabla huerfana EmailConfiguration | 2026-08-30 | Aplicado 2026-08-30 |
+| 012 | NNN_descripcion_corta.sql | Plantilla para proximo cambio | YYYY-MM-DD | Pendiente |
 
 ## Reglas de ejecucion
 

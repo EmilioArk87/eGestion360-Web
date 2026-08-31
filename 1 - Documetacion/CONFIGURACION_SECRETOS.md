@@ -97,3 +97,23 @@ cerrar el tema del todo hay que cambiarlas en origen:
 - contraseña de `acc_datos` en el panel de somee.com;
 - contraseña de la casilla `egaray@siptecnologia.xyz` en Hostinger;
 - `Encryption__Key` / `Encryption__IV` sólo con el procedimiento de recifrado descrito arriba.
+
+## Casilla de notificaciones (2026-08-30)
+
+El correo del sistema pasó a la casilla de Somee. Los valores no secretos ya están en
+`appsettings.json`:
+
+| Dato | Valor |
+|---|---|
+| Remitente / usuario SMTP | `notificaciones@siptecnologia.somee.com` |
+| Servidor | `mail.siptecnologia.somee.com` |
+| Puerto | `465` (SSL implícito; `587` STARTTLS como alternativa) |
+
+La contraseña va en `EmailSettings__Password` y, cifrada con AES, en la columna `PasswordHash`
+de `dbo.EmailConfigurations` (ver `2 - Script SQL/011_configurar_correo_notificaciones.sql`).
+
+`Encryption__Key` y `Encryption__IV` **no existían** hasta esa fecha: se generaron entonces y
+quedaron en los *user-secrets* del proyecto para desarrollo local. Como no había ninguna
+contraseña cifrada en la base todavía, generarlas no rompió nada; a partir de ahora sí aplica
+la advertencia de recifrado de más arriba. Para producción hay que copiar esos dos valores al
+`web.config` (o al `appsettings.Production.json`) del servidor.
