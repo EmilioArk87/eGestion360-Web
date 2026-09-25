@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control de Salidas y Entradas (maqueta) - eGestion360</title>
+    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../css/site.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <style>
+        .kpi-card { border-left: 5px solid transparent; }
+        .kpi-card .kpi-num { font-size: 2rem; line-height: 1; font-weight: 700; }
+        .kpi-card .kpi-lbl { font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; }
+        .kpi-dentro { border-left-color: #198754; }
+        .kpi-fuera  { border-left-color: #0d6efd; }
+        .kpi-mov    { border-left-color: #6610f2; }
+        .kpi-km     { border-left-color: #fd7e14; }
+
+        /* Cartel de modo automático */
+        .modo {
+            border-radius: 12px; padding: 1rem 1.25rem; color: #fff;
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .modo .ico { font-size: 1.9rem; opacity: .9; }
+        .modo .tit { font-size: 1.35rem; font-weight: 700; line-height: 1.1; }
+        .modo .sub { font-size: .85rem; opacity: .92; }
+        .modo-salida  { background: linear-gradient(100deg, #0d6efd, #0a58ca); }
+        .modo-entrada { background: linear-gradient(100deg, #198754, #146c43); }
+        .modo-vacio   { background: #e9ecef; color: #6c757d; }
+        .modo-vacio .tit { font-size: 1.05rem; font-weight: 600; }
+
+        .km-input { font-size: 1.6rem; font-weight: 700; letter-spacing: .01em; }
+        .km-ref { font-size: .82rem; }
+
+        .viaje-box {
+            background: #f8f9fa; border: 1px dashed #ced4da; border-radius: 10px; padding: .9rem 1rem;
+        }
+        .viaje-box dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #6c757d; font-weight: 600; }
+        .viaje-box dd { margin-bottom: .6rem; font-weight: 600; }
+
+        .fila-fuera { border-left: 3px solid #0d6efd; }
+        .fila-dentro { border-left: 3px solid #198754; }
+        .lista-mov .item { padding: .6rem .8rem; border-bottom: 1px solid #f1f3f5; }
+        .lista-mov .item:last-child { border-bottom: none; }
+        .placa { font-weight: 700; letter-spacing: .02em; }
+        .mini { font-size: .78rem; color: #6c757d; }
+
+        .badge-mov { font-size: .68rem; font-weight: 700; letter-spacing: .04em; }
+
+        .alerta-km { font-size: .84rem; }
+        .card-captura { position: sticky; top: 1rem; }
+        #toast-ok { position: fixed; right: 1rem; bottom: 1rem; z-index: 1080; min-width: 20rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                    <img src="../img/isotipo.svg" alt="" height="30" class="me-2" />eGestión360
+                </a>
+                <div class="collapse navbar-collapse">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-home me-1"></i>Inicio</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-th-large me-1"></i>Menú Principal</a></li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-user-circle me-1"></i>Portería</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid">
+        <main role="main" class="py-4">
+            <div class="container">
+
+                <div class="alert alert-warning border-0 shadow-sm d-flex align-items-start">
+                    <i class="fas fa-flask fa-lg me-3 mt-1"></i>
+                    <div>
+                        <strong>Maqueta interactiva — probala.</strong>
+                        Elegí un vehículo del selector: el sistema decide solo si es <strong>salida</strong> o <strong>entrada</strong>.
+                        Registrá el movimiento y mirá cómo cambian las listas. Nada se guarda: al recargar vuelve al estado inicial.
+                    </div>
+                </div>
+
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Menú Principal</a></li>
+                        <li class="breadcrumb-item"><a href="#">Flota &amp; KPIs</a></li>
+                        <li class="breadcrumb-item"><a href="#">Operación Diaria</a></li>
+                        <li class="breadcrumb-item active">Control de Salidas y Entradas</li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h2 class="mb-1"><i class="fas fa-right-left me-2" style="color:#0d6efd;"></i>Control de Salidas y Entradas</h2>
+                        <p class="text-muted mb-0">Odómetro capturado en el momento en que el vehículo cruza el portón · <strong>02/09/2026</strong></p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-secondary"><i class="fas fa-clock-rotate-left me-2"></i>Historial</a>
+                        <a href="#" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+                    </div>
+                </div>
+
+                <!-- KPIs -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-lg-3">
+                        <div class="card border-0 shadow-sm h-100 kpi-card kpi-dentro">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div><div class="kpi-num text-success" id="kDentro">5</div><div class="kpi-lbl text-muted mt-1">En sitio</div></div>
+                                <i class="fas fa-warehouse fa-lg text-success opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="card border-0 shadow-sm h-100 kpi-card kpi-fuera">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div><div class="kpi-num text-primary" id="kFuera">3</div><div class="kpi-lbl text-muted mt-1">Fuera ahora</div></div>
+                                <i class="fas fa-road fa-lg text-primary opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="card border-0 shadow-sm h-100 kpi-card kpi-mov">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div><div class="kpi-num" style="color:#6610f2;" id="kMov">11</div><div class="kpi-lbl text-muted mt-1">Movimientos hoy</div></div>
+                                <i class="fas fa-right-left fa-lg opacity-50" style="color:#6610f2;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-lg-3">
+                        <div class="card border-0 shadow-sm h-100 kpi-card kpi-km">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div><div class="kpi-num" style="color:#fd7e14;" id="kKm">1.284</div><div class="kpi-lbl text-muted mt-1">Km recorridos hoy</div></div>
+                                <i class="fas fa-gauge-high fa-lg opacity-50" style="color:#fd7e14;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+
+                    <!-- ══ Captura ══ -->
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm card-captura">
+                            <div class="card-header bg-white border-0 pt-3 pb-0">
+                                <h5 class="fw-bold mb-0"><i class="fas fa-barcode me-2 text-primary"></i>Registrar movimiento</h5>
+                                <p class="text-muted small mb-0">Elegí el vehículo; el tipo lo pone el sistema.</p>
+                            </div>
+                            <div class="card-body">
+
+                                <label class="form-label fw-semibold small">Vehículo</label>
+                                <select class="form-select form-select-lg mb-3" id="selVehiculo">
+                                    <option value="">-- Seleccione o escanee --</option>
+                                </select>
+
+                                <div id="panelModo" class="modo modo-vacio mb-3">
+                                    <i class="fas fa-hand-pointer ico"></i>
+                                    <div>
+                                        <div class="tit">Esperando vehículo</div>
+                                        <div class="sub">El sistema detecta solo si corresponde salida o entrada.</div>
+                                    </div>
+                                </div>
+
+                                <div id="formMov" class="d-none">
+                                    <div id="cajaViaje" class="viaje-box mb-3 d-none">
+                                        <div class="fw-bold mb-2 small text-uppercase text-muted">Salida registrada</div>
+                                        <dl class="row mb-0">
+                                            <div class="col-6"><dt>Hora</dt><dd id="vHora">—</dd></div>
+                                            <div class="col-6"><dt>Odómetro</dt><dd id="vKm">—</dd></div>
+                                            <div class="col-6"><dt>Conductor</dt><dd id="vCond">—</dd></div>
+                                            <div class="col-6"><dt>Destino</dt><dd id="vDest">—</dd></div>
+                                        </dl>
+                                    </div>
+
+                                    <label class="form-label fw-semibold small" id="lblKm">Odómetro de salida</label>
+                                    <div class="input-group mb-1">
+                                        <input type="number" class="form-control km-input" id="inKm" placeholder="0" />
+                                        <span class="input-group-text">km</span>
+                                    </div>
+                                    <div class="km-ref text-muted mb-3" id="refKm">—</div>
+
+                                    <div id="alertaKm" class="alert alerta-km py-2 px-3 d-none"></div>
+
+                                    <div class="row g-2 mb-3" id="camposSalida">
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold small">Conductor</label>
+                                            <select class="form-select" id="selConductor">
+                                                <option>J. Martínez</option>
+                                                <option>R. Fúnez</option>
+                                                <option>M. Cruz</option>
+                                                <option>E. Sabillón</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold small">Ruta / destino</label>
+                                            <select class="form-select" id="selDestino">
+                                                <option>SPS — Puerto Cortés</option>
+                                                <option>SPS — Tegucigalpa</option>
+                                                <option>SPS — Choloma</option>
+                                                <option>Local / ciudad</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Observaciones <span class="text-muted fw-normal">(opcional)</span></label>
+                                        <input type="text" class="form-control" placeholder="Ej. sale con remolque cargado" />
+                                    </div>
+
+                                    <button class="btn btn-lg w-100 text-white" id="btnRegistrar" style="background-color:#0d6efd;">
+                                        <i class="fas fa-arrow-right-from-bracket me-2"></i>Registrar salida
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ Listas ══ -->
+                    <div class="col-lg-7">
+
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold mb-0"><i class="fas fa-road me-2 text-primary"></i>Fuera del sitio ahora</h6>
+                                <span class="badge bg-primary" id="badgeFuera">3</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Vehículo</th><th>Salió</th><th>Odómetro</th>
+                                                <th>Conductor</th><th>Destino</th><th>Tiempo fuera</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbFuera"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-0 pt-3">
+                                <h6 class="fw-bold mb-0"><i class="fas fa-list-ul me-2" style="color:#6610f2;"></i>Últimos movimientos de hoy</h6>
+                            </div>
+                            <div class="card-body p-0 lista-mov" id="listaMov"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Reglas -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-scale-balanced me-2 text-primary"></i>Reglas que aplica la pantalla</h6>
+                        <div class="row g-3 small">
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="fw-semibold mb-1"><i class="fas fa-wand-magic-sparkles me-1 text-secondary"></i>Tipo automático</div>
+                                    Si el vehículo está en sitio, el movimiento es <strong>salida</strong>.
+                                    Si tiene una salida abierta, es <strong>entrada</strong>. No hay que elegirlo.
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="fw-semibold mb-1"><i class="fas fa-shield-halved me-1 text-secondary"></i>Odómetro coherente</div>
+                                    La entrada no puede ser menor que su salida, y la salida no puede ser menor
+                                    que el último odómetro conocido del vehículo.
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="fw-semibold mb-1"><i class="fas fa-triangle-exclamation me-1 text-secondary"></i>Saltos sospechosos</div>
+                                    Un recorrido mayor a <strong>1.200 km</strong> en un solo viaje pide confirmación,
+                                    por si se tecleó un dígito de más.
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="fw-semibold mb-1"><i class="fas fa-moon me-1 text-secondary"></i>Viajes de varios días</div>
+                                    La salida queda abierta hasta que vuelva, sin importar cuántos días pasen.
+                                    A las <strong>36 horas</strong> se marca para revisión.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="../img/logo-blanco.svg" alt="eGestión360" height="42" class="mb-2" />
+                    <p class="mb-0">Sistema de Gestión Web desarrollado por SIP Tecnología</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2026 - SIP Tecnología - Todos los derechos reservados</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast-ok"></div>
+
+    <script src="../lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ── Datos de ejemplo (placas reales del seed Transgar) ─────────────
+        var vehiculos = [
+            { id: 1, placa: 'HBB7057', interno: 'Cab120', desc: 'Peterbilt 2007',  estado: 'dentro', km: 423540 },
+            { id: 2, placa: 'HAU7246', interno: 'Cab122', desc: 'Pro Star 2009',   estado: 'fuera',  km: 312250,
+              salida: { hora: '06:12', km: 312250, conductor: 'J. Martínez', destino: 'SPS — Puerto Cortés', fuera: '2 h 48 min' } },
+            { id: 3, placa: 'AAM7870', interno: 'Cab100', desc: 'Pro Star 2011',   estado: 'fuera',  km: 204870,
+              salida: { hora: '05:40', km: 204870, conductor: 'R. Fúnez', destino: 'SPS — Tegucigalpa', fuera: '3 h 20 min' } },
+            { id: 4, placa: 'AAR9162', interno: 'Cab102', desc: 'Kenworth 2008',   estado: 'dentro', km: 290500 },
+            { id: 5, placa: 'RC5698',  interno: 'AS1',    desc: 'Asfaltero 1999',  estado: 'dentro', km: 96410  },
+            { id: 6, placa: 'HAW4780', interno: 'Cab107', desc: 'Columbia 2006',   estado: 'fuera',  km: 519780,
+              salida: { hora: '07:05', km: 519780, conductor: 'M. Cruz', destino: 'SPS — Choloma', fuera: '1 h 55 min' } },
+            { id: 7, placa: 'AAK6502', interno: 'Cab4',   desc: 'Volvo 1999',      estado: 'dentro', km: 188900 },
+            { id: 8, placa: 'AAM8429', interno: 'Cab105', desc: 'Peterbilt 2006',  estado: 'dentro', km: 341220 }
+        ];
+
+        var movimientos = [
+            { hora: '07:05', tipo: 'SALIDA',  placa: 'HAW4780', km: 519780, txt: 'M. Cruz · SPS — Choloma' },
+            { hora: '06:48', tipo: 'ENTRADA', placa: 'AAM8429', km: 341220, txt: 'Recorrido 96 km · 1 h 12 min fuera' },
+            { hora: '06:12', tipo: 'SALIDA',  placa: 'HAU7246', km: 312250, txt: 'J. Martínez · SPS — Puerto Cortés' },
+            { hora: '05:40', tipo: 'SALIDA',  placa: 'AAM7870', km: 204870, txt: 'R. Fúnez · SPS — Tegucigalpa' },
+            { hora: '05:36', tipo: 'ENTRADA', placa: 'AAR9162', km: 290500, txt: 'Recorrido 214 km · 9 h 04 min fuera' }
+        ];
+
+        var movHoy = 11, kmHoy = 1284;
+
+        var fmt = function (n) { return n.toLocaleString('es-HN'); };
+        var $ = function (id) { return document.getElementById(id); };
+
+        // ── Selector ───────────────────────────────────────────────────────
+        function llenarSelect() {
+            var sel = $('selVehiculo');
+            var actual = sel.value;
+            sel.innerHTML = '<option value="">-- Seleccione o escanee --</option>';
+            vehiculos.forEach(function (v) {
+                var o = document.createElement('option');
+                o.value = v.id;
+                o.textContent = v.placa + ' — ' + v.interno + '  (' + (v.estado === 'dentro' ? 'en sitio' : 'fuera') + ')';
+                sel.appendChild(o);
+            });
+            sel.value = actual;
+        }
+
+        function veh(id) { return vehiculos.filter(function (v) { return v.id == id; })[0]; }
+
+        // ── Panel de captura ───────────────────────────────────────────────
+        function pintarModo() {
+            var v = veh($('selVehiculo').value);
+            var panel = $('panelModo'), form = $('formMov');
+
+            if (!v) {
+                panel.className = 'modo modo-vacio mb-3';
+                panel.innerHTML = '<i class="fas fa-hand-pointer ico"></i><div>' +
+                    '<div class="tit">Esperando vehículo</div>' +
+                    '<div class="sub">El sistema detecta solo si corresponde salida o entrada.</div></div>';
+                form.classList.add('d-none');
+                return;
+            }
+
+            form.classList.remove('d-none');
+            $('alertaKm').classList.add('d-none');
+            $('inKm').value = '';
+
+            if (v.estado === 'dentro') {
+                panel.className = 'modo modo-salida mb-3';
+                panel.innerHTML = '<i class="fas fa-arrow-right-from-bracket ico"></i><div>' +
+                    '<div class="tit">SALIDA</div>' +
+                    '<div class="sub">' + v.placa + ' está en sitio · se registra su salida</div></div>';
+                $('lblKm').textContent = 'Odómetro de salida';
+                $('refKm').innerHTML = 'Último odómetro conocido: <strong>' + fmt(v.km) + ' km</strong>';
+                $('cajaViaje').classList.add('d-none');
+                $('camposSalida').classList.remove('d-none');
+                $('btnRegistrar').className = 'btn btn-lg w-100 text-white';
+                $('btnRegistrar').style.backgroundColor = '#0d6efd';
+                $('btnRegistrar').innerHTML = '<i class="fas fa-arrow-right-from-bracket me-2"></i>Registrar salida';
+            } else {
+                panel.className = 'modo modo-entrada mb-3';
+                panel.innerHTML = '<i class="fas fa-arrow-right-to-bracket ico"></i><div>' +
+                    '<div class="tit">ENTRADA</div>' +
+                    '<div class="sub">' + v.placa + ' salió a las ' + v.salida.hora + ' · se cierra el viaje</div></div>';
+                $('lblKm').textContent = 'Odómetro de entrada';
+                $('refKm').innerHTML = 'Salió con <strong>' + fmt(v.salida.km) + ' km</strong> · el recorrido se calcula solo';
+                $('vHora').textContent = v.salida.hora;
+                $('vKm').textContent = fmt(v.salida.km) + ' km';
+                $('vCond').textContent = v.salida.conductor;
+                $('vDest').textContent = v.salida.destino;
+                $('cajaViaje').classList.remove('d-none');
+                $('camposSalida').classList.add('d-none');
+                $('btnRegistrar').className = 'btn btn-lg w-100 btn-success text-white';
+                $('btnRegistrar').style.backgroundColor = '';
+                $('btnRegistrar').innerHTML = '<i class="fas fa-arrow-right-to-bracket me-2"></i>Registrar entrada';
+            }
+        }
+
+        // ── Validación en vivo ─────────────────────────────────────────────
+        function validarKm() {
+            var v = veh($('selVehiculo').value);
+            var a = $('alertaKm');
+            if (!v || $('inKm').value === '') { a.classList.add('d-none'); return true; }
+
+            var km = parseFloat($('inKm').value);
+            var base = v.estado === 'dentro' ? v.km : v.salida.km;
+
+            if (km < base) {
+                a.className = 'alert alert-danger alerta-km py-2 px-3';
+                a.innerHTML = '<i class="fas fa-circle-exclamation me-1"></i>El odómetro no puede ser menor a <strong>' +
+                    fmt(base) + ' km</strong>' + (v.estado === 'dentro' ? ' (última lectura).' : ' (odómetro de salida).');
+                return false;
+            }
+            var dif = km - base;
+            if (v.estado === 'fuera' && dif > 1200) {
+                a.className = 'alert alert-warning alerta-km py-2 px-3';
+                a.innerHTML = '<i class="fas fa-triangle-exclamation me-1"></i>Recorrido de <strong>' + fmt(dif) +
+                    ' km</strong> en un viaje. Verificá el número antes de confirmar.';
+                return true;
+            }
+            a.className = 'alert alert-success alerta-km py-2 px-3';
+            a.innerHTML = v.estado === 'fuera'
+                ? '<i class="fas fa-circle-check me-1"></i>Recorrido del viaje: <strong>' + fmt(dif) + ' km</strong>'
+                : '<i class="fas fa-circle-check me-1"></i>' + (dif === 0
+                    ? 'Coincide con la última lectura.'
+                    : '<strong>' + fmt(dif) + ' km</strong> desde la última lectura registrada.');
+            return true;
+        }
+
+        // ── Registrar ──────────────────────────────────────────────────────
+        function registrar() {
+            var v = veh($('selVehiculo').value);
+            if (!v) return;
+            if ($('inKm').value === '') { $('inKm').focus(); return; }
+            if (!validarKm()) return;
+
+            var km = parseFloat($('inKm').value);
+            var ahora = new Date();
+            var hora = ('0' + ahora.getHours()).slice(-2) + ':' + ('0' + ahora.getMinutes()).slice(-2);
+
+            if (v.estado === 'dentro') {
+                v.estado = 'fuera';
+                v.km = km;
+                v.salida = {
+                    hora: hora, km: km,
+                    conductor: $('selConductor').value,
+                    destino: $('selDestino').value,
+                    fuera: 'recién'
+                };
+                movimientos.unshift({ hora: hora, tipo: 'SALIDA', placa: v.placa, km: km,
+                    txt: v.salida.conductor + ' · ' + v.salida.destino });
+                toast('Salida registrada — ' + v.placa + ' con ' + fmt(km) + ' km', 'primary');
+            } else {
+                var rec = km - v.salida.km;
+                movimientos.unshift({ hora: hora, tipo: 'ENTRADA', placa: v.placa, km: km,
+                    txt: 'Recorrido ' + fmt(rec) + ' km · salió ' + v.salida.hora });
+                v.estado = 'dentro';
+                v.km = km;
+                delete v.salida;
+                kmHoy += rec;
+                toast('Entrada registrada — recorrido de ' + fmt(rec) + ' km', 'success');
+            }
+
+            movHoy++;
+            $('selVehiculo').value = '';
+            pintarTodo();
+        }
+
+        function toast(msg, color) {
+            var d = document.createElement('div');
+            d.className = 'alert alert-' + color + ' shadow d-flex align-items-center mb-2';
+            d.innerHTML = '<i class="fas fa-circle-check me-2"></i>' + msg;
+            $('toast-ok').appendChild(d);
+            setTimeout(function () { d.remove(); }, 4000);
+        }
+
+        // ── Listas ─────────────────────────────────────────────────────────
+        function pintarListas() {
+            var fuera = vehiculos.filter(function (v) { return v.estado === 'fuera'; });
+            var tb = $('tbFuera');
+            tb.innerHTML = '';
+
+            if (!fuera.length) {
+                tb.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">' +
+                    '<i class="fas fa-warehouse fa-2x mb-2 d-block text-success"></i>Toda la flota está en sitio.</td></tr>';
+            }
+            fuera.forEach(function (v) {
+                tb.innerHTML += '<tr class="fila-fuera">' +
+                    '<td><div class="placa">' + v.placa + '</div><div class="mini">' + v.interno + ' · ' + v.desc + '</div></td>' +
+                    '<td>' + v.salida.hora + '</td>' +
+                    '<td>' + fmt(v.salida.km) + ' km</td>' +
+                    '<td>' + v.salida.conductor + '</td>' +
+                    '<td class="mini">' + v.salida.destino + '</td>' +
+                    '<td><span class="badge bg-light text-dark border">' + v.salida.fuera + '</span></td></tr>';
+            });
+
+            var lm = $('listaMov');
+            lm.innerHTML = '';
+            movimientos.slice(0, 8).forEach(function (m) {
+                var esSal = m.tipo === 'SALIDA';
+                lm.innerHTML += '<div class="item d-flex align-items-center gap-3 ' +
+                    (esSal ? 'fila-fuera' : 'fila-dentro') + '">' +
+                    '<span class="mini" style="width:3rem;">' + m.hora + '</span>' +
+                    '<span class="badge badge-mov ' + (esSal ? 'bg-primary' : 'bg-success') + '" style="width:5rem;">' + m.tipo + '</span>' +
+                    '<span class="placa" style="width:6rem;">' + m.placa + '</span>' +
+                    '<span class="mini flex-grow-1">' + m.txt + '</span>' +
+                    '<span class="fw-semibold">' + fmt(m.km) + ' km</span></div>';
+            });
+
+            $('kDentro').textContent = vehiculos.filter(function (v) { return v.estado === 'dentro'; }).length;
+            $('kFuera').textContent = fuera.length;
+            $('badgeFuera').textContent = fuera.length;
+            $('kMov').textContent = movHoy;
+            $('kKm').textContent = fmt(kmHoy);
+        }
+
+        function pintarTodo() { llenarSelect(); pintarModo(); pintarListas(); }
+
+        $('selVehiculo').addEventListener('change', pintarModo);
+        $('inKm').addEventListener('input', validarKm);
+        $('btnRegistrar').addEventListener('click', registrar);
+
+        pintarTodo();
+    </script>
+</body>
+</html>
