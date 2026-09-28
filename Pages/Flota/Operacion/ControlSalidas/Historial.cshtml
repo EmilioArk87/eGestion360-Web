@@ -1,0 +1,179 @@
+@page
+@model eGestion360Web.Pages.Flota.Operacion.ControlSalidas.HistorialModel
+@{
+    ViewData["Title"] = "Historial de Salidas y Entradas";
+}
+
+<div class="container-fluid px-3 px-lg-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota &amp; KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Operacion/Index">Operación Diaria</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Control de Salidas y Entradas</a></li>
+            <li class="breadcrumb-item active">Historial</li>
+        </ol>
+    </nav>
+
+    @if (TempData["Exito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Exito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-clock-rotate-left me-2 text-primary"></i>Historial de Salidas y Entradas</h2>
+            <p class="text-muted mb-0">Auditoría completa de movimientos de portón y viajes realizados</p>
+        </div>
+        <a asp-page="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver al Control en Vivo
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Desde</label>
+                    <input type="date" class="form-control" name="Desde" value="@Model.Desde?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Hasta</label>
+                    <input type="date" class="form-control" name="Hasta" value="@Model.Hasta?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Vehículo</label>
+                    <select class="form-select" name="IdVehiculo" asp-items="Model.VehiculosList">
+                        <option value="">-- Todos los vehículos --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Estado</label>
+                    <select class="form-select" name="Estado">
+                        <option value="TODOS" selected="@(Model.Estado == "TODOS" || string.IsNullOrEmpty(Model.Estado))">Todos</option>
+                        <option value="CERRADO" selected="@(Model.Estado == "CERRADO")">Cerrados (Completos)</option>
+                        <option value="ABIERTO" selected="@(Model.Estado == "ABIERTO")">Abiertos (En viaje)</option>
+                        <option value="ANULADO" selected="@(Model.Estado == "ANULADO")">Anulados</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100" title="Filtrar">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <a asp-page="Historial" class="btn btn-outline-secondary" title="Limpiar">
+                        <i class="fas fa-rotate-left"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabla de resultados -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Estado</th>
+                            <th>Vehículo</th>
+                            <th>Salida (Fecha/Hora)</th>
+                            <th>Entrada (Fecha/Hora)</th>
+                            <th>Conductor / Destino</th>
+                            <th class="text-end">Km Salida</th>
+                            <th class="text-end">Km Entrada</th>
+                            <th class="text-end">Recorrido</th>
+                            <th>Tiempo Fuera</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Registros.Any())
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-3x mb-2 d-block opacity-50"></i>
+                                    No se encontraron movimientos para los filtros seleccionados.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var r in Model.Registros)
+                            {
+                                var badgeClass = r.Estado switch
+                                {
+                                    "CERRADO" => "bg-success",
+                                    "ABIERTO" => "bg-primary",
+                                    "ANULADO" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                <tr>
+                                    <td>
+                                        <span class="badge @badgeClass">@r.Estado</span>
+                                    </td>
+                                    <td>
+                                        <strong>@r.Vehiculo?.Placa</strong>
+                                        <div class="text-muted small">@r.Vehiculo?.NumeroInterno</div>
+                                    </td>
+                                    <td>
+                                        <div>@r.FechaHoraSalida.ToString("dd/MM/yyyy")</div>
+                                        <div class="text-muted small fw-semibold">@r.FechaHoraSalida.ToString("HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        @if (r.FechaHoraEntrada.HasValue)
+                                        {
+                                            <div>@r.FechaHoraEntrada.Value.ToString("dd/MM/yyyy")</div>
+                                            <div class="text-muted small fw-semibold">@r.FechaHoraEntrada.Value.ToString("HH:mm")</div>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div>@(r.Conductor?.NombreCompleto ?? "Sin conductor")</div>
+                                        <div class="text-muted small">@(r.Destino ?? "—")</div>
+                                    </td>
+                                    <td class="text-end">@r.OdometroSalida.ToString("N0") km</td>
+                                    <td class="text-end">
+                                        @(r.OdometroEntrada.HasValue ? $"{r.OdometroEntrada.Value:N0} km" : "—")
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        @(r.KmRecorridos.HasValue ? $"{r.KmRecorridos.Value:N0} km" : "—")
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">@r.TiempoFuera</span>
+                                    </td>
+                                    <td class="text-end">
+                                        @if (r.Estado != "ANULADO")
+                                        {
+                                            <form method="post" asp-page-handler="Anular" asp-route-id="@r.IdControlSalida" class="d-inline"
+                                                  onsubmit="return confirm('¿Seguro que desea anular este movimiento?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Anular movimiento">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

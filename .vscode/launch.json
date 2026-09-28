@@ -26,6 +26,7 @@
                 "enabled": false
             }
         },
+
         {
             "name": ".NET Core Attach",
             "type": "coreclr",

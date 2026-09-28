@@ -19,12 +19,41 @@ namespace eGestion360Web.Services
                 .OrderBy(v => v.Placa)
                 .ToListAsync(ct);
 
-            var kmPorVehiculo = await _db.OdometrosDiarios
+            // KM: la fuente es la garita (viajes CERRADOS, asignados al día de la entrada,
+            // igual que "KM recorridos hoy" en Control de Salidas). odometro_diario ya no se
+            // captura y queda como histórico: sólo cuenta en los días en que el vehículo no
+            // tiene viajes de garita, para no sumar dos veces el mismo recorrido.
+            var entradaDesde = fechaDesde.ToDateTime(TimeOnly.MinValue);
+            var entradaHasta = fechaHasta.AddDays(1).ToDateTime(TimeOnly.MinValue);
+
+            var viajes = await _db.ControlSalidas
+                .Where(c => c.IdEmpresa == idEmpresa && !c.Eliminado && c.Estado == "CERRADO"
+                         && c.FechaHoraEntrada >= entradaDesde && c.FechaHoraEntrada < entradaHasta)
+                .Select(c => new { c.IdVehiculo, Entrada = c.FechaHoraEntrada!.Value, Km = c.KmRecorridos ?? 0 })
+                .ToListAsync(ct);
+
+            var kmGaritaPorDia = viajes
+                .GroupBy(v => (v.IdVehiculo, Dia: DateOnly.FromDateTime(v.Entrada)))
+                .ToDictionary(g => g.Key, g => g.Sum(v => v.Km));
+
+            var kmHistoricoPorDia = await _db.OdometrosDiarios
                 .Where(o => o.IdEmpresa == idEmpresa && !o.Eliminado
                          && o.Fecha >= fechaDesde && o.Fecha <= fechaHasta)
-                .GroupBy(o => o.IdVehiculo)
-                .Select(g => new { g.Key, Total = g.Sum(o => o.KmRecorridos) })
-                .ToDictionaryAsync(x => x.Key, x => x.Total, ct);
+                .GroupBy(o => new { o.IdVehiculo, o.Fecha })
+                .Select(g => new { g.Key.IdVehiculo, g.Key.Fecha, Km = g.Sum(o => o.KmRecorridos) })
+                .ToListAsync(ct);
+
+            var kmPorVehiculo = new Dictionary<int, decimal>();
+            foreach (var (clave, km) in kmGaritaPorDia)
+            {
+                kmPorVehiculo.TryGetValue(clave.IdVehiculo, out var acum);
+                kmPorVehiculo[clave.IdVehiculo] = acum + km;
+            }
+            foreach (var h in kmHistoricoPorDia.Where(h => !kmGaritaPorDia.ContainsKey((h.IdVehiculo, h.Fecha))))
+            {
+                kmPorVehiculo.TryGetValue(h.IdVehiculo, out var acum);
+                kmPorVehiculo[h.IdVehiculo] = acum + h.Km;
+            }
 
             var combustiblePorVehiculo = await _db.CargasCombustible
                 .Where(c => c.IdEmpresa == idEmpresa && !c.Eliminado

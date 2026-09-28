@@ -1,0 +1,485 @@
+@page
+@model eGestion360Web.Pages.Flota.Operacion.ControlSalidas.IndexModel
+@{
+    ViewData["Title"] = "Control de Salidas y Entradas";
+}
+
+<style>
+    .kpi-card { border-left: 5px solid transparent; }
+    .kpi-card .kpi-num { font-size: 2rem; line-height: 1; font-weight: 700; }
+    .kpi-card .kpi-lbl { font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; }
+    .kpi-dentro { border-left-color: #198754; }
+    .kpi-fuera  { border-left-color: #0d6efd; }
+    .kpi-mov    { border-left-color: #6610f2; }
+    .kpi-km     { border-left-color: #fd7e14; }
+
+    /* Cartel de modo automático */
+    .modo {
+        border-radius: 12px; padding: 1rem 1.25rem; color: #fff;
+        display: flex; align-items: center; gap: 1rem;
+    }
+    .modo .ico { font-size: 1.9rem; opacity: .9; }
+    .modo .tit { font-size: 1.35rem; font-weight: 700; line-height: 1.1; }
+    .modo .sub { font-size: .85rem; opacity: .92; }
+    .modo-salida  { background: linear-gradient(100deg, #0d6efd, #0a58ca); }
+    .modo-entrada { background: linear-gradient(100deg, #198754, #146c43); }
+    .modo-vacio   { background: #e9ecef; color: #6c757d; }
+    .modo-vacio .tit { font-size: 1.05rem; font-weight: 600; }
+
+    .km-input { font-size: 1.6rem; font-weight: 700; letter-spacing: .01em; }
+    .km-ref { font-size: .82rem; }
+
+    .viaje-box {
+        background: #f8f9fa; border: 1px dashed #ced4da; border-radius: 10px; padding: .9rem 1rem;
+    }
+    .viaje-box dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: #6c757d; font-weight: 600; }
+    .viaje-box dd { margin-bottom: .6rem; font-weight: 600; }
+
+    .fila-fuera { border-left: 3px solid #0d6efd; }
+    .fila-dentro { border-left: 3px solid #198754; }
+    .lista-mov .item { padding: .6rem .8rem; border-bottom: 1px solid #f1f3f5; }
+    .lista-mov .item:last-child { border-bottom: none; }
+    .placa { font-weight: 700; letter-spacing: .02em; }
+    .mini { font-size: .78rem; color: #6c757d; }
+    .badge-mov { font-size: .68rem; font-weight: 700; letter-spacing: .04em; }
+    .alerta-km { font-size: .84rem; }
+    .card-captura { position: sticky; top: 1rem; }
+</style>
+
+<div class="container-fluid px-3 px-lg-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Index">Flota &amp; KPIs</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Flota/Operacion/Index">Operación Diaria</a></li>
+            <li class="breadcrumb-item active">Control de Salidas y Entradas</li>
+        </ol>
+    </nav>
+
+    @if (TempData["Exito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Exito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-right-left me-2" style="color:#0d6efd;"></i>Control de Salidas y Entradas</h2>
+            <p class="text-muted mb-0">Captura en tiempo real en garita / portería · <strong>@DateTime.Today.ToString("dd/MM/yyyy")</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="Historial" class="btn btn-outline-secondary">
+                <i class="fas fa-clock-rotate-left me-2"></i>Historial
+            </a>
+            <a asp-page="/Flota/Operacion/Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- ══ KPIs ══ -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 kpi-card kpi-dentro">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-num text-success" id="kpiDentro">@Model.KpiDentro</div>
+                        <div class="kpi-lbl text-muted mt-1">En plantel / sitio</div>
+                    </div>
+                    <i class="fas fa-warehouse fa-lg text-success opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 kpi-card kpi-fuera">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-num text-primary" id="kpiFuera">@Model.KpiFuera</div>
+                        <div class="kpi-lbl text-muted mt-1">Fuera ahora</div>
+                    </div>
+                    <i class="fas fa-road fa-lg text-primary opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 kpi-card kpi-mov">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-num" style="color:#6610f2;" id="kpiMov">@Model.KpiMovimientosHoy</div>
+                        <div class="kpi-lbl text-muted mt-1">Movimientos hoy</div>
+                    </div>
+                    <i class="fas fa-right-left fa-lg opacity-50" style="color:#6610f2;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100 kpi-card kpi-km">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="kpi-num" style="color:#fd7e14;" id="kpiKm">@Model.KpiKmHoy.ToString("N0")</div>
+                        <div class="kpi-lbl text-muted mt-1">Km recorridos hoy</div>
+                    </div>
+                    <i class="fas fa-gauge-high fa-lg opacity-50" style="color:#fd7e14;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- ══ Panel de Captura ══ -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm card-captura">
+                <div class="card-header bg-white border-0 pt-3 pb-0">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-barcode me-2 text-primary"></i>Registrar cruce de portón</h5>
+                    <p class="text-muted small mb-0">Seleccione el vehículo; el sistema detecta solo si es salida o entrada.</p>
+                </div>
+                <div class="card-body">
+                    <label class="form-label fw-semibold small">Vehículo</label>
+                    <select class="form-select form-select-lg mb-3" id="selVehiculo">
+                        <option value="">-- Seleccione o busque vehículo --</option>
+                        @foreach (var v in Model.ListaVehiculos)
+                        {
+                            <option value="@v.IdVehiculo" 
+                                    data-estado="@v.Estado"
+                                    data-ultimo-km="@v.UltimoOdometro"
+                                    data-id-abierto="@(v.IdControlSalidaAbierto ?? 0)"
+                                    data-hora="@v.SalidaHora"
+                                    data-km-salida="@v.SalidaKm"
+                                    data-conductor="@v.SalidaConductor"
+                                    data-destino="@v.SalidaDestino">
+                                @v.Placa @(string.IsNullOrEmpty(v.NumeroInterno) ? "" : $"— {v.NumeroInterno}") (@(v.Estado == "dentro" ? "en sitio" : "fuera"))
+                            </option>
+                        }
+                    </select>
+
+                    <div id="panelModo" class="modo modo-vacio mb-3">
+                        <i class="fas fa-hand-pointer ico"></i>
+                        <div>
+                            <div class="tit">Esperando selección</div>
+                            <div class="sub">El sistema detectará automáticamente si corresponde registrar salida o entrada.</div>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO SALIDA -->
+                    <form method="post" asp-page-handler="Salida" id="formSalida" class="d-none">
+                        <input type="hidden" asp-for="IdVehiculoSalida" id="hiddenIdVehiculoSalida" />
+
+                        <label class="form-label fw-semibold small">Odómetro de salida</label>
+                        <div class="input-group mb-1">
+                            <input type="number" step="0.1" class="form-control km-input" asp-for="OdometroSalida" id="inKmSalida" placeholder="0" required />
+                            <span class="input-group-text">km</span>
+                        </div>
+                        <div class="km-ref text-muted mb-3" id="refKmSalida">—</div>
+
+                        <div id="alertaKmSalida" class="alert alerta-km py-2 px-3 d-none"></div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Conductor asignado</label>
+                                <select class="form-select" asp-for="IdConductorSalida" asp-items="Model.ConductoresList">
+                                    <option value="">-- Sin conductor asignado --</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Ruta / Destino</label>
+                                <input type="text" class="form-control" asp-for="DestinoSalida" list="listaRutas" placeholder="Ej. SPS — Puerto Cortés" />
+                                <datalist id="listaRutas">
+                                    @foreach (var r in Model.RutasList)
+                                    {
+                                        <option value="@r.Text"></option>
+                                    }
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Observaciones <span class="text-muted fw-normal">(opcional)</span></label>
+                            <input type="text" class="form-control" asp-for="ObservacionesSalida" placeholder="Ej. Sale con contenedor vacío" />
+                        </div>
+
+                        <button type="submit" class="btn btn-lg w-100 text-white" style="background-color:#0d6efd;" id="btnSalida">
+                            <i class="fas fa-arrow-right-from-bracket me-2"></i>Registrar salida
+                        </button>
+                    </form>
+
+                    <!-- FORMULARIO ENTRADA -->
+                    <form method="post" asp-page-handler="Entrada" id="formEntrada" class="d-none">
+                        <input type="hidden" asp-for="IdControlSalidaEntrada" id="hiddenIdControlSalidaEntrada" />
+
+                        <div class="viaje-box mb-3">
+                            <div class="fw-bold mb-2 small text-uppercase text-muted"><i class="fas fa-clock-rotate-left me-1"></i>Salida registrada previamente</div>
+                            <dl class="row mb-0">
+                                <div class="col-6"><dt>Hora salida</dt><dd id="vHora">—</dd></div>
+                                <div class="col-6"><dt>Odómetro salida</dt><dd id="vKm">—</dd></div>
+                                <div class="col-6"><dt>Conductor</dt><dd id="vCond">—</dd></div>
+                                <div class="col-6"><dt>Destino</dt><dd id="vDest">—</dd></div>
+                            </dl>
+                        </div>
+
+                        <label class="form-label fw-semibold small">Odómetro de entrada</label>
+                        <div class="input-group mb-1">
+                            <input type="number" step="0.1" class="form-control km-input" asp-for="OdometroEntrada" id="inKmEntrada" placeholder="0" required />
+                            <span class="input-group-text">km</span>
+                        </div>
+                        <div class="km-ref text-muted mb-3" id="refKmEntrada">—</div>
+
+                        <div id="alertaKmEntrada" class="alert alerta-km py-2 px-3 d-none"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Observaciones de retorno <span class="text-muted fw-normal">(opcional)</span></label>
+                            <input type="text" class="form-control" asp-for="ObservacionesEntrada" placeholder="Ej. Llega sin novedad, con tanque a 1/2" />
+                        </div>
+
+                        <button type="submit" class="btn btn-lg w-100 btn-success text-white" id="btnEntrada">
+                            <i class="fas fa-arrow-right-to-bracket me-2"></i>Registrar entrada
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Tablas en Vivo ══ -->
+        <div class="col-lg-7">
+            <!-- Tabla: Fuera del sitio ahora -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-road me-2 text-primary"></i>Fuera del plantel ahora</h6>
+                    <span class="badge bg-primary" id="badgeFuera">@Model.FueraAhora.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vehículo</th>
+                                    <th>Salió</th>
+                                    <th>Odómetro</th>
+                                    <th>Conductor</th>
+                                    <th>Destino</th>
+                                    <th>Tiempo fuera</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.FueraAhora.Any())
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-warehouse fa-2x mb-2 d-block text-success"></i>
+                                            Toda la flota está en sitio.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var f in Model.FueraAhora)
+                                    {
+                                        <tr class="fila-fuera">
+                                            <td>
+                                                <div class="placa">@f.Vehiculo?.Placa</div>
+                                                <div class="mini">@f.Vehiculo?.NumeroInterno · @f.Vehiculo?.Marca @f.Vehiculo?.Modelo</div>
+                                            </td>
+                                            <td>@f.FechaHoraSalida.ToString("HH:mm")</td>
+                                            <td>@f.OdometroSalida.ToString("N0") km</td>
+                                            <td>@(f.Conductor?.NombreCompleto ?? "Sin conductor")</td>
+                                            <td class="mini">@(f.Destino ?? "—")</td>
+                                            <td><span class="badge bg-light text-dark border">@f.TiempoFuera</span></td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-success" 
+                                                        onclick="seleccionarParaEntrada(@f.IdVehiculo)" title="Cargar entrada de este vehículo">
+                                                    <i class="fas fa-arrow-right-to-bracket me-1"></i>Entrada
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista: Últimos movimientos de hoy -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-list-ul me-2" style="color:#6610f2;"></i>Últimos movimientos de hoy</h6>
+                </div>
+                <div class="card-body p-0 lista-mov">
+                    @if (!Model.MovimientosHoy.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-clock fa-2x mb-2 d-block opacity-50"></i>
+                            Aún no hay movimientos registrados hoy.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var m in Model.MovimientosHoy)
+                        {
+                            var esSalida = m.Tipo == "SALIDA";
+                            <div class="item d-flex align-items-center gap-3 @(esSalida ? "fila-fuera" : "fila-dentro")">
+                                <span class="mini fw-semibold" style="width:3rem;">@m.Hora</span>
+                                <span class="badge badge-mov @(esSalida ? "bg-primary" : "bg-success")" style="width:5.2rem;">@m.Tipo</span>
+                                <span class="placa" style="width:6rem;">@m.Placa</span>
+                                <span class="mini flex-grow-1">@m.Detalle</span>
+                                <span class="fw-semibold">@m.Odometro.ToString("N0") km</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const selVehiculo = document.getElementById('selVehiculo');
+    const panelModo = document.getElementById('panelModo');
+    const formSalida = document.getElementById('formSalida');
+    const formEntrada = document.getElementById('formEntrada');
+
+    const inKmSalida = document.getElementById('inKmSalida');
+    const refKmSalida = document.getElementById('refKmSalida');
+    const alertaKmSalida = document.getElementById('alertaKmSalida');
+    const hiddenIdVehiculoSalida = document.getElementById('hiddenIdVehiculoSalida');
+
+    const inKmEntrada = document.getElementById('inKmEntrada');
+    const refKmEntrada = document.getElementById('refKmEntrada');
+    const alertaKmEntrada = document.getElementById('alertaKmEntrada');
+    const hiddenIdControlSalidaEntrada = document.getElementById('hiddenIdControlSalidaEntrada');
+
+    let vehiculoActual = null;
+
+    function formatoNum(n) {
+        return Number(n).toLocaleString('es-HN');
+    }
+
+    function seleccionarParaEntrada(idVehiculo) {
+        selVehiculo.value = idVehiculo;
+        actualizarModo();
+        inKmEntrada.focus();
+    }
+
+    function actualizarModo() {
+        const id = selVehiculo.value;
+        if (!id) {
+            panelModo.className = 'modo modo-vacio mb-3';
+            panelModo.innerHTML = '<i class="fas fa-hand-pointer ico"></i><div>' +
+                '<div class="tit">Esperando selección</div>' +
+                '<div class="sub">El sistema detectará automáticamente si corresponde registrar salida o entrada.</div></div>';
+            formSalida.classList.add('d-none');
+            formEntrada.classList.add('d-none');
+            vehiculoActual = null;
+            return;
+        }
+
+        const opt = selVehiculo.options[selVehiculo.selectedIndex];
+        vehiculoActual = {
+            id: parseInt(id),
+            estado: opt.dataset.estado,
+            ultimoKm: parseFloat(opt.dataset.ultimoKm || 0),
+            idAbierto: parseInt(opt.dataset.idAbierto || 0),
+            hora: opt.dataset.hora || '',
+            kmSalida: parseFloat(opt.dataset.kmSalida || 0),
+            conductor: opt.dataset.conductor || '',
+            destino: opt.dataset.destino || '',
+            placa: opt.text.split(' ')[0]
+        };
+
+        if (vehiculoActual.estado === 'dentro') {
+            // Modo Salida
+            formEntrada.classList.add('d-none');
+            formSalida.classList.remove('d-none');
+            hiddenIdVehiculoSalida.value = vehiculoActual.id;
+
+            panelModo.className = 'modo modo-salida mb-3';
+            panelModo.innerHTML = '<i class="fas fa-arrow-right-from-bracket ico"></i><div>' +
+                '<div class="tit">SALIDA</div>' +
+                '<div class="sub">' + vehiculoActual.placa + ' está en sitio · Se registra su salida del plantel</div></div>';
+
+            refKmSalida.innerHTML = 'Último odómetro registrado: <strong>' + formatoNum(vehiculoActual.ultimoKm) + ' km</strong>';
+            inKmSalida.value = '';
+            inKmSalida.min = vehiculoActual.ultimoKm;
+            alertaKmSalida.classList.add('d-none');
+            inKmSalida.focus();
+        } else {
+            // Modo Entrada
+            formSalida.classList.add('d-none');
+            formEntrada.classList.remove('d-none');
+            hiddenIdControlSalidaEntrada.value = vehiculoActual.idAbierto;
+
+            panelModo.className = 'modo modo-entrada mb-3';
+            panelModo.innerHTML = '<i class="fas fa-arrow-right-to-bracket ico"></i><div>' +
+                '<div class="tit">ENTRADA</div>' +
+                '<div class="sub">' + vehiculoActual.placa + ' salió a las ' + vehiculoActual.hora + ' · Se cierra el viaje</div></div>';
+
+            document.getElementById('vHora').textContent = vehiculoActual.hora || '—';
+            document.getElementById('vKm').textContent = formatoNum(vehiculoActual.kmSalida) + ' km';
+            document.getElementById('vCond').textContent = vehiculoActual.conductor || 'Sin asignar';
+            document.getElementById('vDest').textContent = vehiculoActual.destino || 'Sin especificar';
+
+            refKmEntrada.innerHTML = 'Salió con <strong>' + formatoNum(vehiculoActual.kmSalida) + ' km</strong> · El recorrido se calcula automáticamente.';
+            inKmEntrada.value = '';
+            inKmEntrada.min = vehiculoActual.kmSalida;
+            alertaKmEntrada.classList.add('d-none');
+            inKmEntrada.focus();
+        }
+    }
+
+    inKmSalida.addEventListener('input', function () {
+        if (!vehiculoActual) return;
+        const val = parseFloat(this.value);
+        if (isNaN(val)) { alertaKmSalida.classList.add('d-none'); return; }
+
+        if (val < vehiculoActual.ultimoKm) {
+            alertaKmSalida.className = 'alert alert-danger alerta-km py-2 px-3';
+            alertaKmSalida.innerHTML = '<i class="fas fa-circle-exclamation me-1"></i>El odómetro no puede ser menor a <strong>' +
+                formatoNum(vehiculoActual.ultimoKm) + ' km</strong> (última lectura).';
+            alertaKmSalida.classList.remove('d-none');
+        } else {
+            const dif = val - vehiculoActual.ultimoKm;
+            alertaKmSalida.className = 'alert alert-success alerta-km py-2 px-3';
+            alertaKmSalida.innerHTML = '<i class="fas fa-circle-check me-1"></i>' +
+                (dif === 0 ? 'Coincide con la última lectura registrada.' : 'Diferencia de <strong>' + formatoNum(dif) + ' km</strong> con la última lectura.');
+            alertaKmSalida.classList.remove('d-none');
+        }
+    });
+
+    inKmEntrada.addEventListener('input', function () {
+        if (!vehiculoActual) return;
+        const val = parseFloat(this.value);
+        if (isNaN(val)) { alertaKmEntrada.classList.add('d-none'); return; }
+
+        if (val < vehiculoActual.kmSalida) {
+            alertaKmEntrada.className = 'alert alert-danger alerta-km py-2 px-3';
+            alertaKmEntrada.innerHTML = '<i class="fas fa-circle-exclamation me-1"></i>El odómetro de entrada no puede ser menor al de salida (<strong>' +
+                formatoNum(vehiculoActual.kmSalida) + ' km</strong>).';
+            alertaKmEntrada.classList.remove('d-none');
+        } else {
+            const dif = val - vehiculoActual.kmSalida;
+            if (dif > 1200) {
+                alertaKmEntrada.className = 'alert alert-warning alerta-km py-2 px-3';
+                alertaKmEntrada.innerHTML = '<i class="fas fa-triangle-exclamation me-1"></i>Recorrido de <strong>' + formatoNum(dif) +
+                    ' km</strong> en un solo viaje. Verifique el número antes de confirmar.';
+            } else {
+                alertaKmEntrada.className = 'alert alert-success alerta-km py-2 px-3';
+                alertaKmEntrada.innerHTML = '<i class="fas fa-circle-check me-1"></i>Recorrido calculado del viaje: <strong>' + formatoNum(dif) + ' km</strong>';
+            }
+            alertaKmEntrada.classList.remove('d-none');
+        }
+    });
+
+    selVehiculo.addEventListener('change', actualizarModo);
+</script>
+}

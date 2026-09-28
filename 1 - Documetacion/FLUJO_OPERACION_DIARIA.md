@@ -7,7 +7,7 @@
 ├── /Catalogos          ← Datos maestros (vehículos, rutas, personas, talleres)
 │   └── /Vehiculos      ← CRUD de vehículos
 ├── /Operacion          ← Registros del día a día
-│   ├── /OdometroDiario ← Kilómetros recorridos por vehículo
+│   ├── /ControlSalidas ← Salidas y entradas en garita (fuente de los KM)
 │   ├── /CargasCombustible ← Cargas de combustible
 │   └── /SalariosDiarios   ← Salarios de conductores y cobradores
 └── /Gastos             ← Gastos periódicos (no diarios)
@@ -25,7 +25,7 @@ Antes de registrar operación diaria, deben existir en el sistema:
 | Catálogo | Tabla BD | Mínimo requerido |
 |----------|----------|------------------|
 | Vehículos | `vehiculos` | Al menos 1 vehículo activo |
-| Rutas | `rutas` | Al menos 1 ruta activa (para odómetro) |
+| Rutas | `rutas` | Opcional (destino sugerido en garita) |
 | Personas | `personas` | Al menos 1 persona activa con cargo CONDUCTOR |
 | Talleres | `talleres` | Al menos 1 taller activo (para mantenimiento) |
 | Categorías de repuesto | `categorias_repuesto` | Al menos 1 categoría activa |
@@ -34,50 +34,25 @@ Todos los selects en formularios filtran por `id_empresa` de la sesión y `activ
 
 ---
 
-## 1. Odómetro Diario
+## 1. Control de Salidas y Entradas (kilómetros)
 
-**URL:** `/Flota/Operacion/OdometroDiario`  
-**Tabla BD:** `odometro_diario`  
-**Propósito:** Registrar los kilómetros recorridos por cada vehículo en el día.
+**URL:** `/Flota/Operacion/ControlSalidas`  
+**Tabla BD:** `control_salidas`  
+**Propósito:** Registrar cada cruce del portón con su odómetro. Los km de cada viaje
+(`km_recorridos = odometro_entrada - odometro_salida`) son el denominador del KPI.
+Detalle de la pantalla en `Vistas/Flota_ControlSalidas.md`.
 
-### Flujo de registro
+### Odómetro Diario (retirado 2026-09-27)
 
-```
-Operador accede a /Flota/Operacion/OdometroDiario/Create
-        │
-   Fecha se pre-llena con hoy
-        │
-   Selecciona: Vehículo (obligatorio)
-   Ingresa:    KM inicial, KM final
-   Selecciona: Ruta (opcional), Conductor (opcional)
-   Ingresa:    Observaciones (opcional)
-        │
-        ▼
-   Validación: KM final >= KM inicial
-        │
-        ▼
-   Sistema calcula KM recorridos = KM final - KM inicial (columna computada en BD)
-   Registra: id_empresa (de sesión), creado_por (username de sesión), fecha_creacion (UTC)
-        │
-        ▼
-   Guarda en `odometro_diario` → redirige al listado con mensaje de confirmación
-```
+La captura manual en `/Flota/Operacion/OdometroDiario` se eliminó: los km salen ahora de
+la garita. La tabla `odometro_diario` **se conserva como histórico** (8.066 filas al
+2026-09-27, incluidas las de 2019–2021 de Transgar) y se sigue usando en dos lugares:
 
-### Campos del formulario
-
-| Campo | Obligatorio | Validación |
-|-------|-------------|------------|
-| Vehículo | Sí | Lista de vehículos activos de la empresa |
-| Fecha | Sí | Pre-llenada con hoy |
-| KM inicial | Sí | Número >= 0 |
-| KM final | Sí | Número >= 0; debe ser >= KM inicial |
-| Ruta | No | Lista de rutas activas |
-| Conductor | No | Lista de personas con cargo CONDUCTOR |
-| Observaciones | No | Texto libre, max 500 caracteres |
-
-### Campo calculado en BD
-
-`km_recorridos = km_final - km_inicial` (columna computada, no se ingresa manualmente).
+- **KPI:** para cada vehículo y día, si hay viajes cerrados en garita se usan esos km; si no,
+  los de `odometro_diario`. Así los períodos viejos siguen calculando y no se cuenta dos veces
+  el mismo día.
+- **Garita:** la última lectura conocida del vehículo es la mayor entre `control_salidas` y
+  `odometro_diario.km_final`.
 
 ---
 
@@ -283,7 +258,8 @@ L/KM = (Combustible + Repuestos + Salarios + Seguros + Mantenimiento)
 
 | Módulo | Tabla | Contribuye a |
 |--------|-------|-------------|
-| Odómetro Diario | `odometro_diario` | Denominador (KM) |
+| Control de Salidas | `control_salidas` | Denominador (KM): viajes CERRADOS, por día de entrada |
+| Odómetro Diario (histórico) | `odometro_diario` | Denominador (KM) sólo en días sin viajes de garita |
 | Cargas Combustible | `cargas_combustible` | Numerador (costo combustible) |
 | Salarios Diarios | `salarios_diarios` | Numerador (costo personal) |
 | Mantenimiento | `ordenes_mantenimiento` | Numerador (costo taller) |

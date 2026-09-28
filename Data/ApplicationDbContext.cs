@@ -39,6 +39,7 @@ namespace eGestion360Web.Data
         public DbSet<PolizaSeguro> PolizasSeguros { get; set; }
         public DbSet<SalarioDiario> SalariosDiarios { get; set; }
         public DbSet<Taller> Talleres { get; set; }
+        public DbSet<ControlSalida> ControlSalidas { get; set; }
 
         // Catálogos transversales (Fase 0)
         public DbSet<Cliente> Clientes { get; set; }
@@ -221,6 +222,33 @@ namespace eGestion360Web.Data
                 entity.HasOne(o => o.Conductor)
                       .WithMany()
                       .HasForeignKey(o => o.IdConductor)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<ControlSalida>(entity =>
+            {
+                entity.ToTable("control_salidas");
+                entity.HasKey(e => e.IdControlSalida);
+
+                entity.Property(e => e.OdometroSalida).HasPrecision(12, 2);
+                entity.Property(e => e.OdometroEntrada).HasPrecision(12, 2);
+                entity.Property(e => e.KmRecorridos).HasPrecision(12, 2);
+
+                entity.HasOne(e => e.Vehiculo)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdVehiculo)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Conductor)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdConductor)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
+                entity.HasOne(e => e.Ruta)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdRuta)
                       .OnDelete(DeleteBehavior.SetNull)
                       .IsRequired(false);
             });

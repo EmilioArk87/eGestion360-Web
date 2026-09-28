@@ -16,7 +16,7 @@
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="mb-1"><i class="fas fa-calendar-day me-2" style="color:#0d6efd;"></i>Operación Diaria</h2>
-            <p class="text-muted mb-0">Registro diario de kilómetros, combustible y salarios</p>
+            <p class="text-muted mb-0">Salidas y entradas de garita, combustible, salarios y peajes</p>
         </div>
         <a asp-page="/Flota/Index" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>Volver
@@ -25,18 +25,18 @@
 
     <div class="row g-4">
 
-        <!-- Odómetro diario -->
+        <!-- Control de Salidas y Entradas (Garita / Portería) -->
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 menu-card">
+            <div class="card h-100 shadow-sm border-0 menu-card border-start border-4 border-primary">
                 <div class="card-body text-center p-4">
                     <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 4rem; height: 4rem; background-color:#0d6efd;">
-                        <i class="fas fa-tachometer-alt fa-lg"></i>
+                         style="width: 4rem; height: 4rem; background: linear-gradient(135deg, #0d6efd, #0a58ca);">
+                        <i class="fas fa-right-left fa-lg"></i>
                     </div>
-                    <h6 class="fw-bold mb-2">Odómetro Diario</h6>
-                    <p class="text-muted small mb-3">KM inicial y final por vehículo</p>
-                    <a asp-page="/Flota/Operacion/OdometroDiario/Index" class="btn btn-sm w-100 text-white" style="background-color:#0d6efd;">
-                        <i class="fas fa-arrow-right me-1"></i>Registrar
+                    <h6 class="fw-bold mb-2">Control Salidas / Entradas</h6>
+                    <p class="text-muted small mb-3">Captura en garita en tiempo real al cruzar el portón</p>
+                    <a asp-page="/Flota/Operacion/ControlSalidas/Index" class="btn btn-sm w-100 btn-primary">
+                        <i class="fas fa-arrow-right me-1"></i>Acceder a Garita
                     </a>
                 </div>
             </div>
