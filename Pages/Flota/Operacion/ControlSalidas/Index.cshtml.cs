@@ -102,7 +102,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
             decimal ultimoKm = await ObtenerUltimoOdometroVehiculoAsync(vehiculo.IdVehiculo, vehiculo.KmInicial);
             if (OdometroSalida < ultimoKm)
             {
-                TempData["Error"] = $"El odómetro de salida ({OdometroSalida:N0} km) no puede ser menor a la última lectura conocida ({ultimoKm:N0} km).";
+                TempData["Error"] = $"El odómetro de salida ({OdometroSalida:#,##0.#} km) no puede ser menor a la última lectura conocida ({ultimoKm:#,##0.#} km).";
                 return RedirectToPage();
             }
 
@@ -124,7 +124,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
             _db.ControlSalidas.Add(salida);
             await _db.SaveChangesAsync();
 
-            TempData["Exito"] = $"Salida registrada con éxito para {vehiculo.Placa} (Odómetro: {OdometroSalida:N0} km).";
+            TempData["Exito"] = $"Salida registrada con éxito para {vehiculo.Placa} (Odómetro: {OdometroSalida:#,##0.#} km).";
             return RedirectToPage();
         }
 
@@ -145,7 +145,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
 
             if (OdometroEntrada < salida.OdometroSalida)
             {
-                TempData["Error"] = $"El odómetro de entrada ({OdometroEntrada:N0} km) no puede ser menor al de salida ({salida.OdometroSalida:N0} km).";
+                TempData["Error"] = $"El odómetro de entrada ({OdometroEntrada:#,##0.#} km) no puede ser menor al de salida ({salida.OdometroSalida:#,##0.#} km).";
                 return RedirectToPage();
             }
 
@@ -159,7 +159,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
             await _db.SaveChangesAsync();
 
             decimal recorrido = OdometroEntrada - salida.OdometroSalida;
-            TempData["Exito"] = $"Entrada registrada para {salida.Vehiculo?.Placa}. Recorrido del viaje: {recorrido:N0} km.";
+            TempData["Exito"] = $"Entrada registrada para {salida.Vehiculo?.Placa}. Recorrido del viaje: {recorrido:#,##0.#} km.";
             return RedirectToPage();
         }
 
@@ -299,7 +299,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
                     Placa = e.Vehiculo?.Placa ?? "—",
                     NumeroInterno = e.Vehiculo?.NumeroInterno,
                     Odometro = e.OdometroEntrada ?? 0,
-                    Detalle = $"Recorrido {rec:N0} km · salió {e.FechaHoraSalida:HH:mm}",
+                    Detalle = $"Recorrido {rec:#,##0.#} km · salió {e.FechaHoraSalida:HH:mm}",
                     KmRecorridos = rec,
                     TiempoFuera = e.TiempoFuera
                 });

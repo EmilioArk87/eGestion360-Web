@@ -147,12 +147,12 @@
                                         <div>@(r.Conductor?.NombreCompleto ?? "Sin conductor")</div>
                                         <div class="text-muted small">@(r.Destino ?? "—")</div>
                                     </td>
-                                    <td class="text-end">@r.OdometroSalida.ToString("N0") km</td>
+                                    <td class="text-end">@r.OdometroSalida.ToString("#,##0.#") km</td>
                                     <td class="text-end">
-                                        @(r.OdometroEntrada.HasValue ? $"{r.OdometroEntrada.Value:N0} km" : "—")
+                                        @(r.OdometroEntrada.HasValue ? $"{r.OdometroEntrada.Value:#,##0.#} km" : "—")
                                     </td>
                                     <td class="text-end fw-bold">
-                                        @(r.KmRecorridos.HasValue ? $"{r.KmRecorridos.Value:N0} km" : "—")
+                                        @(r.KmRecorridos.HasValue ? $"{r.KmRecorridos.Value:#,##0.#} km" : "—")
                                     </td>
                                     <td>
                                         <span class="badge bg-light text-dark border">@r.TiempoFuera</span>

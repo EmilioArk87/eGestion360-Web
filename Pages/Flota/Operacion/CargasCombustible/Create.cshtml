@@ -83,6 +83,20 @@
                             <span class="input-group-text">km</span>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <label asp-for="Item.Hora" class="form-label fw-semibold"></label>
+                        <input asp-for="Item.Hora" type="time" class="form-control" />
+                    </div>
+                    <div class="col-md-8">
+                        <label asp-for="Item.IdConductor" class="form-label fw-semibold"></label>
+                        <select asp-for="Item.IdConductor" asp-items="ViewBag.Conductores" class="form-select">
+                            <option value="">-- Sin conductor --</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Item.Observaciones" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Item.Observaciones" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
             </div>
             <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">

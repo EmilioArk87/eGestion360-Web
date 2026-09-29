@@ -46,6 +46,9 @@ namespace eGestion360Web.Pages.Flota.Operacion.CargasCombustible
             ViewData["Vehiculos"] = new SelectList(
                 await _db.Vehiculos.Where(v => v.IdEmpresa == id && v.Activo).OrderBy(v => v.Placa).ToListAsync(),
                 "IdVehiculo", "Placa");
+            ViewData["Conductores"] = new SelectList(
+                await _db.Personas.Where(p => p.IdEmpresa == id && p.Activo && p.Cargo == "CONDUCTOR").OrderBy(p => p.Apellidos).ToListAsync(),
+                "IdPersona", "NombreCompleto");
         }
 
         private int GetIdEmpresa()

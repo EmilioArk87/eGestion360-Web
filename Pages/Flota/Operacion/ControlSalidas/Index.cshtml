@@ -290,7 +290,7 @@
                                                 <div class="mini">@f.Vehiculo?.NumeroInterno · @f.Vehiculo?.Marca @f.Vehiculo?.Modelo</div>
                                             </td>
                                             <td>@f.FechaHoraSalida.ToString("HH:mm")</td>
-                                            <td>@f.OdometroSalida.ToString("N0") km</td>
+                                            <td>@f.OdometroSalida.ToString("#,##0.#") km</td>
                                             <td>@(f.Conductor?.NombreCompleto ?? "Sin conductor")</td>
                                             <td class="mini">@(f.Destino ?? "—")</td>
                                             <td><span class="badge bg-light text-dark border">@f.TiempoFuera</span></td>
@@ -332,7 +332,7 @@
                                 <span class="badge badge-mov @(esSalida ? "bg-primary" : "bg-success")" style="width:5.2rem;">@m.Tipo</span>
                                 <span class="placa" style="width:6rem;">@m.Placa</span>
                                 <span class="mini flex-grow-1">@m.Detalle</span>
-                                <span class="fw-semibold">@m.Odometro.ToString("N0") km</span>
+                                <span class="fw-semibold">@m.Odometro.ToString("#,##0.#") km</span>
                             </div>
                         }
                     }
