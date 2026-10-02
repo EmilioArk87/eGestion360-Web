@@ -1,71 +1,84 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using eGestion360Web.Data;
-using eGestion360Web.Models.Flota;
+using Microsoft.Extensions.Options;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Pages.Flota.Catalogos.Personas
 {
-    public class IndexModel : PageModel
+    public class IndexModel : PersonaPaginaBase
     {
-        private readonly ApplicationDbContext _context;
-        public IndexModel(ApplicationDbContext context) => _context = context;
+        private readonly IPersonaConsultaService _consulta;
+        private readonly IPersonaService _personas;
 
-        [BindProperty(SupportsGet = true)] public string? Search       { get; set; }
-        [BindProperty(SupportsGet = true)] public string? FiltroCargo  { get; set; }
+        public IndexModel(
+            IPersonaConsultaService consulta, IPersonaService personas,
+            IOptions<PersonaValidacionOptions> opciones, TimeProvider tiempo)
+            : base(opciones, tiempo)
+        {
+            _consulta = consulta;
+            _personas = personas;
+        }
+
+        [BindProperty(SupportsGet = true)] public string? Search { get; set; }
+        [BindProperty(SupportsGet = true)] public string? FiltroCargo { get; set; }
         [BindProperty(SupportsGet = true)] public string? FiltroEstado { get; set; }
 
-        public List<Persona> Personas { get; set; } = new();
+        /// <summary>"incompleto" o "nombres": ver <see cref="FiltroPerfilPersona"/>.</summary>
+        [BindProperty(SupportsGet = true)] public string? FiltroPerfil { get; set; }
 
-        public async Task<IActionResult> OnGetAsync()
+        public IReadOnlyList<PersonaFila> Personas { get; private set; } = Array.Empty<PersonaFila>();
+        public IReadOnlyList<OpcionCatalogo> Cargos { get; private set; } = Array.Empty<OpcionCatalogo>();
+
+        /// <summary>Personas con el nombre por revisar (sin importar los filtros), para el aviso de arriba.</summary>
+        public int NombresPorRevisar { get; private set; }
+
+        public bool PuedeCrear => AuthHelper.PuedeCrear(HttpContext, "flota");
+        public bool PuedeEditar => AuthHelper.PuedeEditar(HttpContext, "flota");
+
+        public async Task<IActionResult> OnGetAsync(CancellationToken ct)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
+            var bloqueo = Entrar(PermisoPersona.Ver);
+            if (bloqueo != null) return bloqueo;
 
-            var empresaId = AuthHelper.IsAdmin(HttpContext)
-                ? (int?)null
-                : AuthHelper.GetEmpresaId(HttpContext);
-
-            var q = _context.Personas.Where(p => !p.Eliminado).AsQueryable();
-
-            if (empresaId.HasValue)
-                q = q.Where(p => p.IdEmpresa == empresaId.Value);
-
-            if (!string.IsNullOrWhiteSpace(Search))
+            var filtro = new PersonaFiltro
             {
-                var s = Search.Trim().ToLower();
-                q = q.Where(p => p.Nombres.ToLower().Contains(s)
-                               || p.Apellidos.ToLower().Contains(s)
-                               || p.Documento.ToLower().Contains(s));
-            }
+                Texto = Search,
+                Cargo = FiltroCargo,
+                Activo = FiltroEstado switch { "1" => true, "0" => false, _ => null },
+                Perfil = FiltroPerfil switch
+                {
+                    "incompleto" => FiltroPerfilPersona.Incompleto,
+                    "nombres" => FiltroPerfilPersona.NombresPorRevisar,
+                    _ => FiltroPerfilPersona.Todos
+                }
+            };
 
-            if (!string.IsNullOrWhiteSpace(FiltroCargo))
-                q = q.Where(p => p.Cargo == FiltroCargo);
+            Personas = await _consulta.ListarAsync(IdEmpresa, filtro, ct);
+            Cargos = await _consulta.CargosAsync(IdEmpresa, ct);
+            NombresPorRevisar = (await _consulta.ListarAsync(
+                IdEmpresa, new PersonaFiltro { Perfil = FiltroPerfilPersona.NombresPorRevisar }, ct)).Count;
 
-            if (!string.IsNullOrWhiteSpace(FiltroEstado))
-            {
-                bool activo = FiltroEstado == "1";
-                q = q.Where(p => p.Activo == activo);
-            }
-
-            Personas = await q.OrderBy(p => p.Apellidos).ThenBy(p => p.Nombres).ToListAsync();
             return Page();
         }
 
-        public async Task<IActionResult> OnPostToggleAsync(int id, bool activo)
+        public async Task<IActionResult> OnPostToggleAsync(int id, bool activo, CancellationToken ct)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
+            var bloqueo = Entrar(PermisoPersona.Editar);
+            if (bloqueo != null) return bloqueo;
 
-            var persona = await _context.Personas.FindAsync(id);
-            if (persona != null)
+            var resultado = await _personas.CambiarEstadoAsync(new CambiarEstadoPersonaInput
             {
-                persona.Activo           = activo;
-                persona.ModificadoPor    = HttpContext.Session.GetString("Username");
-                persona.FechaModificacion = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
-                TempData["Mensaje"] = $"{persona.NombreCompleto} {(activo ? "activado" : "desactivado")} correctamente.";
-            }
-            return RedirectToPage(new { Search, FiltroCargo, FiltroEstado });
+                IdEmpresa = IdEmpresa, IdPersona = id, Activo = activo, Usuario = Usuario
+            }, ct);
+
+            if (!resultado.Encontrada)
+                TempData["Error"] = "No se encontró a la persona.";
+            else if (!resultado.Ok)
+                TempData["Error"] = "No se pudo cambiar el estado. Intenta de nuevo.";
+            else
+                TempData["Mensaje"] = $"{resultado.NombreCompleto} {(activo ? "activado" : "desactivado")} correctamente.";
+
+            return RedirectToPage(new { Search, FiltroCargo, FiltroEstado, FiltroPerfil });
         }
     }
 }

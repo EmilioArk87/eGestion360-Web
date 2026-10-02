@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Models;
+using eGestion360Web.Models.Auditoria;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Contabilidad;
 using eGestion360Web.Models.Eventos;
 using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Models.Flota;
+using eGestion360Web.Models.Personas;
 
 namespace eGestion360Web.Data
 {
@@ -36,6 +38,18 @@ namespace eGestion360Web.Data
         public DbSet<OrdenMantenimiento> OrdenesMantenimiento { get; set; }
         public DbSet<Peaje> Peajes { get; set; }
         public DbSet<Persona> Personas { get; set; }
+
+        // Persona maestra (scripts 014 a 018): vínculos por empresa, roles, documentos y bitácora
+        public DbSet<PersonaDocumento> PersonaDocumentos { get; set; }
+        public DbSet<PersonaEmpresa> PersonaEmpresas { get; set; }
+        public DbSet<Empleado> Empleados { get; set; }
+        public DbSet<BitacoraCambio> BitacoraCambios { get; set; }
+
+        // Catálogos globales de Honduras (scripts 014 y 015), sin id_empresa
+        public DbSet<CatalogoDepartamento> CatalogoDepartamentos { get; set; }
+        public DbSet<CatalogoMunicipio> CatalogoMunicipios { get; set; }
+        public DbSet<CatalogoTipoDocumento> CatalogoTiposDocumento { get; set; }
+        public DbSet<CatalogoTipoLicencia> CatalogoTiposLicencia { get; set; }
         public DbSet<PolizaSeguro> PolizasSeguros { get; set; }
         public DbSet<SalarioDiario> SalariosDiarios { get; set; }
         public DbSet<Taller> Talleres { get; set; }
@@ -303,6 +317,98 @@ namespace eGestion360Web.Data
             modelBuilder.Entity<Persona>(entity =>
             {
                 entity.Property(p => p.TarifaDiaria).HasPrecision(18, 2);
+
+                // Persona maestra (script 014). Todas las referencias son opcionales.
+                entity.HasOne(p => p.Nacionalidad)
+                      .WithMany()
+                      .HasForeignKey(p => p.PaisNacionalidad)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(p => p.MunicipioNacimiento)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdMunicipioNacimiento)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(p => p.MunicipioResidencia)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdMunicipioResidencia)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(p => p.TipoLicencia)
+                      .WithMany()
+                      .HasForeignKey(p => p.LicenciaTipo)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(p => p.PersonaPrincipal)
+                      .WithMany()
+                      .HasForeignKey(p => p.IdPersonaPrincipal)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<PersonaDocumento>(entity =>
+            {
+                entity.HasOne(d => d.Persona)
+                      .WithMany(p => p.Documentos)
+                      .HasForeignKey(d => d.IdPersona)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Tipo)
+                      .WithMany()
+                      .HasForeignKey(d => d.TipoDocumento)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PersonaEmpresa>(entity =>
+            {
+                entity.HasOne(v => v.Empresa)
+                      .WithMany()
+                      .HasForeignKey(v => v.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(v => v.Persona)
+                      .WithMany(p => p.Vinculos)
+                      .HasForeignKey(v => v.IdPersona)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Empleado>(entity =>
+            {
+                entity.Property(e => e.TarifaDiaria).HasPrecision(18, 2);
+
+                // La BD tiene una clave foránea compuesta (id_persona_empresa, id_empresa, tipo_vinculo)
+                // que garantiza la misma empresa y el tipo 'empleado'. A EF le basta la parte simple.
+                entity.HasOne(e => e.Vinculo)
+                      .WithOne(v => v.Empleado)
+                      .HasForeignKey<Empleado>(e => e.IdPersonaEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // El cliente natural se enlaza con su vínculo de tipo 'cliente' (script 014).
+            modelBuilder.Entity<Cliente>()
+                .HasOne(c => c.Vinculo)
+                .WithMany()
+                .HasForeignKey(c => c.IdPersonaEmpresa)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            modelBuilder.Entity<BitacoraCambio>(entity =>
+            {
+                // La tabla tiene un disparador INSTEAD OF UPDATE, DELETE. Declararlo hace que EF recupere
+                // el id generado sin la cláusula OUTPUT directa, que SQL Server no admite con disparadores.
+                entity.ToTable(t => t.HasTrigger("TR_bitacora_cambios_inmutable"));
+            });
+
+            modelBuilder.Entity<CatalogoMunicipio>(entity =>
+            {
+                entity.HasOne(m => m.Departamento)
+                      .WithMany(d => d.Municipios)
+                      .HasForeignKey(m => m.IdDepartamento)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<PolizaSeguro>(entity =>
@@ -561,202 +667,7 @@ namespace eGestion360Web.Data
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
             });
 
-            // Seed Paises
-            modelBuilder.Entity<Pais>().HasData(
-                new Pais { CodigoIso = "AF", Nombre = "Afganistán" },
-                new Pais { CodigoIso = "AL", Nombre = "Albania" },
-                new Pais { CodigoIso = "DE", Nombre = "Alemania" },
-                new Pais { CodigoIso = "AD", Nombre = "Andorra" },
-                new Pais { CodigoIso = "AO", Nombre = "Angola" },
-                new Pais { CodigoIso = "AG", Nombre = "Antigua y Barbuda" },
-                new Pais { CodigoIso = "SA", Nombre = "Arabia Saudita" },
-                new Pais { CodigoIso = "DZ", Nombre = "Argelia" },
-                new Pais { CodigoIso = "AR", Nombre = "Argentina" },
-                new Pais { CodigoIso = "AM", Nombre = "Armenia" },
-                new Pais { CodigoIso = "AU", Nombre = "Australia" },
-                new Pais { CodigoIso = "AT", Nombre = "Austria" },
-                new Pais { CodigoIso = "AZ", Nombre = "Azerbaiyán" },
-                new Pais { CodigoIso = "BS", Nombre = "Bahamas" },
-                new Pais { CodigoIso = "BH", Nombre = "Baréin" },
-                new Pais { CodigoIso = "BD", Nombre = "Bangladés" },
-                new Pais { CodigoIso = "BB", Nombre = "Barbados" },
-                new Pais { CodigoIso = "BE", Nombre = "Bélgica" },
-                new Pais { CodigoIso = "BZ", Nombre = "Belice" },
-                new Pais { CodigoIso = "BJ", Nombre = "Benín" },
-                new Pais { CodigoIso = "BY", Nombre = "Bielorrusia" },
-                new Pais { CodigoIso = "BO", Nombre = "Bolivia" },
-                new Pais { CodigoIso = "BA", Nombre = "Bosnia y Herzegovina" },
-                new Pais { CodigoIso = "BW", Nombre = "Botsuana" },
-                new Pais { CodigoIso = "BR", Nombre = "Brasil" },
-                new Pais { CodigoIso = "BN", Nombre = "Brunéi" },
-                new Pais { CodigoIso = "BG", Nombre = "Bulgaria" },
-                new Pais { CodigoIso = "BF", Nombre = "Burkina Faso" },
-                new Pais { CodigoIso = "BI", Nombre = "Burundi" },
-                new Pais { CodigoIso = "BT", Nombre = "Bután" },
-                new Pais { CodigoIso = "CV", Nombre = "Cabo Verde" },
-                new Pais { CodigoIso = "KH", Nombre = "Camboya" },
-                new Pais { CodigoIso = "CM", Nombre = "Camerún" },
-                new Pais { CodigoIso = "CA", Nombre = "Canadá" },
-                new Pais { CodigoIso = "QA", Nombre = "Catar" },
-                new Pais { CodigoIso = "TD", Nombre = "Chad" },
-                new Pais { CodigoIso = "CL", Nombre = "Chile" },
-                new Pais { CodigoIso = "CN", Nombre = "China" },
-                new Pais { CodigoIso = "CY", Nombre = "Chipre" },
-                new Pais { CodigoIso = "CO", Nombre = "Colombia" },
-                new Pais { CodigoIso = "KM", Nombre = "Comoras" },
-                new Pais { CodigoIso = "CG", Nombre = "Congo" },
-                new Pais { CodigoIso = "CD", Nombre = "Congo (RDC)" },
-                new Pais { CodigoIso = "KP", Nombre = "Corea del Norte" },
-                new Pais { CodigoIso = "KR", Nombre = "Corea del Sur" },
-                new Pais { CodigoIso = "CI", Nombre = "Costa de Marfil" },
-                new Pais { CodigoIso = "CR", Nombre = "Costa Rica" },
-                new Pais { CodigoIso = "HR", Nombre = "Croacia" },
-                new Pais { CodigoIso = "CU", Nombre = "Cuba" },
-                new Pais { CodigoIso = "DK", Nombre = "Dinamarca" },
-                new Pais { CodigoIso = "DJ", Nombre = "Yibuti" },
-                new Pais { CodigoIso = "DM", Nombre = "Dominica" },
-                new Pais { CodigoIso = "EC", Nombre = "Ecuador" },
-                new Pais { CodigoIso = "EG", Nombre = "Egipto" },
-                new Pais { CodigoIso = "SV", Nombre = "El Salvador" },
-                new Pais { CodigoIso = "AE", Nombre = "Emiratos Árabes Unidos" },
-                new Pais { CodigoIso = "ER", Nombre = "Eritrea" },
-                new Pais { CodigoIso = "SK", Nombre = "Eslovaquia" },
-                new Pais { CodigoIso = "SI", Nombre = "Eslovenia" },
-                new Pais { CodigoIso = "ES", Nombre = "España" },
-                new Pais { CodigoIso = "US", Nombre = "Estados Unidos" },
-                new Pais { CodigoIso = "EE", Nombre = "Estonia" },
-                new Pais { CodigoIso = "ET", Nombre = "Etiopía" },
-                new Pais { CodigoIso = "PH", Nombre = "Filipinas" },
-                new Pais { CodigoIso = "FI", Nombre = "Finlandia" },
-                new Pais { CodigoIso = "FJ", Nombre = "Fiyi" },
-                new Pais { CodigoIso = "FR", Nombre = "Francia" },
-                new Pais { CodigoIso = "GA", Nombre = "Gabón" },
-                new Pais { CodigoIso = "GM", Nombre = "Gambia" },
-                new Pais { CodigoIso = "GE", Nombre = "Georgia" },
-                new Pais { CodigoIso = "GH", Nombre = "Ghana" },
-                new Pais { CodigoIso = "GD", Nombre = "Granada" },
-                new Pais { CodigoIso = "GR", Nombre = "Grecia" },
-                new Pais { CodigoIso = "GT", Nombre = "Guatemala" },
-                new Pais { CodigoIso = "GN", Nombre = "Guinea" },
-                new Pais { CodigoIso = "GQ", Nombre = "Guinea Ecuatorial" },
-                new Pais { CodigoIso = "GW", Nombre = "Guinea-Bisáu" },
-                new Pais { CodigoIso = "GY", Nombre = "Guyana" },
-                new Pais { CodigoIso = "HT", Nombre = "Haití" },
-                new Pais { CodigoIso = "HN", Nombre = "Honduras" },
-                new Pais { CodigoIso = "HU", Nombre = "Hungría" },
-                new Pais { CodigoIso = "IN", Nombre = "India" },
-                new Pais { CodigoIso = "ID", Nombre = "Indonesia" },
-                new Pais { CodigoIso = "IQ", Nombre = "Irak" },
-                new Pais { CodigoIso = "IR", Nombre = "Irán" },
-                new Pais { CodigoIso = "IE", Nombre = "Irlanda" },
-                new Pais { CodigoIso = "IS", Nombre = "Islandia" },
-                new Pais { CodigoIso = "MH", Nombre = "Islas Marshall" },
-                new Pais { CodigoIso = "SB", Nombre = "Islas Salomón" },
-                new Pais { CodigoIso = "IL", Nombre = "Israel" },
-                new Pais { CodigoIso = "IT", Nombre = "Italia" },
-                new Pais { CodigoIso = "JM", Nombre = "Jamaica" },
-                new Pais { CodigoIso = "JP", Nombre = "Japón" },
-                new Pais { CodigoIso = "JO", Nombre = "Jordania" },
-                new Pais { CodigoIso = "KZ", Nombre = "Kazajistán" },
-                new Pais { CodigoIso = "KE", Nombre = "Kenia" },
-                new Pais { CodigoIso = "KG", Nombre = "Kirguistán" },
-                new Pais { CodigoIso = "KI", Nombre = "Kiribati" },
-                new Pais { CodigoIso = "KW", Nombre = "Kuwait" },
-                new Pais { CodigoIso = "LA", Nombre = "Laos" },
-                new Pais { CodigoIso = "LS", Nombre = "Lesoto" },
-                new Pais { CodigoIso = "LV", Nombre = "Letonia" },
-                new Pais { CodigoIso = "LB", Nombre = "Líbano" },
-                new Pais { CodigoIso = "LR", Nombre = "Liberia" },
-                new Pais { CodigoIso = "LY", Nombre = "Libia" },
-                new Pais { CodigoIso = "LI", Nombre = "Liechtenstein" },
-                new Pais { CodigoIso = "LT", Nombre = "Lituania" },
-                new Pais { CodigoIso = "LU", Nombre = "Luxemburgo" },
-                new Pais { CodigoIso = "MK", Nombre = "Macedonia del Norte" },
-                new Pais { CodigoIso = "MG", Nombre = "Madagascar" },
-                new Pais { CodigoIso = "MY", Nombre = "Malasia" },
-                new Pais { CodigoIso = "MW", Nombre = "Malaui" },
-                new Pais { CodigoIso = "MV", Nombre = "Maldivas" },
-                new Pais { CodigoIso = "ML", Nombre = "Malí" },
-                new Pais { CodigoIso = "MT", Nombre = "Malta" },
-                new Pais { CodigoIso = "MA", Nombre = "Marruecos" },
-                new Pais { CodigoIso = "MU", Nombre = "Mauricio" },
-                new Pais { CodigoIso = "MR", Nombre = "Mauritania" },
-                new Pais { CodigoIso = "MX", Nombre = "México" },
-                new Pais { CodigoIso = "FM", Nombre = "Micronesia" },
-                new Pais { CodigoIso = "MD", Nombre = "Moldavia" },
-                new Pais { CodigoIso = "MC", Nombre = "Mónaco" },
-                new Pais { CodigoIso = "MN", Nombre = "Mongolia" },
-                new Pais { CodigoIso = "ME", Nombre = "Montenegro" },
-                new Pais { CodigoIso = "MZ", Nombre = "Mozambique" },
-                new Pais { CodigoIso = "MM", Nombre = "Myanmar" },
-                new Pais { CodigoIso = "NA", Nombre = "Namibia" },
-                new Pais { CodigoIso = "NR", Nombre = "Nauru" },
-                new Pais { CodigoIso = "NP", Nombre = "Nepal" },
-                new Pais { CodigoIso = "NI", Nombre = "Nicaragua" },
-                new Pais { CodigoIso = "NE", Nombre = "Níger" },
-                new Pais { CodigoIso = "NG", Nombre = "Nigeria" },
-                new Pais { CodigoIso = "NO", Nombre = "Noruega" },
-                new Pais { CodigoIso = "NZ", Nombre = "Nueva Zelanda" },
-                new Pais { CodigoIso = "OM", Nombre = "Omán" },
-                new Pais { CodigoIso = "PK", Nombre = "Pakistán" },
-                new Pais { CodigoIso = "PW", Nombre = "Palaos" },
-                new Pais { CodigoIso = "PA", Nombre = "Panamá" },
-                new Pais { CodigoIso = "PG", Nombre = "Papúa Nueva Guinea" },
-                new Pais { CodigoIso = "PY", Nombre = "Paraguay" },
-                new Pais { CodigoIso = "NL", Nombre = "Países Bajos" },
-                new Pais { CodigoIso = "PE", Nombre = "Perú" },
-                new Pais { CodigoIso = "PL", Nombre = "Polonia" },
-                new Pais { CodigoIso = "PT", Nombre = "Portugal" },
-                new Pais { CodigoIso = "GB", Nombre = "Reino Unido" },
-                new Pais { CodigoIso = "CF", Nombre = "República Centroafricana" },
-                new Pais { CodigoIso = "CZ", Nombre = "República Checa" },
-                new Pais { CodigoIso = "DO", Nombre = "República Dominicana" },
-                new Pais { CodigoIso = "RW", Nombre = "Ruanda" },
-                new Pais { CodigoIso = "RO", Nombre = "Rumanía" },
-                new Pais { CodigoIso = "RU", Nombre = "Rusia" },
-                new Pais { CodigoIso = "WS", Nombre = "Samoa" },
-                new Pais { CodigoIso = "KN", Nombre = "San Cristóbal y Nieves" },
-                new Pais { CodigoIso = "SM", Nombre = "San Marino" },
-                new Pais { CodigoIso = "VC", Nombre = "San Vicente y las Granadinas" },
-                new Pais { CodigoIso = "LC", Nombre = "Santa Lucía" },
-                new Pais { CodigoIso = "ST", Nombre = "Santo Tomé y Príncipe" },
-                new Pais { CodigoIso = "SN", Nombre = "Senegal" },
-                new Pais { CodigoIso = "RS", Nombre = "Serbia" },
-                new Pais { CodigoIso = "SC", Nombre = "Seychelles" },
-                new Pais { CodigoIso = "SL", Nombre = "Sierra Leona" },
-                new Pais { CodigoIso = "SG", Nombre = "Singapur" },
-                new Pais { CodigoIso = "SY", Nombre = "Siria" },
-                new Pais { CodigoIso = "SO", Nombre = "Somalia" },
-                new Pais { CodigoIso = "LK", Nombre = "Sri Lanka" },
-                new Pais { CodigoIso = "SZ", Nombre = "Suazilandia" },
-                new Pais { CodigoIso = "ZA", Nombre = "Sudáfrica" },
-                new Pais { CodigoIso = "SS", Nombre = "Sudán del Sur" },
-                new Pais { CodigoIso = "SD", Nombre = "Sudán" },
-                new Pais { CodigoIso = "SE", Nombre = "Suecia" },
-                new Pais { CodigoIso = "CH", Nombre = "Suiza" },
-                new Pais { CodigoIso = "SR", Nombre = "Surinam" },
-                new Pais { CodigoIso = "TH", Nombre = "Tailandia" },
-                new Pais { CodigoIso = "TZ", Nombre = "Tanzania" },
-                new Pais { CodigoIso = "TJ", Nombre = "Tayikistán" },
-                new Pais { CodigoIso = "TL", Nombre = "Timor Oriental" },
-                new Pais { CodigoIso = "TG", Nombre = "Togo" },
-                new Pais { CodigoIso = "TO", Nombre = "Tonga" },
-                new Pais { CodigoIso = "TT", Nombre = "Trinidad y Tobago" },
-                new Pais { CodigoIso = "TN", Nombre = "Túnez" },
-                new Pais { CodigoIso = "TM", Nombre = "Turkmenistán" },
-                new Pais { CodigoIso = "TR", Nombre = "Turquía" },
-                new Pais { CodigoIso = "TV", Nombre = "Tuvalu" },
-                new Pais { CodigoIso = "UA", Nombre = "Ucrania" },
-                new Pais { CodigoIso = "UG", Nombre = "Uganda" },
-                new Pais { CodigoIso = "UY", Nombre = "Uruguay" },
-                new Pais { CodigoIso = "UZ", Nombre = "Uzbekistán" },
-                new Pais { CodigoIso = "VU", Nombre = "Vanuatu" },
-                new Pais { CodigoIso = "VE", Nombre = "Venezuela" },
-                new Pais { CodigoIso = "VN", Nombre = "Vietnam" },
-                new Pais { CodigoIso = "YE", Nombre = "Yemen" },
-                new Pais { CodigoIso = "ZM", Nombre = "Zambia" },
-                new Pais { CodigoIso = "ZW", Nombre = "Zimbabue" }
-            );
+            // PaÃ­ses: sin semilla aquÃ­. La tabla catalogo_paises (249 filas, ISO 3166-1) la carga el script 016 (decisiÃ³n D12).
 
             // ─────────────────────────────────────────────────────────────────
             // Catálogos transversales (Fase 0) — todos multitenant por id_empresa

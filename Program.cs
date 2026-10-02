@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Eventos;
 using eGestion360Web.Services.Facturacion;
+using eGestion360Web.Services.Personas;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +26,16 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "Ver 1 - Documetacion/CONFIGURACION_SECRETOS.md.");
 }
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+// Bitácora de cambios de la persona maestra: el interceptor escribe en bitacora_cambios, dentro del mismo
+// guardado, el historial por campo de Persona, PersonaDocumento, PersonaEmpresa y Empleado (decisión D9).
+// El usuario y la empresa salen de la sesión.
+builder.Services.AddScoped<IContextoAuditoria, ContextoAuditoriaHttp>();
+builder.Services.AddScoped<AuditoriaCambiosInterceptor>();
+builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
+{
+    options.UseSqlServer(connectionString);
+    options.AddInterceptors(sp.GetRequiredService<AuditoriaCambiosInterceptor>());
+});
 
 // Add Password Service
 builder.Services.AddScoped<IPasswordService, PasswordService>();
@@ -72,6 +82,14 @@ builder.Services.AddHostedService<OutboxDispatcherBackgroundService>();
 builder.Services.AddScoped<IFacturacionService, FacturacionService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<INotaService, NotaService>();
+
+// ── Personas (persona maestra: scripts 014 a 018) ──────────────────────────
+// Reglas de validación parametrizables en la sección "Personas:Validacion" (si no existe, valen los defaults).
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.Configure<PersonaValidacionOptions>(builder.Configuration.GetSection("Personas:Validacion"));
+builder.Services.AddScoped<IPersonaValidacionService, PersonaValidacionService>();
+builder.Services.AddScoped<IPersonaService, PersonaService>();
+builder.Services.AddScoped<IPersonaConsultaService, PersonaConsultaService>();
 
 // Add session support
 builder.Services.AddSession(options =>

@@ -4,6 +4,8 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eGestion360Web", "eGestion360Web.csproj", "{BE2B637A-7C80-F865-FE1E-DCBD37E2F08D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eGestion360Web.Tests", "eGestion360Web.Tests\eGestion360Web.Tests.csproj", "{77FC548C-2CB6-4A53-B537-6CB371B97967}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,6 +16,10 @@ Global
 		{BE2B637A-7C80-F865-FE1E-DCBD37E2F08D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE2B637A-7C80-F865-FE1E-DCBD37E2F08D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE2B637A-7C80-F865-FE1E-DCBD37E2F08D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77FC548C-2CB6-4A53-B537-6CB371B97967}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77FC548C-2CB6-4A53-B537-6CB371B97967}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77FC548C-2CB6-4A53-B537-6CB371B97967}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77FC548C-2CB6-4A53-B537-6CB371B97967}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

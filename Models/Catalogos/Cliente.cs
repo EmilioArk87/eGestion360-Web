@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Personas;
 
 namespace eGestion360Web.Models.Catalogos
 {
@@ -34,6 +35,18 @@ namespace eGestion360Web.Models.Catalogos
         [Display(Name = "Tipo")]
         [Column("tipo")]
         public string Tipo { get; set; } = "natural";  // natural | juridica
+
+        /// <summary>
+        /// Vínculo de cliente de la persona natural con la empresa (script 014). Es nulo en los clientes
+        /// jurídicos, que siguen con su razón social. Un vínculo corresponde a un solo cliente.
+        /// </summary>
+        [Column("id_persona_empresa")]
+        public int? IdPersonaEmpresa { get; set; }
+
+        /// <summary>Siempre 'cliente': parte de la clave foránea compuesta hacia persona_empresa.</summary>
+        [StringLength(20)]
+        [Column("tipo_vinculo", TypeName = "varchar(20)")]
+        public string TipoVinculo { get; set; } = TiposVinculo.Cliente;
 
         [StringLength(50)]
         [Display(Name = "Identificador fiscal (RTN)")]
@@ -103,5 +116,6 @@ namespace eGestion360Web.Models.Catalogos
 
         public Empresa Empresa { get; set; } = null!;
         public CondicionPago? CondicionPagoDefault { get; set; }
+        public PersonaEmpresa? Vinculo { get; set; }
     }
 }

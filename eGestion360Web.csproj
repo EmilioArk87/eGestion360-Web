@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- El proyecto de pruebas vive dentro de esta carpeta: no debe compilarse ni publicarse con el sitio. -->
+    <Compile Remove="eGestion360Web.Tests\**" />
+    <Content Remove="eGestion360Web.Tests\**" />
+    <EmbeddedResource Remove="eGestion360Web.Tests\**" />
+    <None Remove="eGestion360Web.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
     <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="MailKit" Version="4.16.0" />

@@ -1,0 +1,306 @@
+@using eGestion360Web.Services.Personas
+@model eGestion360Web.Pages.Flota.Catalogos.Personas.PersonaFormularioVista
+@{
+    var cat = Model.Catalogos;
+    var datos = Model.Datos;
+    var esConductor = string.Equals(datos.Empleado?.Cargo, Model.CodigoConductor, StringComparison.OrdinalIgnoreCase)
+                      || !string.IsNullOrWhiteSpace(datos.LicenciaNumero);
+
+    SelectList Lista(IEnumerable<OpcionCatalogo> opciones) => new(opciones, nameof(OpcionCatalogo.Valor), nameof(OpcionCatalogo.Texto));
+
+    var departamentos = new SelectList(cat.Departamentos, nameof(OpcionDepartamento.Id), nameof(OpcionDepartamento.Nombre));
+    var municipiosNacimiento = Model.IdDepartamentoNacimiento is { } dn
+        ? cat.Municipios.Where(m => m.IdDepartamento == dn) : Enumerable.Empty<OpcionMunicipio>();
+    var municipiosResidencia = Model.IdDepartamentoResidencia is { } dr
+        ? cat.Municipios.Where(m => m.IdDepartamento == dr) : Enumerable.Empty<OpcionMunicipio>();
+}
+
+<script type="application/json" id="persona-config">
+    @Json.Serialize(new
+    {
+        edadMinima = Model.EdadMinima,
+        edadMinimaConductor = Model.EdadMinimaConductor,
+        codigoConductor = Model.CodigoConductor,
+        hoy = Model.Hoy.ToString("yyyy-MM-dd"),
+        esEdicion = Model.EsEdicion
+    })
+</script>
+<script type="application/json" id="persona-municipios">
+    @Json.Serialize(cat.Municipios.Select(m => new { id = m.Id, d = m.IdDepartamento, n = m.Nombre }))
+</script>
+
+@if (!string.IsNullOrWhiteSpace(Model.NombresPorSeparar))
+{
+    <div class="alert alert-warning small">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Nombre por revisar.</strong> Esta persona viene de una carga antigua y quedó registrada como
+        «<span class="fw-semibold">@Model.NombresPorSeparar</span>». Escribe abajo cuál es el primer nombre, el segundo
+        nombre, el primer apellido y el segundo apellido.
+    </div>
+}
+
+<!-- 1. Identificación -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold py-3">
+        <i class="fas fa-id-card me-2 text-primary"></i>Identificación
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Datos.TipoDocumento" class="form-label fw-semibold">Tipo de documento</label>
+                <select asp-for="Datos.TipoDocumento" asp-items="Lista(cat.TiposDocumento)" class="form-select">
+                    <option value="">— Sin documento todavía —</option>
+                </select>
+                <span asp-validation-for="Datos.TipoDocumento" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.Documento" class="form-label fw-semibold">Número de documento</label>
+                <input asp-for="Datos.Documento" class="form-control" autocomplete="off" maxlength="30"
+                       placeholder="0000-0000-00000" data-mascara="documento" />
+                <span asp-validation-for="Datos.Documento" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.PaisEmisor" class="form-label fw-semibold">País emisor</label>
+                <select asp-for="Datos.PaisEmisor" asp-items="Lista(cat.Paises)" class="form-select"></select>
+                <span asp-validation-for="Datos.PaisEmisor" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="Datos.PrimerNombre" class="form-label fw-semibold">Primer nombre <span class="text-danger">*</span></label>
+                <input asp-for="Datos.PrimerNombre" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+                <span asp-validation-for="Datos.PrimerNombre" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.SegundoNombre" class="form-label fw-semibold">Segundo nombre</label>
+                <input asp-for="Datos.SegundoNombre" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+                <span asp-validation-for="Datos.SegundoNombre" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.PrimerApellido" class="form-label fw-semibold">Primer apellido <span class="text-danger">*</span></label>
+                <input asp-for="Datos.PrimerApellido" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+                <span asp-validation-for="Datos.PrimerApellido" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.SegundoApellido" class="form-label fw-semibold">Segundo apellido</label>
+                <input asp-for="Datos.SegundoApellido" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+                <span asp-validation-for="Datos.SegundoApellido" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Datos personales -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold py-3">
+        <i class="fas fa-user me-2 text-primary"></i>Datos personales
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label asp-for="Datos.Sexo" class="form-label fw-semibold">Sexo</label>
+                <select asp-for="Datos.Sexo" class="form-select">
+                    <option value="">—</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                </select>
+                <span asp-validation-for="Datos.Sexo" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.EstadoCivil" class="form-label fw-semibold">Estado civil</label>
+                <select asp-for="Datos.EstadoCivil" class="form-select">
+                    <option value="">—</option>
+                    <option value="soltero">Soltero(a)</option>
+                    <option value="casado">Casado(a)</option>
+                    <option value="union_libre">Unión libre</option>
+                    <option value="divorciado">Divorciado(a)</option>
+                    <option value="viudo">Viudo(a)</option>
+                </select>
+                <span asp-validation-for="Datos.EstadoCivil" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.FechaNacimiento" class="form-label fw-semibold">Fecha de nacimiento</label>
+                <input asp-for="Datos.FechaNacimiento" class="form-control" type="date" min="1900-01-01" max="@Model.Hoy.ToString("yyyy-MM-dd")" />
+                <div class="form-text" id="edad-calculada"></div>
+                <span asp-validation-for="Datos.FechaNacimiento" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.PaisNacionalidad" class="form-label fw-semibold">Nacionalidad</label>
+                <select asp-for="Datos.PaisNacionalidad" asp-items="Lista(cat.Paises)" class="form-select">
+                    <option value="">—</option>
+                </select>
+                <span asp-validation-for="Datos.PaisNacionalidad" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Ubicación -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold py-3">
+        <i class="fas fa-map-marker-alt me-2 text-primary"></i>Ubicación
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label asp-for="IdDepartamentoNacimiento" class="form-label fw-semibold">Departamento de nacimiento</label>
+                <select asp-for="IdDepartamentoNacimiento" asp-items="departamentos" class="form-select" data-cascada="municipio-nacimiento">
+                    <option value="">—</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.IdMunicipioNacimiento" class="form-label fw-semibold">Municipio de nacimiento</label>
+                <select asp-for="Datos.IdMunicipioNacimiento" asp-items="new SelectList(municipiosNacimiento, nameof(OpcionMunicipio.Id), nameof(OpcionMunicipio.Nombre))"
+                        class="form-select" id="municipio-nacimiento">
+                    <option value="">—</option>
+                </select>
+                <span asp-validation-for="Datos.IdMunicipioNacimiento" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="IdDepartamentoResidencia" class="form-label fw-semibold">Departamento de residencia</label>
+                <select asp-for="IdDepartamentoResidencia" asp-items="departamentos" class="form-select" data-cascada="municipio-residencia">
+                    <option value="">—</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.IdMunicipioResidencia" class="form-label fw-semibold">Municipio de residencia</label>
+                <select asp-for="Datos.IdMunicipioResidencia" asp-items="new SelectList(municipiosResidencia, nameof(OpcionMunicipio.Id), nameof(OpcionMunicipio.Nombre))"
+                        class="form-select" id="municipio-residencia">
+                    <option value="">—</option>
+                </select>
+                <span asp-validation-for="Datos.IdMunicipioResidencia" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Datos.DireccionResidencia" class="form-label fw-semibold">Dirección</label>
+                <input asp-for="Datos.DireccionResidencia" class="form-control" maxlength="300" autocomplete="off"
+                       placeholder="Barrio o colonia, calle, casa" />
+                <span asp-validation-for="Datos.DireccionResidencia" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Contacto -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold py-3">
+        <i class="fas fa-phone me-2 text-primary"></i>Contacto
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Datos.Telefono" class="form-label fw-semibold">Teléfono</label>
+                <input asp-for="Datos.Telefono" class="form-control" autocomplete="off" inputmode="tel" placeholder="9999-9999" data-mascara="telefono" />
+                <span asp-validation-for="Datos.Telefono" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.TelefonoSecundario" class="form-label fw-semibold">Teléfono secundario</label>
+                <input asp-for="Datos.TelefonoSecundario" class="form-control" autocomplete="off" inputmode="tel" placeholder="9999-9999" data-mascara="telefono" />
+                <span asp-validation-for="Datos.TelefonoSecundario" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.Email" class="form-label fw-semibold">Correo electrónico</label>
+                <input asp-for="Datos.Email" class="form-control" type="email" autocomplete="off" maxlength="150" placeholder="nombre@empresa.com" />
+                <span asp-validation-for="Datos.Email" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12"><hr class="my-1" /><div class="small text-muted">Contacto de emergencia: los tres datos o ninguno.</div></div>
+            <div class="col-md-5">
+                <label asp-for="Datos.ContactoEmergenciaNombre" class="form-label fw-semibold">Nombre</label>
+                <input asp-for="Datos.ContactoEmergenciaNombre" class="form-control" autocomplete="off" maxlength="150" data-mascara="nombre" />
+                <span asp-validation-for="Datos.ContactoEmergenciaNombre" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.ContactoEmergenciaTelefono" class="form-label fw-semibold">Teléfono</label>
+                <input asp-for="Datos.ContactoEmergenciaTelefono" class="form-control" autocomplete="off" inputmode="tel" placeholder="9999-9999" data-mascara="telefono" />
+                <span asp-validation-for="Datos.ContactoEmergenciaTelefono" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.ContactoEmergenciaParentesco" class="form-label fw-semibold">Parentesco</label>
+                <input asp-for="Datos.ContactoEmergenciaParentesco" class="form-control" autocomplete="off" maxlength="30" placeholder="Madre, esposa..." data-mascara="nombre" />
+                <span asp-validation-for="Datos.ContactoEmergenciaParentesco" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Conductor (solo si el cargo es conductor o ya tiene licencia) -->
+<div class="card border-0 shadow-sm mb-3 @(esConductor ? "" : "d-none")" id="seccion-conductor">
+    <div class="card-header bg-white fw-semibold py-3">
+        <i class="fas fa-id-card-alt me-2 text-primary"></i>Conductor
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label asp-for="Datos.LicenciaTipo" class="form-label fw-semibold">Categoría de licencia</label>
+                <select asp-for="Datos.LicenciaTipo" asp-items="Lista(cat.CategoriasLicencia)" class="form-select">
+                    <option value="">—</option>
+                </select>
+                <span asp-validation-for="Datos.LicenciaTipo" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.LicenciaNumero" class="form-label fw-semibold">Número de licencia</label>
+                <input asp-for="Datos.LicenciaNumero" class="form-control" autocomplete="off" maxlength="30" data-mascara="licencia" />
+                <span asp-validation-for="Datos.LicenciaNumero" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.LicenciaVencimiento" class="form-label fw-semibold">Vencimiento</label>
+                <input asp-for="Datos.LicenciaVencimiento" class="form-control" type="date" />
+                <span asp-validation-for="Datos.LicenciaVencimiento" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Datos.TipoSangre" class="form-label fw-semibold">Tipo de sangre</label>
+                <select asp-for="Datos.TipoSangre" class="form-select">
+                    <option value="">—</option>
+                    @foreach (var tipo in new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" })
+                    {
+                        <option value="@tipo">@tipo</option>
+                    }
+                </select>
+                <span asp-validation-for="Datos.TipoSangre" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 6. Laboral -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold py-3">
+        <i class="fas fa-briefcase me-2 text-primary"></i>Datos laborales
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Datos.Empleado!.Cargo" class="form-label fw-semibold">Cargo <span class="text-danger">*</span></label>
+                <select asp-for="Datos.Empleado!.Cargo" asp-items="Lista(cat.Cargos)" class="form-select">
+                    <option value="">— Elige un cargo —</option>
+                </select>
+                <span asp-validation-for="Datos.Empleado!.Cargo" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.Empleado!.CodigoInterno" class="form-label fw-semibold">Código de empleado</label>
+                <input asp-for="Datos.Empleado!.CodigoInterno" class="form-control" autocomplete="off" maxlength="30" data-mascara="codigo" />
+                <div class="form-text">Es el número de empleado de esta empresa; no reemplaza al documento.</div>
+                <span asp-validation-for="Datos.Empleado!.CodigoInterno" class="text-danger small"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Datos.Empleado!.FechaIngreso" class="form-label fw-semibold">Fecha de ingreso</label>
+                <input asp-for="Datos.Empleado!.FechaIngreso" class="form-control" type="date" />
+                <span asp-validation-for="Datos.Empleado!.FechaIngreso" class="text-danger small"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Datos.Empleado!.FechaBaja" class="form-label fw-semibold">Fecha de baja</label>
+                <input asp-for="Datos.Empleado!.FechaBaja" class="form-control" type="date" />
+                <span asp-validation-for="Datos.Empleado!.FechaBaja" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.Empleado!.TarifaDiaria" class="form-label fw-semibold">Tarifa diaria</label>
+                <input asp-for="Datos.Empleado!.TarifaDiaria" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
+                <span asp-validation-for="Datos.Empleado!.TarifaDiaria" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Datos.Empleado!.MonedaTarifa" class="form-label fw-semibold">Moneda de la tarifa</label>
+                <select asp-for="Datos.Empleado!.MonedaTarifa" asp-items="Lista(cat.Monedas)" class="form-select"></select>
+                <span asp-validation-for="Datos.Empleado!.MonedaTarifa" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+</div>

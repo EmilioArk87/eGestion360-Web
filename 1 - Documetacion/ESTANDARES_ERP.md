@@ -47,10 +47,11 @@ Solución de **un solo proyecto** (`eGestion360Web.csproj`). Las "capas" son car
 | Carpeta | Rol |
 |---|---|
 | `Data/ApplicationDbContext.cs` | Único `DbContext`: `DbSet<>`, `OnModelCreating` (claves, índices únicos, precisión decimal, FKs, `HasData` de seeds). |
-| `Models/` | Entidades EF por dominio: `Catalogos/`, `Facturacion/`, `Flota/`, `Eventos/`. Algunos ViewModels sueltos. |
-| `Services/` | Lógica de negocio/infra: interfaz + implementación, registradas por **DI** en `Program.cs`. Subcarpetas `Eventos/`, `Facturacion/`. |
+| `Models/` | Entidades EF por dominio: `Catalogos/`, `Facturacion/`, `Flota/`, `Eventos/`, `Personas/` (vínculos, roles y documentos de la persona maestra), `Auditoria/` (bitácora de cambios). Algunos ViewModels sueltos. |
+| `Services/` | Lógica de negocio/infra: interfaz + implementación, registradas por **DI** en `Program.cs`. Subcarpetas `Eventos/`, `Facturacion/`, `Personas/`, `Auditoria/` (interceptor de la bitácora de cambios). |
 | `Pages/<Modulo>/` | Razor Pages por módulo (`Admin/`, `Catalogos/`, `Facturacion/`, `Flota/`, `Empresas/`, `Shared/`). |
 | `Migrations/` | Migraciones EF Core (C#). |
+| `eGestion360Web.Tests/` | Pruebas automatizadas xUnit sobre SQLite en memoria (ver `PRUEBAS_AUTOMATIZADAS.md`). Se excluye de la compilación y publicación del sitio. |
 | `wwwroot/` | Estáticos. |
 
 **Patrón de acceso:** `PageModel` inyecta `ApplicationDbContext` y/o `Services`. La lógica de negocio no trivial

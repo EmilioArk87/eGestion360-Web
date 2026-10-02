@@ -1,7 +1,7 @@
 @page
 @model eGestion360Web.Pages.Flota.Catalogos.Personas.CreateModel
 @{
-    ViewData["Title"] = "Nuevo Personal";
+    ViewData["Title"] = "Nuevo personal";
 }
 
 <div class="container">
@@ -20,113 +20,79 @@
             <i class="fas fa-user-plus"></i>
         </div>
         <div>
-            <h2 class="mb-0">Nuevo Registro de Personal</h2>
-            <p class="text-muted mb-0">Completa los datos del conductor, cobrador u otro cargo</p>
+            <h2 class="mb-0">Nuevo registro de personal</h2>
+            <p class="text-muted mb-0">Completa los datos de la persona y su cargo en la empresa</p>
         </div>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <form method="post">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
-
-                <!-- Datos personales -->
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-header bg-white fw-semibold py-3">
-                        <i class="fas fa-user me-2 text-primary"></i>Datos personales
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="Persona.Nombres" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.Nombres" class="form-control" placeholder="Ej: Carlos Alberto" />
-                                <span asp-validation-for="Persona.Nombres" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Persona.Apellidos" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.Apellidos" class="form-control" placeholder="Ej: Martínez López" />
-                                <span asp-validation-for="Persona.Apellidos" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Persona.TipoDocumento" class="form-label fw-semibold"></label>
-                                <select asp-for="Persona.TipoDocumento" class="form-select">
-                                    <option value="DNI">DNI</option>
-                                    <option value="PASAPORTE">Pasaporte</option>
-                                    <option value="RUC">RUC</option>
-                                    <option value="OTRO">Otro</option>
-                                </select>
-                            </div>
-                            <div class="col-md-8">
-                                <label asp-for="Persona.Documento" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.Documento" class="form-control" placeholder="Número de documento" />
-                                <span asp-validation-for="Persona.Documento" class="text-danger small"></span>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Persona.Telefono" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.Telefono" class="form-control" placeholder="Ej: 9901-2345" />
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Persona.Email" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.Email" class="form-control" placeholder="correo@ejemplo.com" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Datos laborales -->
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-header bg-white fw-semibold py-3">
-                        <i class="fas fa-briefcase me-2 text-primary"></i>Datos laborales
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="Persona.Cargo" class="form-label fw-semibold"></label>
-                                <select asp-for="Persona.Cargo" class="form-select">
-                                    @foreach (var c in Model.Cargos)
-                                    {
-                                        <option value="@c.Codigo">@c.Nombre</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="Persona.FechaIngreso" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.FechaIngreso" class="form-control" type="date" />
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Persona.TarifaDiaria" class="form-label fw-semibold"></label>
-                                <input asp-for="Persona.TarifaDiaria" class="form-control" placeholder="0.00" type="number" step="0.01" min="0" />
-                            </div>
-                            <div class="col-md-4">
-                                <label asp-for="Persona.MonedaTarifa" class="form-label fw-semibold"></label>
-                                <select asp-for="Persona.MonedaTarifa" class="form-select">
-                                    <option value="HNL">HNL — Lempira</option>
-                                    <option value="USD">USD — Dólar</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <div class="form-check form-switch mb-2">
-                                    <input asp-for="Persona.Activo" class="form-check-input" />
-                                    <label asp-for="Persona.Activo" class="form-check-label fw-semibold">Activo</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Guardar
-                    </button>
-                    <a asp-page="Index" class="btn btn-outline-secondary">
-                        <i class="fas fa-times me-2"></i>Cancelar
-                    </a>
-                </div>
-            </form>
+    @if (Model.MensajeBloqueo != null)
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-lock me-2"></i>@Model.MensajeBloqueo
         </div>
-    </div>
+        <a asp-page="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <form method="post" id="form-persona" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+
+                    @if (Model.Parecidas.Any())
+                    {
+                        <div class="card border-warning shadow-sm mb-3">
+                            <div class="card-header bg-warning bg-opacity-25 fw-semibold">
+                                <i class="fas fa-users me-2"></i>¿Ya está registrada esta persona?
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">
+                                    En esta empresa hay @(Model.Parecidas.Count == 1 ? "una persona" : $"{Model.Parecidas.Count} personas")
+                                    con el mismo nombre. Revisa si es la misma antes de registrarla otra vez.
+                                </p>
+                                <table class="table table-sm align-middle mb-3">
+                                    <thead class="table-light">
+                                        <tr><th>Nombre</th><th>Nacimiento</th><th>Estado</th><th></th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var p in Model.Parecidas)
+                                        {
+                                            <tr>
+                                                <td>@p.NombreCompleto</td>
+                                                <td>@(p.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                                <td><span class="badge @(p.Activa ? "bg-success" : "bg-secondary")">@(p.Activa ? "Activo" : "Inactivo")</span></td>
+                                                <td class="text-end">
+                                                    <a asp-page="Edit" asp-route-id="@p.IdPersona" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit me-1"></i>Abrir esa ficha
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                <button type="submit" name="ConfirmarQueEsOtraPersona" value="true" class="btn btn-warning">
+                                    <i class="fas fa-user-plus me-2"></i>Es otra persona: registrar de todos modos
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <partial name="_PersonaFormulario" model="Model.Vista" />
+
+                    <div class="d-flex gap-2 mb-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar
+                        </button>
+                        <a asp-page="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/personas-form.js" asp-append-version="true"></script>
 }

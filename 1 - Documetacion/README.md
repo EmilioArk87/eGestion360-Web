@@ -9,6 +9,7 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 | Documento | Descripción |
 |-----------|-------------|
 | [ESTANDARES_ERP.md](ESTANDARES_ERP.md) | Convenciones globales del ERP: stack real, arquitectura por capas, multitenant, nombres de BD, auditoría y control de cambios |
+| [PRUEBAS_AUTOMATIZADAS.md](PRUEBAS_AUTOMATIZADAS.md) | Proyecto de pruebas xUnit: cómo correrlas, qué cubren, la base SQLite de prueba y sus límites |
 
 ## Contabilidad
 
@@ -38,6 +39,14 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 | [HOSTINGER_EMAIL_SETUP.md](HOSTINGER_EMAIL_SETUP.md) | Setup específico para Hostinger.es |
 | [EMAIL_SETUP.md](EMAIL_SETUP.md) | Guía alternativa de configuración SMTP |
 | [VALIDACION_EMAILS_GUIA.md](VALIDACION_EMAILS_GUIA.md) | Validación y prueba de envío de emails |
+
+## Documentación de Vistas
+
+| Documento | Descripción |
+|-----------|-------------|
+| [Vistas/Flota_ControlSalidas.md](Vistas/Flota_ControlSalidas.md) | Control de salidas y entradas en garita: vista en vivo e historial |
+| [Vistas/Flota_Catalogos_Personas.md](Vistas/Flota_Catalogos_Personas.md) | Personal (personas maestras por empresa): listado, nuevo, editar e historial de cambios |
+| [Vistas/_PlantillaVista.md](Vistas/_PlantillaVista.md) | Plantilla para documentar una vista nueva |
 
 ## Base de Datos
 
