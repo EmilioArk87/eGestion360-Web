@@ -57,7 +57,6 @@ Usuario accede a cualquier página protegida
 |-------|------|------------|
 | Usuario | Text | Requerido. Acepta `Username` o `Email` |
 | Contraseña | Password | Requerida |
-| Recordarme | Checkbox | Opcional (visual, sin efecto en sesión actualmente) |
 
 ### Comportamiento de sesión
 

@@ -31,10 +31,6 @@ namespace eGestion360Web.Pages
         [Display(Name = "Contraseña")]
         public string Password { get; set; } = string.Empty;
 
-        [BindProperty]
-        [Display(Name = "Recordarme")]
-        public bool RememberMe { get; set; }
-
         public IActionResult OnGet()
         {
             // Si el usuario ya ha iniciado sesión, redirigir al menú principal
