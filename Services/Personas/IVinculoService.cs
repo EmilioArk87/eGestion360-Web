@@ -30,7 +30,14 @@ namespace eGestion360Web.Services.Personas
         /// fecha y el motivo, y lo marca inactivo. No borra nada: el cliente puede volver con
         /// <see cref="RegistrarClienteNaturalAsync"/>.
         /// </summary>
-        Task<ResultadoTerminarCliente> TerminarClienteAsync(TerminarClienteInput input, CancellationToken ct = default);
+        Task<ResultadoEstadoCliente> TerminarClienteAsync(TerminarClienteInput input, CancellationToken ct = default);
+
+        /// <summary>
+        /// Reactiva a un cliente natural enlazado a una persona que se dio de baja: reabre su vínculo (sin fecha de fin
+        /// ni motivo) y lo marca activo. No cambia sus datos; para eso se registra de nuevo con
+        /// <see cref="RegistrarClienteNaturalAsync"/>.
+        /// </summary>
+        Task<ResultadoEstadoCliente> ReactivarClienteAsync(int idEmpresa, int idCliente, string usuario, CancellationToken ct = default);
 
         /// <summary>
         /// Los vínculos que una persona tiene con ESTA empresa (empleado, cliente...). Vacío si la persona no es de la
@@ -136,7 +143,11 @@ namespace eGestion360Web.Services.Personas
 
     /// <param name="Encontrado">Falso si el cliente no existe, no es de la empresa o no está enlazado a una persona.</param>
     /// <param name="Mensaje">Qué pasó, para la pantalla: el error, o vacío si salió bien.</param>
-    public sealed record ResultadoTerminarCliente(bool Ok, bool Encontrado, string Mensaje);
+    /// <param name="SinCambios">
+    /// Verdadero cuando no había nada que hacer porque el cliente ya estaba en ese estado (ya dado de baja, o ya
+    /// activo). No es un error: quien llama puede seguir. <see cref="Ok"/> es falso en ese caso.
+    /// </param>
+    public sealed record ResultadoEstadoCliente(bool Ok, bool Encontrado, string Mensaje, bool SinCambios = false);
 
     // ── Consultar vínculos ──────────────────────────────────────────────────
 

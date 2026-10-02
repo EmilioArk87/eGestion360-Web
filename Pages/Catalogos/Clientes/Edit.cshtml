@@ -27,7 +27,47 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                 <input type="hidden" asp-for="Cliente.IdCliente" />
                 <input type="hidden" asp-for="Cliente.TokenConcurrencia" />
-                <partial name="_ClienteForm" model="Model.Cliente" />
+
+                @if (Model.Enlazado && Model.Persona != null)
+                {
+                    <div class="border rounded p-3 mb-4 bg-light">
+                        <h6 class="fw-semibold mb-2"><i class="fas fa-id-card me-2"></i>Persona</h6>
+                        <div class="small">
+                            @if (!string.IsNullOrEmpty(Model.Persona.Numero))
+                            {
+                                <span class="badge bg-light text-dark border me-1">@Model.Persona.TipoDocumento</span>
+                                <span class="me-2">@eGestion360Web.Services.Personas.DocumentosIdentidad.Enmascarar(Model.Persona.Numero)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted me-2">Sin documento</span>
+                            }
+                            @if (Model.Persona.EstadoIdentidad == "verificada")
+                            {
+                                <span class="badge bg-success me-2"><i class="fas fa-check-circle me-1"></i>Identidad verificada</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary me-2"><i class="fas fa-hourglass-half me-1"></i>Identidad pendiente</span>
+                            }
+                            @if (Model.Persona.Desde.HasValue)
+                            {
+                                <span class="text-muted">Cliente desde @Model.Persona.Desde.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                            @if (Model.Persona.Hasta.HasValue)
+                            {
+                                <span class="text-muted ms-2">· Dado de baja el @Model.Persona.Hasta.Value.ToString("dd/MM/yyyy")@(string.IsNullOrEmpty(Model.Persona.Motivo) ? "" : $" ({Model.Persona.Motivo})")</span>
+                            }
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Este cliente comparte su ficha de persona con el resto del sistema. Aquí solo se cambian sus datos comerciales.
+                            Desactivarlo da de baja su relación como cliente; activarlo la reabre.
+                        </div>
+                    </div>
+                }
+
+                <partial name="_ClienteForm" model="Model.Cliente"
+                         view-data="@(new ViewDataDictionary(ViewData) { TemplateInfo = { HtmlFieldPrefix = nameof(Model.Cliente) } })" />
                 <hr class="my-4" />
                 <div class="d-flex justify-content-end gap-2">
                     <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>

@@ -23,9 +23,46 @@
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
-            <form method="post">
+            <form method="post" id="form-cliente">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                <partial name="_ClienteForm" model="Model.Cliente" />
+
+                @if (Model.Parecidas.Any())
+                {
+                    <div class="card border-warning shadow-sm mb-4">
+                        <div class="card-header bg-warning bg-opacity-25 fw-semibold">
+                            <i class="fas fa-users me-2"></i>¿Ya está registrada esta persona?
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                En esta empresa hay @(Model.Parecidas.Count == 1 ? "una persona" : $"{Model.Parecidas.Count} personas")
+                                con el mismo nombre. Revisa si es la misma antes de registrarla otra vez: si lo es, usa su mismo documento
+                                y se reutilizará su ficha.
+                            </p>
+                            <table class="table table-sm align-middle mb-3">
+                                <thead class="table-light">
+                                    <tr><th>Nombre</th><th>Nacimiento</th><th>Estado</th></tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Model.Parecidas)
+                                    {
+                                        <tr>
+                                            <td>@p.NombreCompleto</td>
+                                            <td>@(p.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                            <td><span class="badge @(p.Activa ? "bg-success" : "bg-secondary")">@(p.Activa ? "Activo" : "Inactivo")</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <button type="submit" name="ConfirmarQueEsOtraPersona" value="true" class="btn btn-warning">
+                                <i class="fas fa-user-plus me-2"></i>Es otra persona: registrar de todos modos
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <partial name="_ClientePersona" model="Model" />
+                <partial name="_ClienteForm" model="Model.Cliente"
+                         view-data="@(new ViewDataDictionary(ViewData) { TemplateInfo = { HtmlFieldPrefix = nameof(Model.Cliente) } })" />
                 <hr class="my-4" />
                 <div class="d-flex justify-content-end gap-2">
                     <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
@@ -40,4 +77,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/clientes-persona.js" asp-append-version="true"></script>
 }

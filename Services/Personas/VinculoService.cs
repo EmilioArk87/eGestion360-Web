@@ -378,10 +378,10 @@ namespace eGestion360Web.Services.Personas
         //  TERMINAR CLIENTE
         // ──────────────────────────────────────────────────────────────────
 
-        public async Task<ResultadoTerminarCliente> TerminarClienteAsync(TerminarClienteInput input, CancellationToken ct = default)
+        public async Task<ResultadoEstadoCliente> TerminarClienteAsync(TerminarClienteInput input, CancellationToken ct = default)
         {
             ArgumentNullException.ThrowIfNull(input);
-            var noEncontrado = new ResultadoTerminarCliente(false, false, "No se encontró al cliente.");
+            var noEncontrado = new ResultadoEstadoCliente(false, false, "No se encontró al cliente.");
 
             if (input.IdEmpresa <= 0 || input.IdCliente <= 0) return noEncontrado;
 
@@ -394,18 +394,18 @@ namespace eGestion360Web.Services.Personas
 
             var vinculo = cliente.Vinculo;
             if (vinculo.FechaFin != null && !cliente.Activo)
-                return new ResultadoTerminarCliente(false, true, "El cliente ya estaba dado de baja.");
+                return new ResultadoEstadoCliente(false, true, "El cliente ya estaba dado de baja.", SinCambios: true);
 
             var fin = input.FechaFin ?? Hoy();
             if (vinculo.FechaInicio is { } inicio && fin < inicio)
             {
-                return new ResultadoTerminarCliente(false, true,
+                return new ResultadoEstadoCliente(false, true,
                     $"La fecha de fin no puede ser anterior al inicio de la relación ({inicio:dd/MM/yyyy}).");
             }
 
             var motivo = Opcional(input.Motivo);
             if (motivo is { Length: > 200 })
-                return new ResultadoTerminarCliente(false, true, "El motivo no puede pasar de 200 caracteres.");
+                return new ResultadoEstadoCliente(false, true, "El motivo no puede pasar de 200 caracteres.");
 
             var ahora = Ahora();
             vinculo.FechaFin = fin;
@@ -425,16 +425,66 @@ namespace eGestion360Web.Services.Personas
             catch (DbUpdateConcurrencyException)
             {
                 _db.ChangeTracker.Clear();
-                return new ResultadoTerminarCliente(false, true, MensajeConcurrencia);
+                return new ResultadoEstadoCliente(false, true, MensajeConcurrencia);
             }
             catch (DbUpdateException ex)
             {
                 _log.LogError(ex, "No se pudo dar de baja al cliente {IdCliente}", input.IdCliente);
                 _db.ChangeTracker.Clear();
-                return new ResultadoTerminarCliente(false, true, MensajeNoGuardado);
+                return new ResultadoEstadoCliente(false, true, MensajeNoGuardado);
             }
 
-            return new ResultadoTerminarCliente(true, true, string.Empty);
+            return new ResultadoEstadoCliente(true, true, string.Empty);
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        //  REACTIVAR CLIENTE
+        // ──────────────────────────────────────────────────────────────────
+
+        public async Task<ResultadoEstadoCliente> ReactivarClienteAsync(
+            int idEmpresa, int idCliente, string usuario, CancellationToken ct = default)
+        {
+            var noEncontrado = new ResultadoEstadoCliente(false, false, "No se encontró al cliente.");
+            if (idEmpresa <= 0 || idCliente <= 0) return noEncontrado;
+
+            var cliente = await _db.Clientes
+                .Include(c => c.Vinculo)
+                .FirstOrDefaultAsync(c => c.IdCliente == idCliente && c.IdEmpresa == idEmpresa
+                                          && !c.Eliminado && c.IdPersonaEmpresa != null, ct);
+            if (cliente?.Vinculo == null) return noEncontrado;
+
+            var vinculo = cliente.Vinculo;
+            if (cliente.Activo && vinculo.FechaFin == null && vinculo.Activo)
+                return new ResultadoEstadoCliente(false, true, "El cliente ya estaba activo.", SinCambios: true);
+
+            var ahora = Ahora();
+            vinculo.FechaFin = null;
+            vinculo.MotivoFin = null;
+            vinculo.Activo = true;
+            vinculo.ModificadoPor = usuario;
+            vinculo.FechaModificacion = ahora;
+
+            cliente.Activo = true;
+            cliente.ModificadoPor = usuario;
+            cliente.FechaModificacion = ahora;
+
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                _db.ChangeTracker.Clear();
+                return new ResultadoEstadoCliente(false, true, MensajeConcurrencia);
+            }
+            catch (DbUpdateException ex)
+            {
+                _log.LogError(ex, "No se pudo reactivar al cliente {IdCliente}", idCliente);
+                _db.ChangeTracker.Clear();
+                return new ResultadoEstadoCliente(false, true, MensajeNoGuardado);
+            }
+
+            return new ResultadoEstadoCliente(true, true, string.Empty);
         }
 
         // ──────────────────────────────────────────────────────────────────

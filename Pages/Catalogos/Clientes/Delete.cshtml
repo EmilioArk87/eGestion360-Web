@@ -27,6 +27,14 @@
             <i class="fas fa-exclamation-triangle me-2"></i>
             ¿Está seguro que desea eliminar al cliente <strong>@Model.Cliente.RazonSocial</strong>?
             Esta acción marcará el registro como eliminado (soft delete) y no podrá usarse en operaciones nuevas.
+            @if (Model.Enlazado)
+            {
+                <br />
+                <span>
+                    Este cliente comparte su ficha de persona con el resto del sistema: se dará de baja su relación como cliente,
+                    pero la persona y sus otros roles (por ejemplo, empleado) no se tocan.
+                </span>
+            }
         </div>
 
         <div class="card border-0 shadow-sm mb-3">

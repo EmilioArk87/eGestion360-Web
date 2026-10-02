@@ -114,6 +114,11 @@ namespace eGestion360Web.Models.Catalogos
         [Column("token_concurrencia")]
         public byte[] TokenConcurrencia { get; set; } = Array.Empty<byte>();
 
+        /// <summary>
+        /// Navegación, no un dato del formulario. Sin <c>[ValidateNever]</c>, MVC la trata como obligatoria por no ser
+        /// nulable y el alta y la edición de clientes rechazaban siempre el formulario sin decir por qué.
+        /// </summary>
+        [Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidateNever]
         public Empresa Empresa { get; set; } = null!;
         public CondicionPago? CondicionPagoDefault { get; set; }
         public PersonaEmpresa? Vinculo { get; set; }

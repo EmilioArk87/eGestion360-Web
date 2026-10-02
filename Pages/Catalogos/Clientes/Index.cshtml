@@ -36,6 +36,22 @@
         </div>
     }
 
+    @if (TempData["ClientesAvisos"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ClientesAvisos"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (TempData["ClientesError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-times-circle me-2"></i>@TempData["ClientesError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
     <form method="get" class="card border-0 shadow-sm mb-3">
         <div class="card-body">
             <div class="input-group">
@@ -84,6 +100,10 @@
                                     <td><code>@c.Codigo</code></td>
                                     <td>
                                         <strong>@c.RazonSocial</strong>
+                                        @if (c.IdPersonaEmpresa != null)
+                                        {
+                                            <span class="badge bg-light text-dark border ms-1" title="Comparte su ficha de persona con el resto del sistema"><i class="fas fa-id-card me-1"></i>Con ficha</span>
+                                        }
                                         @if (!string.IsNullOrEmpty(c.NombreComercial))
                                         {
                                             <br /><small class="text-muted">@c.NombreComercial</small>

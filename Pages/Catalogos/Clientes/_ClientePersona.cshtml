@@ -1,0 +1,48 @@
+@model eGestion360Web.Pages.Catalogos.Clientes.CreateModel
+
+@* Solo para un cliente natural. Con documento, el cliente se registra con su ficha de persona; sin él, como siempre. *@
+<div id="seccion-persona" class="border rounded p-3 mb-4 bg-light @(Model.Cliente.Tipo == "natural" ? "" : "d-none")">
+    <h6 class="fw-semibold mb-1"><i class="fas fa-id-card me-2"></i>Identificación de la persona <span class="text-muted fw-normal">(opcional)</span></h6>
+    <p class="small text-muted mb-3">
+        Escribe el documento para registrar al cliente con su ficha de persona: si ya existe en el sistema se reutiliza,
+        y la razón social sale de su nombre. Sin documento (un consumidor final) se registra solo con la razón social.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="Persona.TipoDocumento" class="form-label">Tipo de documento</label>
+            <select asp-for="Persona.TipoDocumento" asp-items="ViewBag.TiposDocumento as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-select"></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Persona.Documento" class="form-label">Número de documento</label>
+            <input asp-for="Persona.Documento" class="form-control" autocomplete="off" maxlength="30" placeholder="0000-0000-00000" data-mascara="documento" />
+            <span asp-validation-for="Persona.Documento" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Persona.FechaNacimiento" class="form-label">Fecha de nacimiento <span class="text-muted small">(opcional)</span></label>
+            <input asp-for="Persona.FechaNacimiento" class="form-control" type="date" />
+            <span asp-validation-for="Persona.FechaNacimiento" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Persona.PrimerNombre" class="form-label">Primer nombre <span class="text-danger">*</span></label>
+            <input asp-for="Persona.PrimerNombre" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+            <span asp-validation-for="Persona.PrimerNombre" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Persona.SegundoNombre" class="form-label">Segundo nombre</label>
+            <input asp-for="Persona.SegundoNombre" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+            <span asp-validation-for="Persona.SegundoNombre" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Persona.PrimerApellido" class="form-label">Primer apellido <span class="text-danger">*</span></label>
+            <input asp-for="Persona.PrimerApellido" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+            <span asp-validation-for="Persona.PrimerApellido" class="text-danger small"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Persona.SegundoApellido" class="form-label">Segundo apellido</label>
+            <input asp-for="Persona.SegundoApellido" class="form-control" autocomplete="off" maxlength="50" data-mascara="nombre" />
+            <span asp-validation-for="Persona.SegundoApellido" class="text-danger small"></span>
+        </div>
+    </div>
+</div>

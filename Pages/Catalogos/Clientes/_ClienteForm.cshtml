@@ -1,4 +1,8 @@
 @model eGestion360Web.Models.Catalogos.Cliente
+@{
+    // Un cliente enlazado a una persona toma su razón social del nombre de ella y es siempre natural.
+    var enlazado = ViewData["Enlazado"] as bool? ?? false;
+}
 
 <div class="row g-3">
     <div class="col-md-4">
@@ -8,8 +12,17 @@
     </div>
     <div class="col-md-8">
         <label asp-for="RazonSocial" class="form-label"></label>
-        <input asp-for="RazonSocial" class="form-control" maxlength="200" />
-        <span asp-validation-for="RazonSocial" class="text-danger"></span>
+        @if (enlazado)
+        {
+            <input asp-for="RazonSocial" class="form-control" maxlength="200" readonly />
+            <div class="form-text">Es el nombre de la persona: cambia cuando el nombre de ella cambia.</div>
+        }
+        else
+        {
+            <input asp-for="RazonSocial" class="form-control" maxlength="200" />
+            <div id="ayuda-razon-social" class="form-text d-none">Con documento, la razón social se toma del nombre de la persona.</div>
+            <span asp-validation-for="RazonSocial" class="text-danger"></span>
+        }
     </div>
 
     <div class="col-md-8">
@@ -18,7 +31,7 @@
     </div>
     <div class="col-md-4">
         <label asp-for="Tipo" class="form-label"></label>
-        <select asp-for="Tipo" class="form-select">
+        <select asp-for="Tipo" class="form-select" disabled="@enlazado">
             <option value="natural">Natural</option>
             <option value="juridica">Jurídica</option>
         </select>

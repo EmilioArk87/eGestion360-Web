@@ -526,6 +526,59 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.False(segunda.Ok);
             Assert.True(segunda.Encontrado);
             Assert.Contains("ya estaba dado de baja", segunda.Mensaje);
+            Assert.True(segunda.SinCambios);   // no es un error: quien llama puede seguir
+        }
+
+        [Fact]
+        public async Task Reactiva_a_un_cliente_dado_de_baja_sin_tocar_sus_datos()
+        {
+            var r = await RegistrarOk(Alta(ajustar: i => i.Cliente.Email = "ventas@taller.hn"));
+            using (var db = Contexto())
+            {
+                await Servicio(db).TerminarClienteAsync(new TerminarClienteInput
+                    { IdEmpresa = DatosBase.EmpresaA, IdCliente = r.IdCliente!.Value, Motivo = "Pausa" });
+            }
+
+            ResultadoEstadoCliente reactivado;
+            using (var db = Contexto())
+                reactivado = await Servicio(db).ReactivarClienteAsync(DatosBase.EmpresaA, r.IdCliente!.Value, "ventas.ana");
+
+            Assert.True(reactivado.Ok);
+            Assert.Equal(string.Empty, reactivado.Mensaje);
+
+            using var db2 = _bd.Crear();
+            var vinculo = await db2.PersonaEmpresas.AsNoTracking().SingleAsync();
+            Assert.Null(vinculo.FechaFin);
+            Assert.Null(vinculo.MotivoFin);
+            Assert.True(vinculo.Activo);
+            var cliente = await db2.Clientes.AsNoTracking().SingleAsync();
+            Assert.True(cliente.Activo);
+            Assert.Equal("ventas@taller.hn", cliente.Email);
+            Assert.Equal("C-0001", cliente.Codigo);
+        }
+
+        [Fact]
+        public async Task Reactivar_a_uno_que_ya_esta_activo_no_hace_nada_y_lo_avisa()
+        {
+            var r = await RegistrarOk(Alta());
+
+            using var db = Contexto();
+            var resultado = await Servicio(db).ReactivarClienteAsync(DatosBase.EmpresaA, r.IdCliente!.Value, "ventas.ana");
+
+            Assert.False(resultado.Ok);
+            Assert.True(resultado.Encontrado);
+            Assert.True(resultado.SinCambios);
+            Assert.Contains("ya estaba activo", resultado.Mensaje);
+        }
+
+        [Fact]
+        public async Task No_reactiva_a_un_cliente_de_otra_empresa_ni_a_uno_que_no_existe()
+        {
+            var r = await RegistrarOk(Alta());
+
+            using var db = Contexto();
+            Assert.False((await Servicio(db).ReactivarClienteAsync(DatosBase.EmpresaB, r.IdCliente!.Value, "x")).Encontrado);
+            Assert.False((await Servicio(db).ReactivarClienteAsync(DatosBase.EmpresaA, 9999, "x")).Encontrado);
         }
 
         [Fact]
