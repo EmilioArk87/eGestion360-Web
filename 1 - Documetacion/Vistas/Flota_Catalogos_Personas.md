@@ -62,6 +62,7 @@ Alta, consulta, edición y bitácora de las personas que trabajan en la empresa 
 - Edad mínima 16 años (18 para conductor); licencia obligatoria para el cargo conductor, con aviso cuando vence en 30 días o menos (valores en `PersonaValidacionOptions`).
 - Documentos: DNI con 13 dígitos y estructura validada; el número se guarda normalizado y se muestra enmascarado.
 - Identidad **verificada** = tiene al menos un documento; **pendiente** = solo código de empleado.
+- Esta pantalla es del **personal** (vínculo de empleado). Una persona que solo es cliente de la empresa no aparece en el listado ni se abre en Editar (`404`); si coincide con quien se está registrando, el aviso de parecidas la muestra sin enlace («Aún no es personal de la empresa»). Registrar como empleado a alguien que ya es cliente de la empresa reutiliza su ficha (`IVinculoService` hace lo inverso).
 - Nada se borra: desactivar cambia el estado del vínculo y toda modificación queda en la bitácora (inmutable por trigger).
 - Mientras no se ejecute el script `019`, las columnas antiguas de `personas` se siguen escribiendo (doble escritura) para no romper otros módulos.
 

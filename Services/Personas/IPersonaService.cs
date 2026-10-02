@@ -6,8 +6,9 @@ namespace eGestion360Web.Services.Personas
     /// y guarda todo (persona, documento, vínculo y ficha de empleado) en un solo guardado atómico. Los
     /// cambios quedan en la bitácora por medio del interceptor de auditoría.
     ///
-    /// Alcance de esta versión: el rol de empleado. Los demás roles (cliente, proveedor...) llegan con
-    /// IVinculoService.
+    /// Alcance: el rol de empleado. El de cliente lo registra <see cref="IVinculoService"/>, que reutiliza a la
+    /// misma persona: una persona puede ser empleado y cliente de la misma empresa con una sola ficha, y en cada
+    /// sentido se le agrega el rol que le falta sin crear a nadie dos veces.
     ///
     /// Compatibilidad: mientras existan las columnas legadas de dbo.personas (se retiran en el script
     /// 019), el servicio las mantiene al día (nombres, apellidos, documento, cargo, tarifa, fechas), porque
@@ -99,7 +100,8 @@ namespace eGestion360Web.Services.Personas
     }
 
     /// <summary>Una persona de la empresa con el mismo nombre normalizado (y la misma fecha de nacimiento, si ambas la tienen).</summary>
-    public sealed record PersonaParecida(int IdPersona, string NombreCompleto, DateOnly? FechaNacimiento, bool Activa);
+    /// <param name="EsPersonal">Si tiene ficha de empleado en la empresa: solo entonces la pantalla de personal puede abrirla.</param>
+    public sealed record PersonaParecida(int IdPersona, string NombreCompleto, DateOnly? FechaNacimiento, bool Activa, bool EsPersonal = true);
 
     public sealed record ResultadoCrearPersona(
         EstadoCrearPersona Estado,

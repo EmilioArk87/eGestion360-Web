@@ -24,22 +24,24 @@ namespace eGestion360Web.Models.Flota
 
         // ── LEGADO: pasan al vínculo (persona_empresa), a la ficha de empleado y a persona_documentos ──
 
-        /// <summary>LEGADO: la empresa vive en <see cref="Vinculos"/>. En la BD ya admite NULL.</summary>
+        /// <summary>
+        /// LEGADO: la empresa vive en <see cref="Vinculos"/>. Es nulo en quien nunca fue empleado (por ejemplo
+        /// una persona que solo es cliente): así no aparece en las listas viejas, que filtran por esta columna.
+        /// </summary>
         [Column("id_empresa")]
-        public int IdEmpresa { get; set; }
+        public int? IdEmpresa { get; set; }
 
         /// <summary>LEGADO: el documento de identidad vive en <see cref="Documentos"/>; el número de empleado, en Empleado.CodigoInterno.</summary>
-        [Required(ErrorMessage = "El documento es requerido")]
         [StringLength(30)]
         [Display(Name = "Documento")]
         [Column("documento")]
-        public string Documento { get; set; } = string.Empty;
+        public string? Documento { get; set; } = string.Empty;
 
         /// <summary>LEGADO: ver <see cref="Documentos"/>.</summary>
         [StringLength(20)]
         [Display(Name = "Tipo documento")]
         [Column("tipo_documento")]
-        public string TipoDocumento { get; set; } = "DNI";
+        public string? TipoDocumento { get; set; } = "DNI";
 
         /// <summary>LEGADO (compuesto): se compone con <see cref="PrimerNombre"/> y <see cref="SegundoNombre"/> al guardar.</summary>
         [Required(ErrorMessage = "Los nombres son requeridos")]
@@ -55,12 +57,11 @@ namespace eGestion360Web.Models.Flota
         [Column("apellidos")]
         public string Apellidos { get; set; } = string.Empty;
 
-        /// <summary>LEGADO: el cargo vive en Empleado.Cargo.</summary>
-        [Required(ErrorMessage = "El cargo es requerido")]
+        /// <summary>LEGADO: el cargo vive en Empleado.Cargo. Es nulo en quien nunca fue empleado.</summary>
         [StringLength(30)]
         [Display(Name = "Cargo")]
         [Column("cargo")]
-        public string Cargo { get; set; } = "CONDUCTOR";
+        public string? Cargo { get; set; } = "CONDUCTOR";
 
         /// <summary>LEGADO: vive en Empleado.TarifaDiaria.</summary>
         [Range(0, double.MaxValue)]

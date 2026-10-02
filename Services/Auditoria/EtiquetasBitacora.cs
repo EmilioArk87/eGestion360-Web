@@ -10,7 +10,8 @@ namespace eGestion360Web.Services.Auditoria
             ["personas"] = "Persona",
             ["persona_documentos"] = "Documento",
             ["persona_empresa"] = "Vínculo con la empresa",
-            ["empleados"] = "Ficha de empleado"
+            ["empleados"] = "Ficha de empleado",
+            ["clientes"] = "Ficha de cliente"
         };
 
         private static readonly Dictionary<string, string> Operaciones = new()
@@ -68,7 +69,18 @@ namespace eGestion360Web.Services.Auditoria
             ["pais_emisor"] = "País emisor",
             ["es_principal"] = "Principal",
             ["fecha_vencimiento"] = "Vencimiento",
-            ["fusion"] = "Fusión de fichas"
+            ["fusion"] = "Fusión de fichas",
+            ["codigo"] = "Código de cliente",
+            ["razon_social"] = "Razón social",
+            ["nombre_comercial"] = "Nombre comercial",
+            ["tipo"] = "Tipo de cliente",
+            ["identificador_fiscal"] = "Identificador fiscal (RTN)",
+            ["direccion"] = "Dirección comercial",
+            ["ciudad"] = "Ciudad",
+            ["moneda_iso_default"] = "Moneda",
+            ["id_condicion_pago_default"] = "Condición de pago",
+            ["limite_credito"] = "Límite de crédito",
+            ["id_persona_empresa"] = "Vínculo con la empresa"
         };
 
         public static string Entidad(string entidad) =>

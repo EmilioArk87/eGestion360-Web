@@ -243,6 +243,21 @@ namespace eGestion360Web.Tests.Services.Personas
         }
 
         [Fact]
+        public async Task Un_flujo_que_agrega_otro_rol_puede_apagar_el_error_y_sigue_viendo_que_la_persona_es_de_la_empresa()
+        {
+            using var db = _bd.Crear();
+            var existente = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Gaby", "Mendoza", dni: "0801199088888");
+
+            var i = Alta(DatosBase.EmpresaA); i.Documento = "0801199088888"; i.DocumentoDeLaEmpresaEsDuplicado = false;
+            var r = await Servicio(db).ValidarAsync(i);
+
+            Assert.True(r.Ok, Detalle(r));
+            Assert.NotNull(r.DocumentoExistente);
+            Assert.Equal(existente.IdPersona, r.DocumentoExistente!.IdPersona);
+            Assert.True(r.DocumentoExistente.TieneVinculoEnEstaEmpresa);
+        }
+
+        [Fact]
         public async Task Un_documento_que_solo_existe_en_otra_empresa_no_da_error_ni_aviso_decision_D8()
         {
             using var db = _bd.Crear();

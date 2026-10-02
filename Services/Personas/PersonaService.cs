@@ -16,6 +16,8 @@ namespace eGestion360Web.Services.Personas
 
         private const string MensajeNoGuardado = "No se pudo guardar a la persona. Revisa los datos e intenta de nuevo.";
 
+        private const string MensajeDocumentoDeLaEmpresa = "Ya existe una persona con ese documento en esta empresa.";
+
         private const string MensajeConcurrencia = "Otro usuario modificó a esta persona. Recarga la pantalla y vuelve a intentarlo.";
 
         private static readonly JsonSerializerOptions OpcionesJson = new()
@@ -52,14 +54,31 @@ namespace eGestion360Web.Services.Personas
             datos.Modo = ModoValidacionPersona.Alta;
             datos.IdPersona = null;
 
+            // Este servicio decide qué hacer con un documento que la empresa ya tiene (ver más abajo).
+            datos.DocumentoDeLaEmpresaEsDuplicado = false;
+
             if (datos.Empleado == null)
-                return Rechazada(new ErrorValidacion("Empleado", "Por ahora solo se pueden registrar empleados."));
+                return Rechazada(new ErrorValidacion("Empleado", "Este servicio solo registra empleados; los clientes se registran con IVinculoService."));
 
             var validacion = await _validacion.ValidarAsync(datos, ct);
             if (!validacion.Ok)
                 return Rechazada(validacion.Errores, validacion.Advertencias);
 
             var n = validacion.Datos;
+
+            // El documento ya es de una persona de ESTA empresa con otro rol (por ejemplo, un cliente): no se crea
+            // otra persona, se le agrega el rol de empleado. Si ya es empleado de la empresa, es un duplicado. No hace
+            // falta verificar nada: la empresa ya la tiene y la ve.
+            if (validacion.DocumentoExistente is { TieneVinculoEnEstaEmpresa: true } deLaEmpresa)
+            {
+                var yaEsEmpleado = await _db.PersonaEmpresas.AsNoTracking()
+                    .AnyAsync(v => v.IdPersona == deLaEmpresa.IdPersona && v.IdEmpresa == datos.IdEmpresa
+                                   && v.TipoVinculo == TiposVinculo.Empleado && !v.Eliminado, ct);
+                if (yaEsEmpleado)
+                    return Rechazada(new ErrorValidacion(nameof(PersonaDatosInput.Documento), MensajeDocumentoDeLaEmpresa), validacion.Advertencias);
+
+                return await VincularAsync(deLaEmpresa.IdPersona, datos.IdEmpresa, n, input.Usuario, validacion.Advertencias, ct);
+            }
 
             // El documento ya existe en otra empresa: se verifica antes de revelar o vincular nada (D8).
             if (validacion.DocumentoExistente is { TieneVinculoEnEstaEmpresa: false } otra)
@@ -72,8 +91,8 @@ namespace eGestion360Web.Services.Personas
             }
 
             // Personas parecidas en la empresa: el usuario debe confirmar que es otra.
-            var parecidas = await BuscarParecidasAsync(
-                datos.IdEmpresa, n.NombreNormalizado, n.PrimerNombre, n.PrimerApellido, n.FechaNacimiento, excluirIdPersona: null, ct);
+            var parecidas = await PersonasParecidas.BuscarAsync(
+                _db, datos.IdEmpresa, n.NombreNormalizado, n.PrimerNombre, n.PrimerApellido, n.FechaNacimiento, excluirIdPersona: null, ct);
             if (parecidas.Count > 0 && !input.ConfirmarQueEsOtraPersona)
             {
                 return new ResultadoCrearPersona(
@@ -108,6 +127,25 @@ namespace eGestion360Web.Services.Personas
             vinculo.IdPersona = idPersona;
             _db.PersonaEmpresas.Add(vinculo);
 
+            // LEGADO: una persona que nunca fue empleado (por ejemplo, solo cliente) no tiene empresa ni cargo en las
+            // columnas viejas, y las pantallas y consumidores actuales la buscan por ahí. Si están vacías se llenan
+            // con este vínculo; si ya tienen los de otra empresa, no se tocan (no caben dos empresas en una columna).
+            var persona = await _db.Personas.FirstAsync(p => p.IdPersona == idPersona, ct);
+            if (persona.IdEmpresa == null)
+            {
+                var e = n.Empleado!;
+                persona.IdEmpresa = idEmpresa;
+                persona.Cargo = e.Cargo ?? "OTRO";
+                persona.TarifaDiaria = e.TarifaDiaria;
+                persona.MonedaTarifa = e.MonedaTarifa;
+                persona.FechaIngreso = e.FechaIngreso;
+                persona.FechaBaja = e.FechaBaja;
+                persona.TipoDocumento = n.TipoDocumento ?? "INTERNO";
+                persona.Documento = !string.IsNullOrEmpty(n.Documento) ? n.Documento : e.CodigoInterno ?? string.Empty;
+                persona.ModificadoPor = usuario;
+                persona.FechaModificacion = Ahora();
+            }
+
             try
             {
                 await _db.SaveChangesAsync(ct);
@@ -135,108 +173,22 @@ namespace eGestion360Web.Services.Personas
             && existente.FechaNacimiento == escritos.FechaNacimiento
             && NombresPersona.Normalizar(existente.PrimerApellido) == NombresPersona.Normalizar(escritos.PrimerApellido);
 
-        /// <summary>
-        /// Personas de la empresa que podrían ser la misma: con el mismo nombre normalizado o, si se conoce la fecha
-        /// de nacimiento, con el mismo primer nombre, el mismo primer apellido y esa misma fecha (así se detecta a la
-        /// misma persona escrita con y sin segundo apellido). Si ambas tienen fecha de nacimiento, deben coincidir.
-        /// </summary>
-        private async Task<IReadOnlyList<PersonaParecida>> BuscarParecidasAsync(
-            int idEmpresa, string nombreNormalizado, string primerNombre, string primerApellido,
-            DateOnly? fechaNacimiento, int? excluirIdPersona, CancellationToken ct)
-        {
-            if (string.IsNullOrEmpty(nombreNormalizado)) return Array.Empty<PersonaParecida>();
-
-            var inicio = NombresPersona.Normalizar(primerNombre) + " ";
-            var apellido = NombresPersona.Normalizar(primerApellido);
-            var conApellidoEnMedio = " " + apellido + " ";
-            var conApellidoAlFinal = " " + apellido;
-            var puedeCompararPartes = fechaNacimiento != null && inicio.Trim().Length > 0 && apellido.Length > 0;
-
-            // Solo personas de esta empresa: no se revela a quienes están en otras.
-            var consulta = _db.Personas.AsNoTracking()
-                .Where(p => !p.Eliminado && p.IdPersonaPrincipal == null
-                            && p.Vinculos.Any(v => v.IdEmpresa == idEmpresa && !v.Eliminado)
-                            && (p.NombreNormalizado == nombreNormalizado
-                                || (puedeCompararPartes && p.FechaNacimiento == fechaNacimiento
-                                    && p.NombreNormalizado != null
-                                    && p.NombreNormalizado.StartsWith(inicio)
-                                    && (p.NombreNormalizado.Contains(conApellidoEnMedio) || p.NombreNormalizado.EndsWith(conApellidoAlFinal)))));
-
-            if (excluirIdPersona != null)
-                consulta = consulta.Where(p => p.IdPersona != excluirIdPersona);
-
-            if (fechaNacimiento != null)
-                consulta = consulta.Where(p => p.FechaNacimiento == null || p.FechaNacimiento == fechaNacimiento);
-
-            return await consulta
-                .OrderBy(p => p.IdPersona)
-                .Take(10)
-                .Select(p => new PersonaParecida(p.IdPersona, p.Nombres + " " + p.Apellidos, p.FechaNacimiento, p.Activo))
-                .ToListAsync(ct);
-        }
-
         private Persona ConstruirPersona(PersonaDatosNormalizados n, int idEmpresa, string usuario)
         {
-            var ahora = Ahora();
             var e = n.Empleado!;
             var tieneDocumento = !string.IsNullOrEmpty(n.Documento);
 
-            var persona = new Persona
-            {
-                // LEGADO: se mantienen al día porque las pantallas y los consumidores actuales todavía las leen.
-                IdEmpresa = idEmpresa,
-                TipoDocumento = tieneDocumento ? n.TipoDocumento! : "INTERNO",
-                Documento = tieneDocumento ? n.Documento! : e.CodigoInterno ?? string.Empty,
-                Nombres = n.Nombres,
-                Apellidos = n.Apellidos,
-                Cargo = e.Cargo ?? "OTRO",
-                TarifaDiaria = e.TarifaDiaria,
-                MonedaTarifa = e.MonedaTarifa,
-                FechaIngreso = e.FechaIngreso,
-                FechaBaja = e.FechaBaja,
-                Activo = true,
+            var persona = PersonasConstructor.Nueva(n, usuario, Ahora());
 
-                Telefono = n.Telefono,
-                Email = n.Email,
-
-                PrimerNombre = n.PrimerNombre,
-                SegundoNombre = n.SegundoNombre,
-                PrimerApellido = n.PrimerApellido,
-                SegundoApellido = n.SegundoApellido,
-                NombreNormalizado = n.NombreNormalizado,
-                Sexo = n.Sexo,
-                EstadoCivil = n.EstadoCivil,
-                FechaNacimiento = n.FechaNacimiento,
-                PaisNacionalidad = n.PaisNacionalidad,
-                TipoSangre = n.TipoSangre,
-                IdMunicipioNacimiento = n.IdMunicipioNacimiento,
-                IdMunicipioResidencia = n.IdMunicipioResidencia,
-                DireccionResidencia = n.DireccionResidencia,
-                TelefonoSecundario = n.TelefonoSecundario,
-                ContactoEmergenciaNombre = n.ContactoEmergenciaNombre,
-                ContactoEmergenciaTelefono = n.ContactoEmergenciaTelefono,
-                ContactoEmergenciaParentesco = n.ContactoEmergenciaParentesco,
-                LicenciaTipo = n.LicenciaTipo,
-                LicenciaNumero = n.LicenciaNumero,
-                LicenciaVencimiento = n.LicenciaVencimiento,
-                EstadoIdentidad = n.TieneDocumentoDeIdentidad ? EstadosIdentidad.Verificada : EstadosIdentidad.Pendiente,
-
-                CreadoPor = usuario,
-                FechaCreacion = ahora
-            };
-
-            if (tieneDocumento)
-            {
-                persona.Documentos.Add(new PersonaDocumento
-                {
-                    TipoDocumento = n.TipoDocumento!,
-                    PaisEmisor = n.PaisEmisor!,
-                    Numero = n.Documento!,
-                    EsPrincipal = true,
-                    CreadoPor = usuario,
-                    FechaCreacion = ahora
-                });
-            }
+            // LEGADO: se mantienen al día porque las pantallas y los consumidores actuales todavía las leen.
+            persona.IdEmpresa = idEmpresa;
+            persona.TipoDocumento = tieneDocumento ? n.TipoDocumento! : "INTERNO";
+            persona.Documento = tieneDocumento ? n.Documento! : e.CodigoInterno ?? string.Empty;
+            persona.Cargo = e.Cargo ?? "OTRO";
+            persona.TarifaDiaria = e.TarifaDiaria;
+            persona.MonedaTarifa = e.MonedaTarifa;
+            persona.FechaIngreso = e.FechaIngreso;
+            persona.FechaBaja = e.FechaBaja;
 
             persona.Vinculos.Add(ConstruirVinculo(idEmpresa, e, usuario));
             return persona;
@@ -286,6 +238,9 @@ namespace eGestion360Web.Services.Personas
             var datos = input.Datos;
             datos.Modo = ModoValidacionPersona.Edicion;
 
+            // Aquí un documento de otra persona de la empresa sí es un duplicado, diga lo que diga el formulario.
+            datos.DocumentoDeLaEmpresaEsDuplicado = true;
+
             if (datos.IdPersona is not > 0 || datos.IdEmpresa <= 0)
                 return Actualizacion(EstadoActualizarPersona.NoEncontrada, null);
 
@@ -331,6 +286,7 @@ namespace eGestion360Web.Services.Personas
                 _db.Entry(persona).Property(p => p.TokenConcurrencia).OriginalValue = token;
 
             await AplicarCambiosAsync(persona, n, idEmpresa, input.Usuario, ct);
+            await SincronizarRazonSocialAsync(idPersona, persona.Nombres, persona.Apellidos, input.Usuario, Ahora(), ct);
 
             try
             {
@@ -465,6 +421,28 @@ namespace eGestion360Web.Services.Personas
             }
 
             MarcarModificados(usuario, ahora);
+        }
+
+        /// <summary>
+        /// La razón social de un cliente natural es el nombre de la persona: cuando el nombre cambia (o dos fichas se
+        /// fusionan) se actualiza la de todos los clientes naturales enlazados a ella, en cualquier empresa. Es un dato
+        /// derivado del nombre, no revela nada de una empresa a otra. Quien llama guarda los cambios.
+        /// </summary>
+        private async Task SincronizarRazonSocialAsync(
+            int idPersona, string nombres, string apellidos, string usuario, DateTime ahora, CancellationToken ct)
+        {
+            var razonSocial = RazonSocialCliente.De(nombres, apellidos);
+            var clientes = await _db.Clientes
+                .Where(c => !c.Eliminado && c.Tipo == "natural" && c.IdPersonaEmpresa != null
+                            && c.Vinculo!.IdPersona == idPersona && c.RazonSocial != razonSocial)
+                .ToListAsync(ct);
+
+            foreach (var cliente in clientes)
+            {
+                cliente.RazonSocial = razonSocial;
+                cliente.ModificadoPor = usuario;
+                cliente.FechaModificacion = ahora;
+            }
         }
 
         /// <summary>Pone quién y cuándo en lo que cambió de verdad, sin forzar un UPDATE en lo que no cambió.</summary>
@@ -614,6 +592,9 @@ namespace eGestion360Web.Services.Personas
                     .ExecuteUpdateAsync(s => s.SetProperty(x => x.IdConductor, idPrincipal), ct);
                 operativos += await _db.SalariosDiarios.Where(x => x.IdPersona == idSobrante)
                     .ExecuteUpdateAsync(s => s.SetProperty(x => x.IdPersona, idPrincipal), ct);
+
+                // Los clientes naturales que venían de la ficha sobrante pasan a llamarse como la principal.
+                await SincronizarRazonSocialAsync(principal.IdPersona, principal.Nombres, principal.Apellidos, usuario, ahora, ct);
 
                 // Esos registros no pasan por el interceptor: se deja constancia de la fusión y de lo que se reasignó.
                 _db.BitacoraCambios.Add(new BitacoraCambio

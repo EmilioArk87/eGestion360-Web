@@ -45,6 +45,14 @@ namespace eGestion360Web.Services.Personas
         /// <summary>Persona que se edita; nulo en un alta. Se excluye al buscar duplicados.</summary>
         public int? IdPersona { get; set; }
 
+        /// <summary>
+        /// Si es verdadero (el valor por defecto), un documento que ya pertenece a otra persona de ESTA empresa es
+        /// un error. Los flujos que le agregan otro rol a una persona que la empresa ya tiene (un cliente que
+        /// también es empleado) lo apagan y deciden con <see cref="ResultadoValidacionPersona.DocumentoExistente"/>.
+        /// Lo fija cada servicio, nunca la pantalla: un valor que llegue del formulario no cuenta.
+        /// </summary>
+        public bool DocumentoDeLaEmpresaEsDuplicado { get; set; } = true;
+
         // Nombre
         public string? PrimerNombre { get; set; }
         public string? SegundoNombre { get; set; }

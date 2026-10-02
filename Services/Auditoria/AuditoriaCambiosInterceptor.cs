@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using eGestion360Web.Models.Auditoria;
+using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 
@@ -16,7 +17,8 @@ namespace eGestion360Web.Services.Auditoria
 {
     /// <summary>
     /// Escribe en bitacora_cambios, dentro del mismo guardado, el historial por campo de las entidades de
-    /// la persona maestra: Persona, PersonaDocumento, PersonaEmpresa y Empleado (decisión D9).
+    /// la persona maestra: Persona, PersonaDocumento, PersonaEmpresa, Empleado y, cuando está enlazado a una
+    /// persona, Cliente (decisión D9). Un cliente sin ficha de persona (un «consumidor final») no se audita.
     ///
     ///   * Modificación: una fila por cada campo cuyo valor cambió (valor anterior y valor nuevo).
     ///   * Alta y baja física: una fila con campo nulo y la foto del registro en JSON.
@@ -43,7 +45,8 @@ namespace eGestion360Web.Services.Auditoria
             [typeof(Persona)] = "personas",
             [typeof(PersonaDocumento)] = "persona_documentos",
             [typeof(PersonaEmpresa)] = "persona_empresa",
-            [typeof(Empleado)] = "empleados"
+            [typeof(Empleado)] = "empleados",
+            [typeof(Cliente)] = "clientes"
         };
 
         private static readonly HashSet<string> PropiedadesIgnoradas = new()
@@ -101,8 +104,8 @@ namespace eGestion360Web.Services.Auditoria
             if (_estados.TryGetValue(contexto, out var anterior) && anterior.Guardando) return;
 
             var entradas = contexto.ChangeTracker.Entries()
-                .Where(e => Entidades.ContainsKey(e.Entity.GetType())
-                            && e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+                            && Auditable(e))
                 .ToList();
 
             _estados.Remove(contexto);
@@ -134,6 +137,19 @@ namespace eGestion360Web.Services.Auditoria
             // Las altas se registran en un segundo guardado: deben ir en la misma transacción que el primero.
             if (estado.Altas.Count > 0 && contexto.Database.CurrentTransaction == null)
                 estado.Transaccion = await contexto.Database.BeginTransactionAsync(ct);
+        }
+
+        /// <summary>
+        /// Si la entidad es de las que se auditan. Un cliente solo cuenta si está enlazado a una persona (o lo estaba
+        /// antes del cambio, para que quede constancia de que se desenlazó).
+        /// </summary>
+        private static bool Auditable(EntityEntry entrada)
+        {
+            if (!Entidades.ContainsKey(entrada.Entity.GetType())) return false;
+            if (entrada.Entity is not Cliente cliente) return true;
+
+            return cliente.IdPersonaEmpresa != null
+                   || entrada.Property(nameof(Cliente.IdPersonaEmpresa)).OriginalValue != null;
         }
 
         // ── Después de guardar ──────────────────────────────────────────────
@@ -302,6 +318,18 @@ namespace eGestion360Web.Services.Auditoria
                             .Select(v => (int?)v.IdPersona)
                             .FirstOrDefaultAsync(ct);
                     return (e.IdEmpresa, idPersona, idRegistro);
+
+                case Cliente c:
+                    var idVinculo = c.IdPersonaEmpresa ?? (int?)entrada.Property(nameof(Cliente.IdPersonaEmpresa)).OriginalValue;
+                    var idPersonaDelCliente = c.Vinculo?.IdPersona > 0
+                        ? c.Vinculo.IdPersona
+                        : idVinculo == null
+                            ? null
+                            : await contexto.Set<PersonaEmpresa>().AsNoTracking()
+                                .Where(v => v.IdPersonaEmpresa == idVinculo)
+                                .Select(v => (int?)v.IdPersona)
+                                .FirstOrDefaultAsync(ct);
+                    return (c.IdEmpresa, idPersonaDelCliente, idRegistro);
 
                 default:
                     return (_contexto.IdEmpresa, null, idRegistro);

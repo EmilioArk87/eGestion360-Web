@@ -188,7 +188,7 @@ namespace eGestion360Web.Services.Personas
                 .AnyAsync(x => x.IdPersona == idOtra && x.IdEmpresa == i.IdEmpresa && !x.Eliminado, ct);
 
             // Solo dentro de la empresa hay error: fuera de ella no se revela nada (decisión D8).
-            if (enEstaEmpresa)
+            if (enEstaEmpresa && i.DocumentoDeLaEmpresaEsDuplicado)
                 v.Error(nameof(PersonaDatosInput.Documento), "Ya existe una persona con ese documento en esta empresa.");
 
             return new DocumentoExistente(idOtra, enEstaEmpresa);

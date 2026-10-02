@@ -90,6 +90,7 @@ builder.Services.Configure<PersonaValidacionOptions>(builder.Configuration.GetSe
 builder.Services.AddScoped<IPersonaValidacionService, PersonaValidacionService>();
 builder.Services.AddScoped<IPersonaService, PersonaService>();
 builder.Services.AddScoped<IPersonaConsultaService, PersonaConsultaService>();
+builder.Services.AddScoped<IVinculoService, VinculoService>();
 
 // Add session support
 builder.Services.AddSession(options =>

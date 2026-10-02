@@ -8,8 +8,11 @@ namespace eGestion360Web.Services.Personas
 {
     public sealed class PersonaConsultaService : IPersonaConsultaService
     {
-        /// <summary>Entidades de la bitácora que son datos de la relación laboral con UNA empresa: privadas de ella.</summary>
-        private static readonly string[] EntidadesDeLaRelacion = { "persona_empresa", "empleados" };
+        /// <summary>
+        /// Entidades de la bitácora que son datos de la relación con UNA empresa (laboral o comercial): privadas de
+        /// ella. Que alguien sea cliente de una empresa no lo ve otra.
+        /// </summary>
+        private static readonly string[] EntidadesDeLaRelacion = { "persona_empresa", "empleados", "clientes" };
 
         /// <summary>
         /// Columnas legadas de dbo.personas que en realidad son de la relación laboral con una empresa. Mientras

@@ -18,6 +18,7 @@ No necesitan SQL Server, ni internet, ni secretos: usan SQLite en memoria. **Nun
 | `Services/Personas/NombresPersonaTests`, `DocumentosIdentidadTests`, `ContactoPersonaTests` | Reglas puras (sin base de datos): nombres, DNI y otros documentos, teléfonos y correos |
 | `Services/Personas/PersonaValidacionServiceTests` | `IPersonaValidacionService` contra los catálogos: documento, código de empleado, cargo, edad, licencia, contacto, fechas laborales, tarifa y moneda |
 | `Services/Personas/PersonaServiceTests` | `IPersonaService`: alta con verificación entre empresas (D8) y detección de parecidas, edición protegida por empresa, y fusión de fichas |
+| `Services/Personas/VinculoServiceTests` | `IVinculoService`: alta de un cliente natural que reutiliza a la persona (de la empresa o de otra con verificación), reactivación, baja, consulta de vínculos, razón social al día, privacidad entre empresas y su bitácora e historial; también el cliente que luego es empleado |
 | `Services/Auditoria/AuditoriaCambiosInterceptorTests` | La bitácora por campo: altas, modificaciones, bajas, enmascarado del documento y atomicidad |
 
 ## La base de prueba
@@ -35,8 +36,9 @@ Diferencias con SQL Server que el proyecto compensa:
 
 ## Lo que estas pruebas NO cubren
 
-- Índices únicos filtrados, claves foráneas compuestas, el disparador de inmutabilidad de la bitácora y las
-  restricciones `CHECK`: viven en la base y los cubren los scripts SQL con su `PRECHECK` y `POSTCHECK`.
+- Índices únicos filtrados (por ejemplo, un solo cliente por vínculo), claves foráneas compuestas, el disparador de
+  inmutabilidad de la bitácora y las restricciones `CHECK`: viven en la base y los cubren los scripts SQL con su
+  `PRECHECK` y `POSTCHECK`.
 - La concurrencia optimista (`token_concurrencia`).
 - Las pantallas Razor.
 

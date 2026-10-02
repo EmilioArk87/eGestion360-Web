@@ -62,9 +62,16 @@
                                                 <td>@(p.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "—")</td>
                                                 <td><span class="badge @(p.Activa ? "bg-success" : "bg-secondary")">@(p.Activa ? "Activo" : "Inactivo")</span></td>
                                                 <td class="text-end">
-                                                    <a asp-page="Edit" asp-route-id="@p.IdPersona" class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-edit me-1"></i>Abrir esa ficha
-                                                    </a>
+                                                    @if (p.EsPersonal)
+                                                    {
+                                                        <a asp-page="Edit" asp-route-id="@p.IdPersona" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-edit me-1"></i>Abrir esa ficha
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="small text-muted">Aún no es personal de la empresa</span>
+                                                    }
                                                 </td>
                                             </tr>
                                         }
