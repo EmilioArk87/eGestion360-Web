@@ -131,3 +131,21 @@ footer a {
 footer a:hover {
   color: #007bff !important;
 }
+/* Tarjetas de menú (menú principal y submenús): contenedor vertical flexible.
+   La descripción absorbe el espacio sobrante y el botón se ancla abajo, así
+   todas las tarjetas de una fila quedan con la acción a la misma altura sin
+   importar cuántas líneas de texto tengan. Aplica a cualquier .menu-card nueva. */
+.menu-card > .card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.menu-card > .card-body > p {
+  flex-grow: 1;
+}
+
+.menu-card > .card-body > .btn,
+.menu-card > .card-body > a {
+  margin-top: auto;
+}
