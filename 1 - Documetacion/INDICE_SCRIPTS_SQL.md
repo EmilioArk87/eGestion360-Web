@@ -33,6 +33,15 @@ Regla de nombre: NNN_descripcion_corta.sql (NNN incremental de 3 digitos).
 | 018 | 018_personas_migrar_a_maestra.sql | Migra las personas actuales a la persona maestra: crea el vinculo de empleado (persona_empresa) y la ficha (empleados) de cada persona, registra los DNI en persona_documentos, separa nombres y apellidos cuando el reparto es seguro, calcula el nombre normalizado, marca la identidad y escribe la bitacora (origen script:018); crea la copia respaldo_personas_018; no toca las columnas viejas | 2026-09-30 | Aplicado 2026-10-01 |
 | 019 | NNN_descripcion_corta.sql | Plantilla para proximo cambio | YYYY-MM-DD | Pendiente |
 
+## Scripts de datos de Demo sin numero
+
+Se ejecutan a mano contra la empresa Demo. No forman parte de la cadena de creacion de una BD limpia y no usan un
+numero de orden (el 019 esta reservado para retirar las columnas viejas de `dbo.personas`).
+
+| Archivo | Proposito | Fecha | Estado |
+|---|---|---|---|
+| seed_demo_catalogos_cliente_demo.sql | Activa el modulo Catalogos para la empresa Demo (hoy solo la pantalla de Clientes) y da ver, crear y editar, sin eliminar, al rol Flota, que solo usa cliente_demo; con PRECHECK, POSTCHECK y ROLLBACK | 2026-10-02 | Aplicado 2026-10-02 |
+
 ## Scripts que asumen el esquema anterior a la 019
 
 El script 019 (retirar las columnas viejas de `dbo.personas`: `id_empresa`, `documento`, `tipo_documento`, `cargo`,
