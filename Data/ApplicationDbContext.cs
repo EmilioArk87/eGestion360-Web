@@ -316,8 +316,6 @@ namespace eGestion360Web.Data
 
             modelBuilder.Entity<Persona>(entity =>
             {
-                entity.Property(p => p.TarifaDiaria).HasPrecision(18, 2);
-
                 // Persona maestra (script 014). Todas las referencias son opcionales.
                 entity.HasOne(p => p.Nacionalidad)
                       .WithMany()

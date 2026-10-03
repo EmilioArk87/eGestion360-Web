@@ -465,6 +465,86 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.All(c.Municipios, m => Assert.Equal(c.Departamentos[0].Id, m.IdDepartamento));
         }
 
+        // ── Personal para elegir en otros módulos (F6) ──────────────────────
+
+        [Fact]
+        public async Task Personal_para_seleccion_trae_solo_al_personal_activo_de_la_empresa_ordenado_por_apellido()
+        {
+            using var db = _bd.Crear();
+            Insertar(db, DatosBase.EmpresaB, "Zoe", "Vega", codigo: "B1", cargo: "CONDUCTOR");
+            Insertar(db, DatosBase.EmpresaB, "Ana", "Paz", codigo: "B2", cargo: "COBRADOR");
+            Insertar(db, DatosBase.EmpresaA, "Beto", "Rivas", codigo: "A1");
+
+            var lista = await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB);
+
+            Assert.Equal(new[] { "Ana Paz", "Zoe Vega" }, lista.Select(x => x.NombreCompleto).ToArray());
+        }
+
+        [Fact]
+        public async Task Personal_para_seleccion_filtra_por_cargo()
+        {
+            using var db = _bd.Crear();
+            Insertar(db, DatosBase.EmpresaB, "Zoe", "Vega", codigo: "B1", cargo: "CONDUCTOR");
+            Insertar(db, DatosBase.EmpresaB, "Ana", "Paz", codigo: "B2", cargo: "COBRADOR");
+
+            var conductores = await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "CONDUCTOR");
+
+            Assert.Equal("Zoe Vega", Assert.Single(conductores).NombreCompleto);
+            Assert.Empty(await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "SUPERVISOR"));
+        }
+
+        [Fact]
+        public async Task Personal_para_seleccion_deja_fuera_a_inactivos_eliminados_fusionados_clientes_y_fichas_apagadas()
+        {
+            using var db = _bd.Crear();
+            Insertar(db, DatosBase.EmpresaB, "Bien", "Activo", codigo: "OK1", cargo: "CONDUCTOR");
+            var inactivo = Insertar(db, DatosBase.EmpresaB, "Ina", "Ctivo", codigo: "I1", cargo: "CONDUCTOR");
+            var eliminada = Insertar(db, DatosBase.EmpresaB, "Eli", "Minada", codigo: "E1", cargo: "CONDUCTOR");
+            var fusionada = Insertar(db, DatosBase.EmpresaB, "Fus", "Ionada", codigo: "F1", cargo: "CONDUCTOR");
+            var soloCliente = Insertar(db, DatosBase.EmpresaB, "Sol", "Ocliente", codigo: "C1", cargo: "CONDUCTOR");
+            var fichaApagada = Insertar(db, DatosBase.EmpresaB, "Fic", "Apagada", codigo: "A1", cargo: "CONDUCTOR");
+
+            db.PersonaEmpresas.Single(v => v.IdPersona == inactivo.IdPersona).Activo = false;
+            eliminada.Eliminado = true;
+            fusionada.IdPersonaPrincipal = inactivo.IdPersona;
+            db.PersonaEmpresas.Single(v => v.IdPersona == soloCliente.IdPersona).TipoVinculo = TiposVinculo.Cliente;
+            db.Empleados.Single(e => e.IdPersonaEmpresa == db.PersonaEmpresas.Single(v => v.IdPersona == fichaApagada.IdPersona).IdPersonaEmpresa).Activo = false;
+            db.SaveChanges();
+
+            var conductores = await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "CONDUCTOR");
+
+            Assert.Equal("Bien Activo", Assert.Single(conductores).NombreCompleto);
+        }
+
+        [Fact]
+        public async Task Personal_para_seleccion_incluye_a_quien_trabaja_en_dos_empresas_en_cada_una()
+        {
+            using var db = _bd.Crear();
+            var persona = Insertar(db, DatosBase.EmpresaB, "Dos", "Empresas", dni: "0801199012345", codigo: "B1", cargo: "CONDUCTOR");
+
+            db.PersonaEmpresas.Add(new PersonaEmpresa
+            {
+                IdPersona = persona.IdPersona, IdEmpresa = DatosBase.EmpresaA, TipoVinculo = TiposVinculo.Empleado,
+                CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow,
+                Empleado = new Empleado { IdEmpresa = DatosBase.EmpresaA, CodigoInterno = "A1", Cargo = "CONDUCTOR", CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow }
+            });
+            db.SaveChanges();
+
+            // Con las columnas viejas, esta persona solo aparecía en la empresa que quedó en personas.id_empresa.
+            Assert.Single(await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "CONDUCTOR"));
+            Assert.Single(await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaA, "CONDUCTOR"));
+        }
+
+        [Fact]
+        public async Task Personal_para_seleccion_sin_empresa_no_trae_nada()
+        {
+            using var db = _bd.Crear();
+            Insertar(db, DatosBase.EmpresaB, "Ana", "Paz", codigo: "B1");
+
+            Assert.Empty(await Servicio(db).PersonalParaSeleccionAsync(0));
+            Assert.Empty(await Servicio(db).PersonalParaSeleccionAsync(-1, "CONDUCTOR"));
+        }
+
         [Fact]
         public async Task Catalogos_solo_trae_los_cargos_activos_de_la_empresa()
         {

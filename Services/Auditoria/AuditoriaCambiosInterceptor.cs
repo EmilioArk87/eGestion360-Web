@@ -302,7 +302,7 @@ namespace eGestion360Web.Services.Auditoria
             switch (entrada.Entity)
             {
                 case Persona p:
-                    return (_contexto.IdEmpresa ?? (p.IdEmpresa > 0 ? p.IdEmpresa : null), p.IdPersona, idRegistro);
+                    return (_contexto.IdEmpresa, p.IdPersona, idRegistro);
 
                 case PersonaDocumento d:
                     return (_contexto.IdEmpresa, d.IdPersona, idRegistro);
@@ -385,8 +385,7 @@ namespace eGestion360Web.Services.Auditoria
         {
             if (texto == null) return null;
 
-            var esDocumento = (propiedad.DeclaringType.ClrType == typeof(PersonaDocumento) && propiedad.Name == nameof(PersonaDocumento.Numero))
-                              || (propiedad.DeclaringType.ClrType == typeof(Persona) && propiedad.Name == nameof(Persona.Documento));
+            var esDocumento = propiedad.DeclaringType.ClrType == typeof(PersonaDocumento) && propiedad.Name == nameof(PersonaDocumento.Numero);
 
             // Un código corto de empleado (por ejemplo "31234") no es un documento de identidad: se deja tal cual.
             return esDocumento && texto.Length > 6

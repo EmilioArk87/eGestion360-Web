@@ -5,22 +5,21 @@ namespace eGestion360Web.Services.Personas
 {
     /// <summary>
     /// Arma una persona nueva a partir de datos ya validados. Lo comparten el alta de personal y el alta de clientes:
-    /// ambos guardan los mismos datos personales y el mismo documento; lo que cambia es el rol (el vínculo) y las
-    /// columnas LEGADO que describen ese rol, que pone quien llama.
+    /// ambos guardan los mismos datos personales y el mismo documento; lo que cambia es el rol (el vínculo), que
+    /// agrega quien llama.
     /// </summary>
     internal static class PersonasConstructor
     {
         /// <summary>
         /// Persona con su nombre, datos personales, contacto, licencia, estado de identidad y documento. NO trae
-        /// vínculo ni las columnas LEGADO de rol (empresa, tipo de documento, documento, cargo, tarifa, ingreso y
-        /// baja): quien llama las completa o las deja vacías.
+        /// el vínculo: quien llama le agrega el de empleado o el de cliente.
         /// </summary>
         public static Persona Nueva(PersonaDatosNormalizados n, string usuario, DateTime ahora)
         {
             var persona = new Persona
             {
-                Nombres = n.Nombres,        // LEGADO (compuesto)
-                Apellidos = n.Apellidos,    // LEGADO (compuesto)
+                Nombres = n.Nombres,        // compuesto
+                Apellidos = n.Apellidos,    // compuesto
                 Activo = true,
 
                 Telefono = n.Telefono,

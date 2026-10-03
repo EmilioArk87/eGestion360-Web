@@ -24,9 +24,8 @@ namespace eGestion360Web.Tests.Services.Auditoria
             var ahora = DateTime.UtcNow;
             var persona = new Persona
             {
-                IdEmpresa = DatosBase.EmpresaB, Nombres = nombre, Apellidos = apellido,
-                PrimerNombre = nombre, PrimerApellido = apellido, Cargo = "MECANICO",
-                TipoDocumento = "DNI", Documento = dni ?? "X", CreadoPor = "pruebas", FechaCreacion = ahora
+                Nombres = nombre, Apellidos = apellido,
+                PrimerNombre = nombre, PrimerApellido = apellido, CreadoPor = "pruebas", FechaCreacion = ahora
             };
             var vinculo = new PersonaEmpresa
             {
@@ -114,7 +113,6 @@ namespace eGestion360Web.Tests.Services.Auditoria
 
             var documento = Json(filas.Single(f => f.Entidad == "persona_documentos").ValorNuevo);
             Assert.Equal("*********2345", documento["numero"].GetString());
-            Assert.Equal("*********2345", Json(filas.Single(f => f.Entidad == "personas").ValorNuevo)["documento"].GetString());
             Assert.DoesNotContain(filas, f => (f.ValorNuevo ?? "").Contains("0801199012345") || (f.ValorAnterior ?? "").Contains("0801199012345"));
         }
 
@@ -206,18 +204,17 @@ namespace eGestion360Web.Tests.Services.Auditoria
         [Fact]
         public async Task Cambiar_el_documento_largo_de_la_persona_lo_registra_enmascarado()
         {
-            int id;
-            using (var db = SinAuditoria()) { var p = NuevaPersona(dni: "0801199012345"); db.Personas.Add(p); await db.SaveChangesAsync(); id = p.IdPersona; }
+            using (var db = SinAuditoria()) { db.Personas.Add(NuevaPersona(dni: "0801199012345")); await db.SaveChangesAsync(); }
 
             using (var db = ConAuditoria())
             {
-                var persona = await db.Personas.SingleAsync(p => p.IdPersona == id);
-                persona.Documento = "0801199099999";
+                var documento = await db.PersonaDocumentos.SingleAsync();
+                documento.Numero = "0801199099999";
                 await db.SaveChangesAsync();
             }
 
             using var lectura = SinAuditoria();
-            var fila = await lectura.BitacoraCambios.AsNoTracking().SingleAsync(f => f.Campo == "documento");
+            var fila = await lectura.BitacoraCambios.AsNoTracking().SingleAsync(f => f.Campo == "numero");
             Assert.Equal("*********2345", fila.ValorAnterior);
             Assert.Equal("*********9999", fila.ValorNuevo);
         }
@@ -402,8 +399,10 @@ namespace eGestion360Web.Tests.Services.Auditoria
             using var lectura = SinAuditoria();
             var filas = await lectura.BitacoraCambios.AsNoTracking().ToListAsync();
             Assert.All(filas, f => { Assert.Equal("script.migracion", f.Usuario); Assert.Equal("script:099", f.Origen); });
-            // Sin empresa en la sesión, la fila de la persona toma la empresa de su columna legada.
-            Assert.Equal(DatosBase.EmpresaB, filas.Single(f => f.Entidad == "personas").IdEmpresa);
+            // La persona no es de una sola empresa: sin empresa en la sesión su fila queda sin empresa, y la
+            // ficha de empleado (que sí es de una empresa) conserva la suya.
+            Assert.Null(filas.Single(f => f.Entidad == "personas").IdEmpresa);
+            Assert.Equal(DatosBase.EmpresaB, filas.Single(f => f.Entidad == "empleados").IdEmpresa);
         }
     }
 }

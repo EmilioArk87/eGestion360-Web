@@ -64,7 +64,8 @@ Alta, consulta, edición y bitácora de las personas que trabajan en la empresa 
 - Identidad **verificada** = tiene al menos un documento; **pendiente** = solo código de empleado.
 - Esta pantalla es del **personal** (vínculo de empleado). Una persona que solo es cliente de la empresa no aparece en el listado ni se abre en Editar (`404`); si coincide con quien se está registrando, el aviso de parecidas la muestra sin enlace («Aún no es personal de la empresa»). Registrar como empleado a alguien que ya es cliente de la empresa reutiliza su ficha (`IVinculoService` hace lo inverso).
 - Nada se borra: desactivar cambia el estado del vínculo y toda modificación queda en la bitácora (inmutable por trigger).
-- Mientras no se ejecute el script `019`, las columnas antiguas de `personas` se siguen escribiendo (doble escritura) para no romper otros módulos.
+- Los datos de empleo viven solo en `empleados` (cargo, tarifa, moneda), `persona_empresa` (ingreso y baja) y `persona_documentos` (documento). Desde F6 el servicio ya **no escribe** las columnas antiguas de `personas` (`id_empresa`, `documento`, `tipo_documento`, `cargo`, `tarifa_diaria`, `moneda_tarifa`, `fecha_ingreso`, `fecha_baja`): la entidad `Persona` ya no las tiene y quedan en la BD, vacías en las personas nuevas, hasta que el script `019` las retire.
+- Las pantallas de operación (salarios, peajes, combustible y control de salidas) leen al personal con `IPersonaConsultaService.PersonalParaSeleccionAsync`: empleados con vínculo vigente en la empresa de la sesión, filtrados por cargo cuando hace falta (conductores). Quien solo es cliente no aparece ahí.
 
 ## Manejo de errores
 - Validaciones de formulario: en el navegador (`personas-form.js`) solo las reglas esenciales; el servidor es la autoridad y devuelve los errores por campo.
@@ -72,6 +73,6 @@ Alta, consulta, edición y bitácora de las personas que trabajan en la empresa 
 - Redirecciones de error: sin sesión → `/Login`; persona de otra empresa o inexistente → `404`; sin permiso o sin empresa → misma página con `MensajeBloqueo`.
 
 ## Notas
-- Riesgos tecnicos: las columnas de rol antiguas de `personas` (una sola empresa) no pueden representar a una persona en varias empresas; hasta migrar los consumidores (F6) y el script `019`, esas pantallas siguen leyendo las columnas antiguas. Antes de publicar, volver a ejecutar `018` (es idempotente) para que las personas creadas con pantallas antiguas reciban su vínculo.
+- Riesgos tecnicos: el código de F6 debe estar publicado **antes** de ejecutar la `019` (si no, las pantallas viejas fallarían al no encontrar las columnas). Después de publicarlo, volver a la versión anterior de la aplicación dejaría fuera de las listas viejas a las personas creadas desde entonces (sus columnas antiguas quedan vacías); por eso la `019` se ejecuta solo cuando la nueva versión ya se verificó, y conserva la copia `respaldo_personas_018`. Los scripts que aún usan las columnas antiguas están listados en `INDICE_SCRIPTS_SQL.md`.
 - Deuda tecnica: el conteo de «nombres por revisar» del listado recorre la lista otra vez; si el volumen crece, pasarlo a un `COUNT` en el servicio.
 - Pruebas: `eGestion360Web.Tests` (ver [PRUEBAS_AUTOMATIZADAS.md](../PRUEBAS_AUTOMATIZADAS.md)).

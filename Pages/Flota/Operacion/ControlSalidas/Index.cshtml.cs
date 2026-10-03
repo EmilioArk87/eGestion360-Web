@@ -5,16 +5,19 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
 {
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _db;
+        private readonly IPersonaConsultaService _personal;
 
-        public IndexModel(ApplicationDbContext db)
+        public IndexModel(ApplicationDbContext db, IPersonaConsultaService personal)
         {
             _db = db;
+            _personal = personal;
         }
 
         public class VehiculoEstadoDto
@@ -307,10 +310,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
             MovimientosHoy = MovimientosHoy.OrderByDescending(m => m.Hora).Take(15).ToList();
 
             // 6. Selects
-            var conductores = await _db.Personas
-                .Where(p => p.IdEmpresa == idEmpresa && p.Activo && !p.Eliminado && p.Cargo == "CONDUCTOR")
-                .OrderBy(p => p.Apellidos)
-                .ToListAsync();
+            var conductores = await _personal.PersonalParaSeleccionAsync(idEmpresa, "CONDUCTOR");
 
             var rutas = await _db.Rutas
                 .Where(r => r.IdEmpresa == idEmpresa && r.Activo && !r.Eliminado)

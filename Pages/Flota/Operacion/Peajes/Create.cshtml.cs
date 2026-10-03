@@ -5,13 +5,20 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Pages.Flota.Operacion.Peajes
 {
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _db;
-        public CreateModel(ApplicationDbContext db) => _db = db;
+        private readonly IPersonaConsultaService _personal;
+
+        public CreateModel(ApplicationDbContext db, IPersonaConsultaService personal)
+        {
+            _db = db;
+            _personal = personal;
+        }
 
         [BindProperty] public Peaje Item { get; set; } = new();
 
@@ -50,7 +57,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.Peajes
                 await _db.Rutas.Where(r => r.IdEmpresa == idEmpresa && r.Activo).OrderBy(r => r.Nombre).ToListAsync(),
                 "IdRuta", "Nombre");
             ViewData["Conductores"] = new SelectList(
-                await _db.Personas.Where(p => p.IdEmpresa == idEmpresa && p.Activo && p.Cargo == "CONDUCTOR").OrderBy(p => p.Apellidos).ToListAsync(),
+                await _personal.PersonalParaSeleccionAsync(idEmpresa, "CONDUCTOR"),
                 "IdPersona", "NombreCompleto");
         }
 

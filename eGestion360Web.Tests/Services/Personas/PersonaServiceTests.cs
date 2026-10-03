@@ -114,16 +114,9 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal("rrhh.ana", p.CreadoPor);
             Assert.Equal(_reloj.GetUtcNow().UtcDateTime, p.FechaCreacion);
 
-            // LEGADO: las pantallas actuales siguen leyendo estas columnas
-            Assert.Equal(DatosBase.EmpresaB, p.IdEmpresa);
+            // Nombre compuesto: lo muestran muchas pantallas
             Assert.Equal("Luis", p.Nombres);
             Assert.Equal("Pérez", p.Apellidos);
-            Assert.Equal("DNI", p.TipoDocumento);
-            Assert.Equal("0801199012345", p.Documento);
-            Assert.Equal("MECANICO", p.Cargo);
-            Assert.Equal(350m, p.TarifaDiaria);
-            Assert.Equal("HNL", p.MonedaTarifa);
-            Assert.Equal(new DateOnly(2026, 3, 1), p.FechaIngreso);
             Assert.True(p.Activo);
 
             // Documento, vínculo y ficha
@@ -139,6 +132,8 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.NotNull(vinculo.Empleado);
             Assert.Equal("M100", vinculo.Empleado!.CodigoInterno);
             Assert.Equal("MECANICO", vinculo.Empleado.Cargo);
+            Assert.Equal(350m, vinculo.Empleado.TarifaDiaria);
+            Assert.Equal("HNL", vinculo.Empleado.MonedaTarifa);
             Assert.Equal(DatosBase.EmpresaB, vinculo.Empleado.IdEmpresa);
             Assert.Equal(TiposVinculo.Empleado, vinculo.Empleado.TipoVinculo);
 
@@ -150,18 +145,18 @@ namespace eGestion360Web.Tests.Services.Personas
         }
 
         [Fact]
-        public async Task Crear_sin_documento_usa_el_codigo_de_empleado_como_documento_legado_y_queda_pendiente()
+        public async Task Crear_sin_documento_guarda_el_codigo_de_empleado_y_queda_pendiente()
         {
             var input = Alta(); input.Datos.TipoDocumento = null; input.Datos.Documento = null; input.Datos.Empleado!.CodigoInterno = "M101";
             var id = await CrearPersona(input);
 
             using var lectura = _bd.Crear();
-            var p = await lectura.Personas.AsNoTracking().Include(x => x.Documentos).SingleAsync(x => x.IdPersona == id);
+            var p = await lectura.Personas.AsNoTracking().Include(x => x.Documentos)
+                .Include(x => x.Vinculos).ThenInclude(v => v.Empleado).SingleAsync(x => x.IdPersona == id);
 
             Assert.Equal(EstadosIdentidad.Pendiente, p.EstadoIdentidad);
             Assert.Empty(p.Documentos);
-            Assert.Equal("INTERNO", p.TipoDocumento);   // LEGADO: convención de las personas sin documento
-            Assert.Equal("M101", p.Documento);
+            Assert.Equal("M101", Assert.Single(p.Vinculos).Empleado!.CodigoInterno);
         }
 
         [Fact]
@@ -257,10 +252,10 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal("M300", nuevo.Empleado!.CodigoInterno);
             Assert.Equal("MECANICO", nuevo.Empleado.Cargo);
 
-            // La persona existente no se toca: ni nombre ni empresa legada.
+            // La persona existente no se toca: ni su nombre ni su vínculo con la otra empresa.
             Assert.Equal("Mario", p.PrimerNombre);
             Assert.Equal("Mejía", p.PrimerApellido);
-            Assert.Equal(DatosBase.EmpresaA, p.IdEmpresa);
+            Assert.Contains(p.Vinculos, v => v.IdEmpresa == DatosBase.EmpresaA);
         }
 
         [Theory]
@@ -424,7 +419,7 @@ namespace eGestion360Web.Tests.Services.Personas
         }
 
         [Fact]
-        public async Task Actualizar_cambia_los_datos_mantiene_los_campos_legados_y_registra_cada_cambio()
+        public async Task Actualizar_cambia_los_datos_de_la_persona_y_del_empleado_y_registra_cada_cambio()
         {
             var id = await CrearPersona(Alta());
             using (var db = Contexto()) { db.BitacoraCambios.RemoveRange(db.BitacoraCambios); await db.SaveChangesAsync(); }
@@ -450,12 +445,10 @@ namespace eGestion360Web.Tests.Services.Personas
             var p = await lectura.Personas.AsNoTracking().Include(x => x.Vinculos).ThenInclude(v => v.Empleado).SingleAsync(x => x.IdPersona == id);
 
             Assert.Equal("Alberto", p.SegundoNombre);
-            Assert.Equal("Luis Alberto", p.Nombres);              // LEGADO compuesto
+            Assert.Equal("Luis Alberto", p.Nombres);              // compuesto
             Assert.Equal("LUIS ALBERTO PEREZ", p.NombreNormalizado);
             Assert.Equal("22223333", p.Telefono);
             Assert.Equal("luis.perez@empresa.com", p.Email);
-            Assert.Equal("SUPERVISOR", p.Cargo);                  // LEGADO
-            Assert.Equal(400m, p.TarifaDiaria);                   // LEGADO
             Assert.Equal("rrhh.ana", p.ModificadoPor);
             Assert.Equal(_reloj.GetUtcNow().UtcDateTime, p.FechaModificacion);
             var empleado = p.Vinculos.Single().Empleado!;
@@ -468,7 +461,6 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Contains("personas.nombres", campos);
             Assert.Contains("personas.telefono", campos);
             Assert.Contains("personas.email", campos);
-            Assert.Contains("personas.cargo", campos);
             Assert.Contains("empleados.cargo", campos);
             Assert.Contains("empleados.tarifa_diaria", campos);
             Assert.DoesNotContain("personas.primer_nombre", campos);          // no cambió
@@ -521,9 +513,8 @@ namespace eGestion360Web.Tests.Services.Personas
             var documento = Assert.Single(p.Documentos);
             Assert.Equal("0801199055555", documento.Numero);
             Assert.True(documento.EsPrincipal);
+            Assert.Equal("DNI", documento.TipoDocumento);
             Assert.Equal(EstadosIdentidad.Verificada, p.EstadoIdentidad);
-            Assert.Equal("0801199055555", p.Documento);   // LEGADO
-            Assert.Equal("DNI", p.TipoDocumento);         // LEGADO
         }
 
         [Fact]

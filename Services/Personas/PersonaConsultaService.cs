@@ -15,8 +15,10 @@ namespace eGestion360Web.Services.Personas
         private static readonly string[] EntidadesDeLaRelacion = { "persona_empresa", "empleados", "clientes" };
 
         /// <summary>
-        /// Columnas legadas de dbo.personas que en realidad son de la relación laboral con una empresa. Mientras
-        /// existan, sus cambios hechos desde otra empresa tampoco se muestran.
+        /// Columnas de dbo.personas que son de la relación con una empresa y no de la persona: las que se retiran en
+        /// el script 019 (ya no están en la entidad) y "activo", que depende de los vínculos. La bitácora no se
+        /// puede modificar, así que conserva los cambios históricos hechos en ellas; los hechos desde otra empresa
+        /// no se muestran.
         /// </summary>
         private static readonly string[] CamposLegadosDeLaRelacion =
         {
@@ -241,7 +243,7 @@ namespace eGestion360Web.Services.Personas
             {
                 var deOtra = b.IdEmpresa != null && b.IdEmpresa != idEmpresa;
 
-                // Los campos laborales que todavía viven en dbo.personas tampoco se muestran si son de otra empresa.
+                // Los campos de la relación con una empresa que la bitácora guardó en "personas" tampoco se muestran si son de otra empresa.
                 if (deOtra && b.Entidad == "personas" && b.Campo != null && CamposLegadosDeLaRelacion.Contains(b.Campo))
                     continue;
 
@@ -278,6 +280,29 @@ namespace eGestion360Web.Services.Personas
                 .OrderBy(c => c.Nombre)
                 .Select(c => new OpcionCatalogo(c.Codigo, c.Nombre))
                 .ToListAsync(ct);
+
+        public async Task<IReadOnlyList<OpcionPersona>> PersonalParaSeleccionAsync(
+            int idEmpresa, string? cargo = null, CancellationToken ct = default)
+        {
+            if (idEmpresa <= 0) return Array.Empty<OpcionPersona>();
+
+            // Empleados activos de ESTA empresa: ni personas fusionadas o eliminadas, ni vínculos de otro rol.
+            var consulta = _db.PersonaEmpresas.AsNoTracking()
+                .Where(v => v.IdEmpresa == idEmpresa && v.TipoVinculo == TiposVinculo.Empleado
+                            && v.Activo && !v.Eliminado
+                            && !v.Persona.Eliminado && v.Persona.IdPersonaPrincipal == null);
+
+            if (!string.IsNullOrWhiteSpace(cargo))
+            {
+                consulta = consulta.Where(v => v.Empleado != null && v.Empleado.Cargo == cargo
+                                               && v.Empleado.Activo && !v.Empleado.Eliminado);
+            }
+
+            return await consulta
+                .OrderBy(v => v.Persona.Apellidos).ThenBy(v => v.Persona.Nombres)
+                .Select(v => new OpcionPersona(v.IdPersona, (v.Persona.Nombres + " " + v.Persona.Apellidos).Trim()))
+                .ToListAsync(ct);
+        }
 
         public async Task<PersonaCatalogos> CatalogosAsync(int idEmpresa, CancellationToken ct = default)
         {

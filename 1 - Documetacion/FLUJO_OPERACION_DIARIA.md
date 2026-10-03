@@ -141,7 +141,7 @@ Operador accede a /Flota/Operacion/SalariosDiarios/Create
 | Campo | Obligatorio | Valor por defecto |
 |-------|-------------|-------------------|
 | Vehículo | Sí | — |
-| Persona | Sí | Lista de personas activas |
+| Persona | Sí | Lista del personal activo de la empresa (vínculo de empleado vigente) |
 | Fecha | Sí | Hoy |
 | Cargo | Sí | CONDUCTOR |
 | Monto | Sí | — (>= 0) |

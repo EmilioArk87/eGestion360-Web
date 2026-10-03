@@ -25,6 +25,11 @@ modifica datos de otras empresas.
 
 > Respete el orden: 20 depende de 00; 30 depende de 00; 40 depende de 00/20/30; 50 depende de 00/20.
 
+> **Después de la 019:** los scripts `30`, `40` y `60` usan las columnas viejas de `dbo.personas`
+> (`id_empresa`, `documento`, `tipo_documento`, `cargo`) y dejan de funcionar cuando la 019 las retira. Son una
+> carga ya hecha; no se vuelven a correr contra una BD con la 019. Ver
+> `1 - Documetacion/INDICE_SCRIPTS_SQL.md`, sección «Scripts que asumen el esquema anterior a la 019».
+
 ## Cómo aplicar (sqlcmd)
 
 Desde esta carpeta. El flag `-I` (QUOTED_IDENTIFIER) es obligatorio en esta base

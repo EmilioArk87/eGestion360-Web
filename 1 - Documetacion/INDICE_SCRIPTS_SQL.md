@@ -33,6 +33,28 @@ Regla de nombre: NNN_descripcion_corta.sql (NNN incremental de 3 digitos).
 | 018 | 018_personas_migrar_a_maestra.sql | Migra las personas actuales a la persona maestra: crea el vinculo de empleado (persona_empresa) y la ficha (empleados) de cada persona, registra los DNI en persona_documentos, separa nombres y apellidos cuando el reparto es seguro, calcula el nombre normalizado, marca la identidad y escribe la bitacora (origen script:018); crea la copia respaldo_personas_018; no toca las columnas viejas | 2026-09-30 | Aplicado 2026-10-01 |
 | 019 | NNN_descripcion_corta.sql | Plantilla para proximo cambio | YYYY-MM-DD | Pendiente |
 
+## Scripts que asumen el esquema anterior a la 019
+
+El script 019 (retirar las columnas viejas de `dbo.personas`: `id_empresa`, `documento`, `tipo_documento`, `cargo`,
+`tarifa_diaria`, `moneda_tarifa`, `fecha_ingreso`, `fecha_baja`) deja sin funcionar a los scripts de abajo, que las
+leen o las escriben. No son parte de la aplicacion: son datos de ejemplo o cargas ya hechas. Cada uno lleva un aviso
+al inicio. **Ejecutelos solo antes de la 019**; despues, los datos de personas se cargan con la pantalla de Personal
+(o con la logica nueva: persona maestra + `persona_empresa` + `empleados` + `persona_documentos`).
+
+| Script | Que hace | Columnas viejas que usa |
+|--------|----------|-------------------------|
+| 013_datos_demo_control_salidas.sql | Datos demo de garita (busca conductores en `personas`) | `id_empresa`, `cargo` |
+| seed_combustible_mensual.sql | Semilla de combustible del mes | `id_empresa`, `cargo` |
+| seed_odometro_mensual.sql | Semilla de odometro del mes | `id_empresa`, `cargo` |
+| seed_salarios_mensual.sql | Semilla de salarios del mes | `id_empresa`, `cargo`, `tarifa_diaria` |
+| seed_demo_flota_extra.sql | Datos demo de flota (inserta y busca personas por documento) | `id_empresa`, `documento`, `tipo_documento`, `cargo`, `tarifa_diaria` |
+| Transgar/30_transgar_personas.sql | Carga de 68 empleados de Transgar | `id_empresa`, `documento`, `tipo_documento`, `cargo` |
+| Transgar/40_transgar_cargas_combustible.sql | Cargas de combustible de Transgar (cruza el conductor por documento) | `id_empresa`, `documento` |
+| Transgar/60_transgar_odometro_diario.sql | Odometros de Transgar (cruza el conductor por documento) | `id_empresa`, `documento` |
+
+`KPI_01_Catalogos.sql` crea `dbo.personas` con las columnas viejas, pero es parte de la cadena de creacion de una BD
+nueva (despues corren la 014, la 018 y la 019), asi que no lleva aviso.
+
 ## Reglas de ejecucion
 
 1. Ejecutar en orden ascendente de la columna Orden.

@@ -127,25 +127,6 @@ namespace eGestion360Web.Services.Personas
             vinculo.IdPersona = idPersona;
             _db.PersonaEmpresas.Add(vinculo);
 
-            // LEGADO: una persona que nunca fue empleado (por ejemplo, solo cliente) no tiene empresa ni cargo en las
-            // columnas viejas, y las pantallas y consumidores actuales la buscan por ahí. Si están vacías se llenan
-            // con este vínculo; si ya tienen los de otra empresa, no se tocan (no caben dos empresas en una columna).
-            var persona = await _db.Personas.FirstAsync(p => p.IdPersona == idPersona, ct);
-            if (persona.IdEmpresa == null)
-            {
-                var e = n.Empleado!;
-                persona.IdEmpresa = idEmpresa;
-                persona.Cargo = e.Cargo ?? "OTRO";
-                persona.TarifaDiaria = e.TarifaDiaria;
-                persona.MonedaTarifa = e.MonedaTarifa;
-                persona.FechaIngreso = e.FechaIngreso;
-                persona.FechaBaja = e.FechaBaja;
-                persona.TipoDocumento = n.TipoDocumento ?? "INTERNO";
-                persona.Documento = !string.IsNullOrEmpty(n.Documento) ? n.Documento : e.CodigoInterno ?? string.Empty;
-                persona.ModificadoPor = usuario;
-                persona.FechaModificacion = Ahora();
-            }
-
             try
             {
                 await _db.SaveChangesAsync(ct);
@@ -175,22 +156,8 @@ namespace eGestion360Web.Services.Personas
 
         private Persona ConstruirPersona(PersonaDatosNormalizados n, int idEmpresa, string usuario)
         {
-            var e = n.Empleado!;
-            var tieneDocumento = !string.IsNullOrEmpty(n.Documento);
-
             var persona = PersonasConstructor.Nueva(n, usuario, Ahora());
-
-            // LEGADO: se mantienen al día porque las pantallas y los consumidores actuales todavía las leen.
-            persona.IdEmpresa = idEmpresa;
-            persona.TipoDocumento = tieneDocumento ? n.TipoDocumento! : "INTERNO";
-            persona.Documento = tieneDocumento ? n.Documento! : e.CodigoInterno ?? string.Empty;
-            persona.Cargo = e.Cargo ?? "OTRO";
-            persona.TarifaDiaria = e.TarifaDiaria;
-            persona.MonedaTarifa = e.MonedaTarifa;
-            persona.FechaIngreso = e.FechaIngreso;
-            persona.FechaBaja = e.FechaBaja;
-
-            persona.Vinculos.Add(ConstruirVinculo(idEmpresa, e, usuario));
+            persona.Vinculos.Add(ConstruirVinculo(idEmpresa, n.Empleado!, usuario));
             return persona;
         }
 
@@ -318,8 +285,8 @@ namespace eGestion360Web.Services.Personas
             persona.PrimerApellido = n.PrimerApellido;
             persona.SegundoApellido = n.SegundoApellido;
             persona.NombreNormalizado = n.NombreNormalizado;
-            persona.Nombres = n.Nombres;       // LEGADO (compuesto)
-            persona.Apellidos = n.Apellidos;   // LEGADO (compuesto)
+            persona.Nombres = n.Nombres;       // compuesto
+            persona.Apellidos = n.Apellidos;   // compuesto
             persona.Sexo = n.Sexo;
             persona.EstadoCivil = n.EstadoCivil;
             persona.FechaNacimiento = n.FechaNacimiento;
@@ -366,14 +333,6 @@ namespace eGestion360Web.Services.Personas
                         });
                     }
                 }
-
-                persona.TipoDocumento = n.TipoDocumento!;   // LEGADO
-                persona.Documento = n.Documento;            // LEGADO
-            }
-            else if (e?.CodigoInterno != null && !persona.Documentos.Any(d => !d.Eliminado))
-            {
-                persona.TipoDocumento = "INTERNO";          // LEGADO: convención de las personas sin documento
-                persona.Documento = e.CodigoInterno;
             }
 
             // La identidad pasa a verificada cuando tiene un documento de identidad; nunca retrocede.
@@ -411,13 +370,6 @@ namespace eGestion360Web.Services.Personas
                     empleado.TarifaDiaria = e.TarifaDiaria;
                     empleado.MonedaTarifa = e.MonedaTarifa;
                 }
-
-                // LEGADO
-                persona.Cargo = e.Cargo ?? persona.Cargo;
-                persona.TarifaDiaria = e.TarifaDiaria;
-                persona.MonedaTarifa = e.MonedaTarifa;
-                persona.FechaIngreso = e.FechaIngreso;
-                persona.FechaBaja = e.FechaBaja;
             }
 
             MarcarModificados(usuario, ahora);
@@ -652,7 +604,7 @@ namespace eGestion360Web.Services.Personas
 
             if (input.IdEmpresa <= 0 || input.IdPersona <= 0) return noEncontrada;
 
-            // Se cargan todos los vínculos activos de la persona: la columna legada depende de los de otras empresas.
+            // Se cargan todos los vínculos activos de la persona: personas.activo depende de los de otras empresas.
             var persona = await _db.Personas
                 .Include(p => p.Vinculos.Where(v => !v.Eliminado)).ThenInclude(v => v.Empleado)
                 .FirstOrDefaultAsync(p => p.IdPersona == input.IdPersona && !p.Eliminado && p.IdPersonaPrincipal == null
@@ -667,7 +619,7 @@ namespace eGestion360Web.Services.Personas
                 if (vinculo.Empleado != null) vinculo.Empleado.Activo = input.Activo;
             }
 
-            // LEGADO: personas.activo es una sola columna; no se apaga mientras la persona siga activa en otra empresa.
+            // personas.activo es una sola columna: no se apaga mientras la persona siga activa en otra empresa.
             persona.Activo = persona.Vinculos.Any(v => v.Activo);
 
             MarcarModificados(input.Usuario, ahora);

@@ -123,22 +123,17 @@ namespace eGestion360Web.Tests.Services.Personas
         }
 
         [Fact]
-        public async Task Quien_solo_es_cliente_no_tiene_empresa_ni_cargo_en_las_columnas_viejas_y_no_aparece_en_las_listas_de_personal()
+        public async Task Quien_solo_es_cliente_no_aparece_en_la_lista_de_personal_ni_en_las_de_seleccion()
         {
             await RegistrarOk(Alta());
 
             using var db = _bd.Crear();
-            var persona = await db.Personas.AsNoTracking().SingleAsync();
-            Assert.Null(persona.IdEmpresa);
-            Assert.Null(persona.Cargo);
-            Assert.Null(persona.Documento);
-            Assert.Null(persona.TipoDocumento);
+            var consulta = new PersonaConsultaService(db, Options.Create(new PersonaValidacionOptions()));
 
-            // Lo que hacen las pantallas viejas (salarios, peajes...) y la lista nueva de personal.
-            Assert.Empty(await db.Personas.Where(p => p.IdEmpresa == DatosBase.EmpresaA && p.Activo).ToListAsync());
-            var lista = await new PersonaConsultaService(db, Options.Create(new PersonaValidacionOptions()))
-                .ListarAsync(DatosBase.EmpresaA, new PersonaFiltro());
-            Assert.Empty(lista);
+            // La lista de personal y las listas de las pantallas de operación (salarios, peajes, combustible...).
+            Assert.Empty(await consulta.ListarAsync(DatosBase.EmpresaA, new PersonaFiltro()));
+            Assert.Empty(await consulta.PersonalParaSeleccionAsync(DatosBase.EmpresaA));
+            Assert.Empty(await consulta.PersonalParaSeleccionAsync(DatosBase.EmpresaA, "CONDUCTOR"));
         }
 
         [Fact]
@@ -322,7 +317,6 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal(1, await db.Personas.CountAsync());
             var persona = await db.Personas.AsNoTracking().Include(p => p.Vinculos).SingleAsync();
             Assert.Null(persona.SegundoNombre);
-            Assert.Equal(DatosBase.EmpresaA, persona.IdEmpresa);   // sigue siendo del personal en las columnas viejas
             Assert.Equal(new[] { TiposVinculo.Cliente, TiposVinculo.Empleado }, persona.Vinculos.Select(v => v.TipoVinculo).OrderBy(x => x).ToArray());
 
             var cliente = await db.Clientes.AsNoTracking().SingleAsync();
@@ -667,12 +661,13 @@ namespace eGestion360Web.Tests.Services.Personas
 
             using var db2 = _bd.Crear();
             Assert.Equal(1, await db2.Personas.CountAsync());
-            var persona = await db2.Personas.AsNoTracking().Include(p => p.Vinculos).SingleAsync();
+            var persona = await db2.Personas.AsNoTracking().Include(p => p.Documentos)
+                .Include(p => p.Vinculos).ThenInclude(v => v.Empleado).SingleAsync();
             Assert.Equal(2, persona.Vinculos.Count);
-            Assert.Equal(DatosBase.EmpresaA, persona.IdEmpresa);
-            Assert.Equal("MECANICO", persona.Cargo);
-            Assert.Equal(350m, persona.TarifaDiaria);
-            Assert.Equal(Dni.Replace("-", ""), persona.Documento);
+            var empleado = persona.Vinculos.Single(v => v.TipoVinculo == TiposVinculo.Empleado).Empleado!;
+            Assert.Equal("MECANICO", empleado.Cargo);
+            Assert.Equal(350m, empleado.TarifaDiaria);
+            Assert.Equal(Dni.Replace("-", ""), Assert.Single(persona.Documentos).Numero);
 
             // Y ahora sí aparece en la lista de personal, sin dejar de ser cliente.
             var lista = await new PersonaConsultaService(db2, Options.Create(new PersonaValidacionOptions()))

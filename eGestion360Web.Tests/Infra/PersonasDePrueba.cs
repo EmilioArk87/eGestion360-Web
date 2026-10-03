@@ -23,16 +23,12 @@ namespace eGestion360Web.Tests.Infra
 
             var persona = new Persona
             {
-                IdEmpresa = idEmpresa,
                 Nombres = primerNombre,
                 Apellidos = primerApellido,
                 PrimerNombre = primerNombre,
                 PrimerApellido = primerApellido,
                 NombreNormalizado = NombresPersona.Normalizar(primerNombre, null, primerApellido, null),
                 FechaNacimiento = nacimiento,
-                Cargo = cargo,
-                TipoDocumento = dni != null ? "DNI" : "INTERNO",
-                Documento = dni ?? codigoInterno ?? "SIN-DOC",
                 EstadoIdentidad = dni != null ? EstadosIdentidad.Verificada : EstadosIdentidad.Pendiente,
                 CreadoPor = "pruebas",
                 FechaCreacion = ahora

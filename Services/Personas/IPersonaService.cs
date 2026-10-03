@@ -10,12 +10,11 @@ namespace eGestion360Web.Services.Personas
     /// misma persona: una persona puede ser empleado y cliente de la misma empresa con una sola ficha, y en cada
     /// sentido se le agrega el rol que le falta sin crear a nadie dos veces.
     ///
-    /// Compatibilidad: mientras existan las columnas legadas de dbo.personas (se retiran en el script
-    /// 019), el servicio las mantiene al día (nombres, apellidos, documento, cargo, tarifa, fechas), porque
-    /// las pantallas y los consumidores actuales todavía las leen. Una persona compartida entre empresas no
-    /// se puede representar en esas columnas, que son de una sola empresa: hasta que los consumidores lean
-    /// el vínculo (fase F6), una persona vinculada a una segunda empresa no aparece en las listas viejas de
-    /// esa empresa.
+    /// Datos de empleo: el servicio ya no escribe las columnas viejas de dbo.personas (id_empresa, documento,
+    /// tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso y fecha_baja; las retira el script
+    /// 019). El cargo y la tarifa viven en la ficha de empleado, las fechas en el vínculo y el documento en
+    /// persona_documentos; los nombres y apellidos compuestos se siguen armando porque muchas pantallas los
+    /// muestran. Quien necesite listar personal usa <see cref="IPersonaConsultaService"/>.
     ///
     /// Privacidad entre empresas (decisión D8): una empresa solo ve a las personas con las que tiene un
     /// vínculo. Registrar un documento que ya existe en otra empresa no lo revela: pide verificar al rol

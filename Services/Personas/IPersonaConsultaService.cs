@@ -26,6 +26,15 @@ namespace eGestion360Web.Services.Personas
         /// <summary>Los cargos activos de la empresa, para el filtro del listado.</summary>
         Task<IReadOnlyList<OpcionCatalogo>> CargosAsync(int idEmpresa, CancellationToken ct = default);
 
+        /// <summary>
+        /// El personal activo de la empresa, listo para elegirlo en un formulario de otro módulo (conductores de
+        /// combustible, peajes y salidas; personas de los salarios). Sale del vínculo de empleado y de su ficha, no de
+        /// las columnas viejas de personas, así que incluye también a quien trabaja en más de una empresa. Ordenado por
+        /// apellidos y nombres.
+        /// </summary>
+        /// <param name="cargo">Código del cargo (por ejemplo «CONDUCTOR»); nulo para todo el personal activo.</param>
+        Task<IReadOnlyList<OpcionPersona>> PersonalParaSeleccionAsync(int idEmpresa, string? cargo = null, CancellationToken ct = default);
+
         /// <summary>Las listas del formulario: cargos de la empresa y catálogos globales.</summary>
         Task<PersonaCatalogos> CatalogosAsync(int idEmpresa, CancellationToken ct = default);
     }
@@ -122,6 +131,9 @@ namespace eGestion360Web.Services.Personas
     // ── Catálogos del formulario ────────────────────────────────────────────
 
     public sealed record OpcionCatalogo(string Valor, string Texto);
+
+    /// <param name="NombreCompleto">Nombres y apellidos, tal como se muestran en las listas de elegir persona.</param>
+    public sealed record OpcionPersona(int IdPersona, string NombreCompleto);
     public sealed record OpcionDepartamento(int Id, string Nombre);
     public sealed record OpcionMunicipio(int Id, int IdDepartamento, string Nombre);
 

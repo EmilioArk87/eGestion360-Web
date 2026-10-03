@@ -10,10 +10,12 @@ namespace eGestion360Web.Models.Flota
     /// Su relación con cada empresa y su rol (empleado, cliente...) están en <see cref="Vinculos"/>;
     /// sus documentos de identidad, en <see cref="Documentos"/>.
     ///
-    /// Compatibilidad (fase "expandir" del plan de personas): los miembros marcados como LEGADO
-    /// siguen en la tabla y en esta clase porque las pantallas actuales los leen y escriben. Se
-    /// retiran en el script 019, cuando el código ya use persona_empresa, empleados y
-    /// persona_documentos.
+    /// Las columnas viejas de personas que describían a la persona como empleada de UNA empresa (id_empresa,
+    /// documento, tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso y fecha_baja) ya no están
+    /// en esta clase: pasaron a <see cref="PersonaEmpresa"/> (empresa, ingreso y baja), a <see cref="Empleado"/>
+    /// (cargo, tarifa y moneda) y a <see cref="PersonaDocumento"/> (documento). El script 019 las retira de la
+    /// tabla. Nombres y apellidos compuestos se conservan porque muchas pantallas muestran
+    /// <see cref="NombreCompleto"/>.
     /// </summary>
     [Table("personas")]
     public class Persona
@@ -22,58 +24,19 @@ namespace eGestion360Web.Models.Flota
         [Column("id_persona")]
         public int IdPersona { get; set; }
 
-        // ── LEGADO: pasan al vínculo (persona_empresa), a la ficha de empleado y a persona_documentos ──
-
-        /// <summary>
-        /// LEGADO: la empresa vive en <see cref="Vinculos"/>. Es nulo en quien nunca fue empleado (por ejemplo
-        /// una persona que solo es cliente): así no aparece en las listas viejas, que filtran por esta columna.
-        /// </summary>
-        [Column("id_empresa")]
-        public int? IdEmpresa { get; set; }
-
-        /// <summary>LEGADO: el documento de identidad vive en <see cref="Documentos"/>; el número de empleado, en Empleado.CodigoInterno.</summary>
-        [StringLength(30)]
-        [Display(Name = "Documento")]
-        [Column("documento")]
-        public string? Documento { get; set; } = string.Empty;
-
-        /// <summary>LEGADO: ver <see cref="Documentos"/>.</summary>
-        [StringLength(20)]
-        [Display(Name = "Tipo documento")]
-        [Column("tipo_documento")]
-        public string? TipoDocumento { get; set; } = "DNI";
-
-        /// <summary>LEGADO (compuesto): se compone con <see cref="PrimerNombre"/> y <see cref="SegundoNombre"/> al guardar.</summary>
+        /// <summary>COMPUESTO: se arma con <see cref="PrimerNombre"/> y <see cref="SegundoNombre"/> al guardar.</summary>
         [Required(ErrorMessage = "Los nombres son requeridos")]
         [StringLength(100)]
         [Display(Name = "Nombres")]
         [Column("nombres")]
         public string Nombres { get; set; } = string.Empty;
 
-        /// <summary>LEGADO (compuesto): se compone con <see cref="PrimerApellido"/> y <see cref="SegundoApellido"/> al guardar.</summary>
+        /// <summary>COMPUESTO: se arma con <see cref="PrimerApellido"/> y <see cref="SegundoApellido"/> al guardar.</summary>
         [Required(ErrorMessage = "Los apellidos son requeridos")]
         [StringLength(100)]
         [Display(Name = "Apellidos")]
         [Column("apellidos")]
         public string Apellidos { get; set; } = string.Empty;
-
-        /// <summary>LEGADO: el cargo vive en Empleado.Cargo. Es nulo en quien nunca fue empleado.</summary>
-        [StringLength(30)]
-        [Display(Name = "Cargo")]
-        [Column("cargo")]
-        public string? Cargo { get; set; } = "CONDUCTOR";
-
-        /// <summary>LEGADO: vive en Empleado.TarifaDiaria.</summary>
-        [Range(0, double.MaxValue)]
-        [Display(Name = "Tarifa diaria")]
-        [Column("tarifa_diaria")]
-        public decimal? TarifaDiaria { get; set; }
-
-        /// <summary>LEGADO: vive en Empleado.MonedaTarifa.</summary>
-        [StringLength(3)]
-        [Display(Name = "Moneda tarifa")]
-        [Column("moneda_tarifa")]
-        public string? MonedaTarifa { get; set; }
 
         // ── Contacto (se queda en la persona) ──
 
@@ -87,16 +50,10 @@ namespace eGestion360Web.Models.Flota
         [Column("email")]
         public string? Email { get; set; }
 
-        /// <summary>LEGADO: es el inicio del vínculo (PersonaEmpresa.FechaInicio).</summary>
-        [Display(Name = "Fecha de ingreso")]
-        [Column("fecha_ingreso")]
-        public DateOnly? FechaIngreso { get; set; }
-
-        /// <summary>LEGADO: es el fin del vínculo (PersonaEmpresa.FechaFin).</summary>
-        [Display(Name = "Fecha de baja")]
-        [Column("fecha_baja")]
-        public DateOnly? FechaBaja { get; set; }
-
+        /// <summary>
+        /// La persona está activa si lo está en alguna empresa; cada vínculo tiene además su propio estado
+        /// (<see cref="PersonaEmpresa.Activo"/>), que es el que mandan las listas de cada empresa.
+        /// </summary>
         [Display(Name = "Activo")]
         [Column("activo")]
         public bool Activo { get; set; } = true;

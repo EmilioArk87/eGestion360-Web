@@ -5,13 +5,20 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Pages.Flota.Operacion.SalariosDiarios
 {
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _db;
-        public CreateModel(ApplicationDbContext db) => _db = db;
+        private readonly IPersonaConsultaService _personal;
+
+        public CreateModel(ApplicationDbContext db, IPersonaConsultaService personal)
+        {
+            _db = db;
+            _personal = personal;
+        }
 
         [BindProperty] public SalarioDiario Item { get; set; } = new();
 
@@ -47,7 +54,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.SalariosDiarios
                 await _db.Vehiculos.Where(v => v.IdEmpresa == id && v.Activo).OrderBy(v => v.Placa).ToListAsync(),
                 "IdVehiculo", "Placa");
             ViewData["Personas"] = new SelectList(
-                await _db.Personas.Where(p => p.IdEmpresa == id && p.Activo).OrderBy(p => p.Apellidos).ToListAsync(),
+                await _personal.PersonalParaSeleccionAsync(id),
                 "IdPersona", "NombreCompleto");
         }
 

@@ -1,4 +1,11 @@
-﻿-- =============================================================================
+﻿-- AVISO (F6, 2026-10-02): ESQUEMA ANTERIOR A LA 019
+-- Este script lee o escribe las columnas viejas de dbo.personas (id_empresa, documento,
+-- tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso, fecha_baja).
+-- El script 019_personas_retirar_columnas.sql las elimina: DESPUES DE LA 019 ESTE SCRIPT
+-- YA NO FUNCIONA. Es historico o de datos de ejemplo; no lo ejecute contra una BD con la 019.
+-- Ver "Scripts que asumen el esquema anterior a la 019" en 1 - Documetacion/INDICE_SCRIPTS_SQL.md.
+-- ----------------------------------------------------------------------------------------
+-- =============================================================================
 -- Transgar - 60: Odometro diario desde 'Control de Combustible' (KM INICIAL / KM FINAL)
 -- Un registro por vehiculo+fecha: se toma la fila de MAYOR KM FINAL del dia con su propio
 -- par (km_inicial, km_final), evitando spans irreales al mezclar filas. Respeta el indice

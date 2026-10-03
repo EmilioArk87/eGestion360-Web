@@ -147,13 +147,6 @@ namespace eGestion360Web.Services.Personas
             {
                 personaNueva = PersonasConstructor.Nueva(n, usuario, ahora);
 
-                // LEGADO: quien solo es cliente no tiene empresa ni cargo en las columnas viejas. Así no entra en
-                // las listas de personal (salarios, peajes...) que todavía las leen.
-                personaNueva.IdEmpresa = null;
-                personaNueva.TipoDocumento = null;
-                personaNueva.Documento = null;
-                personaNueva.Cargo = null;
-
                 vinculo = NuevoVinculo(input.IdEmpresa, usuario, ahora);
                 personaNueva.Vinculos.Add(vinculo);
                 _db.Personas.Add(personaNueva);
