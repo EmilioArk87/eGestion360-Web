@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
+using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Services.Auditoria;
 
@@ -161,43 +162,15 @@ namespace eGestion360Web.Services.Personas
                     .Where(m => ids.Contains(m.IdMunicipio))
                     .ToDictionaryAsync(m => m.IdMunicipio, m => m.IdDepartamento, ct);
 
-            var datos = new PersonaDatosInput
+            var datos = DatosPersonales(persona, documento, idEmpresa);
+            datos.Empleado = new EmpleadoDatosInput
             {
-                IdEmpresa = idEmpresa,
-                IdPersona = persona.IdPersona,
-                PrimerNombre = persona.PrimerNombre,
-                SegundoNombre = persona.SegundoNombre,
-                PrimerApellido = persona.PrimerApellido,
-                SegundoApellido = persona.SegundoApellido,
-                TipoDocumento = documento?.TipoDocumento,
-                Documento = documento?.Numero,
-                PaisEmisor = documento?.PaisEmisor,
-                FechaNacimiento = persona.FechaNacimiento,
-                Sexo = persona.Sexo,
-                EstadoCivil = persona.EstadoCivil,
-                TipoSangre = persona.TipoSangre,
-                PaisNacionalidad = persona.PaisNacionalidad,
-                IdMunicipioNacimiento = persona.IdMunicipioNacimiento,
-                IdMunicipioResidencia = persona.IdMunicipioResidencia,
-                DireccionResidencia = persona.DireccionResidencia,
-                Telefono = persona.Telefono,
-                TelefonoSecundario = persona.TelefonoSecundario,
-                Email = persona.Email,
-                ContactoEmergenciaNombre = persona.ContactoEmergenciaNombre,
-                ContactoEmergenciaTelefono = persona.ContactoEmergenciaTelefono,
-                ContactoEmergenciaParentesco = persona.ContactoEmergenciaParentesco,
-                LicenciaTipo = persona.LicenciaTipo,
-                LicenciaNumero = persona.LicenciaNumero,
-                LicenciaVencimiento = persona.LicenciaVencimiento,
-                Empleado = new EmpleadoDatosInput
-                {
-                    CodigoInterno = vinculo.Empleado?.CodigoInterno,
-                    Cargo = vinculo.Empleado?.Cargo,
-                    FechaIngreso = vinculo.FechaInicio,
-                    FechaBaja = vinculo.FechaFin,
-                    TarifaDiaria = vinculo.Empleado?.TarifaDiaria,
-                    MonedaTarifa = vinculo.Empleado?.MonedaTarifa
-                }
+                CodigoInterno = vinculo.Empleado?.CodigoInterno,
+                Cargo = vinculo.Empleado?.Cargo,
+                FechaIngreso = vinculo.FechaInicio,
+                FechaBaja = vinculo.FechaFin,
+                TarifaDiaria = vinculo.Empleado?.TarifaDiaria,
+                MonedaTarifa = vinculo.Empleado?.MonedaTarifa
             };
 
             return new PersonaEdicion(
@@ -214,6 +187,37 @@ namespace eGestion360Web.Services.Personas
                 persona.ModificadoPor,
                 persona.FechaModificacion);
         }
+
+        /// <summary>Los datos personales de la persona en la forma que usan el formulario y el servicio, sin los datos de empleo.</summary>
+        internal static PersonaDatosInput DatosPersonales(Persona persona, PersonaDocumento? documento, int idEmpresa) => new()
+        {
+            IdEmpresa = idEmpresa,
+            IdPersona = persona.IdPersona,
+            PrimerNombre = persona.PrimerNombre,
+            SegundoNombre = persona.SegundoNombre,
+            PrimerApellido = persona.PrimerApellido,
+            SegundoApellido = persona.SegundoApellido,
+            TipoDocumento = documento?.TipoDocumento,
+            Documento = documento?.Numero,
+            PaisEmisor = documento?.PaisEmisor,
+            FechaNacimiento = persona.FechaNacimiento,
+            Sexo = persona.Sexo,
+            EstadoCivil = persona.EstadoCivil,
+            TipoSangre = persona.TipoSangre,
+            PaisNacionalidad = persona.PaisNacionalidad,
+            IdMunicipioNacimiento = persona.IdMunicipioNacimiento,
+            IdMunicipioResidencia = persona.IdMunicipioResidencia,
+            DireccionResidencia = persona.DireccionResidencia,
+            Telefono = persona.Telefono,
+            TelefonoSecundario = persona.TelefonoSecundario,
+            Email = persona.Email,
+            ContactoEmergenciaNombre = persona.ContactoEmergenciaNombre,
+            ContactoEmergenciaTelefono = persona.ContactoEmergenciaTelefono,
+            ContactoEmergenciaParentesco = persona.ContactoEmergenciaParentesco,
+            LicenciaTipo = persona.LicenciaTipo,
+            LicenciaNumero = persona.LicenciaNumero,
+            LicenciaVencimiento = persona.LicenciaVencimiento
+        };
 
         // ──────────────────────────────────────────────────────────────────
         //  HISTORIAL

@@ -1,0 +1,250 @@
+@page
+@model eGestion360Web.Pages.Admin.Personas.IndexModel
+@using eGestion360Web.Models.Personas
+@using eGestion360Web.Services.Personas
+@{
+    ViewData["Title"] = "Personas del sistema";
+    var resultado = Model.Resultado;
+
+    string Enlace(int pagina) => Url.Page("Index", new
+    {
+        Texto = Model.Texto,
+        IdEmpresa = Model.IdEmpresa,
+        Rol = Model.Rol,
+        Estado = Model.Estado == EstadoVinculoFiltro.Todos ? (EstadoVinculoFiltro?)null : Model.Estado,
+        Perfil = Model.Perfil == FiltroPerfilPersona.Todos ? (FiltroPerfilPersona?)null : Model.Perfil,
+        Pagina = pagina
+    })!;
+
+    var desde = resultado.Total == 0 ? 0 : (resultado.Pagina - 1) * resultado.Tamano + 1;
+    var hasta = desde + resultado.Filas.Count - (resultado.Total == 0 ? 0 : 1);
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active">Personas del sistema</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-address-book me-2" style="color:#0d6efd;"></i>Personas del sistema</h2>
+            <p class="text-muted mb-0">Todas las personas de todas las empresas, con las empresas a las que están asignadas y el rol que tienen en cada una</p>
+        </div>
+        <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Avisos"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Avisos"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filtros -->
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-lg">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input name="Texto" value="@Model.Texto" class="form-control"
+                               placeholder="Buscar por nombre, documento, código de empleado o de cliente..." />
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <select name="IdEmpresa" class="form-select" aria-label="Empresa">
+                        <option value="">— Todas las empresas —</option>
+                        @foreach (var e in Model.Empresas)
+                        {
+                            <option value="@e.Valor" selected="@(Model.IdEmpresa?.ToString() == e.Valor)">@e.Texto</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select name="Rol" class="form-select" aria-label="Rol">
+                        <option value="">— Todos los roles —</option>
+                        @foreach (var t in TiposVinculo.Todos)
+                        {
+                            <option value="@t" selected="@(Model.Rol == t)">@EtiquetasVinculo.Rol(t)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select name="Estado" class="form-select" aria-label="Estado del vínculo">
+                        <option value="@EstadoVinculoFiltro.Todos" selected="@(Model.Estado == EstadoVinculoFiltro.Todos)">— Con o sin vínculo vigente —</option>
+                        <option value="@EstadoVinculoFiltro.ConVinculoVigente" selected="@(Model.Estado == EstadoVinculoFiltro.ConVinculoVigente)">Con vínculo vigente</option>
+                        <option value="@EstadoVinculoFiltro.SinVinculoVigente" selected="@(Model.Estado == EstadoVinculoFiltro.SinVinculoVigente)">Sin vínculo vigente</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select name="Perfil" class="form-select" aria-label="Perfil">
+                        <option value="@FiltroPerfilPersona.Todos" selected="@(Model.Perfil == FiltroPerfilPersona.Todos)">— Todos los perfiles —</option>
+                        <option value="@FiltroPerfilPersona.Incompleto" selected="@(Model.Perfil == FiltroPerfilPersona.Incompleto)">Perfil incompleto</option>
+                        <option value="@FiltroPerfilPersona.NombresPorRevisar" selected="@(Model.Perfil == FiltroPerfilPersona.NombresPorRevisar)">Nombre por revisar</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i>Buscar</button>
+                    @if (Model.HayFiltros)
+                    {
+                        <a asp-page="Index" class="btn btn-outline-secondary ms-1" title="Quitar los filtros"><i class="fas fa-times"></i></a>
+                    }
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabla -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre completo</th>
+                            <th>Documento</th>
+                            <th>Teléfono</th>
+                            <th>Empresas y roles</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!resultado.Filas.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="fas fa-users fa-2x mb-2 d-block text-secondary"></i>
+                                    @(Model.HayFiltros ? "Ninguna persona coincide con los filtros." : "No hay personas registradas.")
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var p in resultado.Filas)
+                            {
+                                var partes = p.NombreCompleto.Split(", ", 2);
+                                <tr>
+                                    <td>
+                                        <a asp-page="Edit" asp-route-id="@p.IdPersona" class="text-decoration-none text-reset">
+                                            <strong>@partes[0]</strong>@(partes.Length > 1 ? ", " + partes[1] : "")
+                                        </a>
+                                        <div>
+                                            @if (p.EstadoIdentidad == EstadosIdentidad.Verificada)
+                                            {
+                                                <span class="badge bg-success" title="Tiene un documento de identidad registrado"><i class="fas fa-check-circle me-1"></i>Verificada</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary" title="Todavía no tiene un documento de identidad registrado"><i class="fas fa-hourglass-half me-1"></i>Pendiente</span>
+                                            }
+                                            @if (p.PerfilIncompleto)
+                                            {
+                                                <span class="badge bg-warning text-dark" title="Falta: @string.Join(", ", p.Faltantes)">
+                                                    <i class="fas fa-exclamation-circle me-1"></i>Perfil incompleto
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-muted small text-nowrap">
+                                        @if (!string.IsNullOrEmpty(p.Documento))
+                                        {
+                                            <span class="badge bg-light text-dark border me-1">@p.TipoDocumento</span>
+                                            <span>@DocumentosIdentidad.Enmascarar(p.Documento)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Sin documento</span>
+                                        }
+                                    </td>
+                                    <td class="text-nowrap">@(string.IsNullOrEmpty(p.Telefono) ? "—" : ContactoPersona.FormatearTelefono(p.Telefono))</td>
+                                    <td>
+                                        @if (!p.Vinculos.Any())
+                                        {
+                                            <span class="text-muted small fst-italic">Sin empresas</span>
+                                        }
+                                        else
+                                        {
+                                            foreach (var v in p.Vinculos)
+                                            {
+                                                <span class="badge @EtiquetasVinculo.Clase(v.TipoVinculo, v.Vigente) me-1 mb-1 fw-normal"
+                                                      title="@EtiquetasVinculo.Estado(v.Activo, v.FechaFin)@(v.Detalle != null ? " · " + v.Detalle : "")">
+                                                    @v.Empresa · <strong>@EtiquetasVinculo.Rol(v.TipoVinculo)</strong>
+                                                </span>
+                                            }
+                                        }
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <a asp-page="Edit" asp-route-id="@p.IdPersona" class="btn btn-sm btn-outline-primary" title="Ver y editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-page="Historial" asp-route-id="@p.IdPersona" class="btn btn-sm btn-outline-secondary" title="Historial de cambios">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (resultado.Filas.Any())
+        {
+            <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-2 px-3">
+                <span class="text-muted small">
+                    @desde–@hasta de @resultado.Total persona(s)
+                </span>
+                @if (resultado.TotalPaginas > 1)
+                {
+                    var inicio = Math.Max(1, resultado.Pagina - 2);
+                    var fin = Math.Min(resultado.TotalPaginas, resultado.Pagina + 2);
+                    <nav aria-label="Páginas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(resultado.Pagina <= 1 ? "disabled" : "")">
+                                <a class="page-link" href="@Enlace(resultado.Pagina - 1)" aria-label="Anterior">&laquo;</a>
+                            </li>
+                            @if (inicio > 1)
+                            {
+                                <li class="page-item"><a class="page-link" href="@Enlace(1)">1</a></li>
+                                @if (inicio > 2)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                }
+                            }
+                            @for (var n = inicio; n <= fin; n++)
+                            {
+                                <li class="page-item @(n == resultado.Pagina ? "active" : "")">
+                                    <a class="page-link" href="@Enlace(n)">@n</a>
+                                </li>
+                            }
+                            @if (fin < resultado.TotalPaginas)
+                            {
+                                @if (fin < resultado.TotalPaginas - 1)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                }
+                                <li class="page-item"><a class="page-link" href="@Enlace(resultado.TotalPaginas)">@resultado.TotalPaginas</a></li>
+                            }
+                            <li class="page-item @(resultado.Pagina >= resultado.TotalPaginas ? "disabled" : "")">
+                                <a class="page-link" href="@Enlace(resultado.Pagina + 1)" aria-label="Siguiente">&raquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+            </div>
+        }
+    </div>
+</div>

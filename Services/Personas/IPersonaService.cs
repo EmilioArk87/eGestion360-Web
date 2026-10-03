@@ -38,6 +38,15 @@ namespace eGestion360Web.Services.Personas
         Task<ResultadoActualizarPersona> ActualizarAsync(ActualizarPersonaInput input, CancellationToken ct = default);
 
         /// <summary>
+        /// Edición de los DATOS PERSONALES de cualquier persona del sistema, para el administrador general: nombre,
+        /// documento, datos personales, contacto y licencia. No pide empresa y no toca el vínculo, la ficha de empleado
+        /// ni la tarifa (esos datos son de cada empresa): <c>Datos.Empleado</c> se ignora. Un documento que ya tiene otra
+        /// persona es un error y no se ofrece fusión. Quien llama debe haber comprobado que el usuario es administrador
+        /// general: el servicio no mira la sesión.
+        /// </summary>
+        Task<ResultadoActualizarPersona> ActualizarComoAdministradorAsync(ActualizarPersonaInput input, CancellationToken ct = default);
+
+        /// <summary>
         /// Fusiona dos fichas de la misma persona: la sobrante queda marcada como fusionada y apunta a la
         /// principal; sus documentos, vínculos y registros operativos pasan a la principal, todo en una
         /// transacción. Las dos personas deben pertenecer a la empresa de la sesión.

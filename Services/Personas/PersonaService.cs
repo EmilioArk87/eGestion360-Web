@@ -249,11 +249,48 @@ namespace eGestion360Web.Services.Personas
                         fusion.Errores.Select(m => new ErrorValidacion(string.Empty, m)).ToList(), validacion.Advertencias);
             }
 
+            return await GuardarCambiosAsync(persona, n, idEmpresa, input, validacion.Advertencias, ct);
+        }
+
+        public async Task<ResultadoActualizarPersona> ActualizarComoAdministradorAsync(ActualizarPersonaInput input, CancellationToken ct = default)
+        {
+            ArgumentNullException.ThrowIfNull(input);
+
+            var datos = input.Datos;
+            datos.Modo = ModoValidacionPersona.EdicionAdministrador;
+            datos.IdEmpresa = 0;      // el administrador general no trabaja con ninguna empresa
+            datos.Empleado = null;    // los datos de empleo son de cada empresa: aquí no se tocan
+            datos.DocumentoDeLaEmpresaEsDuplicado = true;
+
+            if (datos.IdPersona is not > 0)
+                return Actualizacion(EstadoActualizarPersona.NoEncontrada, null);
+
+            var idPersona = datos.IdPersona.Value;
+
+            // Cualquier persona, de la empresa que sea, salvo las eliminadas y las fusionadas en otra.
+            var persona = await _db.Personas
+                .Include(p => p.Documentos)
+                .FirstOrDefaultAsync(p => p.IdPersona == idPersona && !p.Eliminado && p.IdPersonaPrincipal == null, ct);
+            if (persona == null)
+                return Actualizacion(EstadoActualizarPersona.NoEncontrada, null);
+
+            var validacion = await _validacion.ValidarAsync(datos, ct);
+            if (!validacion.Ok)
+                return Actualizacion(EstadoActualizarPersona.Rechazada, null, validacion.Errores, validacion.Advertencias);
+
+            return await GuardarCambiosAsync(persona, validacion.Datos, 0, input, validacion.Advertencias, ct);
+        }
+
+        /// <summary>Aplica los datos validados a la persona y guarda: concurrencia, razón social de sus clientes y errores de la base.</summary>
+        private async Task<ResultadoActualizarPersona> GuardarCambiosAsync(
+            Persona persona, PersonaDatosNormalizados n, int idEmpresa, ActualizarPersonaInput input,
+            IReadOnlyList<string> advertencias, CancellationToken ct)
+        {
             if (input.TokenConcurrencia is { Length: > 0 } token)
                 _db.Entry(persona).Property(p => p.TokenConcurrencia).OriginalValue = token;
 
             await AplicarCambiosAsync(persona, n, idEmpresa, input.Usuario, ct);
-            await SincronizarRazonSocialAsync(idPersona, persona.Nombres, persona.Apellidos, input.Usuario, Ahora(), ct);
+            await SincronizarRazonSocialAsync(persona.IdPersona, persona.Nombres, persona.Apellidos, input.Usuario, Ahora(), ct);
 
             try
             {
@@ -262,16 +299,16 @@ namespace eGestion360Web.Services.Personas
             catch (DbUpdateConcurrencyException)
             {
                 return Actualizacion(EstadoActualizarPersona.Rechazada, null,
-                    new[] { new ErrorValidacion(string.Empty, MensajeConcurrencia) }, validacion.Advertencias);
+                    new[] { new ErrorValidacion(string.Empty, MensajeConcurrencia) }, advertencias);
             }
             catch (DbUpdateException ex)
             {
-                _log.LogError(ex, "No se pudo actualizar a la persona {IdPersona}", idPersona);
+                _log.LogError(ex, "No se pudo actualizar a la persona {IdPersona}", persona.IdPersona);
                 return Actualizacion(EstadoActualizarPersona.Rechazada, null,
-                    new[] { new ErrorValidacion(string.Empty, MensajeNoGuardado) }, validacion.Advertencias);
+                    new[] { new ErrorValidacion(string.Empty, MensajeNoGuardado) }, advertencias);
             }
 
-            return Actualizacion(EstadoActualizarPersona.Actualizada, idPersona, advertencias: validacion.Advertencias);
+            return Actualizacion(EstadoActualizarPersona.Actualizada, persona.IdPersona, advertencias: advertencias);
         }
 
         private async Task AplicarCambiosAsync(Persona persona, PersonaDatosNormalizados n, int idEmpresa, string usuario, CancellationToken ct)

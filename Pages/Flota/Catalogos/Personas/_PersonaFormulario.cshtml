@@ -3,8 +3,10 @@
 @{
     var cat = Model.Catalogos;
     var datos = Model.Datos;
+    // En la edición del administrador general no hay cargo: la licencia es un dato de la persona y se muestra siempre.
     var esConductor = string.Equals(datos.Empleado?.Cargo, Model.CodigoConductor, StringComparison.OrdinalIgnoreCase)
-                      || !string.IsNullOrWhiteSpace(datos.LicenciaNumero);
+                      || !string.IsNullOrWhiteSpace(datos.LicenciaNumero)
+                      || Model.SoloDatosPersonales;
 
     SelectList Lista(IEnumerable<OpcionCatalogo> opciones) => new(opciones, nameof(OpcionCatalogo.Valor), nameof(OpcionCatalogo.Texto));
 
@@ -223,7 +225,7 @@
 </div>
 
 <!-- 5. Conductor (solo si el cargo es conductor o ya tiene licencia) -->
-<div class="card border-0 shadow-sm mb-3 @(esConductor ? "" : "d-none")" id="seccion-conductor">
+<div class="card border-0 shadow-sm mb-3 @(esConductor ? "" : "d-none")" id="seccion-conductor" @(Model.SoloDatosPersonales ? "data-siempre-visible" : "")>
     <div class="card-header bg-white fw-semibold py-3">
         <i class="fas fa-id-card-alt me-2 text-primary"></i>Conductor
     </div>
@@ -261,7 +263,9 @@
     </div>
 </div>
 
-<!-- 6. Laboral -->
+<!-- 6. Laboral (el administrador general no edita datos de empleo: son de cada empresa) -->
+@if (!Model.SoloDatosPersonales)
+{
 <div class="card border-0 shadow-sm mb-3">
     <div class="card-header bg-white fw-semibold py-3">
         <i class="fas fa-briefcase me-2 text-primary"></i>Datos laborales
@@ -304,3 +308,4 @@
         </div>
     </div>
 </div>
+}

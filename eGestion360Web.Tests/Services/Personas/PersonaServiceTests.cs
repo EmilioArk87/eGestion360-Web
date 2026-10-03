@@ -940,5 +940,201 @@ namespace eGestion360Web.Tests.Services.Personas
             using var db2 = Contexto();
             Assert.Equal(EstadoActualizarPersona.NoEncontrada, (await Servicio(db2).ActualizarAsync(edicion)).Estado);
         }
+
+        // ── Edición por el administrador general ────────────────────────────
+
+        /// <summary>El administrador general no tiene empresa en la sesión: la bitácora no recibe ninguna.</summary>
+        private ApplicationDbContext ContextoAdmin() =>
+            _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "admin", IdEmpresa = null }));
+
+        /// <summary>Lo que envía la pantalla del administrador: los datos personales tal como están, con los cambios que quiera.</summary>
+        private async Task<ActualizarPersonaInput> EdicionAdmin(int idPersona, Action<PersonaDatosInput>? cambiar = null)
+        {
+            using var db = _bd.Crear();
+            var p = await db.Personas.AsNoTracking().Include(x => x.Documentos).SingleAsync(x => x.IdPersona == idPersona);
+            var documento = p.Documentos.FirstOrDefault(d => !d.Eliminado);
+
+            var datos = new PersonaDatosInput
+            {
+                IdPersona = idPersona,
+                PrimerNombre = p.PrimerNombre, SegundoNombre = p.SegundoNombre, PrimerApellido = p.PrimerApellido, SegundoApellido = p.SegundoApellido,
+                TipoDocumento = documento?.TipoDocumento, Documento = documento?.Numero, PaisEmisor = documento?.PaisEmisor,
+                FechaNacimiento = p.FechaNacimiento, Telefono = p.Telefono, Email = p.Email
+            };
+            cambiar?.Invoke(datos);
+            return new ActualizarPersonaInput { Usuario = "admin", Datos = datos };
+        }
+
+        [Fact]
+        public async Task El_administrador_edita_los_datos_personales_de_una_persona_de_cualquier_empresa_sin_tocar_su_empleo()
+        {
+            var id = await CrearPersona(Alta());   // empleado de la empresa B; la sesión del administrador no tiene empresa
+            using (var db = _bd.Crear()) { db.BitacoraCambios.RemoveRange(db.BitacoraCambios); await db.SaveChangesAsync(); }
+
+            var edicion = await EdicionAdmin(id, d =>
+            {
+                d.SegundoNombre = "Alberto";
+                d.Telefono = "2222-3333";
+                d.Email = "Luis.Perez@Empresa.com";
+                // Datos de empleo que el administrador no puede cambiar: se ignoran aunque lleguen.
+                d.IdEmpresa = DatosBase.EmpresaA;
+                d.Empleado = new EmpleadoDatosInput { Cargo = "SUPERVISOR", CodigoInterno = "ZZ", TarifaDiaria = 999m };
+            });
+
+            using (var db = ContextoAdmin())
+            {
+                var r = await Servicio(db).ActualizarComoAdministradorAsync(edicion);
+                Assert.Equal(EstadoActualizarPersona.Actualizada, r.Estado);
+                Assert.Equal(id, r.IdPersona);
+            }
+
+            using var lectura = _bd.Crear();
+            var p = await lectura.Personas.AsNoTracking().Include(x => x.Vinculos).ThenInclude(v => v.Empleado).SingleAsync(x => x.IdPersona == id);
+            Assert.Equal("Alberto", p.SegundoNombre);
+            Assert.Equal("Luis Alberto", p.Nombres);
+            Assert.Equal("22223333", p.Telefono);
+            Assert.Equal("luis.perez@empresa.com", p.Email);
+            Assert.Equal("admin", p.ModificadoPor);
+
+            // El empleo de la empresa B quedó como estaba.
+            var vinculo = Assert.Single(p.Vinculos);
+            Assert.Equal(DatosBase.EmpresaB, vinculo.IdEmpresa);
+            Assert.Equal("MECANICO", vinculo.Empleado!.Cargo);
+            Assert.Equal("M100", vinculo.Empleado.CodigoInterno);
+            Assert.Equal(350m, vinculo.Empleado.TarifaDiaria);
+            Assert.Null(vinculo.ModificadoPor);
+
+            // La bitácora lo atribuye al administrador y no a una empresa; no hay filas de empleo.
+            var filas = await lectura.BitacoraCambios.AsNoTracking().ToListAsync();
+            Assert.All(filas, f => { Assert.Equal("UPDATE", f.Operacion); Assert.Equal("admin", f.Usuario); Assert.Null(f.IdEmpresa); Assert.Equal(id, f.IdPersona); });
+            var campos = filas.Select(f => f.Entidad + "." + f.Campo).ToList();
+            Assert.Contains("personas.segundo_nombre", campos);
+            Assert.Contains("personas.telefono", campos);
+            Assert.DoesNotContain(filas, f => f.Entidad is "empleados" or "persona_empresa");
+        }
+
+        [Fact]
+        public async Task El_administrador_no_puede_poner_un_documento_que_ya_tiene_otra_persona_de_cualquier_empresa()
+        {
+            var ana = await CrearPersona(Alta());                       // empresa B, DNI 0801-1990-12345
+            int otra;
+            using (var db = _bd.Crear())
+                otra = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Beto", "Rivas", dni: "0801-1985-11111", codigoInterno: "A1").IdPersona;
+
+            var edicion = await EdicionAdmin(otra, d => { d.TipoDocumento = "DNI"; d.Documento = "0801-1990-12345"; });
+            using var db2 = ContextoAdmin();
+            var r = await Servicio(db2).ActualizarComoAdministradorAsync(edicion);
+
+            Assert.Equal(EstadoActualizarPersona.Rechazada, r.Estado);   // sin ofrecer fusión
+            var error = Assert.Single(r.Errores, e => e.Campo == "Documento");
+            Assert.Contains($"n.º {ana}", error.Mensaje);
+
+            using var lectura = _bd.Crear();
+            Assert.Equal("0801198511111", (await lectura.PersonaDocumentos.AsNoTracking().SingleAsync(d => d.IdPersona == otra)).NumeroNormalizado);
+        }
+
+        [Fact]
+        public async Task El_administrador_agrega_el_documento_a_quien_no_lo_tenia_y_la_identidad_pasa_a_verificada()
+        {
+            var input = Alta(); input.Datos.TipoDocumento = null; input.Datos.Documento = null;
+            var id = await CrearPersona(input);
+
+            var edicion = await EdicionAdmin(id, d => { d.TipoDocumento = "DNI"; d.Documento = "0801-1990-55555"; });
+            using (var db = ContextoAdmin())
+                Assert.Equal(EstadoActualizarPersona.Actualizada, (await Servicio(db).ActualizarComoAdministradorAsync(edicion)).Estado);
+
+            using var lectura = _bd.Crear();
+            var p = await lectura.Personas.AsNoTracking().Include(x => x.Documentos).SingleAsync(x => x.IdPersona == id);
+            Assert.Equal("0801199055555", Assert.Single(p.Documentos).Numero);
+            Assert.Equal(EstadosIdentidad.Verificada, p.EstadoIdentidad);
+        }
+
+        [Fact]
+        public async Task El_administrador_no_encuentra_a_una_persona_eliminada_fusionada_o_inexistente()
+        {
+            var id = await CrearPersona(Alta());
+            int eliminada, fusionada;
+            using (var db = _bd.Crear())
+            {
+                var e = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Eli", "Mina", codigoInterno: "E1");
+                var f = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Fus", "Ion", codigoInterno: "F1");
+                e.Eliminado = true; f.IdPersonaPrincipal = id;
+                db.SaveChanges();
+                eliminada = e.IdPersona; fusionada = f.IdPersona;
+            }
+
+            foreach (var inexistente in new int?[] { eliminada, fusionada, 9999, 0, null })
+            {
+                var edicion = await EdicionAdmin(id);
+                edicion.Datos.IdPersona = inexistente;
+                using var db = ContextoAdmin();
+                Assert.Equal(EstadoActualizarPersona.NoEncontrada, (await Servicio(db).ActualizarComoAdministradorAsync(edicion)).Estado);
+            }
+        }
+
+        [Fact]
+        public async Task El_administrador_ve_los_errores_de_validacion_y_no_se_guarda_nada()
+        {
+            var id = await CrearPersona(Alta());
+            var edicion = await EdicionAdmin(id, d => { d.PrimerNombre = "J0se"; d.Telefono = "12"; d.LicenciaNumero = "SOLO-NUMERO"; });
+
+            using (var db = ContextoAdmin())
+            {
+                var r = await Servicio(db).ActualizarComoAdministradorAsync(edicion);
+                Assert.Equal(EstadoActualizarPersona.Rechazada, r.Estado);
+                Assert.Contains(r.Errores, e => e.Campo == "PrimerNombre");
+                Assert.Contains(r.Errores, e => e.Campo == "Telefono");
+                Assert.Contains(r.Errores, e => e.Campo == "LicenciaTipo");   // número sin categoría
+            }
+
+            using var lectura = _bd.Crear();
+            var p = await lectura.Personas.AsNoTracking().SingleAsync(x => x.IdPersona == id);
+            Assert.Equal("Luis", p.PrimerNombre);
+            Assert.Null(p.ModificadoPor);
+        }
+
+        [Fact]
+        public async Task El_administrador_guarda_la_licencia_completa_de_quien_no_es_conductor()
+        {
+            var id = await CrearPersona(Alta());
+            var edicion = await EdicionAdmin(id, d =>
+            {
+                d.LicenciaTipo = "c"; d.LicenciaNumero = "lic-123"; d.LicenciaVencimiento = RelojFijo.Hoy.AddYears(3);
+            });
+
+            using (var db = ContextoAdmin())
+                Assert.Equal(EstadoActualizarPersona.Actualizada, (await Servicio(db).ActualizarComoAdministradorAsync(edicion)).Estado);
+
+            using var lectura = _bd.Crear();
+            var p = await lectura.Personas.AsNoTracking().SingleAsync(x => x.IdPersona == id);
+            Assert.Equal("C", p.LicenciaTipo);
+            Assert.Equal("LIC-123", p.LicenciaNumero);
+        }
+
+        [Fact]
+        public async Task Al_cambiar_el_nombre_el_administrador_actualiza_la_razon_social_de_sus_clientes_en_cualquier_empresa()
+        {
+            var id = await CrearPersona(Alta());                       // empleado en la empresa B
+            using (var db = _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaA })))
+            {
+                var vinculos = new VinculoService(db,
+                    new PersonaValidacionService(db, Options.Create(new PersonaValidacionOptions()), _reloj),
+                    Options.Create(new PersonaValidacionOptions()), _reloj, NullLogger<VinculoService>.Instance);
+                var r = await vinculos.RegistrarClienteNaturalAsync(new RegistrarClienteNaturalInput
+                {
+                    IdEmpresa = DatosBase.EmpresaA, Usuario = "ventas",
+                    Persona = new PersonaDatosInput { PrimerNombre = "Luis", PrimerApellido = "Pérez", TipoDocumento = "DNI", Documento = "0801-1990-12345" },
+                    Cliente = new ClienteDatosInput { Codigo = "C-1" }
+                });
+                Assert.True(r.Ok, string.Join(" | ", r.Errores.Select(e => e.Mensaje)));
+            }
+
+            var edicion = await EdicionAdmin(id, d => d.PrimerApellido = "Pereira");
+            using (var db = ContextoAdmin())
+                Assert.Equal(EstadoActualizarPersona.Actualizada, (await Servicio(db).ActualizarComoAdministradorAsync(edicion)).Estado);
+
+            using var lectura = _bd.Crear();
+            Assert.Equal("Luis Pereira", (await lectura.Clientes.AsNoTracking().SingleAsync()).RazonSocial);
+        }
     }
 }

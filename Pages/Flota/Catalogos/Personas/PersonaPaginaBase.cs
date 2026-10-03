@@ -123,6 +123,12 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         public int? IdDepartamentoResidencia { get; init; }
         public bool EsEdicion { get; init; }
 
+        /// <summary>
+        /// Solo los datos de la persona, sin la sección de datos laborales (cargo, código, tarifa): es el formulario
+        /// del administrador general, que no edita datos de empleo. La sección de licencia se muestra siempre.
+        /// </summary>
+        public bool SoloDatosPersonales { get; init; }
+
         /// <summary>El texto antiguo «nombres apellidos», solo cuando todavía no está separado.</summary>
         public string? NombresPorSeparar { get; init; }
 

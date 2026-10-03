@@ -40,7 +40,7 @@ namespace eGestion360Web.Services.Personas
             var esConductor = conRol && string.Equals(
                 NombresPersona.Limpiar(input.Empleado!.Cargo), _opt.CodigoCargoConductor, StringComparison.OrdinalIgnoreCase);
 
-            if (input.IdEmpresa <= 0)
+            if (input.IdEmpresa <= 0 && input.Modo != ModoValidacionPersona.EdicionAdministrador)
                 v.Error(nameof(PersonaDatosInput.IdEmpresa), "Empresa requerida.");
 
             ValidarNombres(input, d, v);
@@ -184,6 +184,14 @@ namespace eGestion360Web.Services.Personas
             if (otraPersona == null) return null;
 
             var idOtra = otraPersona.Value;
+
+            // El administrador general ve todo el sistema: para él cualquier duplicado es un error, con su número.
+            if (i.Modo == ModoValidacionPersona.EdicionAdministrador)
+            {
+                v.Error(nameof(PersonaDatosInput.Documento), $"Ese documento ya pertenece a otra persona registrada (n.º {idOtra}).");
+                return new DocumentoExistente(idOtra, false);
+            }
+
             var enEstaEmpresa = await _db.PersonaEmpresas.AsNoTracking()
                 .AnyAsync(x => x.IdPersona == idOtra && x.IdEmpresa == i.IdEmpresa && !x.Eliminado, ct);
 
@@ -342,11 +350,12 @@ namespace eGestion360Web.Services.Personas
                 {
                     d.Email = correo;
                     var excluir = i.IdPersona ?? 0;
+                    var detodas = i.Modo == ModoValidacionPersona.EdicionAdministrador;
                     var usado = await _db.Personas.AsNoTracking()
                         .AnyAsync(p => !p.Eliminado && p.IdPersona != excluir && p.Email == correo
-                                       && p.Vinculos.Any(x => x.IdEmpresa == i.IdEmpresa && !x.Eliminado), ct);
+                                       && (detodas || p.Vinculos.Any(x => x.IdEmpresa == i.IdEmpresa && !x.Eliminado)), ct);
                     if (usado)
-                        v.Aviso("Ya hay otra persona de esta empresa con ese correo.");
+                        v.Aviso(detodas ? "Ya hay otra persona con ese correo." : "Ya hay otra persona de esta empresa con ese correo.");
                 }
                 else
                 {

@@ -110,7 +110,8 @@ namespace eGestion360Web.Services.Auditoria
         /// Resume la foto JSON de un alta o una baja como «Campo: valor, Campo: valor». Si el texto no es un JSON
         /// de objeto (o no hay), devuelve nulo.
         /// </summary>
-        public static string? Resumir(string? json)
+        /// <param name="omitir">Nombres de columna que no se incluyen en el resumen (por ejemplo, los salarios).</param>
+        public static string? Resumir(string? json, IReadOnlySet<string>? omitir = null)
         {
             if (string.IsNullOrWhiteSpace(json)) return null;
 
@@ -122,6 +123,8 @@ namespace eGestion360Web.Services.Auditoria
                 var partes = new List<string>();
                 foreach (var propiedad in documento.RootElement.EnumerateObject())
                 {
+                    if (omitir != null && omitir.Contains(propiedad.Name)) continue;
+
                     var valor = propiedad.Value.ValueKind switch
                     {
                         JsonValueKind.String => propiedad.Value.GetString(),

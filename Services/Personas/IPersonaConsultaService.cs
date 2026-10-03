@@ -116,6 +116,7 @@ namespace eGestion360Web.Services.Personas
     /// <param name="Campo">Nombre del campo en español; nulo en altas y bajas.</param>
     /// <param name="Detalle">En altas y bajas, un resumen de lo que se creó o se borró; nulo si no se puede mostrar.</param>
     /// <param name="Usuario">Quien hizo el cambio, o «otra empresa» si fue desde otra empresa.</param>
+    /// <param name="Empresa">La empresa desde la que se hizo el cambio. Solo la informa el historial del administrador general; en el de una empresa va nulo.</param>
     public sealed record HistorialFila(
         DateTime FechaHora,
         string Entidad,
@@ -126,7 +127,8 @@ namespace eGestion360Web.Services.Personas
         string? Detalle,
         string Usuario,
         Guid IdTransaccion,
-        bool DeOtraEmpresa);
+        bool DeOtraEmpresa,
+        string? Empresa = null);
 
     // ── Catálogos del formulario ────────────────────────────────────────────
 

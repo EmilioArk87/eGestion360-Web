@@ -47,6 +47,7 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 | [Vistas/Flota_ControlSalidas.md](Vistas/Flota_ControlSalidas.md) | Control de salidas y entradas en garita: vista en vivo e historial |
 | [Vistas/Flota_Catalogos_Personas.md](Vistas/Flota_Catalogos_Personas.md) | Personal (personas maestras por empresa): listado, nuevo, editar e historial de cambios |
 | [Vistas/Catalogos_Clientes.md](Vistas/Catalogos_Clientes.md) | Clientes: alta con ficha de persona (reutilizada entre empresas), edición, baja y eliminación |
+| [Vistas/Admin_Personas.md](Vistas/Admin_Personas.md) | Personas del sistema (solo administrador general): todas las personas con sus empresas y roles, edición de datos personales e historial completo |
 | [Vistas/_PlantillaVista.md](Vistas/_PlantillaVista.md) | Plantilla para documentar una vista nueva |
 
 ## Base de Datos

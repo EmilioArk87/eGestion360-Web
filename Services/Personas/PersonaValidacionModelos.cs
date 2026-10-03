@@ -32,7 +32,14 @@ namespace eGestion360Web.Services.Personas
         /// Edición de una persona existente: solo se exigen el primer nombre y el primer apellido, y lo
         /// que falta pasa a advertencia, para que las fichas antiguas se completen poco a poco.
         /// </summary>
-        Edicion
+        Edicion,
+
+        /// <summary>
+        /// Edición de los datos personales por el administrador general, que no trabaja con ninguna empresa. Igual
+        /// que <see cref="Edicion"/>, pero no pide empresa y un documento que ya tiene otra persona, de cualquier
+        /// empresa, es un error (el administrador ve todo el sistema, así que no hay nada que ocultar).
+        /// </summary>
+        EdicionAdministrador
     }
 
     public sealed class PersonaDatosInput

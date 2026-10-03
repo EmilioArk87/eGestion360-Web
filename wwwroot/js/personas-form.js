@@ -137,7 +137,7 @@
 
         function actualizarConductor() {
             var seccion = document.getElementById('seccion-conductor');
-            if (!seccion) return;
+            if (!seccion || seccion.hasAttribute('data-siempre-visible')) return;
             seccion.classList.toggle('d-none', !(esConductor() || tieneLicencia()));
         }
 
