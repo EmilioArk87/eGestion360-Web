@@ -11,8 +11,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // AdminOnlyPageFilter cierra el acceso anónimo a las páginas de mantenimiento
 // (/ResetAdmin, /DebugUsers, /ResetCodesHistory, config SMTP…). Ver el filtro.
+// EmpresaRequeridaPageFilter desvía a quien no trae empresa en la sesión (el administrador general) de las pantallas
+// de Flota, que operan sobre una sola empresa y ya no caen en la empresa 1 por defecto. Ver el filtro.
 builder.Services.AddRazorPages()
-    .AddMvcOptions(options => options.Filters.Add<AdminOnlyPageFilter>());
+    .AddMvcOptions(options =>
+    {
+        options.Filters.Add<AdminOnlyPageFilter>();
+        options.Filters.Add<EmpresaRequeridaPageFilter>();
+    });
 
 // Add Entity Framework with SQL Server.
 // La cadena ya no vive en appsettings.json: viene de la variable de entorno

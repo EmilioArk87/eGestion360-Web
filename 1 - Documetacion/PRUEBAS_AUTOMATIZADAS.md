@@ -20,6 +20,7 @@ No necesitan SQL Server, ni internet, ni secretos: usan SQLite en memoria. **Nun
 | `Services/Personas/PersonaServiceTests` | `IPersonaService`: alta con verificación entre empresas (D8) y detección de parecidas, edición protegida por empresa, y fusión de fichas |
 | `Services/Personas/VinculoServiceTests` | `IVinculoService`: alta de un cliente natural que reutiliza a la persona (de la empresa o de otra con verificación), reactivación, baja, consulta de vínculos, razón social al día, privacidad entre empresas y su bitácora e historial; también el cliente que luego es empleado |
 | `Services/Auditoria/AuditoriaCambiosInterceptorTests` | La bitácora por campo: altas, modificaciones, bajas, enmascarado del documento y atomicidad |
+| `Services/EmpresaRequeridaTests` | `AuthHelper.GetEmpresaIdRequerida` y `EmpresaRequeridaPageFilter` (con una sesión en memoria, `Infra/SesionFalsa`): qué rutas de Flota exige empresa, adónde se desvía cada sesión y que ninguna página vuelva a caer en la empresa 1 (la prueba lee los `.cs` de `Pages/`) |
 
 ## La base de prueba
 

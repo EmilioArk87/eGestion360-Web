@@ -1,0 +1,33 @@
+@page
+@model eGestion360Web.Pages.Flota.SinEmpresaModel
+@{
+    ViewData["Title"] = "Flota requiere una empresa";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active">Flota & KPIs</li>
+        </ol>
+    </nav>
+
+    <div class="alert alert-warning">
+        <h5 class="alert-heading mb-2"><i class="fas fa-lock me-2"></i>Flota trabaja con la empresa de tu sesión</h5>
+        <p class="mb-2">
+            Tu usuario no pertenece a ninguna empresa, así que no hay datos de flota que mostrar ni registrar.
+            Ninguna empresa se elige por ti: así se evita que un cambio se guarde en una empresa equivocada.
+        </p>
+        <p class="mb-0">
+            Para trabajar con la flota entra con un usuario de la empresa.
+            @if (Model.IsAdmin)
+            {
+                <text>Desde <strong>Gestión de Usuarios</strong> puedes crear o revisar los usuarios de cada empresa.</text>
+            }
+        </p>
+    </div>
+
+    <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Volver al menú
+    </a>
+</div>

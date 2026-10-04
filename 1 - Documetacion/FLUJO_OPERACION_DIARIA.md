@@ -234,7 +234,7 @@ Todos los registros de operación guardan automáticamente:
 
 | Campo | Valor |
 |-------|-------|
-| `id_empresa` | Tomado de `Session["EmpresaId"]` (defecto: 1) |
+| `id_empresa` | Tomado de `Session["EmpresaId"]`; sin empresa en la sesión no se guarda nada (ver «Protección de Páginas» en `FLUJO_AUTENTICACION.md`) |
 | `creado_por` | Tomado de `Session["Username"]` |
 | `fecha_creacion` | `DateTime.UtcNow` al momento del guardado |
 | `modificado_por` | Actualizado en ediciones posteriores |

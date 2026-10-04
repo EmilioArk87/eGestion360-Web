@@ -46,10 +46,6 @@ namespace eGestion360Web.Pages.Flota.Gastos.Repuestos
             ViewData["Categorias"] = new SelectList(await _db.CategoriasRepuesto.Where(c => c.IdEmpresa == id && c.Activo).OrderBy(c => c.Nombre).ToListAsync(), "IdCategoriaRepuesto", "Nombre");
         }
 
-        private int GetIdEmpresa()
-        {
-            if (int.TryParse(HttpContext.Session.GetString("EmpresaId"), out int id) && id > 0) return id;
-            return 1;
-        }
+        private int GetIdEmpresa() => AuthHelper.GetEmpresaIdRequerida(HttpContext);
     }
 }

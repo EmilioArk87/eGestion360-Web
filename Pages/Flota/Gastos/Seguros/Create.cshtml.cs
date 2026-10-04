@@ -51,10 +51,6 @@ namespace eGestion360Web.Pages.Flota.Gastos.Seguros
             ViewData["Vehiculos"] = new SelectList(await _db.Vehiculos.Where(v => v.IdEmpresa == id && v.Activo).OrderBy(v => v.Placa).ToListAsync(), "IdVehiculo", "Placa");
         }
 
-        private int GetIdEmpresa()
-        {
-            if (int.TryParse(HttpContext.Session.GetString("EmpresaId"), out int id) && id > 0) return id;
-            return 1;
-        }
+        private int GetIdEmpresa() => AuthHelper.GetEmpresaIdRequerida(HttpContext);
     }
 }

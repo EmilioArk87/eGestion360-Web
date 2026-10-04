@@ -170,6 +170,25 @@ if (!AuthHelper.IsAuthenticated(HttpContext))
 
 `AuthHelper.IsAuthenticated()` comprueba que `Session["UserId"]` no sea nulo ni vacío.
 
+### Flota exige empresa en la sesión
+
+Las pantallas de `/Flota/**` operan sobre los datos de **una** empresa: la de `Session["EmpresaId"]`. Esa sesión la
+llena el login solo si el usuario pertenece a una empresa; el administrador general (rol `admin`) no pertenece a
+ninguna y entra sin `EmpresaId`.
+
+Antes, cada pantalla de Flota caía en la empresa 1 (SIP) cuando la sesión no traía empresa, y el administrador general
+terminaba viendo y registrando datos de SIP sin darse cuenta. Ya no hay empresa por defecto:
+
+- `Services/EmpresaRequeridaPageFilter.cs` es un filtro global (registrado en `Program.cs` junto a `AdminOnlyPageFilter`).
+  Antes de que corra cualquier handler de `/Flota/**`, una sesión sin empresa va a `/Flota/SinEmpresa`, que explica el
+  motivo, y una sin sesión va a `/Login`. Cubre también las pantallas de Flota que se agreguen después.
+- Quedan fuera del filtro `/Flota/SinEmpresa` (el aviso) y `/Flota/Catalogos/Personas/**`, que ya se bloquean solas con
+  su propio mensaje (`PersonaPaginaBase.Entrar`).
+- Segunda barrera: el helper `GetIdEmpresa()` de cada página llama a `AuthHelper.GetEmpresaIdRequerida`, que lanza
+  `InvalidOperationException` si la sesión no trae una empresa válida (mayor que 0) en lugar de devolver 1.
+- Para trabajar con la flota hay que entrar con un usuario de una empresa. Las pantallas de otros módulos (Catálogos,
+  Facturación, Personas del sistema) no pasan por este filtro.
+
 ---
 
 ## 7. Servicios Involucrados

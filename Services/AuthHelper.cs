@@ -43,6 +43,20 @@ namespace eGestion360Web.Services
             return int.TryParse(val, out var id) ? id : null;
         }
 
+        /// <summary>
+        /// Empresa de la sesión para las pantallas que operan sobre los datos de UNA empresa. No hay empresa por
+        /// defecto: si la sesión no trae una (por ejemplo el administrador general), falla en lugar de trabajar sobre
+        /// otra empresa. <see cref="EmpresaRequeridaPageFilter"/> ya desvía antes a esas sesiones; esto es la segunda
+        /// barrera por si una página se saltara el filtro.
+        /// </summary>
+        public static int GetEmpresaIdRequerida(HttpContext context)
+        {
+            var id = GetEmpresaId(context);
+            if (id is > 0) return id.Value;
+            throw new InvalidOperationException(
+                "La sesión no tiene empresa: esta pantalla solo puede operar sobre los datos de una empresa.");
+        }
+
         public static int? GetEmpresaRolId(HttpContext context)
         {
             var val = context.Session.GetString("EmpresaRolId");

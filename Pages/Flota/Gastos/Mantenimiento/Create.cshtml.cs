@@ -45,10 +45,6 @@ namespace eGestion360Web.Pages.Flota.Gastos.Mantenimiento
             ViewData["Talleres"] = new SelectList(await _db.Talleres.Where(t => t.IdEmpresa == id && t.Activo).OrderBy(t => t.Nombre).ToListAsync(), "IdTaller", "Nombre");
         }
 
-        private int GetIdEmpresa()
-        {
-            if (int.TryParse(HttpContext.Session.GetString("EmpresaId"), out int id) && id > 0) return id;
-            return 1;
-        }
+        private int GetIdEmpresa() => AuthHelper.GetEmpresaIdRequerida(HttpContext);
     }
 }

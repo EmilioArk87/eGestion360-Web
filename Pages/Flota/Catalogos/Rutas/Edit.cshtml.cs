@@ -78,10 +78,6 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Rutas
             }
         }
 
-        private int GetIdEmpresa()
-        {
-            if (int.TryParse(HttpContext.Session.GetString("EmpresaId"), out int id) && id > 0) return id;
-            return 1;
-        }
+        private int GetIdEmpresa() => AuthHelper.GetEmpresaIdRequerida(HttpContext);
     }
 }
