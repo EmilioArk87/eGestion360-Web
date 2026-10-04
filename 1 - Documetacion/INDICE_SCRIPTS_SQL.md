@@ -31,13 +31,13 @@ Regla de nombre: NNN_descripcion_corta.sql (NNN incremental de 3 digitos).
 | 016 | 016_seed_catalogo_paises.sql | Semilla reproducible del catalogo de paises ISO 3166-1 (249 filas, verificadas contra UNSD M49); idempotente, no modifica los existentes. Los datos ya existian en la BD pero el repositorio no tenia script que los cargara | 2026-09-30 | Aplicado 2026-09-30 |
 | 017 | 017_monedas_iso4217_y_fk.sql | Catalogo de monedas con datos de ISO 4217 (SIX, 2026-09-17): codigo numerico y decimales; marca inactivas ANG, BGN y ZWL; agrega KYD, SSP, VED, XCG y ZWG; monedas.codigo_iso pasa a CHAR(3); 12 claves foraneas desde columnas de moneda CHAR(3) (quedan 8 de otro tipo para un paso posterior) | 2026-09-30 | Aplicado 2026-09-30 |
 | 018 | 018_personas_migrar_a_maestra.sql | Migra las personas actuales a la persona maestra: crea el vinculo de empleado (persona_empresa) y la ficha (empleados) de cada persona, registra los DNI en persona_documentos, separa nombres y apellidos cuando el reparto es seguro, calcula el nombre normalizado, marca la identidad y escribe la bitacora (origen script:018); crea la copia respaldo_personas_018; no toca las columnas viejas | 2026-09-30 | Aplicado 2026-10-01 |
-| 019 | 019_personas_retirar_columnas.sql | Retira de dbo.personas las 8 columnas viejas (id_empresa, documento, tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso, fecha_baja) con sus 2 claves foraneas y 2 indices; antes comprueba que nada se pierda (vinculos, documentos y codigos de empleado ya estan en las tablas nuevas) y que no queden nombres por revisar; crea la copia respaldo_personas_019 para la reversa | 2026-10-03 | Pendiente (escrito, validado y simulado en solo lectura; NO ejecutado: su PRECHECK aborta mientras queden personas con el nombre por revisar) |
+| 019 | 019_personas_retirar_columnas.sql | Retira de dbo.personas las 8 columnas viejas (id_empresa, documento, tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso, fecha_baja) con sus 2 claves foraneas y 2 indices; antes comprueba que nada se pierda (vinculos, documentos y codigos de empleado ya estan en las tablas nuevas); crea la copia respaldo_personas_019 para la reversa. Los nombres por revisar ya no lo bloquean (decision del 2026-10-03) | 2026-10-03 | Aplicado 2026-10-03 |
 | 020 | NNN_descripcion_corta.sql | Plantilla para proximo cambio | YYYY-MM-DD | Pendiente |
 
 ## Scripts de datos de Demo sin numero
 
 Se ejecutan a mano contra la empresa Demo. No forman parte de la cadena de creacion de una BD limpia y no usan un
-numero de orden (el 019 esta reservado para retirar las columnas viejas de `dbo.personas`).
+numero de orden (el 019 retiro las columnas viejas de `dbo.personas`).
 
 | Archivo | Proposito | Fecha | Estado |
 |---|---|---|---|
@@ -45,10 +45,10 @@ numero de orden (el 019 esta reservado para retirar las columnas viejas de `dbo.
 
 ## Scripts que asumen el esquema anterior a la 019
 
-El script 019 (retirar las columnas viejas de `dbo.personas`: `id_empresa`, `documento`, `tipo_documento`, `cargo`,
-`tarifa_diaria`, `moneda_tarifa`, `fecha_ingreso`, `fecha_baja`) deja sin funcionar a los scripts de abajo, que las
+El script 019 (aplicado el 2026-10-03; retiro las columnas viejas de `dbo.personas`: `id_empresa`, `documento`, `tipo_documento`, `cargo`,
+`tarifa_diaria`, `moneda_tarifa`, `fecha_ingreso`, `fecha_baja`) dejo sin funcionar a los scripts de abajo, que las
 leen o las escriben. No son parte de la aplicacion: son datos de ejemplo o cargas ya hechas. Cada uno lleva un aviso
-al inicio. **Ejecutelos solo antes de la 019**; despues, los datos de personas se cargan con la pantalla de Personal
+al inicio. **Solo funcionan en una BD anterior a la 019**; ahora los datos de personas se cargan con la pantalla de Personal
 (o con la logica nueva: persona maestra + `persona_empresa` + `empleados` + `persona_documentos`).
 
 | Script | Que hace | Columnas viejas que usa |

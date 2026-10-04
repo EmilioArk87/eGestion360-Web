@@ -13,7 +13,7 @@ namespace eGestion360Web.Models.Flota
     /// Las columnas viejas de personas que describían a la persona como empleada de UNA empresa (id_empresa,
     /// documento, tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso y fecha_baja) ya no están
     /// en esta clase: pasaron a <see cref="PersonaEmpresa"/> (empresa, ingreso y baja), a <see cref="Empleado"/>
-    /// (cargo, tarifa y moneda) y a <see cref="PersonaDocumento"/> (documento). El script 019 las retira de la
+    /// (cargo, tarifa y moneda) y a <see cref="PersonaDocumento"/> (documento). El script 019 las retiró de la
     /// tabla. Nombres y apellidos compuestos se conservan porque muchas pantallas muestran
     /// <see cref="NombreCompleto"/>.
     /// </summary>

@@ -22,15 +22,18 @@
 --
 -- Que hace (PRECHECK y respaldo fuera de la transaccion; el cambio, en UNA transaccion):
 --   1. PRECHECK. Aborta, sin cambiar nada, si:
---        a) queda alguna persona (no eliminada ni fusionada) sin primer nombre o sin primer apellido:
---           la lista de revision de nombres debe estar vacia antes de contraer;
---        b) alguna persona con empresa vieja no tiene su vinculo de empleado en esa empresa;
---        c) algun documento viejo (distinto de INTERNO) no tiene su fila en persona_documentos, o
+--        a) alguna persona con empresa vieja no tiene su vinculo de empleado en esa empresa;
+--        b) algun documento viejo (distinto de INTERNO) no tiene su fila en persona_documentos, o
 --           algun numero de empleado viejo (tipo INTERNO) no esta en empleados.codigo_interno;
---        d) las columnas tienen una dependencia que este script no conoce (otro indice, otra clave
+--        c) las columnas tienen una dependencia que este script no conoce (otro indice, otra clave
 --           foranea, un valor por defecto, una vista, un procedimiento, un check o una estadistica).
---      Solo AVISA (no aborta) cuantas personas tienen valores viejos distintos de los nuevos: son
---      cambios hechos despues de F6 en las tablas nuevas, que son la fuente de verdad.
+--      Solo AVISA (no aborta) de dos cosas:
+--        * cuantas personas tienen valores viejos distintos de los nuevos: son cambios hechos despues
+--          de F6 en las tablas nuevas, que son la fuente de verdad;
+--        * cuantas personas tienen todavia el nombre por revisar (sin primer nombre o primer apellido).
+--          Esa lista NO impide retirar las columnas: las 8 columnas no guardan nombres, y nombres y
+--          apellidos se conservan. (El plan original exigia la lista vacia; Emilio decidio quitar la
+--          regla el 2026-10-03. Se corrige desde Personal o Personas del sistema, cuando se pueda.)
 --   2. Respaldo: crea dbo.respaldo_personas_019 con id_persona y las 8 columnas de toda persona que
 --      tenga alguno de esos datos. Si ya existe, comprueba que coincida con lo actual.
 --   3. Cambio (una transaccion): quita las 2 claves foraneas, los 2 indices y las 8 columnas y
@@ -95,19 +98,14 @@ BEGIN
     IF @presentes <> 8
         THROW 50019, N'Solo existen algunas de las 8 columnas viejas: estado inesperado de dbo.personas. Revise a mano. Abortar.', 1;
 
-    -- a) La lista de revision de nombres debe estar vacia
+    -- Aviso (no aborta): personas con el nombre por revisar. Las 8 columnas no guardan nombres.
     SELECT @n = COUNT(*)
     FROM dbo.personas
     WHERE eliminado = 0 AND id_persona_principal IS NULL
       AND (primer_nombre IS NULL OR primer_apellido IS NULL);
-    IF @n > 0
-    BEGIN
-        SET @msg = CONCAT(N'Hay ', @n, N' persona(s) con el nombre por revisar (sin primer nombre o sin primer apellido). ',
-                          N'Corrijalas desde la pantalla de Personal o la de Personas del sistema y repita. Abortar.');
-        THROW 50019, @msg, 1;
-    END
+    PRINT CONCAT(N'Personas con el nombre por revisar (no impide el cambio; se corrigen desde Personal o Personas del sistema): ', @n);
 
-    -- b) Toda persona con empresa vieja debe tener su vinculo de empleado en esa empresa
+    -- a) Toda persona con empresa vieja debe tener su vinculo de empleado en esa empresa
     SET @sql = N'SELECT @n = COUNT(*) FROM dbo.personas p
                  WHERE p.id_empresa IS NOT NULL
                    AND NOT EXISTS (SELECT 1 FROM dbo.persona_empresa v
@@ -121,7 +119,7 @@ BEGIN
         THROW 50019, @msg, 1;
     END
 
-    -- c1) Documentos viejos (distintos de INTERNO) sin su fila en persona_documentos
+    -- b1) Documentos viejos (distintos de INTERNO) sin su fila en persona_documentos
     SET @sql = N'SELECT @n = COUNT(*) FROM dbo.personas p
                  WHERE p.documento IS NOT NULL AND p.tipo_documento <> ''INTERNO''
                    AND NOT EXISTS (SELECT 1 FROM dbo.persona_documentos d
@@ -134,7 +132,7 @@ BEGIN
         THROW 50019, @msg, 1;
     END
 
-    -- c2) Numeros de empleado viejos (tipo INTERNO) sin su codigo en empleados
+    -- b2) Numeros de empleado viejos (tipo INTERNO) sin su codigo en empleados
     SET @sql = N'SELECT @n = COUNT(*) FROM dbo.personas p
                  WHERE p.tipo_documento = ''INTERNO'' AND p.documento IS NOT NULL
                    AND NOT EXISTS (SELECT 1 FROM dbo.persona_empresa v
@@ -147,7 +145,7 @@ BEGIN
         THROW 50019, @msg, 1;
     END
 
-    -- d) Dependencias que este script no conoce
+    -- c) Dependencias que este script no conoce
     IF EXISTS (SELECT 1
                FROM sys.indexes i
                JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id

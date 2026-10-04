@@ -16,8 +16,8 @@ namespace eGestion360Web.Services.Personas
         private static readonly string[] EntidadesDeLaRelacion = { "persona_empresa", "empleados", "clientes" };
 
         /// <summary>
-        /// Columnas de dbo.personas que son de la relación con una empresa y no de la persona: las que se retiran en
-        /// el script 019 (ya no están en la entidad) y "activo", que depende de los vínculos. La bitácora no se
+        /// Columnas de dbo.personas que son de la relación con una empresa y no de la persona: las que retiró
+        /// el script 019 (ya no están en la entidad ni en la tabla) y "activo", que depende de los vínculos. La bitácora no se
         /// puede modificar, así que conserva los cambios históricos hechos en ellas; los hechos desde otra empresa
         /// no se muestran.
         /// </summary>

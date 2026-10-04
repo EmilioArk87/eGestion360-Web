@@ -11,7 +11,7 @@ namespace eGestion360Web.Services.Personas
     /// sentido se le agrega el rol que le falta sin crear a nadie dos veces.
     ///
     /// Datos de empleo: el servicio ya no escribe las columnas viejas de dbo.personas (id_empresa, documento,
-    /// tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso y fecha_baja; las retira el script
+    /// tipo_documento, cargo, tarifa_diaria, moneda_tarifa, fecha_ingreso y fecha_baja; las retiró el script
     /// 019). El cargo y la tarifa viven en la ficha de empleado, las fechas en el vínculo y el documento en
     /// persona_documentos; los nombres y apellidos compuestos se siguen armando porque muchas pantallas los
     /// muestran. Quien necesite listar personal usa <see cref="IPersonaConsultaService"/>.
