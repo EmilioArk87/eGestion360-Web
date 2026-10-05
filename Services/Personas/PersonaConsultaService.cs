@@ -31,12 +31,20 @@ namespace eGestion360Web.Services.Personas
 
         private readonly ApplicationDbContext _db;
         private readonly PersonaValidacionOptions _opt;
+        private readonly TimeProvider _tiempo;
 
-        public PersonaConsultaService(ApplicationDbContext db, IOptions<PersonaValidacionOptions> opciones)
+        public PersonaConsultaService(ApplicationDbContext db, IOptions<PersonaValidacionOptions> opciones, TimeProvider tiempo)
         {
             _db = db;
             _opt = opciones.Value;
+            _tiempo = tiempo;
         }
+
+        /// <summary>
+        /// Hoy en Honduras (UTC-6). Un empleado con fecha de baja sigue en la empresa ese día y deja de estarlo al
+        /// siguiente: la fecha de baja es su último día.
+        /// </summary>
+        private DateOnly Hoy() => DateOnly.FromDateTime(_tiempo.GetUtcNow().UtcDateTime.AddHours(-6));
 
         // ──────────────────────────────────────────────────────────────────
         //  LISTADO
@@ -66,8 +74,14 @@ namespace eGestion360Web.Services.Personas
             if (!string.IsNullOrWhiteSpace(filtro.Cargo))
                 consulta = consulta.Where(v => v.Empleado != null && v.Empleado.Cargo == filtro.Cargo);
 
+            // Quien ya pasó su fecha de baja cuenta como inactivo aunque nadie lo haya desactivado.
+            var hoy = Hoy();
             if (filtro.Activo is { } activo)
-                consulta = consulta.Where(v => v.Activo == activo);
+            {
+                consulta = activo
+                    ? consulta.Where(v => v.Activo && (v.FechaFin == null || v.FechaFin >= hoy))
+                    : consulta.Where(v => !v.Activo || (v.FechaFin != null && v.FechaFin < hoy));
+            }
 
             switch (filtro.Perfil)
             {
@@ -102,7 +116,8 @@ namespace eGestion360Web.Services.Personas
                     Cargo = v.Empleado != null ? v.Empleado.Cargo : null,
                     TarifaDiaria = v.Empleado != null ? v.Empleado.TarifaDiaria : null,
                     Moneda = v.Empleado != null ? v.Empleado.MonedaTarifa : null,
-                    v.FechaInicio, v.FechaFin, v.Activo
+                    v.FechaInicio, v.FechaFin, v.Activo,
+                    DeBaja = v.FechaFin != null && v.FechaFin < hoy
                 })
                 .ToListAsync(ct);
 
@@ -124,7 +139,7 @@ namespace eGestion360Web.Services.Personas
                 return new PersonaFila(
                     f.IdPersona, $"{apellidos}, {nombres}", separados,
                     f.Documento?.TipoDocumento, f.Documento?.Numero, f.CodigoInterno, f.Cargo, f.Telefono,
-                    f.TarifaDiaria, f.Moneda, f.FechaInicio, f.FechaFin, f.Activo, f.EstadoIdentidad, faltantes);
+                    f.TarifaDiaria, f.Moneda, f.FechaInicio, f.FechaFin, f.Activo, f.DeBaja, f.EstadoIdentidad, faltantes);
             }).ToList();
         }
 
@@ -290,10 +305,12 @@ namespace eGestion360Web.Services.Personas
         {
             if (idEmpresa <= 0) return Array.Empty<OpcionPersona>();
 
-            // Empleados activos de ESTA empresa: ni personas fusionadas o eliminadas, ni vínculos de otro rol.
+            // Empleados activos de ESTA empresa: ni personas fusionadas o eliminadas, ni vínculos de otro rol, ni quien
+            // ya pasó su fecha de baja aunque nadie lo haya desactivado.
+            var hoy = Hoy();
             var consulta = _db.PersonaEmpresas.AsNoTracking()
                 .Where(v => v.IdEmpresa == idEmpresa && v.TipoVinculo == TiposVinculo.Empleado
-                            && v.Activo && !v.Eliminado
+                            && v.Activo && !v.Eliminado && (v.FechaFin == null || v.FechaFin >= hoy)
                             && !v.Persona.Eliminado && v.Persona.IdPersonaPrincipal == null);
 
             if (!string.IsNullOrWhiteSpace(cargo))

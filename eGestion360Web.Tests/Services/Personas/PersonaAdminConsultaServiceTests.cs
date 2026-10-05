@@ -395,7 +395,7 @@ namespace eGestion360Web.Tests.Services.Personas
 
             using var lectura = _bd.Crear();
             var admin = await Servicio(lectura).HistorialAsync(id);
-            var deLaEmpresaA = await new PersonaConsultaService(lectura, Options.Create(new PersonaValidacionOptions())).HistorialAsync(DatosBase.EmpresaA, id);
+            var deLaEmpresaA = await new PersonaConsultaService(lectura, Options.Create(new PersonaValidacionOptions()), TimeProvider.System).HistorialAsync(DatosBase.EmpresaA, id);
 
             Assert.NotNull(admin);
             Assert.All(admin!.Filas, f => Assert.False(f.DeOtraEmpresa));

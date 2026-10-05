@@ -16,7 +16,7 @@ namespace eGestion360Web.Tests.Services.Personas
         public void Dispose() => _bd.Dispose();
 
         private PersonaConsultaService Servicio(ApplicationDbContext db) =>
-            new(db, Options.Create(new PersonaValidacionOptions()));
+            new(db, Options.Create(new PersonaValidacionOptions()), RelojFijo.PorDefecto());
 
         private static Persona Insertar(ApplicationDbContext db, int empresa, string nombre, string apellido, string? dni = null,
             string? codigo = null, string cargo = "MECANICO", DateOnly? nacimiento = null) =>
@@ -514,6 +514,56 @@ namespace eGestion360Web.Tests.Services.Personas
             var conductores = await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "CONDUCTOR");
 
             Assert.Equal("Bien Activo", Assert.Single(conductores).NombreCompleto);
+        }
+
+        [Fact]
+        public async Task Personal_para_seleccion_deja_fuera_a_quien_ya_paso_su_fecha_de_baja_aunque_siga_activo()
+        {
+            using var db = _bd.Crear();
+            var ayer = Insertar(db, DatosBase.EmpresaB, "Baja", "Ayer", codigo: "B1", cargo: "CONDUCTOR");
+            var hoy = Insertar(db, DatosBase.EmpresaB, "Baja", "Hoy", codigo: "B2", cargo: "CONDUCTOR");
+            var futura = Insertar(db, DatosBase.EmpresaB, "Baja", "Futura", codigo: "B3", cargo: "CONDUCTOR");
+            Insertar(db, DatosBase.EmpresaB, "Sin", "Baja", codigo: "B4", cargo: "CONDUCTOR");
+
+            // Nadie los desactivó: solo se les puso la fecha de baja, como hace el formulario de Editar.
+            db.PersonaEmpresas.Single(v => v.IdPersona == ayer.IdPersona).FechaFin = RelojFijo.Hoy.AddDays(-1);
+            db.PersonaEmpresas.Single(v => v.IdPersona == hoy.IdPersona).FechaFin = RelojFijo.Hoy;
+            db.PersonaEmpresas.Single(v => v.IdPersona == futura.IdPersona).FechaFin = RelojFijo.Hoy.AddDays(30);
+            db.SaveChanges();
+
+            var conductores = await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "CONDUCTOR");
+
+            // La fecha de baja es su último día: ese día todavía aparece.
+            Assert.Equal(new[] { "Baja Futura", "Baja Hoy", "Sin Baja" }, conductores.Select(x => x.NombreCompleto).Order().ToArray());
+            Assert.Equal(3, (await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB)).Count);
+        }
+
+        [Fact]
+        public async Task Listar_marca_de_baja_a_quien_ya_paso_su_fecha_de_baja_y_lo_cuenta_como_inactivo()
+        {
+            using var db = _bd.Crear();
+            var pasada = Insertar(db, DatosBase.EmpresaB, "Baja", "Pasada", codigo: "B1");
+            var futura = Insertar(db, DatosBase.EmpresaB, "Baja", "Futura", codigo: "B2");
+            var desactivado = Insertar(db, DatosBase.EmpresaB, "Des", "Activado", codigo: "B3");
+            db.PersonaEmpresas.Single(v => v.IdPersona == pasada.IdPersona).FechaFin = RelojFijo.Hoy.AddDays(-1);
+            db.PersonaEmpresas.Single(v => v.IdPersona == futura.IdPersona).FechaFin = RelojFijo.Hoy.AddDays(30);
+            db.PersonaEmpresas.Single(v => v.IdPersona == desactivado.IdPersona).Activo = false;
+            db.SaveChanges();
+            var servicio = Servicio(db);
+
+            var todas = await servicio.ListarAsync(DatosBase.EmpresaB, new PersonaFiltro());
+            var filaPasada = todas.Single(f => f.IdPersona == pasada.IdPersona);
+            Assert.True(filaPasada.DeBaja);
+            Assert.True(filaPasada.Activo);
+            Assert.Equal(RelojFijo.Hoy.AddDays(-1), filaPasada.FechaBaja);
+            Assert.False(todas.Single(f => f.IdPersona == futura.IdPersona).DeBaja);
+            Assert.False(todas.Single(f => f.IdPersona == desactivado.IdPersona).DeBaja);
+
+            async Task<int[]> Ids(bool activo) =>
+                (await servicio.ListarAsync(DatosBase.EmpresaB, new PersonaFiltro { Activo = activo })).Select(x => x.IdPersona).Order().ToArray();
+
+            Assert.Equal(new[] { futura.IdPersona }, await Ids(true));
+            Assert.Equal(new[] { pasada.IdPersona, desactivado.IdPersona }.Order().ToArray(), await Ids(false));
         }
 
         [Fact]

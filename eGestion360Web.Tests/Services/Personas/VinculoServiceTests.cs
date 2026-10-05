@@ -128,7 +128,7 @@ namespace eGestion360Web.Tests.Services.Personas
             await RegistrarOk(Alta());
 
             using var db = _bd.Crear();
-            var consulta = new PersonaConsultaService(db, Options.Create(new PersonaValidacionOptions()));
+            var consulta = new PersonaConsultaService(db, Options.Create(new PersonaValidacionOptions()), TimeProvider.System);
 
             // La lista de personal y las listas de las pantallas de operación (salarios, peajes, combustible...).
             Assert.Empty(await consulta.ListarAsync(DatosBase.EmpresaA, new PersonaFiltro()));
@@ -670,7 +670,7 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal(Dni.Replace("-", ""), Assert.Single(persona.Documentos).Numero);
 
             // Y ahora sí aparece en la lista de personal, sin dejar de ser cliente.
-            var lista = await new PersonaConsultaService(db2, Options.Create(new PersonaValidacionOptions()))
+            var lista = await new PersonaConsultaService(db2, Options.Create(new PersonaValidacionOptions()), TimeProvider.System)
                 .ListarAsync(DatosBase.EmpresaA, new PersonaFiltro());
             Assert.Single(lista);
             Assert.Equal(1, await db2.Clientes.CountAsync());
@@ -872,7 +872,7 @@ namespace eGestion360Web.Tests.Services.Personas
             await RegistrarOk(Alta(empresa: DatosBase.EmpresaA));
 
             using var db = _bd.Crear();
-            var consulta = new PersonaConsultaService(db, Options.Create(new PersonaValidacionOptions()));
+            var consulta = new PersonaConsultaService(db, Options.Create(new PersonaValidacionOptions()), TimeProvider.System);
 
             var desdeA = await consulta.HistorialAsync(DatosBase.EmpresaA, idPersona);
             Assert.NotNull(desdeA);

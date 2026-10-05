@@ -232,7 +232,14 @@
                                         </td>
                                         <td class="text-muted small">@(p.FechaIngreso?.ToString("dd/MM/yyyy") ?? "—")</td>
                                         <td class="text-center">
-                                            <span class="badge @(p.Activo ? "bg-success" : "bg-secondary")">@(p.Activo ? "Activo" : "Inactivo")</span>
+                                            @if (p.DeBaja)
+                                            {
+                                                <span class="badge bg-dark" title="Fecha de baja: @(p.FechaBaja?.ToString("dd/MM/yyyy")). Para recontratar, quita la fecha de baja en Editar.">De baja</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge @(p.Activo ? "bg-success" : "bg-secondary")">@(p.Activo ? "Activo" : "Inactivo")</span>
+                                            }
                                         </td>
                                         <td class="text-end text-nowrap">
                                             @if (Model.PuedeEditar)

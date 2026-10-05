@@ -29,8 +29,8 @@ namespace eGestion360Web.Services.Personas
         /// <summary>
         /// El personal activo de la empresa, listo para elegirlo en un formulario de otro módulo (conductores de
         /// combustible, peajes y salidas; personas de los salarios). Sale del vínculo de empleado y de su ficha, no de
-        /// las columnas viejas de personas, así que incluye también a quien trabaja en más de una empresa. Ordenado por
-        /// apellidos y nombres.
+        /// las columnas viejas de personas, así que incluye también a quien trabaja en más de una empresa. Deja fuera a
+        /// quien ya pasó su fecha de baja (hora de Honduras). Ordenado por apellidos y nombres.
         /// </summary>
         /// <param name="cargo">Código del cargo (por ejemplo «CONDUCTOR»); nulo para todo el personal activo.</param>
         Task<IReadOnlyList<OpcionPersona>> PersonalParaSeleccionAsync(int idEmpresa, string? cargo = null, CancellationToken ct = default);
@@ -66,6 +66,7 @@ namespace eGestion360Web.Services.Personas
     /// <param name="NombresSeparados">Falso para las personas que esperan revisión de su nombre.</param>
     /// <param name="TipoDocumento">Tipo del documento principal; nulo si no tiene.</param>
     /// <param name="Documento">Número del documento principal SIN enmascarar: la pantalla lo muestra con <see cref="DocumentosIdentidad.Enmascarar"/>.</param>
+    /// <param name="DeBaja">Su fecha de baja ya pasó (hora de Honduras): cuenta como inactivo aunque <c>Activo</c> siga encendido.</param>
     /// <param name="Faltantes">Qué le falta al perfil, en palabras para el usuario; vacío si está completo.</param>
     public sealed record PersonaFila(
         int IdPersona,
@@ -81,6 +82,7 @@ namespace eGestion360Web.Services.Personas
         DateOnly? FechaIngreso,
         DateOnly? FechaBaja,
         bool Activo,
+        bool DeBaja,
         string EstadoIdentidad,
         IReadOnlyList<string> Faltantes)
     {
