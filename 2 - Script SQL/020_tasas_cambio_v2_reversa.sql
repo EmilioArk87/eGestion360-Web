@@ -143,12 +143,18 @@ BEGIN
                                    OBJECT_ID(N'dbo.tasas_cambio_ejecuciones_detalle')))
         THROW 50020, N'Las tablas de la v2 tienen disparadores (triggers) que este script no conoce. Revise a mano. Abortar.', 1;
 
+    -- Las restricciones CHECK y los indices filtrados de las propias tablas tambien aparecen como dependencias:
+    -- no cuentan. Solo importan objetos ajenos a las tres tablas.
     IF EXISTS (SELECT 1 FROM sys.sql_expression_dependencies d
+               JOIN sys.objects o ON o.object_id = d.referencing_id
                WHERE d.referenced_entity_name IN (N'tasas_cambio', N'tasas_cambio_ejecuciones', N'tasas_cambio_ejecuciones_detalle')
                  AND ISNULL(d.referenced_schema_name, N'dbo') = N'dbo'
                  AND d.referencing_id NOT IN (ISNULL(OBJECT_ID(N'dbo.tasas_cambio'), 0),
                                               ISNULL(OBJECT_ID(N'dbo.tasas_cambio_ejecuciones'), 0),
-                                              ISNULL(OBJECT_ID(N'dbo.tasas_cambio_ejecuciones_detalle'), 0)))
+                                              ISNULL(OBJECT_ID(N'dbo.tasas_cambio_ejecuciones_detalle'), 0))
+                 AND o.parent_object_id NOT IN (ISNULL(OBJECT_ID(N'dbo.tasas_cambio'), 0),
+                                                ISNULL(OBJECT_ID(N'dbo.tasas_cambio_ejecuciones'), 0),
+                                                ISNULL(OBJECT_ID(N'dbo.tasas_cambio_ejecuciones_detalle'), 0)))
         THROW 50020, N'Una vista, procedimiento o funcion usa las tablas de la v2 (ver sys.sql_expression_dependencies). Revise a mano. Abortar.', 1;
 END;
 
@@ -367,7 +373,7 @@ BEGIN TRY
     SELECT CONCAT(N'Falta o no coincide la restriccion ', x.nombre)
     FROM @restricciones x
     WHERE NOT EXISTS (SELECT 1 FROM sys.objects o
-                      WHERE o.name = x.nombre AND o.type = x.tipo AND o.parent_object_id = OBJECT_ID(N'dbo.tasas_cambio'))
+                      WHERE o.name = x.nombre AND o.type COLLATE DATABASE_DEFAULT = x.tipo AND o.parent_object_id = OBJECT_ID(N'dbo.tasas_cambio'))
        OR (x.tipo = 'F' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys fk
                                         WHERE fk.name = x.nombre
                                           AND fk.parent_object_id = OBJECT_ID(N'dbo.tasas_cambio')

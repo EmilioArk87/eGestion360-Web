@@ -144,11 +144,14 @@ BEGIN
     IF EXISTS (SELECT 1 FROM sys.triggers WHERE parent_id = OBJECT_ID(N'dbo.tasas_cambio'))
         THROW 50020, N'dbo.tasas_cambio tiene un disparador (trigger) que este script no conoce. Revise a mano. Abortar.', 1;
 
-    -- (Los indices filtrados de la propia tabla aparecen como dependencia de la tabla consigo misma: no cuentan.)
+    -- (Los indices filtrados y las restricciones CHECK de la propia tabla tambien aparecen como dependencias:
+    --  no cuentan. Solo importan objetos ajenos a la tabla: vistas, procedimientos, funciones, otras tablas.)
     IF EXISTS (SELECT 1 FROM sys.sql_expression_dependencies d
+               JOIN sys.objects o ON o.object_id = d.referencing_id
                WHERE d.referenced_entity_name = N'tasas_cambio'
                  AND ISNULL(d.referenced_schema_name, N'dbo') = N'dbo'
-                 AND d.referencing_id <> OBJECT_ID(N'dbo.tasas_cambio'))
+                 AND d.referencing_id <> OBJECT_ID(N'dbo.tasas_cambio')
+                 AND o.parent_object_id <> OBJECT_ID(N'dbo.tasas_cambio'))
         THROW 50020, N'Una vista, procedimiento o funcion usa dbo.tasas_cambio (ver sys.sql_expression_dependencies). Revise a mano. Abortar.', 1;
 END;
 
@@ -174,9 +177,11 @@ BEGIN
         THROW 50020, N'dbo.tipos_cambio tiene un disparador (trigger) que este script no conoce. Revise a mano. Abortar.', 1;
 
     IF EXISTS (SELECT 1 FROM sys.sql_expression_dependencies d
+               JOIN sys.objects o ON o.object_id = d.referencing_id
                WHERE d.referenced_entity_name = N'tipos_cambio'
                  AND ISNULL(d.referenced_schema_name, N'dbo') = N'dbo'
-                 AND d.referencing_id <> OBJECT_ID(N'dbo.tipos_cambio'))
+                 AND d.referencing_id <> OBJECT_ID(N'dbo.tipos_cambio')
+                 AND o.parent_object_id <> OBJECT_ID(N'dbo.tipos_cambio'))
         THROW 50020, N'Una vista, procedimiento o funcion usa dbo.tipos_cambio (ver sys.sql_expression_dependencies). Revise a mano. Abortar.', 1;
 END;
 
@@ -597,7 +602,7 @@ BEGIN TRY
     SELECT CONCAT(N'Falta o no coincide la restriccion ', x.nombre, N' en ', x.tabla)
     FROM @restricciones x
     WHERE NOT EXISTS (SELECT 1 FROM sys.objects o
-                      WHERE o.name = x.nombre AND o.type = x.tipo
+                      WHERE o.name = x.nombre AND o.type COLLATE DATABASE_DEFAULT = x.tipo
                         AND o.parent_object_id = OBJECT_ID(N'dbo.' + x.tabla))
        OR (x.tipo = 'F' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys fk
                                         WHERE fk.name = x.nombre

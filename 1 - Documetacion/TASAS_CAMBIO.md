@@ -1,6 +1,6 @@
 # Tasas de cambio: job automático
 
-> **Estado (2026-10-04):** script `020_tasas_cambio_v2.sql` **pendiente de aprobación (no ejecutado)**; el job
+> **Estado (2026-10-05):** script `020_tasas_cambio_v2.sql` **aplicado en `eBD_SPD`** (tablas vacías); el job
 > viene **deshabilitado** (`TasasCambio:Habilitado = false`) hasta completar la puesta en marcha (sección 12).
 >
 > Las reglas finas (umbrales de validación, esperas entre reintentos, significado exacto de cada estado) viven en el
@@ -471,8 +471,8 @@ Para rotar el token: cambiarlo en el `web.config` y en `TASAS_JOB_TOKEN` a la ve
 3. [ ] **Confirmar los ids de los indicadores** (compra y venta del dólar; euro si existe), el nombre y lugar de la
    clave, los parámetros de fecha, el formato de la respuesta y la hora de publicación. Cargarlos en
    `TasasCambio:Bch` de `appsettings.json`.
-4. [ ] **Aprobar y ejecutar `020_tasas_cambio_v2.sql` con `/alerta-bd`** y marcarlo como aplicado en
-   `INDICE_SCRIPTS_SQL.md`.
+4. [x] **Aprobar y ejecutar `020_tasas_cambio_v2.sql` con `/alerta-bd`** y marcarlo como aplicado en
+   `INDICE_SCRIPTS_SQL.md`. Hecho el 2026-10-05: 9 cambios, POSTCHECK correcto.
 5. [ ] Publicar la versión de la aplicación con el job, todavía con `TasasCambio__Habilitado=false`.
 6. [ ] **Configurar las variables en el `web.config` de Somee** (`TasasCambio__Bch__ApiKey`,
    `TasasCambio__Disparador__Token`, luego `TasasCambio__Habilitado=true`) y reiniciar el sitio.
