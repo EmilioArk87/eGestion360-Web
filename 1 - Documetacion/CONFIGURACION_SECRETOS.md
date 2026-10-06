@@ -20,6 +20,18 @@ como variable de entorno.
 El resto de la configuración (`EmailSettings:SmtpHost`, `KpiSync:*`, `Logging`, etc.) no es
 secreta y sigue en `appsettings.json`.
 
+## Tasas de cambio (job automático, script 020)
+
+Opcionales: sin ellas la aplicación arranca igual y el job queda apagado. Detalle en `TASAS_CAMBIO.md`, sección 10.
+
+| Variable | Reemplaza a | Notas |
+|---|---|---|
+| `TasasCambio__Bch__ApiKey` | `TasasCambio:Bch:ApiKey` | Clave de suscripción del API del BCH. **Secreto.** Si falta, el API queda deshabilitado y el job usa el Excel del BCH. |
+| `TasasCambio__Disparador__Token` | `TasasCambio:Disparador:Token` | Token del endpoint `/internal/jobs/tasas-cambio/ejecutar` (encabezado `X-Job-Token`); el mismo valor del secreto `TASAS_JOB_TOKEN` de GitHub. **Secreto.** Si falta, el endpoint responde 404. |
+| `TasasCambio__Habilitado` | `TasasCambio:Habilitado` | `true` / `false`. No es secreto, pero depende del entorno: `false` en `appsettings.json` y en `appsettings.Development.json`; se pone en `true` solo en el servidor, después de aplicar el script 020. |
+
+Ninguna de las dos claves va en `appsettings*.json` (ni vacía): en el repositorio no existen.
+
 ## `Seguridad:ForzarHttps`
 
 No es un secreto, pero sí depende del entorno. Controla `UseHttpsRedirection()` y `UseHsts()`:
@@ -55,10 +67,14 @@ terminal (hay que reabrir la consola o el editor):
 [Environment]::SetEnvironmentVariable('Encryption__IV', '<iv>', 'User')
 ```
 
+Las de tasas de cambio solo hacen falta para probar el job en local (no contra la base real):
+`TasasCambio__Bch__ApiKey` y `TasasCambio__Disparador__Token`, de la misma forma, o con
+`dotnet user-secrets set "TasasCambio:Bch:ApiKey" "<clave del API del BCH>"`.
+
 Para verificar que quedaron cargadas:
 
 ```powershell
-Get-ChildItem Env: | Where-Object Name -match 'ConnectionStrings__|EmailSettings__|Encryption__'
+Get-ChildItem Env: | Where-Object Name -match 'ConnectionStrings__|EmailSettings__|Encryption__|TasasCambio__'
 ```
 
 No conviene guardar estos valores en un archivo dentro del repositorio: la carpeta está
@@ -76,6 +92,10 @@ el publish:
     <environmentVariable name="EmailSettings__Password" value="<contraseña>" />
     <environmentVariable name="Encryption__Key" value="<clave>" />
     <environmentVariable name="Encryption__IV" value="<iv>" />
+    <!-- Tasas de cambio (opcionales; ver TASAS_CAMBIO.md) -->
+    <environmentVariable name="TasasCambio__Bch__ApiKey" value="<clave del API del BCH>" />
+    <environmentVariable name="TasasCambio__Disparador__Token" value="<token largo y aleatorio>" />
+    <environmentVariable name="TasasCambio__Habilitado" value="true" />
   </environmentVariables>
 </aspNetCore>
 ```

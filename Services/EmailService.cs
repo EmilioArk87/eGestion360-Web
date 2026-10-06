@@ -368,6 +368,24 @@ SIP Tecnología</p>";
             }
         }
 
+        public async Task<bool> SendHtmlEmailAsync(string toEmail, string subject, string htmlContent)
+        {
+            try
+            {
+                var result = await SendEmailAsync(toEmail, "", subject, htmlContent);
+                if (!result)
+                {
+                    _logger.LogError("Error enviando email '{Subject}' a {Email}", subject, toEmail);
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error enviando email '{Subject}' a {Email}", subject, toEmail);
+                return false;
+            }
+        }
+
         private string GenerateTestEmail(string message)
         {
             return $@"

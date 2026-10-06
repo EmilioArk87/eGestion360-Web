@@ -5,6 +5,7 @@ using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Eventos;
 using eGestion360Web.Services.Facturacion;
 using eGestion360Web.Services.Personas;
+using eGestion360Web.Services.TasasCambio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +100,33 @@ builder.Services.AddScoped<IPersonaConsultaService, PersonaConsultaService>();
 builder.Services.AddScoped<IPersonaAdminConsultaService, PersonaAdminConsultaService>();
 builder.Services.AddScoped<IVinculoService, VinculoService>();
 
+// ── Tasas de cambio (script 020) ───────────────────────────────────────────
+// Job que obtiene USD y EUR en lempiras (BCH: API o Excel; euro derivado con el BCE), los valida y los guarda
+// versionados en tasas_cambio, con bitácora en tasas_cambio_ejecuciones. Sección "TasasCambio" de appsettings.
+// "TasasCambio:Habilitado" es false por omisión: el worker no hace nada y el endpoint responde 404 hasta aplicar el
+// script 020 y activarlo. La clave del API del BCH y el token del disparador externo SOLO por variables de entorno
+// (TasasCambio__Bch__ApiKey, TasasCambio__Disparador__Token) o user-secrets.
+builder.Services.Configure<TasasCambioOptions>(builder.Configuration.GetSection(TasasCambioOptions.Seccion));
+builder.Services.AddHttpClient(ClienteHttpTasas.NombreCliente, cliente =>
+{
+    cliente.Timeout = ClienteHttpTasas.TiempoMaximo;
+    cliente.DefaultRequestHeaders.UserAgent.ParseAdd("eGestion360-Web/1.0 (tasas de cambio)");
+});
+builder.Services.AddSingleton<ClienteHttpTasas>();
+builder.Services.AddSingleton<ITasaCambioProveedor, BchApiProveedor>();
+builder.Services.AddSingleton<ITasaCambioProveedor, BchExcelProveedor>();
+builder.Services.AddSingleton<ITasaCambioProveedor, BceProveedor>();
+builder.Services.AddSingleton<TasaCambioValidador>();
+builder.Services.AddSingleton<ColaEjecucionTasasCambio>();
+builder.Services.AddSingleton<DisparadorExternoTasasCambio>();
+builder.Services.AddScoped<IBloqueoJob, BloqueoJobSqlServer>();
+builder.Services.AddScoped<ITasasCambioContextos, TasasCambioContextos>();
+builder.Services.AddScoped<ITasasCambioNotificador, TasasCambioNotificadorCorreo>();
+builder.Services.AddScoped<ITasaCambioSyncService, TasaCambioSyncService>();
+builder.Services.AddScoped<ITasaCambioConsultaService, TasaCambioConsultaService>();
+builder.Services.AddScoped<TasasCambioPlanificador>();
+builder.Services.AddHostedService<TasasCambioBackgroundService>();
+
 // Add session support
 builder.Services.AddSession(options =>
 {
@@ -186,5 +214,8 @@ app.UseSession();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+// Disparador externo del job de tasas de cambio (POST con X-Job-Token). Minimal API: sin filtros de Razor Pages ni sesión.
+app.MapTasasCambioEndpoints();
 
 app.Run();

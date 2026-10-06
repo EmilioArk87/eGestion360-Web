@@ -3,15 +3,14 @@ namespace eGestion360Web.Services;
 /// <summary>
 /// Servicio en segundo plano que ejecuta los jobs de sincronización de datos externos:
 ///
-///   - BCH (Banco Central de Honduras): todos los días a las 23:30 hora Honduras (UTC-6).
-///     Descarga el Excel con el precio promedio diario del dólar y persiste en tasas_cambio.
-///
 ///   - SEN (Secretaría de Energía de Honduras): todos los domingos a las 20:00 hora Honduras.
 ///     Detecta nuevos boletines de precios de combustibles y los registra en sen_boletines
 ///     para ingreso manual desde la UI.
 ///
 /// El servicio despierta cada 10 minutos y evalúa si algún job debe correr.
 /// Para evitar duplicar ejecuciones usa un "último run" en memoria por día/semana.
+///
+/// Las tasas de cambio del BCH ya no van aquí: las obtiene TasasCambio.TasasCambioBackgroundService.
 /// </summary>
 public class KpiSyncBackgroundService : BackgroundService
 {
@@ -20,7 +19,6 @@ public class KpiSyncBackgroundService : BackgroundService
     private readonly IConfiguration _config;
 
     // Última ejecución exitosa (en memoria; se reinicia si el proceso se reinicia)
-    private DateOnly _bchLastRun = DateOnly.MinValue;
     private DateOnly _senLastRun = DateOnly.MinValue;
 
     private static readonly TimeZoneInfo HondurasZone = GetHondurasZone();
@@ -69,16 +67,6 @@ public class KpiSyncBackgroundService : BackgroundService
         var hoyHn   = DateOnly.FromDateTime(ahoraHn);
 
         // -----------------------------------------------------------------
-        // Job BCH: diario a las 23:30 Honduras
-        // -----------------------------------------------------------------
-        if (ahoraHn.Hour == 23 && ahoraHn.Minute >= 30 && _bchLastRun < hoyHn)
-        {
-            _logger.LogInformation("KpiSync: ejecutando job BCH ({Hora})", ahoraHn.ToString("HH:mm"));
-            await RunBchAsync(ct);
-            _bchLastRun = hoyHn;
-        }
-
-        // -----------------------------------------------------------------
         // Job SEN: domingos a las 20:00 Honduras
         // -----------------------------------------------------------------
         if (ahoraHn.DayOfWeek == DayOfWeek.Sunday
@@ -94,26 +82,6 @@ public class KpiSyncBackgroundService : BackgroundService
     // -------------------------------------------------------------------------
     // Delegación a los servicios de dominio
     // -------------------------------------------------------------------------
-
-    private async Task RunBchAsync(CancellationToken ct)
-    {
-        var empresaIds = GetEmpresaIds();
-        await using var scope = _scopes.CreateAsyncScope();
-        var svc = scope.ServiceProvider.GetRequiredService<BchTasaCambioService>();
-
-        foreach (var id in empresaIds)
-        {
-            try
-            {
-                int rows = await svc.SyncAsync(id, diasAtras: 7, ct);
-                _logger.LogInformation("BCH empresa {Id}: {Rows} filas.", id, rows);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "BCH empresa {Id}: error.", id);
-            }
-        }
-    }
 
     private async Task RunSenAsync(CancellationToken ct)
     {
@@ -148,16 +116,6 @@ public class KpiSyncBackgroundService : BackgroundService
                   .ToList();
     }
 
-    private static TimeZoneInfo GetHondurasZone()
-    {
-        // ID en Windows: "Central America Standard Time"
-        // ID en Linux/macOS: "America/Tegucigalpa"
-        foreach (var id in new[] { "Central America Standard Time", "America/Tegucigalpa" })
-        {
-            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
-            catch { /* intentar siguiente */ }
-        }
-        // Fallback: UTC-6 fijo (Honduras no usa horario de verano)
-        return TimeZoneInfo.CreateCustomTimeZone("HN", TimeSpan.FromHours(-6), "Honduras", "Honduras");
-    }
+    // Windows "Central America Standard Time", Linux/macOS "America/Tegucigalpa" o UTC-6 fijo: ver ZonaHorariaHonduras.
+    private static TimeZoneInfo GetHondurasZone() => ZonaHorariaHonduras.Obtener();
 }

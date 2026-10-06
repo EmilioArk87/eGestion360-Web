@@ -1,0 +1,115 @@
+@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+
+@if (Model.TienePermisoCrear || Model.EsAdminSistema)
+{
+    <div class="row g-4 mb-4">
+        @if (Model.TienePermisoCrear)
+        {
+            <div class="@(Model.EsAdminSistema ? "col-lg-7" : "col-12")" id="registrar">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-light">
+                        <strong><i class="fas fa-pen me-2"></i>Registrar tasa propia de la empresa</strong>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.PuedeRegistrar)
+                        {
+                            <p class="small text-muted">
+                                Para su empresa, esta tasa prevalece sobre la oficial de la misma fecha. Si ya registró una para la
+                                misma moneda, tipo y fecha, la nueva la reemplaza y la anterior queda en el histórico.
+                            </p>
+                            <form method="post" asp-page-handler="Registrar">
+                                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+                                <div class="row g-2 align-items-start">
+                                    <div class="col-sm-6 col-md-3">
+                                        <label asp-for="Registro.Moneda" class="form-label small mb-1">Moneda</label>
+                                        <select asp-for="Registro.Moneda" class="form-select form-select-sm" required>
+                                            <option value="">— Seleccione —</option>
+                                            @foreach (var m in Model.Monedas)
+                                            {
+                                                <option value="@m">@m</option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="Registro.Moneda" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label asp-for="Registro.Tipo" class="form-label small mb-1">Tipo</label>
+                                        <select asp-for="Registro.Tipo" class="form-select form-select-sm" required>
+                                            <option value="">— Seleccione —</option>
+                                            @foreach (var t in IndexModel.TiposCaptura)
+                                            {
+                                                <option value="@t">@FormatoTasas.NombreTipo(t)</option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="Registro.Tipo" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label asp-for="Registro.Fecha" class="form-label small mb-1">Fecha de vigencia</label>
+                                        <input asp-for="Registro.Fecha" type="date" class="form-control form-control-sm" required
+                                               max="@Model.Hoy.AddDays(1).ToString("yyyy-MM-dd")" />
+                                        <span asp-validation-for="Registro.Fecha" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label asp-for="Registro.Tasa" class="form-label small mb-1">Tasa (L por unidad)</label>
+                                        <input asp-for="Registro.Tasa" type="number" step="0.0001" min="0.0001" inputmode="decimal"
+                                               class="form-control form-control-sm" placeholder="26.8925" required />
+                                        <span asp-validation-for="Registro.Tasa" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm mt-3">
+                                    <i class="fas fa-save me-2"></i>Registrar tasa
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">
+                                <i class="fas fa-info-circle me-1"></i>Su sesión no tiene empresa: las tasas propias se registran
+                                para la empresa con la que inició sesión.
+                            </p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.EsAdminSistema)
+        {
+            <div class="@(Model.TienePermisoCrear ? "col-lg-5" : "col-12")" id="ejecutar">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-light">
+                        <strong><i class="fas fa-play-circle me-2"></i>Ejecutar ahora</strong>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.PuedeEjecutar)
+                        {
+                            <p class="small text-muted">
+                                Busca ya las tasas oficiales (BCH y, para el euro, el BCE) aunque no toque según la programación.
+                                Corre en segundo plano: el resultado aparece en la bitácora en unos minutos.
+                            </p>
+                            @if (Model.SolicitudesEnCola > 0)
+                            {
+                                <p class="small text-warning mb-2">
+                                    <i class="fas fa-hourglass-half me-1"></i>Solicitudes esperando turno: @Model.SolicitudesEnCola
+                                </p>
+                            }
+                            <form method="post" asp-page-handler="Ejecutar"
+                                  onsubmit="return confirm('¿Ejecutar ahora el job de tasas de cambio?');">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-sync-alt me-2"></i>Ejecutar ahora
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="alert alert-secondary small mb-0">
+                                <i class="fas fa-power-off me-1"></i>El job de tasas de cambio está <strong>deshabilitado</strong>
+                                (<code>TasasCambio:Habilitado = false</code>): no se puede ejecutar desde aquí. Se activa en la
+                                puesta en marcha (<code>TASAS_CAMBIO.md</code>, sección 12).
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

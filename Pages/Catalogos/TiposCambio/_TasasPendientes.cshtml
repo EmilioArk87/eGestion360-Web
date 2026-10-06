@@ -1,0 +1,109 @@
+@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+
+<div class="card border-0 shadow-sm mb-4 @(Model.Pendientes.Any() ? "border-start border-warning border-4" : "")" id="pendientes">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>
+            <i class="fas fa-user-check me-2"></i>Pendientes de revisión
+            @if (Model.Pendientes.Any())
+            {
+                <span class="badge bg-warning text-dark ms-1">@Model.Pendientes.Count</span>
+            }
+        </strong>
+        <small class="text-muted">Datos raros: se guardaron pero no se usan hasta aprobarlos</small>
+    </div>
+    @if (!Model.Pendientes.Any())
+    {
+        <div class="card-body text-muted small">
+            <i class="fas fa-check me-1"></i>No hay tasas pendientes de revisión.
+        </div>
+    }
+    else
+    {
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Moneda</th>
+                            <th>Tipo</th>
+                            <th class="text-end">En revisión</th>
+                            <th class="text-end">Vigente actual</th>
+                            <th>Origen</th>
+                            <th>Motivo</th>
+                            <th class="text-end" style="min-width: 15rem;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Pendientes)
+                        {
+                            var descripcion = $"{p.MonedaOrigen} {FormatoTasas.NombreTipo(p.TipoTasa).ToLowerInvariant()} del {FormatoTasas.Fecha(p.FechaVigencia)}";
+                            <tr>
+                                <td>@FormatoTasas.Fecha(p.FechaVigencia)</td>
+                                <td class="text-nowrap">@p.MonedaOrigen → @p.MonedaDestino</td>
+                                <td>@FormatoTasas.NombreTipo(p.TipoTasa)</td>
+                                <td class="text-end fw-bold text-nowrap">@FormatoTasas.Tasa(p.Tasa)</td>
+                                <td class="text-end text-nowrap">
+                                    @if (p.TasaVigenteActual is { } actual)
+                                    {
+                                        @FormatoTasas.Tasa(actual)
+                                        <br /><span class="text-muted">@FormatoTasas.Variacion(p.Tasa, actual)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (p.IdEmpresa == null)
+                                    {
+                                        <span class="badge bg-light text-dark border">Oficial</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">Propia de la empresa</span>
+                                    }
+                                    <div class="text-muted">@FormatoTasas.NombreFuente(p.Fuente)</div>
+                                </td>
+                                <td>@(p.Motivo ?? "—")</td>
+                                <td class="text-end">
+                                    @if (Model.PuedeRevisar(p.IdEmpresa))
+                                    {
+                                        <form method="post" asp-page-handler="Aprobar" class="d-inline"
+                                              onsubmit="return confirm('¿Aprobar la tasa @descripcion? Pasará a ser la vigente.');">
+                                            <input type="hidden" name="idTasaCambio" value="@p.IdTasaCambio" />
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check me-1"></i>Aprobar
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse"
+                                                data-bs-target="#rechazar-@p.IdTasaCambio" aria-expanded="false"
+                                                aria-controls="rechazar-@p.IdTasaCambio">
+                                            <i class="fas fa-times me-1"></i>Rechazar
+                                        </button>
+                                        <div class="collapse mt-2 text-start" id="rechazar-@p.IdTasaCambio">
+                                            <form method="post" asp-page-handler="Rechazar">
+                                                <input type="hidden" name="idTasaCambio" value="@p.IdTasaCambio" />
+                                                <label class="form-label small mb-1" for="motivo-@p.IdTasaCambio">Motivo del rechazo</label>
+                                                <textarea class="form-control form-control-sm mb-2" id="motivo-@p.IdTasaCambio" name="motivo"
+                                                          rows="2" required maxlength="@IndexModel.LargoMaximoMotivo"
+                                                          placeholder="Obligatorio. Queda en la bitácora."></textarea>
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-ban me-1"></i>Confirmar rechazo
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">@(p.IdEmpresa == null ? "Solo el administrador del sistema" : "Solo un administrador de la empresa")</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,67 @@
+@page
+@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+@{
+    ViewData["Title"] = "Tipos de cambio";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tipos de cambio</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-exchange-alt me-2"></i>Tipos de cambio</h2>
+            <p class="text-muted mb-0">Dólar y euro en lempiras: tasas oficiales del BCH y tasas propias de la empresa</p>
+        </div>
+        <a asp-page="/Catalogos/Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    @if (TempData[IndexModel.ClaveMensaje] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData[IndexModel.ClaveMensaje]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (TempData[IndexModel.ClaveError] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-times-circle me-2"></i>@TempData[IndexModel.ClaveError]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (Model.AvisoBaseDatos != null)
+    {
+        <div class="alert alert-warning d-flex align-items-start" role="alert">
+            <i class="fas fa-database fa-lg me-3 mt-1"></i>
+            <div>
+                <strong>@Model.AvisoBaseDatos</strong>
+                @if (Model.ModuloNoInstalado)
+                {
+                    <div class="small mt-1">
+                        Las tablas de tasas de cambio y su bitácora todavía no existen en esta base de datos. El script
+                        <code>020_tasas_cambio_v2.sql</code> se aplica en la puesta en marcha
+                        (<code>1 - Documetacion/TASAS_CAMBIO.md</code>, sección 12).
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <partial name="_TasasVigentes" model="Model" />
+        <partial name="_TasasPendientes" model="Model" />
+        <partial name="_TasasAcciones" model="Model" />
+        <partial name="_TasasHistorico" model="Model" />
+        <partial name="_TasasBitacora" model="Model" />
+    }
+</div>

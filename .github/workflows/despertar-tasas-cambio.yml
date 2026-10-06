@@ -1,0 +1,46 @@
+# Despierta a eGestion360-Web cada 30 minutos para que corra el job de tasas de cambio aunque Somee (IIS)
+# haya descargado la aplicacion por falta de visitas. El endpoint es idempotente: llamarlo de mas no duplica nada.
+#
+# Configuracion (Settings > Secrets and variables > Actions):
+#   Variable TASAS_CAMBIO_DESPERTAR = true   -> activa el job (ausente o cualquier otro valor: no corre)
+#   Secreto  EGESTION_URL                    -> URL base del sitio, sin barra final
+#   Secreto  TASAS_JOB_TOKEN                 -> mismo valor que TasasCambio__Disparador__Token en el servidor
+#
+# Los cron de GitHub van en UTC, solo corren desde la rama por defecto y pueden atrasarse unos minutos.
+# Documentacion: 1 - Documetacion/TASAS_CAMBIO.md
+
+name: Despertar job de tasas de cambio
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: despertar-tasas-cambio
+  cancel-in-progress: false
+
+jobs:
+  despertar:
+    if: ${{ vars.TASAS_CAMBIO_DESPERTAR == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Llamar al endpoint del job
+        env:
+          URL: ${{ secrets.EGESTION_URL }}
+          TOKEN: ${{ secrets.TASAS_JOB_TOKEN }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$TOKEN" ]; then
+            echo "::error::Faltan los secretos EGESTION_URL o TASAS_JOB_TOKEN."
+            exit 1
+          fi
+          URL="${URL%/}"
+          case "$URL" in
+            https://*) ;;
+            *) echo "::warning::EGESTION_URL no usa HTTPS: el token viaja sin cifrar." ;;
+          esac
+          # Content-Length: 0 porque IIS (HTTP.sys) responde 411 a un POST sin cuerpo ni longitud.
+          curl -fsS -X POST "$URL/internal/jobs/tasas-cambio/ejecutar" -H "X-Job-Token: $TOKEN" -H "Content-Length: 0" --max-time 60

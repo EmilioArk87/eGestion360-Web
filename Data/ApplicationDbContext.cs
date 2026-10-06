@@ -63,7 +63,11 @@ namespace eGestion360Web.Data
         public DbSet<FormaPago> FormasPago { get; set; }
         public DbSet<CondicionPago> CondicionesPago { get; set; }
         public DbSet<CondicionPagoCuota> CondicionesPagoCuotas { get; set; }
-        public DbSet<TipoCambio> TiposCambio { get; set; }
+
+        // Tasas de cambio y bitácora del job que las obtiene (script 020)
+        public DbSet<TasaCambio> TasasCambio { get; set; }
+        public DbSet<TasaCambioEjecucion> TasasCambioEjecuciones { get; set; }
+        public DbSet<TasaCambioEjecucionDetalle> TasasCambioEjecucionesDetalle { get; set; }
 
         // Outbox de eventos de dominio (Fase 0)
         public DbSet<DomainEvent> DomainEvents { get; set; }
@@ -769,15 +773,75 @@ namespace eGestion360Web.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<TipoCambio>(entity =>
+            // Tasas de cambio (script 020). Una sola tasa VIGENTE por par, tipo, fecha y empresa:
+            // lo garantiza el índice único filtrado. En SQL Server los NULL de id_empresa cuentan como
+            // iguales (una sola tasa oficial por clave); SQLite los trata como distintos, así que las
+            // pruebas en memoria no cubren el caso de dos tasas oficiales duplicadas.
+            modelBuilder.Entity<TasaCambio>(entity =>
             {
-                entity.HasKey(e => e.IdTipoCambio);
-                entity.HasIndex(e => new { e.IdEmpresa, e.MonedaOrigen, e.MonedaDestino, e.Fecha }).IsUnique();
+                entity.HasKey(e => e.IdTasaCambio);
+
+                entity.HasIndex(e => new { e.MonedaOrigen, e.MonedaDestino, e.TipoTasa, e.FechaVigencia, e.IdEmpresa })
+                      .IsUnique()
+                      .HasDatabaseName("UX_tasas_cambio_vigente")
+                      .HasFilter("[estado] = 'VIGENTE' AND [eliminado] = 0");
 
                 entity.HasOne(e => e.Empresa)
                       .WithMany()
                       .HasForeignKey(e => e.IdEmpresa)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne<Moneda>()
+                      .WithMany()
+                      .HasForeignKey(e => e.MonedaOrigen)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne<Moneda>()
+                      .WithMany()
+                      .HasForeignKey(e => e.MonedaDestino)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.TasaAnterior)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdTasaAnterior)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+
+                entity.HasOne(e => e.Ejecucion)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEjecucion)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<TasaCambioEjecucion>(entity =>
+            {
+                entity.HasKey(e => e.IdEjecucion);
+                entity.HasIndex(e => new { e.Job, e.FechaObjetivo, e.InicioUtc })
+                      .HasDatabaseName("IX_tce_job_fecha");
+
+                entity.HasOne(e => e.EjecucionOrigen)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdEjecucionOrigen)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+            });
+
+            modelBuilder.Entity<TasaCambioEjecucionDetalle>(entity =>
+            {
+                entity.HasKey(e => e.IdDetalle);
+
+                entity.HasOne(e => e.Ejecucion)
+                      .WithMany(x => x.Detalles)
+                      .HasForeignKey(e => e.IdEjecucion)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.TasaCambio)
+                      .WithMany()
+                      .HasForeignKey(e => e.IdTasaCambio)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
             });
 
             // ─────────────────────────────────────────────────────────────────

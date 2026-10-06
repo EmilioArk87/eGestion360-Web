@@ -1,0 +1,66 @@
+@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+
+<div class="card border-0 shadow-sm mb-4" id="vigentes">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong><i class="fas fa-coins me-2"></i>Tasas vigentes hoy</strong>
+        <small class="text-muted">@FormatoTasas.Fecha(Model.Hoy) · hora de Honduras</small>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            @foreach (var moneda in Model.Vigentes.GroupBy(v => v.MonedaOrigen))
+            {
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold mb-3">
+                            @FormatoTasas.NombreMoneda(moneda.Key)
+                            <small class="text-muted fw-normal">→ @Model.MonedaLocal</small>
+                        </h6>
+                        <div class="row g-3">
+                            @foreach (var v in moneda)
+                            {
+                                <div class="col-6">
+                                    <div class="text-muted small text-uppercase">@FormatoTasas.NombreTipo(v.TipoTasa)</div>
+                                    @if (v.Vigente is { } t)
+                                    {
+                                        <div class="fs-4 fw-bold">@FormatoTasas.Tasa(t.Tasa)</div>
+                                        <div class="small text-muted">
+                                            Vigencia: @FormatoTasas.Fecha(t.FechaVigencia)
+                                            @if (t.FechaVigencia < Model.Hoy)
+                                            {
+                                                <span title="Hoy no hay publicación: se usa la del último día publicado">(último publicado)</span>
+                                            }
+                                        </div>
+                                        <div class="small text-muted">Fuente: @FormatoTasas.NombreFuente(t.Fuente)</div>
+                                        @if (t.EsDerivada || t.EsPropiaEmpresa)
+                                        {
+                                            <div class="mt-1">
+                                                @if (t.EsDerivada)
+                                                {
+                                                    <span class="badge bg-info text-dark" title="@t.ReferenciaFuente">Derivada</span>
+                                                }
+                                                @if (t.EsPropiaEmpresa)
+                                                {
+                                                    <span class="badge bg-primary">Propia de la empresa</span>
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="fs-5 text-muted">Sin tasa todavía</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <p class="small text-muted mt-3 mb-0">
+            <i class="fas fa-info-circle me-1"></i>
+            1 dólar o 1 euro = la tasa en lempiras. Sábados, domingos y feriados rige la del último día publicado.
+            Una tasa propia de la empresa prevalece, para ella, sobre la oficial de la misma fecha.
+            El euro <em>derivado</em> se calcula con el EUR/USD del Banco Central Europeo por el USD/HNL del BCH.
+        </p>
+    </div>
+</div>

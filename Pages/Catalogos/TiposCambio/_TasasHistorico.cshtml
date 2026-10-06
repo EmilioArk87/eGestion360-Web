@@ -1,0 +1,151 @@
+@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+@using Cat = eGestion360Web.Models.Catalogos.TasasCambioCatalogo
+@{
+    var h = Model.Historico;
+    var desde = Model.Desde?.ToString("yyyy-MM-dd");
+    var hasta = Model.Hasta?.ToString("yyyy-MM-dd");
+    var hayFiltros = Model.Moneda != null || Model.Tipo != null || Model.Estado != null || Model.Desde != null || Model.Hasta != null;
+}
+
+<div class="card border-0 shadow-sm mb-4" id="historico">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong><i class="fas fa-history me-2"></i>Histórico</strong>
+        <small class="text-muted">@h.Total.ToString("N0") tasas · oficiales y propias de la empresa</small>
+    </div>
+    <div class="card-body border-bottom">
+        <form method="get" asp-page="Index" asp-fragment="historico" class="row g-2 align-items-end">
+            <div class="col-6 col-md-2">
+                <label asp-for="Moneda" class="form-label small mb-1">Moneda</label>
+                <select asp-for="Moneda" class="form-select form-select-sm">
+                    <option value="">— Todas —</option>
+                    @foreach (var m in Model.Monedas)
+                    {
+                        <option value="@m">@m</option>
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label asp-for="Tipo" class="form-label small mb-1">Tipo</label>
+                <select asp-for="Tipo" class="form-select form-select-sm">
+                    <option value="">— Todos —</option>
+                    @foreach (var t in Cat.TipoTasa.Todos)
+                    {
+                        <option value="@t">@FormatoTasas.NombreTipo(t)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label asp-for="Estado" class="form-label small mb-1">Estado</label>
+                <select asp-for="Estado" class="form-select form-select-sm">
+                    <option value="">— Todos —</option>
+                    @foreach (var e in Cat.EstadoTasa.Todos)
+                    {
+                        <option value="@e">@FormatoTasas.NombreEstadoTasa(e)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label asp-for="Desde" class="form-label small mb-1">Desde</label>
+                <input asp-for="Desde" type="date" class="form-control form-control-sm" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label asp-for="Hasta" class="form-label small mb-1">Hasta</label>
+                <input asp-for="Hasta" type="date" class="form-control form-control-sm" />
+            </div>
+            <div class="col-6 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-filter me-1"></i>Filtrar
+                </button>
+                @if (hayFiltros)
+                {
+                    <a asp-page="Index" asp-fragment="historico" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+                }
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha vigencia</th>
+                        <th>Moneda</th>
+                        <th>Tipo</th>
+                        <th class="text-end">Tasa</th>
+                        <th>Fuente</th>
+                        <th>Estado</th>
+                        <th class="text-center">Versión</th>
+                        <th>Obtenida</th>
+                        <th>Registró</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!h.Filas.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                @(hayFiltros ? "No hay tasas que coincidan con el filtro." : "Todavía no hay tasas registradas.")
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var f in h.Filas)
+                        {
+                            <tr>
+                                <td>@FormatoTasas.Fecha(f.FechaVigencia)</td>
+                                <td>@f.MonedaOrigen → @f.MonedaDestino</td>
+                                <td>@FormatoTasas.NombreTipo(f.TipoTasa)</td>
+                                <td class="text-end fw-bold text-nowrap">@FormatoTasas.Tasa(f.Tasa)</td>
+                                <td>
+                                    @FormatoTasas.NombreFuente(f.Fuente)
+                                    @if (f.EsDerivada)
+                                    {
+                                        <span class="badge bg-info text-dark" title="@f.ReferenciaFuente">Derivada</span>
+                                    }
+                                    @if (f.IdEmpresa != null)
+                                    {
+                                        <span class="badge bg-primary">Propia de la empresa</span>
+                                    }
+                                </td>
+                                <td><span class="badge @FormatoTasas.ClaseEstadoTasa(f.Estado)" title="@f.Estado">@FormatoTasas.NombreEstadoTasa(f.Estado)</span></td>
+                                <td class="text-center">
+                                    <span title="@(f.IdTasaAnterior is { } anterior ? $"Reemplaza a la #{anterior}" : "Primera versión")">@("v" + f.Version)</span>
+                                </td>
+                                <td class="text-nowrap">@Model.HoraHonduras(f.FechaHoraObtencionUtc)</td>
+                                <td>
+                                    @f.CreadoPor
+                                    @if (!string.IsNullOrEmpty(f.ModificadoPor))
+                                    {
+                                        <div class="text-muted" title="Último cambio de estado">@f.ModificadoPor · @Model.HoraHonduras(f.FechaModificacionUtc)</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (h.TotalPaginas > 1)
+    {
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+            <small class="text-muted">Página @h.Pagina de @h.TotalPaginas</small>
+            <nav aria-label="Páginas del histórico">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(h.Pagina <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-page="Index" asp-fragment="historico"
+                           asp-route-moneda="@Model.Moneda" asp-route-tipo="@Model.Tipo" asp-route-estado="@Model.Estado"
+                           asp-route-desde="@desde" asp-route-hasta="@hasta" asp-route-pagina="@(h.Pagina - 1)">Anterior</a>
+                    </li>
+                    <li class="page-item @(h.Pagina >= h.TotalPaginas ? "disabled" : "")">
+                        <a class="page-link" asp-page="Index" asp-fragment="historico"
+                           asp-route-moneda="@Model.Moneda" asp-route-tipo="@Model.Tipo" asp-route-estado="@Model.Estado"
+                           asp-route-desde="@desde" asp-route-hasta="@hasta" asp-route-pagina="@(h.Pagina + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
