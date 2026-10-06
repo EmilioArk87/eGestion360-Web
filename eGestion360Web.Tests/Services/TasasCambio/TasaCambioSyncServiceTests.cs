@@ -90,7 +90,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task Las_fechas_de_auditoria_salen_del_reloj_en_UTC_y_no_quedan_en_0001()
         {
-            var ahora = EscenarioTasas.ViernesTarde.UtcDateTime;   // 2026-10-03 00:00 UTC
+            var ahora = EscenarioTasas.ViernesManana.UtcDateTime;   // 2026-10-02 16:00 UTC
 
             var r = await Ejecutar();
             var manual = await _e.Servicio().RegistrarManualAsync(DatosBase.EmpresaA, "USD", "VENTA", EscenarioTasas.Viernes, 27.10m, "ana");
@@ -355,7 +355,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(Cat.EstadoEjecucion.Reintentada, r1.Estado);
             var e1 = Ejecucion(r1.IdEjecucion!.Value);
             Assert.Equal(1, e1.Intento);
-            Assert.Equal(EscenarioTasas.ViernesTarde.UtcDateTime.AddMinutes(15), e1.ProximoIntentoUtc);
+            Assert.Equal(EscenarioTasas.ViernesManana.UtcDateTime.AddMinutes(15), e1.ProximoIntentoUtc);
             Assert.Equal((short)503, e1.HttpStatus);
             Assert.Contains("503", e1.DetalleError);
             Assert.Contains(e1.Detalles, d => d.Resultado == Cat.ResultadoDetalle.Error && d.FechaVigencia == EscenarioTasas.Viernes);
@@ -367,7 +367,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(Cat.EstadoEjecucion.Reintentada, e2.Estado);
             Assert.Equal(2, e2.Intento);
             Assert.Equal(e1.IdEjecucion, e2.IdEjecucionOrigen);
-            Assert.Equal(EscenarioTasas.ViernesTarde.UtcDateTime.AddMinutes(15 + 30), e2.ProximoIntentoUtc);
+            Assert.Equal(EscenarioTasas.ViernesManana.UtcDateTime.AddMinutes(15 + 30), e2.ProximoIntentoUtc);
 
             _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.Reloj.Avanzar(TimeSpan.FromMinutes(30));
@@ -479,29 +479,32 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public async Task Sin_publicacion_todavia_hoy_queda_REINTENTADA()
+        public async Task Sin_publicacion_todavia_de_la_tasa_de_manana_queda_REINTENTADA()
         {
-            _e.Reloj = new RelojFijo(new DateTimeOffset(2026, 10, 2, 17, 5, 0, TimeSpan.FromHours(-6)));
+            // Jueves 17:05: la fecha objetivo es el viernes y el BCH todavía no la publicó.
+            _e.Reloj = new RelojFijo(new DateTimeOffset(2026, 10, 1, 17, 5, 0, TimeSpan.FromHours(-6)));
             _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));   // hasta el jueves
 
             var r = await Ejecutar();
 
+            Assert.Equal(EscenarioTasas.Viernes, r.FechaObjetivo);
             Assert.Equal(Cat.EstadoEjecucion.Reintentada, r.Estado);
             Assert.Contains(Ejecucion(r.IdEjecucion!.Value).Detalles, d => d.Resultado == Cat.ResultadoDetalle.SinDatos && d.FechaVigencia == EscenarioTasas.Viernes);
-            Assert.Equal(12, r.Insertados);   // martes a jueves sí estaban
+            Assert.Equal(16, r.Insertados);   // lunes a jueves sí estaban (puesta al día desde jueves - 3 días)
         }
 
         [Fact]
-        public async Task Fin_de_semana_o_feriado_sin_publicacion_es_OMITIDA_SIN_DATOS_y_no_alerta()
+        public async Task Fin_de_semana_sin_la_tasa_del_lunes_es_OMITIDA_SIN_DATOS_sin_reintentos_ni_alerta()
         {
             _e.Reloj = new RelojFijo(new DateTimeOffset(2026, 10, 3, 10, 0, 0, TimeSpan.FromHours(-6)));   // sábado
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));   // el viernes no se publicó
+            _e.ResponderExcel(EscenarioTasas.SemanaBch());   // hasta el viernes; la del lunes no está
 
             var r = await Ejecutar();
 
-            Assert.Equal(EscenarioTasas.Viernes, r.FechaObjetivo);
-            Assert.Equal(Cat.EstadoEjecucion.OmitidaSinDatos, r.Estado);
-            Assert.Empty(_e.Notificador.Enviadas);   // el jueves sí tiene tasa: no faltan dos días seguidos
+            Assert.Equal(new DateOnly(2026, 10, 5), r.FechaObjetivo);   // fin de semana: el día hábil siguiente
+            Assert.Equal(Cat.EstadoEjecucion.OmitidaSinDatos, r.Estado);   // el BCH no publica en fin de semana
+            Assert.Null(Ejecucion(r.IdEjecucion!.Value).ProximoIntentoUtc);
+            Assert.Empty(_e.Notificador.Enviadas);   // el viernes sí tiene tasa: no faltan dos días seguidos
         }
 
         [Fact]
@@ -513,12 +516,12 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             var r1 = await Ejecutar();
             var r2 = await Ejecutar();
 
-            Assert.Equal(new DateOnly(2026, 10, 5), r1.FechaObjetivo);   // antes de las 17:00: el día hábil anterior
-            Assert.Equal(Cat.EstadoEjecucion.OmitidaSinDatos, r1.Estado);
+            Assert.Equal(new DateOnly(2026, 10, 6), r1.FechaObjetivo);   // antes de las 17:00 de un día hábil: hoy
+            Assert.Equal(Cat.EstadoEjecucion.OmitidaSinDatos, r1.Estado);   // en la mañana no se reintenta
             var aviso = Assert.Single(_e.Notificador.Enviadas);
             Assert.Contains("dos días hábiles", aviso.Asunto);
-            Assert.Contains("2026-10-02", aviso.Html);
             Assert.Contains("2026-10-05", aviso.Html);
+            Assert.Contains("2026-10-06", aviso.Html);
             Assert.True(Ejecucion(r1.IdEjecucion!.Value).Notificado);
             Assert.Equal(Cat.EstadoEjecucion.OmitidaSinDatos, r2.Estado);
         }
@@ -529,7 +532,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             long vieja, reciente;
             using (var db = _e.Bd.Crear())
             {
-                var ahora = EscenarioTasas.ViernesTarde.UtcDateTime;
+                var ahora = EscenarioTasas.ViernesManana.UtcDateTime;
                 var e1 = new TasaCambioEjecucion { Disparador = "PROGRAMADO", FechaObjetivo = EscenarioTasas.Jueves, Servidor = "x", EjecutadoPor = "job", InicioUtc = ahora.AddMinutes(-20) };
                 var e2 = new TasaCambioEjecucion { Disparador = "PROGRAMADO", FechaObjetivo = EscenarioTasas.Jueves, Servidor = "x", EjecutadoPor = "job", InicioUtc = ahora.AddMinutes(-5) };
                 db.TasasCambioEjecuciones.AddRange(e1, e2);
@@ -591,7 +594,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [InlineData(1, "USD", "PROMEDIO", 27.1, 0, "COMPRA, VENTA o REFERENCIA")]
         [InlineData(1, "USD", "VENTA", 0, 0, "mayor que cero")]
         [InlineData(1, "USD", "VENTA", 270270, 0, "Fuera del rango")]
-        [InlineData(1, "USD", "VENTA", 27.1, 3, "futura")]
+        [InlineData(1, "USD", "VENTA", 27.1, 5, "futura")]   // miércoles 7: más de dos días hábiles adelante
         [InlineData(1, "XYZ", "VENTA", 27.1, 0, "no existe")]
         [InlineData(99, "USD", "VENTA", 27.1, 0, "empresa no existe")]
         public async Task Registrar_manual_rechaza_datos_invalidos(int empresa, string moneda, string tipo, double tasa, int diasAdelante, string mensaje)

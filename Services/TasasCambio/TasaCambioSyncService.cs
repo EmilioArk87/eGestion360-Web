@@ -246,7 +246,8 @@ namespace eGestion360Web.Services.TasasCambio
                 if (desde > corrida.FechaObjetivo) desde = corrida.FechaObjetivo;
 
                 corrida.Desde = desde;
-                corrida.Hasta = corrida.Hoy;
+                // En la tarde la fecha objetivo es el día hábil siguiente: se pide hasta ella.
+                corrida.Hasta = corrida.FechaObjetivo > corrida.Hoy ? corrida.FechaObjetivo : corrida.Hoy;
                 corrida.FechaMinima = desde;
             }
             var solicitud = new SolicitudLectura(corrida.Desde, corrida.Hasta);
@@ -595,8 +596,11 @@ namespace eGestion360Web.Services.TasasCambio
             }
 
             var obtenidas = esperadas - faltantes.Count;
+            // Sin publicación todavía: solo se reintenta en la tarde de un día hábil, que es cuando el BCH publica la
+            // tasa del día hábil siguiente. En la mañana la tasa de hoy ya debió salir ayer, y en fin de semana no
+            // publica: se cierra sin reintentos (y, si faltan dos días hábiles seguidos, avisa enseguida).
             var reintentable = motivos.Values.Any(m => m == Falta.Transitorio)
-                               || (motivos.Values.Any(m => m == Falta.SinDatos) && f == corrida.Hoy);
+                               || (motivos.Values.Any(m => m == Falta.SinDatos) && _calendario.EnVentanaDeLaTarde);
 
             if (corrida.Rango == null && reintentable && ProximoIntento(corrida) is { } proximo)
             {

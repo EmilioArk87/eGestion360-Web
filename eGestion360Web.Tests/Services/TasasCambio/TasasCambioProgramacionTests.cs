@@ -50,6 +50,30 @@ namespace eGestion360Web.Tests.Services.TasasCambio
                     _e.Sembrar(moneda, tipo, fecha, moneda == "USD" ? 27m : 29m);
         }
 
+        // ── Calendario: fecha objetivo y límite de fechas futuras ──────────
+
+        [Theory]
+        [InlineData(1, 10, 0, 1)]    // jueves en la mañana: hoy
+        [InlineData(1, 16, 59, 1)]   // justo antes del primer intento: hoy
+        [InlineData(1, 17, 0, 2)]    // jueves desde las 17:00: el viernes
+        [InlineData(2, 18, 0, 5)]    // viernes en la tarde: el lunes
+        [InlineData(3, 10, 0, 5)]    // sábado: el lunes
+        [InlineData(4, 23, 0, 5)]    // domingo: el lunes
+        [InlineData(5, 6, 0, 5)]     // lunes de madrugada: hoy
+        public void Fecha_objetivo_segun_el_dia_y_la_hora(int dia, int hora, int minuto, int diaObjetivo)
+        {
+            var calendario = new CalendarioTasasCambio(Honduras(dia, hora, minuto), _e.Opciones);
+            Assert.Equal(new DateOnly(2026, 10, diaObjetivo), calendario.FechaObjetivo());
+        }
+
+        [Fact]
+        public void El_limite_de_fechas_futuras_es_dos_dias_habiles_adelante()
+        {
+            Assert.Equal(new DateOnly(2026, 10, 5), CalendarioTasasCambio.LimiteFechaFutura(new DateOnly(2026, 10, 1)));   // jueves → lunes
+            Assert.Equal(new DateOnly(2026, 10, 6), CalendarioTasasCambio.LimiteFechaFutura(new DateOnly(2026, 10, 2)));   // viernes → martes
+            Assert.Equal(new DateOnly(2026, 10, 6), CalendarioTasasCambio.LimiteFechaFutura(new DateOnly(2026, 10, 3)));   // sábado → martes
+        }
+
         // ── Planificador ────────────────────────────────────────────────────
 
         [Fact]
@@ -60,26 +84,27 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public async Task Dia_habil_despues_de_las_17_sin_la_tasa_del_dia_toca_el_primer_intento()
+        public async Task Dia_habil_despues_de_las_17_sin_la_tasa_del_dia_habil_siguiente_toca_el_primer_intento()
         {
-            var d = await Decidir(Honduras(2, 17, 5));
+            var d = await Decidir(Honduras(2, 17, 5));   // viernes en la tarde: objetivo lunes
 
             Assert.NotNull(d);
             Assert.Equal(Cat.Disparador.Programado, d!.Disparador);
+            Assert.Contains("2026-10-05", d.Motivo);
             Assert.False(d.EsBarridoMatutino);
         }
 
         [Fact]
         public async Task Sin_nada_que_falte_no_toca_nunca()
         {
-            Completar(EscenarioTasas.Jueves);
             Completar(EscenarioTasas.Viernes);
+            Completar(EscenarioTasas.Lunes);
 
-            Assert.Null(await Decidir(Honduras(2, 3, 0)));    // madrugada: objetivo jueves
+            Assert.Null(await Decidir(Honduras(2, 3, 0)));    // madrugada: objetivo viernes (hoy)
             Assert.Null(await Decidir(Honduras(2, 7, 5)));    // barrido: no falta nada, no corre
             Assert.Null(await Decidir(Honduras(2, 16, 55)));
-            Assert.Null(await Decidir(Honduras(2, 17, 5)));   // objetivo viernes, ya está
-            Assert.Null(await Decidir(Honduras(3, 18, 0)));   // sábado
+            Assert.Null(await Decidir(Honduras(2, 17, 5)));   // objetivo lunes, ya está
+            Assert.Null(await Decidir(Honduras(3, 18, 0)));   // sábado: objetivo lunes
         }
 
         [Fact]
@@ -90,9 +115,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public async Task Fecha_objetivo_anterior_sin_ninguna_ejecucion_es_un_hueco_de_puesta_al_dia()
+        public async Task Fuera_de_la_tarde_sin_ninguna_ejecucion_para_la_fecha_objetivo_es_un_hueco_de_puesta_al_dia()
         {
-            // Viernes 10:00: el jueves no tiene tasa ni hubo ninguna ejecución para él (el proceso estuvo caído)
+            // Viernes 10:00: el viernes (hoy) no tiene tasa y nadie la buscó el jueves en la tarde (el proceso estuvo caído)
             var d = await Decidir(Honduras(2, 10, 0));
             Assert.Equal(Cat.Disparador.Programado, d!.Disparador);
             Assert.Contains("Puesta al día", d.Motivo);
@@ -102,9 +127,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public async Task Con_una_ejecucion_hoy_para_la_fecha_no_toca_el_primer_intento()
+        public async Task Con_una_ejecucion_para_la_fecha_objetivo_no_toca_el_primer_intento()
         {
-            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos, Utc(2, 17, 0));
+            SembrarEjecucion(EscenarioTasas.Lunes, Cat.EstadoEjecucion.OmitidaSinDatos, Utc(2, 17, 0));
             Assert.Null(await Decidir(Honduras(2, 17, 30)));
             Assert.Null(await Decidir(Honduras(2, 23, 0)));
         }
@@ -112,7 +137,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task Reintento_solo_cuando_vence_su_ProximoIntentoUtc()
         {
-            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Reintentada, Utc(2, 17, 0), Utc(2, 17, 15));
+            SembrarEjecucion(EscenarioTasas.Lunes, Cat.EstadoEjecucion.Reintentada, Utc(2, 17, 0), Utc(2, 17, 15));
 
             Assert.Null(await Decidir(Honduras(2, 17, 10)));   // todavía no vence: no se abre nada más
             Assert.Equal(Cat.Disparador.Reintento, (await Decidir(Honduras(2, 17, 15)))!.Disparador);
@@ -122,11 +147,12 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task La_cadena_de_otra_fecha_objetivo_no_se_persigue()
         {
-            SembrarEjecucion(EscenarioTasas.Jueves, Cat.EstadoEjecucion.Reintentada, Utc(2, 8, 0), Utc(2, 9, 0));
+            // Cadena de la mañana del viernes (un error pasajero de la fuente se reintenta a cualquier hora)
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Reintentada, Utc(2, 8, 0), Utc(2, 9, 0));
 
-            // Viernes 10:00: la fecha objetivo todavía es el jueves, así que su cadena sigue
+            // Viernes 10:00: la fecha objetivo todavía es el viernes, así que su cadena sigue
             Assert.Equal(Cat.Disparador.Reintento, (await Decidir(Honduras(2, 10, 0)))!.Disparador);
-            // Viernes 18:00: el objetivo ya es el viernes (sin ejecuciones): primer intento; el jueves entra en su puesta al día
+            // Viernes 18:00: el objetivo ya es el lunes (sin ejecuciones): primer intento; el viernes entra en su puesta al día
             var d = await Decidir(Honduras(2, 18, 0));
             Assert.Equal(Cat.Disparador.Programado, d!.Disparador);
             Assert.Contains("Primer intento", d.Motivo);
@@ -135,8 +161,8 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task Cadena_terminada_solo_la_reintenta_el_barrido_matutino_una_vez()
         {
-            // La cadena del jueves terminó el jueves a las 22:45 sin tasa
-            SembrarEjecucion(EscenarioTasas.Jueves, Cat.EstadoEjecucion.OmitidaSinDatos, Utc(1, 22, 45));
+            // La cadena del jueves en la tarde (objetivo: viernes) terminó a las 22:45 sin tasa
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos, Utc(1, 22, 45));
 
             Assert.Null(await Decidir(Honduras(1, 23, 0)));
             Assert.Null(await Decidir(Honduras(2, 3, 0)));     // madrugada del viernes: espera al barrido
@@ -145,7 +171,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.True(barrido!.EsBarridoMatutino);
             Assert.Equal(Cat.Disparador.Programado, barrido.Disparador);
 
-            SembrarEjecucion(EscenarioTasas.Jueves, Cat.EstadoEjecucion.OmitidaSinDatos, Utc(2, 7, 5));   // el barrido ya corrió
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos, Utc(2, 7, 5));   // el barrido ya corrió
             Assert.Null(await Decidir(Honduras(2, 7, 30)));
             Assert.Null(await Decidir(Honduras(2, 12, 0)));
         }
@@ -216,9 +242,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task Solicitud_forzada_se_ejecuta_siempre_y_la_de_evaluar_solo_si_toca()
         {
-            Completar(EscenarioTasas.Jueves);
             Completar(EscenarioTasas.Viernes);
-            var (worker, sync, cola) = Worker(Honduras(2, 18, 0));   // no falta nada
+            Completar(EscenarioTasas.Lunes);
+            var (worker, sync, cola) = Worker(Honduras(2, 18, 0));   // no falta nada (objetivo: lunes)
 
             cola.Solicitar(SolicitudEjecucionTasas.Evaluar(Cat.Disparador.Externo));
             cola.Solicitar(Cat.Disparador.Manual, "ana");

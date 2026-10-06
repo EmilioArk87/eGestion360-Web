@@ -69,11 +69,14 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public void Fecha_posterior_a_manana_o_anterior_a_la_puesta_al_dia_es_invalida_salvo_backfill()
+        public void Fecha_mas_alla_de_dos_dias_habiles_o_anterior_a_la_puesta_al_dia_es_invalida_salvo_backfill()
         {
             var v = Validador();
-            Assert.Null(v.RevisarFecha(Hoy.AddDays(1), Hoy, null));                   // mañana se acepta
-            Assert.NotNull(v.RevisarFecha(Hoy.AddDays(2), Hoy, null));
+            // Hoy es viernes 2: el BCH ya publicó la del lunes 5; el martes 6 se tolera por si el lunes fuera feriado.
+            Assert.Null(v.RevisarFecha(Hoy.AddDays(1), Hoy, null));                   // sábado
+            Assert.Null(v.RevisarFecha(Hoy.AddDays(3), Hoy, null));                   // lunes: día hábil siguiente
+            Assert.Null(v.RevisarFecha(Hoy.AddDays(4), Hoy, null));                   // martes: segundo día hábil
+            Assert.NotNull(v.RevisarFecha(Hoy.AddDays(5), Hoy, null));                // miércoles: demasiado adelante
             Assert.NotNull(v.RevisarFecha(Hoy.AddDays(-10), Hoy, Hoy.AddDays(-3)));
             Assert.Null(v.RevisarFecha(Hoy.AddDays(-10), Hoy, null));                 // carga manual de un rango
 

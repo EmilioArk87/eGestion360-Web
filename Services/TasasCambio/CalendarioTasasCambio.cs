@@ -40,18 +40,35 @@ namespace eGestion360Web.Services.TasasCambio
             return fecha;
         }
 
-        /// <summary>
-        /// La fecha cuya tasa ya debería estar publicada: hoy si es día hábil y ya pasó el primer intento
-        /// (<see cref="TasasCambioOptions.PrimerIntento"/>); si no, el día hábil anterior.
-        /// </summary>
-        public DateOnly FechaObjetivo()
+        /// <summary>El día hábil inmediatamente posterior a <paramref name="fecha"/> (sin contarla).</summary>
+        public static DateOnly SiguienteDiaHabil(DateOnly fecha)
         {
-            var ahora = AhoraHonduras;
-            var hoy = DateOnly.FromDateTime(ahora);
-            return EsDiaHabil(hoy) && TimeOnly.FromDateTime(ahora) >= _opt.HoraPrimerIntento
-                ? hoy
-                : DiaHabilAnterior(hoy);
+            do fecha = fecha.AddDays(1);
+            while (!EsDiaHabil(fecha));
+            return fecha;
         }
+
+        /// <summary>
+        /// La fecha de vigencia más lejana que se acepta: dos días hábiles adelante. El BCH publica la tasa del día
+        /// hábil siguiente por adelantado (un viernes ya trae la del lunes); el segundo día hábil tolera un feriado.
+        /// </summary>
+        public static DateOnly LimiteFechaFutura(DateOnly hoy) => SiguienteDiaHabil(SiguienteDiaHabil(hoy));
+
+        /// <summary>
+        /// Día hábil y ya pasó el primer intento (<see cref="TasasCambioOptions.PrimerIntento"/>): la hora en que el
+        /// job busca la tasa del día hábil siguiente.
+        /// </summary>
+        public bool EnVentanaDeLaTarde =>
+            EsDiaHabil(Hoy) && TimeOnly.FromDateTime(AhoraHonduras) >= _opt.HoraPrimerIntento;
+
+        /// <summary>
+        /// La fecha cuya tasa hay que tener. El BCH publica la tasa de un día hábil la tarde del día hábil anterior
+        /// (comprobado con su Excel el 2026-10-05: a las 22:51 ya traía la del 6), así que:
+        ///   * día hábil antes del primer intento: hoy (se publicó ayer y rige desde las 00:00);
+        ///   * día hábil desde el primer intento, o fin de semana: el día hábil siguiente (un viernes en la tarde,
+        ///     el sábado y el domingo apuntan al lunes).
+        /// </summary>
+        public DateOnly FechaObjetivo() => EsDiaHabil(Hoy) && !EnVentanaDeLaTarde ? Hoy : SiguienteDiaHabil(Hoy);
 
         /// <summary>Instante UTC de una hora de Honduras en una fecha.</summary>
         public DateTime AUtc(DateOnly fecha, TimeOnly hora) =>

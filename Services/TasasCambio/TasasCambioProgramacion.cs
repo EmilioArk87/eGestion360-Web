@@ -89,13 +89,15 @@ namespace eGestion360Web.Services.TasasCambio
     /// proceso y el disparador externo; ninguno de ellos fuerza nada. Todo sale de la base (tasas_cambio y la bitácora),
     /// nada de la memoria del proceso, así que un reciclado de IIS no repite ni pierde trabajo.
     ///
-    /// Sobre la fecha objetivo (<see cref="CalendarioTasasCambio.FechaObjetivo"/>) y su última ejecución:
+    /// Sobre la fecha objetivo (<see cref="CalendarioTasasCambio.FechaObjetivo"/>: en la tarde de un día hábil y en
+    /// fin de semana, el día hábil siguiente; antes del primer intento de un día hábil, hoy) y su última ejecución:
     ///   1. Cadena de reintentos abierta (REINTENTADA): manda ella. Toca REINTENTO solo si ya venció su
     ///      ProximoIntentoUtc; si no, no toca nada.
     ///   2. Si a la fecha objetivo no le falta nada, no toca nada.
     ///   3. Nunca hubo una ejecución para la fecha objetivo:
-    ///        * si es hoy (día hábil, ya pasó PrimerIntento): primer intento, mientras no pase UltimoIntento;
-    ///        * si es un día anterior: puesta al día (hueco: el proceso estuvo caído o nadie lo despertó).
+    ///        * en la ventana de la tarde (día hábil, ya pasó PrimerIntento): primer intento por la tasa del día
+    ///          hábil siguiente, mientras no pase UltimoIntento;
+    ///        * en otro momento: puesta al día (hueco: el proceso estuvo caído o nadie lo despertó en la tarde).
     ///   4. La cadena de la fecha objetivo terminó (FALLIDA, OMITIDA_SIN_DATOS…) y sigue faltando algo: no se abre otra
     ///      hasta el barrido matutino, que la intenta una vez más después de BarridoMatutino (07:00) si hoy no hubo
     ///      ninguna ejecución desde esa hora (dato de la bitácora) y, si sigue faltando, avisa.
@@ -145,9 +147,9 @@ namespace eGestion360Web.Services.TasasCambio
             // 3. Nunca se intentó la fecha objetivo
             if (ultima == null)
             {
-                if (objetivo == hoy)
+                if (_calendario.EnVentanaDeLaTarde)
                     return hora <= _opt.HoraUltimoIntento
-                        ? new DecisionProgramada(Cat.Disparador.Programado, false, $"Primer intento de {hoy:yyyy-MM-dd}.")
+                        ? new DecisionProgramada(Cat.Disparador.Programado, false, $"Primer intento de {objetivo:yyyy-MM-dd}.")
                         : null;
 
                 return new DecisionProgramada(Cat.Disparador.Programado, pasoBarrido && !await BarridoHechoHoyAsync(ct),

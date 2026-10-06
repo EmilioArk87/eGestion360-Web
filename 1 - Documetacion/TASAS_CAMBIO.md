@@ -141,8 +141,8 @@ erDiagram
 
 - El valor de una fila **nunca se sobrescribe**. Si la fuente corrige un valor ya guardado, se crea una fila nueva
   (`version + 1`, `id_tasa_anterior` = la anterior) y la anterior pasa a `REEMPLAZADA`, en la misma transacción.
-- Un dato **imposible** (cero o negativo, compra mayor que venta, fecha posterior a mañana o anterior al inicio de la
-  puesta al día) **no se guarda** en `tasas_cambio`: solo queda en la bitácora con resultado `INVALIDA`.
+- Un dato **imposible** (cero o negativo, compra mayor que venta, fecha a más de dos días hábiles adelante o anterior al
+  inicio de la puesta al día) **no se guarda** en `tasas_cambio`: solo queda en la bitácora con resultado `INVALIDA`.
 - Un dato **raro** se guarda `EN_REVISION` (no vigente) y se alerta: fuera del rango de la moneda
   (`Validacion:Rangos`, por omisión USD 15–45 y EUR 15–60), variación contra la última vigente anterior mayor que
   `Validacion:VariacionDiariaMaxPct` (3 %) o diferencia entre compra y venta mayor que
@@ -183,7 +183,7 @@ una transacción **separados** de los de las tasas, para que un error al guardar
 | `FALLIDA` | No se obtuvo nada de la fecha objetivo por errores: se agotaron los intentos, el error es permanente en todas las fuentes del dólar (API y Excel), o hubo un error inesperado. Se alerta. |
 | `OMITIDA_DUPLICADA` | La respuesta de la fuente es idéntica (mismo `hash_contenido`) a la de la última ejecución exitosa y la fecha objetivo ya está completa: no se reprocesa. Si solo coinciden los valores (otro archivo), la ejecución es `EXITOSA` con `duplicados`. |
 | `OMITIDA_INVALIDA` | Lo leído de la fecha objetivo no pasó la validación (inválido o `EN_REVISION`): no quedó nada vigente. |
-| `OMITIDA_SIN_DATOS` | No hay publicación de la fecha objetivo y ya no toca reintentar (es una fecha pasada, o se agotaron los intentos de hoy): fin de semana o feriado. No es un fallo. |
+| `OMITIDA_SIN_DATOS` | No hay publicación de la fecha objetivo y ya no toca reintentar: fuera de la tarde de un día hábil (en la mañana la tasa de hoy ya debió salir ayer; en fin de semana el BCH no publica) o se agotaron los intentos de la tarde. Puede ser un feriado. No es un fallo. |
 
 Resultados del detalle: `INSERTADA`, `REEMPLAZO`, `DUPLICADA`, `INVALIDA`, `EN_REVISION`, `SIN_DATOS`, `ERROR`. El
 detalle **no** tiene clave foránea a `monedas` a propósito: registra también lo que la fuente devolvió y se rechazó.
@@ -238,16 +238,26 @@ Honduras está en **UTC−6 todo el año** (no tiene horario de verano). El serv
 | Momento | Hora Honduras | Hora UTC | Qué pasa |
 |---|---|---|---|
 | Al arrancar la aplicación | cualquiera | | Pregunta al planificador; solo ejecuta si toca algo (sección 6.2) |
-| Primer intento | 17:00 lunes a viernes | 23:00 | Se busca la tasa del día si falta y todavía no hubo ninguna ejecución para hoy |
-| Reintentos | hasta 23:30 | hasta 05:30 del día siguiente | Si no estaba, se reintenta con esperas crecientes; después de 23:30 no se programan más para ese día |
-| Barrido matutino | 07:00 | 13:00 | Una vez al día (también fines de semana): revisa que esté la tasa del día hábil anterior; si falta, la busca y, si tampoco está la del día hábil previo, avisa |
+| Primer intento | 17:00 lunes a viernes | 23:00 | Se busca la tasa del **día hábil siguiente** (el viernes, la del lunes) si falta y todavía no hubo ninguna ejecución para esa fecha |
+| Reintentos | hasta 23:30 | hasta 05:30 del día siguiente | Si el BCH todavía no la publicó, se reintenta con esperas crecientes; después de 23:30 no se programan más |
+| Barrido matutino | 07:00 | 13:00 | Una vez al día: revisa que esté la tasa de la fecha objetivo (en día hábil, la de hoy; en fin de semana, la del lunes); si falta, la busca una vez y, si también falta la del día hábil anterior, avisa |
 
 - El worker (`TasasCambioBackgroundService`) pregunta a `TasasCambioPlanificador` si toca algo **al arrancar, cada
   10 minutos y cada vez que llega el disparador externo**. Toca solo en estos casos: reintento vencido, primer intento
   del día, barrido matutino pendiente o hueco de puesta al día. Si no toca, no descarga nada ni escribe en la bitácora.
 - Cuando la cadena de reintentos de una fecha termina (`FALLIDA`, `OMITIDA_SIN_DATOS`) y sigue faltando la tasa, no se
   abre otra automáticamente: el barrido matutino la intenta una vez más y avisa si sigue faltando.
-- **Fecha objetivo**: hoy si es día hábil y ya pasaron las 17:00; si no, el día hábil anterior.
+- **Por qué el día hábil siguiente**: el BCH publica la tasa de un día hábil en la tarde del día hábil anterior
+  (comprobado con su Excel el 2026-10-05: a las 22:51 ya traía la del 6). Buscarla esa misma tarde hace que cada día
+  amanezca con su tasa vigente; con la regla anterior (objetivo = hoy) había mañanas en que la consulta devolvía la
+  tasa del día anterior. Se corrigió el 2026-10-05.
+- **Fecha objetivo**: en un día hábil antes de las 17:00, hoy; desde las 17:00 y en fin de semana, el día hábil
+  siguiente (`CalendarioTasasCambio.FechaObjetivo`).
+- **Reintentos por falta de publicación**: solo en la tarde de un día hábil, que es cuando el BCH publica. En la
+  mañana y en fin de semana la ejecución cierra sin reintentos (los errores pasajeros de la fuente sí se reintentan
+  a cualquier hora).
+- **Fechas futuras**: se aceptan hasta dos días hábiles adelante (`CalendarioTasasCambio.LimiteFechaFutura`): el
+  viernes trae la del lunes y el segundo día tolera un feriado.
 - **Día hábil** = lunes a viernes. No hay calendario de feriados: un feriado se ve como un día sin publicación
   (`OMITIDA_SIN_DATOS`, no es fallo). Si se juntan dos días hábiles seguidos sin tasa oficial del dólar, se alerta.
 - Las horas son configurables (`TasasCambio:PrimerIntento`, `UltimoIntento`, `BarridoMatutino`).

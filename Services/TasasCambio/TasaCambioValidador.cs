@@ -102,10 +102,13 @@ namespace eGestion360Web.Services.TasasCambio
                           $"el máximo es {_opt.Validacion.DiferenciaCompraVentaMaxPct.ToString("0.##", CultureInfo.InvariantCulture)} %.");
         }
 
-        /// <summary>Motivo si la fecha es posterior a mañana o anterior a la puesta al día.</summary>
+        /// <summary>
+        /// Motivo si la fecha pasa de dos días hábiles adelante (<see cref="CalendarioTasasCambio.LimiteFechaFutura"/>)
+        /// o es anterior a la puesta al día.
+        /// </summary>
         public string? RevisarFecha(DateOnly fecha, DateOnly hoy, DateOnly? minima)
         {
-            if (fecha > hoy.AddDays(1)) return $"Fecha futura: {fecha:yyyy-MM-dd} (hoy es {hoy:yyyy-MM-dd}).";
+            if (fecha > CalendarioTasasCambio.LimiteFechaFutura(hoy)) return $"Fecha futura: {fecha:yyyy-MM-dd} (hoy es {hoy:yyyy-MM-dd}).";
             if (minima is { } min && fecha < min) return $"Fecha {fecha:yyyy-MM-dd} anterior a la puesta al día ({min:yyyy-MM-dd}).";
             return null;
         }

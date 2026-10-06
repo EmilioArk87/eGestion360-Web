@@ -89,6 +89,15 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             }
         }
 
+        /// <summary>Las cuatro tasas del lunes 5 (el BCH las publica el viernes en la tarde), ya vigentes.</summary>
+        private void SembrarLunes()
+        {
+            _e.Sembrar("USD", "COMPRA", EscenarioTasas.Lunes, 26.8901m);
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Lunes, 27.0246m);
+            _e.Sembrar("EUR", "COMPRA", EscenarioTasas.Lunes, 30.1277m, fuente: Cat.Fuente.Derivada);
+            _e.Sembrar("EUR", "VENTA", EscenarioTasas.Lunes, 30.2784m, fuente: Cat.Fuente.Derivada);
+        }
+
         private void SembrarEjecucion(DateOnly fechaObjetivo, string estado, DateTimeOffset inicio, DateTimeOffset? proximo = null)
         {
             using var db = _e.Bd.Crear();
@@ -106,21 +115,21 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task A1_llamada_externa_sin_nada_pendiente_responde_202_sin_descarga_ni_fila_en_la_bitacora()
         {
-            SembrarHastaJueves();
+            SembrarDias(0, 5);   // lunes 28 a viernes 2
             _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.ResponderBce(EscenarioTasas.SemanaBce());
 
-            // Viernes antes del primer intento: la fecha objetivo es el jueves, que ya está.
-            foreach (var momento in new[] { Honduras(2, 3, 0), Honduras(2, 7, 30), Honduras(2, 12, 0) })
+            // Viernes antes del primer intento: la fecha objetivo es el viernes (hoy), que ya está.
+            foreach (var momento in new[] { Honduras(2, 3, 0), Honduras(2, 7, 30), Honduras(2, 12, 0), Honduras(2, 16, 55) })
             {
                 En(momento);
                 Assert.Equal(202, await Proceso().LlamadaExternaAsync());
             }
 
-            // Fin de semana con el viernes ya guardado: no hay publicación nueva que buscar. (Sin el viernes sería un
-            // hueco y la puesta al día sí descargaría; eso lo cubre A4.)
-            SembrarDias(4, 1);
-            foreach (var momento in new[] { Honduras(3, 18, 0), Honduras(4, 10, 0) })
+            // Viernes en la tarde y fin de semana con el lunes ya guardado: no hay publicación nueva que buscar. (Sin el
+            // lunes sería trabajo pendiente y sí descargaría; eso lo cubren A3 y A4.)
+            SembrarLunes();
+            foreach (var momento in new[] { Honduras(2, 17, 30), Honduras(3, 18, 0), Honduras(4, 10, 0) })
             {
                 En(momento);
                 Assert.Equal(202, await Proceso().LlamadaExternaAsync());
@@ -139,9 +148,10 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             SembrarHastaJueves();
             _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.ResponderBce(EscenarioTasas.SemanaBce());
-            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Reintentada, Honduras(2, 17, 0), proximo: Honduras(2, 17, 45));
+            // Cadena del jueves en la tarde por la tasa del viernes
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Reintentada, Honduras(1, 17, 0), proximo: Honduras(1, 17, 45));
 
-            En(Honduras(2, 17, 30));
+            En(Honduras(1, 17, 30));
             Assert.Equal(202, await Proceso().LlamadaExternaAsync());
 
             Assert.Equal(0, DescargasExcel);
@@ -163,9 +173,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         public async Task A3_llamada_externa_con_el_primer_intento_del_dia_pendiente_ejecuta_como_EXTERNO()
         {
             SembrarHastaJueves();
-            _e.ResponderExcel(EscenarioTasas.SemanaBch());
+            _e.ResponderExcel(EscenarioTasas.SemanaBch());   // el BCH ya publicó la del viernes
             _e.ResponderBce(EscenarioTasas.SemanaBce());
-            En(Honduras(2, 17, 5));
+            En(Honduras(1, 17, 5));   // jueves en la tarde: objetivo viernes
 
             var ejecucion = await UnaLlamadaQueEjecuta();
 
@@ -178,8 +188,8 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             SembrarHastaJueves();
             _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.ResponderBce(EscenarioTasas.SemanaBce());
-            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Reintentada, Honduras(2, 17, 0), proximo: Honduras(2, 17, 15));
-            En(Honduras(2, 17, 30));
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Reintentada, Honduras(1, 17, 0), proximo: Honduras(1, 17, 15));
+            En(Honduras(1, 17, 30));
 
             var ejecucion = await UnaLlamadaQueEjecuta();
 
@@ -191,14 +201,14 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task A3_llamada_externa_con_el_barrido_matutino_pendiente_ejecuta_como_EXTERNO()
         {
-            SembrarHastaJueves();
-            using (var db = _e.Bd.Crear())   // al jueves le falta el euro y su cadena ya terminó ayer
+            SembrarDias(0, 5);
+            using (var db = _e.Bd.Crear())   // al viernes le falta el euro y su cadena (jueves en la tarde) ya terminó
             {
-                db.TasasCambio.RemoveRange(db.TasasCambio.Where(t => t.MonedaOrigen == "EUR" && t.FechaVigencia == EscenarioTasas.Jueves));
+                db.TasasCambio.RemoveRange(db.TasasCambio.Where(t => t.MonedaOrigen == "EUR" && t.FechaVigencia == EscenarioTasas.Viernes));
                 db.SaveChanges();
             }
-            SembrarEjecucion(EscenarioTasas.Jueves, Cat.EstadoEjecucion.Parcial, Honduras(1, 22, 45));
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.Parcial, Honduras(1, 22, 45));
+            _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.ResponderBce(EscenarioTasas.SemanaBce());
 
             En(Honduras(2, 6, 30));
@@ -208,20 +218,21 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             En(Honduras(2, 7, 30));
             var ejecucion = await UnaLlamadaQueEjecuta();
 
-            Assert.Equal((EscenarioTasas.Jueves, Cat.EstadoEjecucion.Exitosa), (ejecucion.FechaObjetivo, ejecucion.Estado));
+            Assert.Equal((EscenarioTasas.Viernes, Cat.EstadoEjecucion.Exitosa), (ejecucion.FechaObjetivo, ejecucion.Estado));
         }
 
         [Fact]
         public async Task A3_llamada_externa_con_un_hueco_de_puesta_al_dia_ejecuta_como_EXTERNO()
         {
-            // Nada en la base: el jueves (fecha objetivo de la mañana del viernes) nunca se intentó
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));
+            // Nada en la base: el viernes (fecha objetivo de la mañana del viernes) nunca se intentó, porque nadie
+            // despertó el sitio el jueves en la tarde
+            _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.ResponderBce(EscenarioTasas.SemanaBce());
             En(Honduras(2, 10, 0));
 
             var ejecucion = await UnaLlamadaQueEjecuta();
 
-            Assert.Equal((EscenarioTasas.Jueves, Cat.EstadoEjecucion.Exitosa), (ejecucion.FechaObjetivo, ejecucion.Estado));
+            Assert.Equal((EscenarioTasas.Viernes, Cat.EstadoEjecucion.Exitosa), (ejecucion.FechaObjetivo, ejecucion.Estado));
         }
 
         // ── A4 ──────────────────────────────────────────────────────────────
@@ -229,7 +240,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task A4_arranque_sin_nada_pendiente_no_descarga_ni_escribe()
         {
-            SembrarHastaJueves();
+            SembrarDias(0, 5);   // el viernes (objetivo de la mañana del viernes) ya está
             _e.ResponderExcel(EscenarioTasas.SemanaBch());
 
             foreach (var momento in new[] { Honduras(2, 2, 0), Honduras(2, 9, 0), Honduras(2, 15, 0) })
@@ -245,13 +256,13 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task A4_arranque_con_hueco_hace_la_puesta_al_dia()
         {
-            // Hay hasta el miércoles; falta el jueves (día hábil anterior) y nunca se intentó
+            // Hay hasta el miércoles; falta el viernes (la tasa de hoy) y nunca se intentó
             foreach (var (fecha, compra, venta) in EscenarioTasas.SemanaBch().Take(3))
             {
                 _e.Sembrar("USD", "COMPRA", fecha, compra);
                 _e.Sembrar("USD", "VENTA", fecha, venta);
             }
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));
+            _e.ResponderExcel(EscenarioTasas.SemanaBch());
             _e.ResponderBce(EscenarioTasas.SemanaBce());
             En(Honduras(2, 9, 0));
 
@@ -259,7 +270,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
 
             Assert.Contains("Puesta al día", decision!.Motivo);
             var ejecucion = Assert.Single(Bitacora());
-            Assert.Equal((Cat.Disparador.Programado, EscenarioTasas.Jueves, Cat.EstadoEjecucion.Exitosa),
+            Assert.Equal((Cat.Disparador.Programado, EscenarioTasas.Viernes, Cat.EstadoEjecucion.Exitosa),
                 (ejecucion.Disparador, ejecucion.FechaObjetivo, ejecucion.Estado));
             Assert.Equal(1, DescargasExcel);
         }
@@ -270,13 +281,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         public async Task A5_el_barrido_matutino_sale_de_la_bitacora_un_reinicio_no_lo_repite()
         {
             SembrarHastaJueves();
-            using (var db = _e.Bd.Crear())   // el jueves no se publicó y su cadena terminó ayer
-            {
-                db.TasasCambio.RemoveRange(db.TasasCambio.Where(t => t.FechaVigencia == EscenarioTasas.Jueves));
-                db.SaveChanges();
-            }
-            SembrarEjecucion(EscenarioTasas.Jueves, Cat.EstadoEjecucion.OmitidaSinDatos, Honduras(1, 22, 45));
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(3));   // sigue sin el jueves
+            // El viernes no se publicó: su cadena (jueves en la tarde) terminó sin tasa
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos, Honduras(1, 22, 45));
+            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));   // sigue sin el viernes
             _e.ResponderBce(EscenarioTasas.SemanaBce());
 
             En(Honduras(2, 7, 10));
@@ -298,7 +305,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task A5_el_barrido_matutino_no_corre_si_no_falta_nada()
         {
-            SembrarHastaJueves();
+            SembrarDias(0, 5);
             _e.ResponderExcel(EscenarioTasas.SemanaBch());
             En(Honduras(2, 7, 5));
 
@@ -316,15 +323,15 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         {
             SembrarHastaJueves();
             _e.Opciones.Reintentos.MaxPorFecha = 1;                     // la cadena del viernes termina en su primer intento
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));      // el viernes no se publica (feriado)
+            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));      // la del viernes no se publica
             _e.ResponderBce(EscenarioTasas.SemanaBce());
 
-            En(Honduras(2, 17, 0));
+            En(Honduras(1, 17, 0));   // jueves en la tarde: objetivo viernes
             await Proceso().LlamadaExternaAsync();
             Assert.Equal(Cat.EstadoEjecucion.OmitidaSinDatos, Assert.Single(Bitacora()).Estado);
 
-            // Ni llamadas externas ni reinicios abren otra cadena: viernes noche y madrugada del sábado
-            foreach (var momento in new[] { Honduras(2, 17, 30), Honduras(2, 20, 0), Honduras(2, 23, 0), Honduras(3, 0, 30), Honduras(3, 3, 0), Honduras(3, 6, 30) })
+            // Ni llamadas externas ni reinicios abren otra cadena: jueves noche y madrugada del viernes
+            foreach (var momento in new[] { Honduras(1, 17, 30), Honduras(1, 20, 0), Honduras(1, 23, 0), Honduras(2, 0, 30), Honduras(2, 3, 0), Honduras(2, 6, 30) })
             {
                 En(momento);
                 var proceso = Proceso();
@@ -333,17 +340,17 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             }
             Assert.Single(Bitacora());
 
-            // Sábado 07:00: el barrido lo intenta una vez más
-            En(Honduras(3, 7, 0));
+            // Viernes 07:00: el barrido lo intenta una vez más (en la mañana, sin reintentos)
+            En(Honduras(2, 7, 0));
             await Proceso().LlamadaExternaAsync();
             var barrido = Bitacora()[^1];
             Assert.Equal((Cat.Disparador.Externo, EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos),
                 (barrido.Disparador, barrido.FechaObjetivo, barrido.Estado));
             Assert.Empty(_e.Notificador.Enviadas);   // solo falta un día hábil (el jueves sí tiene): queda en el log
 
-            En(Honduras(3, 7, 30));
+            En(Honduras(2, 7, 30));
             await Proceso().LlamadaExternaAsync();
-            En(Honduras(3, 12, 0));
+            En(Honduras(2, 12, 0));
             await Proceso().LlamadaExternaAsync();
             Assert.Equal(2, Bitacora().Count);
 
@@ -360,18 +367,19 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task A6_el_barrido_avisa_si_siguen_faltando_dos_dias_habiles()
         {
-            // Hasta el miércoles; ni jueves ni viernes. Las dos cadenas ya terminaron sin tasa.
-            foreach (var (fecha, compra, venta) in EscenarioTasas.SemanaBch().Take(3))
+            // Hasta el jueves; ni viernes ni lunes. Las dos cadenas ya terminaron sin tasa: la del viernes (su barrido,
+            // el viernes 07:05) y la del lunes (viernes en la tarde).
+            foreach (var (fecha, compra, venta) in EscenarioTasas.SemanaBch().Take(4))
             {
                 _e.Sembrar("USD", "COMPRA", fecha, compra);
                 _e.Sembrar("USD", "VENTA", fecha, venta);
             }
-            SembrarEjecucion(EscenarioTasas.Jueves, Cat.EstadoEjecucion.OmitidaSinDatos, Honduras(2, 7, 5));
-            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos, Honduras(2, 22, 45));
-            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(3));
+            SembrarEjecucion(EscenarioTasas.Viernes, Cat.EstadoEjecucion.OmitidaSinDatos, Honduras(2, 7, 5));
+            SembrarEjecucion(EscenarioTasas.Lunes, Cat.EstadoEjecucion.OmitidaSinDatos, Honduras(2, 22, 45));
+            _e.ResponderExcel(EscenarioTasas.SemanaBch().Take(4));
             _e.ResponderBce(EscenarioTasas.SemanaBce());
 
-            En(Honduras(3, 7, 0));
+            En(Honduras(3, 7, 0));   // sábado: barrido por el lunes
             await Proceso().LlamadaExternaAsync();
             En(Honduras(4, 7, 0));   // domingo: otro barrido, mismo aviso: no se repite
             await Proceso().LlamadaExternaAsync();
@@ -381,16 +389,56 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(4, Bitacora().Count);
         }
 
+        // ── El día amanece con su tasa (el BCH publica la del día hábil siguiente en la tarde) ──
+
+        [Fact]
+        public async Task Cada_tarde_guarda_la_tasa_del_dia_habil_siguiente_y_el_lunes_amanece_con_la_suya()
+        {
+            SembrarHastaJueves();
+            _e.ResponderBce(EscenarioTasas.SemanaBce());
+
+            // Jueves 17:05: el BCH ya publicó la del viernes
+            _e.ResponderExcel(EscenarioTasas.SemanaBch());
+            En(Honduras(1, 17, 5));
+            await Proceso().LlamadaExternaAsync();
+
+            // Viernes 17:05: ya publicó la del lunes. Con la regla anterior (objetivo = hoy) el viernes ya estaba guardado
+            // desde el jueves, el job no corría y el lunes amanecía con la tasa del viernes.
+            _e.ResponderExcel(EscenarioTasas.SemanaBch().Append((EscenarioTasas.Lunes, 26.8901m, 27.0246m)));
+            En(Honduras(2, 17, 5));
+            await Proceso().LlamadaExternaAsync();
+
+            Assert.Equal(new[] { (EscenarioTasas.Viernes, Cat.EstadoEjecucion.Exitosa), (EscenarioTasas.Lunes, Cat.EstadoEjecucion.Exitosa) },
+                Bitacora().Select(b => (b.FechaObjetivo, b.Estado)));
+            using (var db = _e.Bd.Crear())
+            {
+                var lunes = db.TasasCambio.AsNoTracking()
+                    .Where(t => t.FechaVigencia == EscenarioTasas.Lunes && t.Estado == Cat.EstadoTasa.Vigente).ToList();
+                Assert.Equal(4, lunes.Count);   // USD y EUR, compra y venta
+                Assert.Equal(26.8901m, lunes.Single(t => t.MonedaOrigen == "USD" && t.TipoTasa == Cat.TipoTasa.Compra).Tasa);
+            }
+
+            // Fin de semana y lunes en la mañana: no falta nada, no se descarga otra vez
+            foreach (var momento in new[] { Honduras(3, 7, 0), Honduras(4, 7, 0), Honduras(5, 0, 30), Honduras(5, 7, 5), Honduras(5, 12, 0) })
+            {
+                En(momento);
+                Assert.Equal(202, await Proceso().LlamadaExternaAsync());
+            }
+            Assert.Equal(2, Bitacora().Count);
+            Assert.Equal(2, DescargasExcel);
+        }
+
         // ── A7 ──────────────────────────────────────────────────────────────
 
         [Fact]
         public async Task A7_dia_completo_con_llamada_externa_cada_30_minutos_y_un_reinicio_solo_ejecuta_lo_que_toca()
         {
+            // El jueves completo: el BCH publica la tasa del viernes a las 18:10 del jueves
             SembrarHastaJueves();
-            var publicacion = Honduras(2, 18, 10);
+            var publicacion = Honduras(1, 18, 10);
             var sinViernes = ArchivosDePrueba.ExcelBch(EscenarioTasas.SemanaBch().Take(4));
             var conViernes = ArchivosDePrueba.ExcelBch(EscenarioTasas.SemanaBch());
-            _e.Reloj = new RelojFijo(Honduras(2, 0, 0));
+            _e.Reloj = new RelojFijo(Honduras(1, 0, 0));
             var reloj = _e.Reloj;
             _e.Http.Responder(EscenarioTasas.UrlExcel, _ => new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -429,7 +477,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(new byte[] { 1, 2, 3, 4 }, bitacora.Select(b => b.Intento));
             Assert.All(bitacora, b => Assert.Equal(Cat.Disparador.Externo, b.Disparador));
             Assert.All(bitacora.Skip(1), b => Assert.Equal(bitacora[0].IdEjecucion, b.IdEjecucionOrigen));
-            Assert.Equal(new DateTime?[] { Honduras(2, 17, 15).UtcDateTime, Honduras(2, 18, 0).UtcDateTime, Honduras(2, 19, 0).UtcDateTime, null },
+            Assert.Equal(new DateTime?[] { Honduras(1, 17, 15).UtcDateTime, Honduras(1, 18, 0).UtcDateTime, Honduras(1, 19, 0).UtcDateTime, null },
                 bitacora.Select(b => b.ProximoIntentoUtc));
 
             Assert.Equal(4, DescargasExcel);   // una por ejecución, ninguna después del éxito

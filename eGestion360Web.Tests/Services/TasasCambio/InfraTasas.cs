@@ -166,18 +166,30 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         /// <summary>Valor inventado para el API del BCH en las pruebas: no es una credencial.</summary>
         public const string ValorApiDePrueba = "valor-de-prueba-123";
 
-        /// <summary>Viernes 2 de octubre de 2026, 18:00 en Honduras (UTC-6).</summary>
+        /// <summary>
+        /// Viernes 2 de octubre de 2026, 10:00 en Honduras (UTC-6): reloj por omisión del escenario. Antes del primer intento
+        /// la fecha objetivo es hoy (<see cref="Viernes"/>), cuya tasa el BCH publicó la tarde anterior.
+        /// </summary>
+        public static DateTimeOffset ViernesManana => new(2026, 10, 2, 10, 0, 0, TimeSpan.FromHours(-6));
+
+        /// <summary>Jueves 1 de octubre de 2026, 18:00 en Honduras (UTC-6): su fecha objetivo es el viernes 2.</summary>
+        public static DateTimeOffset JuevesTarde => new(2026, 10, 1, 18, 0, 0, TimeSpan.FromHours(-6));
+
+        /// <summary>Viernes 2 de octubre de 2026, 18:00 en Honduras (UTC-6): su fecha objetivo es el lunes 5.</summary>
         public static DateTimeOffset ViernesTarde => new(2026, 10, 2, 18, 0, 0, TimeSpan.FromHours(-6));
 
         public static readonly DateOnly Viernes = new(2026, 10, 2);
         public static readonly DateOnly Jueves = new(2026, 10, 1);
+
+        /// <summary>Lunes 5 de octubre de 2026: la fecha objetivo del viernes en la tarde y del fin de semana.</summary>
+        public static readonly DateOnly Lunes = new(2026, 10, 5);
 
         public BaseDeDatosDePrueba Bd { get; } = new();
         public ManejadorHttpFalso Http { get; } = new();
         public NotificadorFalso Notificador { get; } = new();
         public BloqueoJobEnMemoria Bloqueo { get; } = new();
         public List<TimeSpan> EsperasHttp { get; } = new();
-        public RelojFijo Reloj { get; set; } = new(ViernesTarde);
+        public RelojFijo Reloj { get; set; } = new(ViernesManana);
         public TasasCambioOptions Opciones { get; } = OpcionesDePrueba();
 
         public static TasasCambioOptions OpcionesDePrueba() => new()
