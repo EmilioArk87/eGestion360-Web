@@ -22,7 +22,8 @@ Regla de nombre: NNN_descripcion_corta.sql (NNN incremental de 3 digitos).
 | Orden | Archivo | Proposito | Fecha | Estado |
 |---|---|---|---|---|
 | 009 | 009_integracion_almacen_contable.sql | Integracion contable del almacen de repuestos (bandera activo_contable + precision monto) | 2026-08-06 | Pendiente |
-| 010 | 010_ct_nucleo_contable.sql | Nucleo del modulo contable: ct_cuentas, ct_ejercicios, ct_periodos, ct_centros_costo, ct_asientos, ct_asiento_movimientos | 2026-08-06 | Pendiente |
+| 010 | 010_ct_nucleo_contable.sql | Nucleo del modulo contable: ct_cuentas, ct_ejercicios, ct_periodos, ct_centros_costo, ct_asientos, ct_asiento_movimientos. Revisado el 2026-10-06 antes de aplicarse: claves foraneas compuestas (id, id_empresa) para que la BD impida mezclar datos de empresas; una sola transaccion; POSTCHECK completo; moneda CHAR(3) con FK a monedas; CHECK de fechas en ejercicios y periodos; token_concurrencia en cuentas, ejercicios y periodos. Aborta si existe una instalacion a medias; idempotente | 2026-08-06 | Pendiente |
+| 010 (reversa) | 010_ct_nucleo_contable_reversa.sql | Reversa del 010: elimina las 6 tablas ct_* solo si estan vacias y nada ajeno al modulo depende de ellas. Solo se ejecuta para revertir | 2026-10-06 | No ejecutada (solo para revertir) |
 | 011 | 011_configurar_correo_notificaciones.sql | Alta del perfil SMTP notificaciones@siptecnologia.somee.com en EmailConfigurations (tabla que lee la app) y saneamiento de contrasenas en claro en la tabla huerfana EmailConfiguration | 2026-08-30 | Aplicado 2026-08-30 |
 | 012 | 012_control_salidas_entradas.sql | Control de salidas y entradas de vehiculos (operacion de porteria/garita en tiempo real) | 2026-09-24 | Aplicado 2026-09-27 |
 | 013 | 013_datos_demo_control_salidas.sql | Datos demo de salidas y entradas de garita para la empresa Demo (14 al 27 de septiembre de 2026; filas marcadas creado_por = 'demo_seed') | 2026-09-27 | Aplicado 2026-09-27 |

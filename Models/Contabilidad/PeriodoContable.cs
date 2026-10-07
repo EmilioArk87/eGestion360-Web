@@ -48,6 +48,10 @@ namespace eGestion360Web.Models.Contabilidad
         [Column("fecha_modificacion")]
         public DateTime? FechaModificacion { get; set; }
 
+        [Timestamp]
+        [Column("token_concurrencia")]
+        public byte[] TokenConcurrencia { get; set; } = Array.Empty<byte>();
+
         // ── Navegación ───────────────────────────────────────────────────────
 
         public EjercicioFiscal Ejercicio { get; set; } = null!;

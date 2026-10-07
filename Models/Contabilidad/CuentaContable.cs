@@ -45,8 +45,9 @@ namespace eGestion360Web.Models.Contabilidad
         [Column("es_movimiento")]
         public bool EsMovimiento { get; set; } = true;
 
+        // CHAR(3) con FK a monedas(codigo_iso), como las demás columnas de moneda desde el script 017.
         [Required, StringLength(3)]
-        [Column("moneda")]
+        [Column("moneda", TypeName = "char(3)")]
         public string Moneda { get; set; } = "HNL";
 
         // ── Auditoría ────────────────────────────────────────────────────────
@@ -73,6 +74,10 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("fecha_modificacion")]
         public DateTime? FechaModificacion { get; set; }
+
+        [Timestamp]
+        [Column("token_concurrencia")]
+        public byte[] TokenConcurrencia { get; set; } = Array.Empty<byte>();
 
         // ── Navegación ───────────────────────────────────────────────────────
 
