@@ -1,6 +1,6 @@
 # Pruebas automatizadas
 
-Proyecto `eGestion360Web.Tests` (xUnit, .NET 8), en la carpeta del mismo nombre. Se excluye de la compilación
+Proyecto `eGestion360Web.Tests` (xUnit, .NET 10), en la carpeta del mismo nombre. Se excluye de la compilación
 y de la publicación del sitio (`eGestion360Web.csproj`).
 
 ## Cómo correrlas

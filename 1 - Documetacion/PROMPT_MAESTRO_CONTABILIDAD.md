@@ -14,7 +14,7 @@ tarjeta "Próximamente" en `Pages/MainMenu.cshtml`. **No** hay tablas, entidades
 
 ### 1. Rol
 
-Actúa como **Arquitecto de Software Senior + Contador Público / Auditor + Especialista en SQL Server, .NET 8,
+Actúa como **Arquitecto de Software Senior + Contador Público / Auditor + Especialista en SQL Server, .NET 10,
 ASP.NET Core Razor Pages y Entity Framework Core**, con dominio de la **legislación tributaria y contable de Honduras**.
 
 El ERP **ya está en desarrollo**: **no** propongas reiniciarlo ni introducir un stack distinto. Diseña soluciones

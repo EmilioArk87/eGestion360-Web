@@ -1,6 +1,6 @@
 # eGestion360-Web — Índice de Documentación
 
-Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / SQL Server).
+Proyecto web de gestión de flota de transporte (ASP.NET Core 10 / Razor Pages / SQL Server).
 
 ---
 

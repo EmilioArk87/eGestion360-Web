@@ -1,6 +1,6 @@
 # eGestion360-Web
 
-ASP.NET Core 8 Razor Pages + SQL Server. Base de datos: `eBD_SPD` (snake_case en español).
+ASP.NET Core 10 Razor Pages + SQL Server. Base de datos: `eBD_SPD` (snake_case en español).
 
 - Scripts SQL de migración: `2 - Script SQL/` con patrón `NNN_descripcion.sql`.
 - Índice de scripts: `1 - Documetacion/INDICE_SCRIPTS_SQL.md`.

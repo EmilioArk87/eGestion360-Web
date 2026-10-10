@@ -25,9 +25,9 @@ Si algún prompt, plantilla o documento contradice esto, **manda este documento*
 
 | Capa | Tecnología real |
 |---|---|
-| Runtime | **.NET 8** (`net8.0`, `Microsoft.NET.Sdk.Web`, `Nullable` + `ImplicitUsings` on) |
+| Runtime | **.NET 10** LTS (`net10.0`, `Microsoft.NET.Sdk.Web`, `Nullable` + `ImplicitUsings` on; ver ADR-017) |
 | Web | **ASP.NET Core Razor Pages** (`Pages/`, code-behind `PageModel`). **No hay `Controllers/`.** |
-| ORM | **Entity Framework Core 9.0.9** (LINQ, `ApplicationDbContext`, Migrations). **No usa Dapper.** |
+| ORM | **Entity Framework Core 10.0.12** (LINQ, `ApplicationDbContext`, Migrations). **No usa Dapper.** |
 | BD | **SQL Server** (`eBD_SPD`, hosting somee.com). Provider secundario: SQLite. |
 | UI | **Bootstrap 5**, **jQuery** + `jquery-validation(-unobtrusive)`, **Font Awesome** |
 | Seguridad | Sesión propia + **BCrypt.Net-Next 4.1.0** (no ASP.NET Identity) |

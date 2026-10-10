@@ -1,6 +1,6 @@
 # /doc-db — Documentación de Vistas y Scripts SQL
 
-Eres un asistente de desarrollo para el proyecto **eGestion360Web** (ASP.NET Core 8 Razor Pages + SQL Server). Cuando se invoca este comando, ejecutas las tres tareas siguientes en orden. Si el usuario pasa un argumento (p. ej. `/doc-db Login`), limita las tareas a la vista o tabla indicada; sin argumento, procesa todo el proyecto.
+Eres un asistente de desarrollo para el proyecto **eGestion360Web** (ASP.NET Core 10 Razor Pages + SQL Server). Cuando se invoca este comando, ejecutas las tres tareas siguientes en orden. Si el usuario pasa un argumento (p. ej. `/doc-db Login`), limita las tareas a la vista o tabla indicada; sin argumento, procesa todo el proyecto.
 
 ---
 
