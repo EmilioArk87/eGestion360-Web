@@ -9,7 +9,8 @@ y de la publicación del sitio (`eGestion360Web.csproj`).
 dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj
 ```
 
-No necesitan SQL Server, ni internet, ni secretos: usan SQLite en memoria. **Nunca tocan la base real.**
+Casi todas usan SQLite en memoria y no necesitan SQL Server, ni internet, ni secretos. Las de `SqlServer/` usan LocalDB
+si está instalado y, si no, se omiten (ver más abajo). **Ninguna toca la base real.**
 
 ## Integración continua
 
@@ -31,6 +32,29 @@ dotnet build eGestion360Web.csproj --configuration Debug --no-restore
 dotnet build eGestion360Web.csproj --configuration Release --no-restore
 dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj --configuration Debug --no-restore
 ```
+
+## Pruebas contra SQL Server (LocalDB)
+
+Lo que SQLite no puede probar (Row-Level Security, claves foráneas compuestas reales, planes de ejecución) se prueba en
+`SqlServer/` contra **SQL Server 2022 LocalDB**, el motor de SQL Server instalado solo en la máquina, sin servidor ni
+claves (autenticación de Windows). Cada corrida crea una base propia con nombre único (`egestion_prueba_…`), la llena
+con datos inventados y la borra al terminar. **Nunca se conectan a eBD_SPD.**
+
+- Se marcan con `[FactSqlServer]` y el rasgo `Categoria=SqlServer`.
+- Si la máquina no tiene LocalDB, aparecen como **omitidas** con el motivo, no como fallidas. Así la suite sigue pasando
+  en una máquina sin LocalDB (por ejemplo, si el runner de GitHub no lo trae).
+- Para usar otro servidor de pruebas, definir la variable de entorno `EGESTION_PRUEBAS_SQLSERVER` con su cadena de
+  conexión, sin base: cada prueba crea la suya. Nunca apuntarla a un servidor con datos reales.
+- Instalar LocalDB: paquete `SqlLocalDB.msi` de SQL Server 2022 desde download.microsoft.com (el mismo motor 16.x de
+  eBD_SPD). Se verifica con `sqllocaldb info MSSQLLocalDB`.
+
+```bash
+dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj --filter "Categoria=SqlServer"
+```
+
+| Carpeta | Qué prueban |
+|---|---|
+| `SqlServer/Rls/RlsPocTests` | Prueba de concepto de RLS (paso F0.5, ADR-001 y ADR-015) sobre un esquema de laboratorio (`poc_*`): sin contexto no se ve nada, la base entrega solo el tenant aunque EF no filtre, rechaza escribir en otro tenant, la clave foránea compuesta, el contexto de solo lectura, el pool de conexiones, el job que recorre tenants, la tabla mixta, el ámbito de plataforma, que el usuario de la aplicación no puede apagar la política y que la consulta del tenant busca por el índice |
 
 ## Qué cubren
 

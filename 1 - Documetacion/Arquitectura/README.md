@@ -1,7 +1,8 @@
 # Arquitectura SaaS multi-tenant — eGestion360
 
 Registro de las decisiones de arquitectura (ADR) que convierten eGestion360 en una plataforma ERP + CRM SaaS
-multi-tenant. Las 14 decisiones se aprobaron el **2026-10-10**. El análisis completo (diagnóstico, diagramas,
+multi-tenant. Las 14 decisiones del plan se aprobaron el **2026-10-10**, y ese mismo día la decimoquinta (ADR-015),
+que salió de la prueba de concepto de RLS. El análisis completo (diagnóstico, diagramas,
 dependencias, MVP y roadmap) está en el artifact del plan:
 https://claude.ai/artifact/DCHBZVf4QPoqkdLBJ5xmEt (privado; solo lo abre quien tenga acceso).
 
@@ -53,7 +54,7 @@ pruebas, QA con el rol real, informe y autorización de Emilio.
 
 | ADR | Decisión | Fase | Estado |
 |---|---|---|---|
-| [ADR-001](ADR-001-aislamiento-multitenant.md) | Base compartida con `id_tenant` y Row-Level Security | F0–F1 | Aceptada 2026-10-10 |
+| [ADR-001](ADR-001-aislamiento-multitenant.md) | Base compartida con `id_tenant` y Row-Level Security | F0–F1 | Aceptada 2026-10-10; un punto reemplazado por ADR-015 |
 | [ADR-002](ADR-002-jerarquia-organizativa.md) | Tenant → Empresa → Sucursal → Punto de emisión; dimensiones fuera del árbol | F1–F2 | Aceptada 2026-10-10 |
 | [ADR-003](ADR-003-identidad-y-membresias.md) | Cuenta de acceso global con membresías por tenant | F1 | Aceptada 2026-10-10 |
 | [ADR-004](ADR-004-persona-maestra-por-tenant.md) | Persona maestra acotada al tenant | F1–F2 | Aceptada 2026-10-10 |
@@ -67,6 +68,7 @@ pruebas, QA con el rol real, informe y autorización de Emilio.
 | [ADR-012](ADR-012-pasarela-de-pago-inicial.md) | Solo pago manual en el MVP; pasarelas por puerto y adaptador | F4 | Aceptada 2026-10-10 |
 | [ADR-013](ADR-013-esquemas-sql.md) | Esquemas `saas` y `seg`; módulos ERP en `dbo` con prefijo | F1 en adelante | Aceptada 2026-10-10 |
 | [ADR-014](ADR-014-script-010-en-espera.md) | El script 010 no se aplica hasta rediseñarlo | F1–F3 | Aceptada 2026-10-10 |
+| [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md) | Predicados de RLS solo por tenant; la plataforma no lee datos de tenants (resultado de la PoC F0.5) | F1 | Aceptada 2026-10-10 |
 
 ---
 

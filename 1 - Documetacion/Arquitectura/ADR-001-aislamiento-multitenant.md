@@ -1,6 +1,7 @@
 # ADR-001 · Aislamiento multi-tenant: base compartida con id_tenant y Row-Level Security
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada. El punto sobre los reportes entre tenants con un usuario SQL de plataforma queda reemplazado por
+  [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md) (aceptada el 2026-10-10, resultado de la prueba de concepto F0.5).
 - **Fecha:** 2026-10-10
 - **Decidió:** Emilio Garay (decisión D1 del plan)
 - **Fase:** prueba de concepto en F0; implementación en F1
