@@ -46,7 +46,8 @@ Solución de **un solo proyecto** (`eGestion360Web.csproj`). Las "capas" son car
 
 | Carpeta | Rol |
 |---|---|
-| `Data/ApplicationDbContext.cs` | Único `DbContext`: `DbSet<>`, `OnModelCreating` (claves, índices únicos, precisión decimal, FKs, `HasData` de seeds). |
+| `Data/ApplicationDbContext.cs` | Único `DbContext`: los `DbSet<>` y un `OnModelCreating` que aplica las configuraciones de `Data/Configuracion/`. |
+| `Data/Configuracion/` | Configuración Fluent de EF, un archivo por módulo (`FlotaConfiguracion.cs`, `ContabilidadConfiguracion.cs`…) con una clase `IEntityTypeConfiguration<T>` por entidad: claves, índices únicos, precisión decimal, FKs y `HasData` de semillas (paso F0.8). |
 | `Models/` | Entidades EF por dominio: `Catalogos/`, `Facturacion/`, `Flota/`, `Eventos/`, `Personas/` (vínculos, roles y documentos de la persona maestra), `Auditoria/` (bitácora de cambios). Algunos ViewModels sueltos. |
 | `Services/` | Lógica de negocio/infra: interfaz + implementación, registradas por **DI** en `Program.cs`. Subcarpetas `Eventos/`, `Facturacion/`, `Personas/`, `Auditoria/` (interceptor de la bitácora de cambios). |
 | `Pages/<Modulo>/` | Razor Pages por módulo (`Admin/`, `Catalogos/`, `Facturacion/`, `Flota/`, `Empresas/`, `Shared/`). |
@@ -173,7 +174,9 @@ fecha_anulacion      DATETIME2      NULL
 ## 7. Convención de código C#
 
 - **Entidades EF** en PascalCase, mapeadas a tablas snake_case con `[Table("ct_asientos")]` / `[Column("id_asiento")]`
-  (o Fluent en `OnModelCreating`). Ver ejemplos en `Data/ApplicationDbContext.cs`.
+  (o Fluent en una clase `IEntityTypeConfiguration<T>`). La configuración Fluent va en el archivo de su módulo dentro
+  de `Data/Configuracion/` (por ejemplo `Data/Configuracion/FacturacionConfiguracion.cs`); `ApplicationDbContext` la
+  aplica sola, no hay que registrarla.
 - **Services**: interfaz `IXxxService` + implementación `XxxService`, registradas con `AddScoped` en `Program.cs`.
   La lógica transaccional (validaciones, cuadre contable, generación de asientos) vive aquí, dentro de una transacción EF.
 - **Razor Pages**: un `.cshtml` + un `.cshtml.cs` (`OnGetAsync`/`OnPostAsync`). Validación con DataAnnotations +
@@ -244,5 +247,5 @@ tasas, secuencias) en tablas, no en código, para soportar cambios legales futur
 - Estilo DDL/auditoría/estados: `2 - Script SQL/F1_Facturacion.sql`, `F1_Pagos_y_Notas.sql`, `F0_Catalogos_Transversales.sql`, `F0_Outbox.sql`
 - Control de cambios: `.claude/commands/skill-db.md`, `1 - Documetacion/INDICE_SCRIPTS_SQL.md`
 - Plantilla de vistas: `1 - Documetacion/Vistas/_PlantillaVista.md`
-- Multitenant/seguridad: `Data/ApplicationDbContext.cs`, `Models/Empresa.cs`, `Services/AuthHelper.cs`
+- Multitenant/seguridad: `Data/ApplicationDbContext.cs`, `Data/Configuracion/`, `Models/Empresa.cs`, `Services/AuthHelper.cs`
 - Outbox/eventos: `Services/Eventos/IDomainEventHandler.cs`, `Services/Eventos/DomainEvent.cs`

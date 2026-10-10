@@ -5,7 +5,7 @@
 > (**Razor Pages + EF Core**, no MVC/Dapper). Las convenciones globales viven en
 > [ESTANDARES_ERP.md](ESTANDARES_ERP.md) — este documento **no las repite**, las aplica.
 
-**Estado del módulo hoy:** solo placeholder. Existe el seed `Modulo` id=8 (`Data/ApplicationDbContext.cs:109`) y una
+**Estado del módulo hoy:** solo placeholder. Existe el seed `Modulo` id=8 (`Data/Configuracion/SeguridadConfiguracion.cs`) y una
 tarjeta "Próximamente" en `Pages/MainMenu.cshtml`. **No** hay tablas, entidades, servicios ni páginas contables.
 
 ---
@@ -352,7 +352,7 @@ public class Asiento
     // + creado_por / fecha_creacion / modificado_por / fecha_modificacion / eliminado / ...
 }
 
-// Data/ApplicationDbContext.cs — OnModelCreating (índice único filtrado para idempotencia)
+// Data/Configuracion/ContabilidadConfiguracion.cs — AsientoConfiguracion (índice único filtrado para idempotencia)
 modelBuilder.Entity<Asiento>()
     .HasIndex(a => new { a.IdEmpresa, a.IdEventoOrigen })
     .HasFilter("[id_evento_origen] IS NOT NULL")
@@ -403,7 +403,7 @@ public sealed class ContabilidadEventHandler : IDomainEventHandler
 
 1. Crear `2 - Script SQL/NNN_ct_nucleo_contable.sql` con la DDL de B.2 + PRECHECK/CAMBIO/POSTCHECK/ROLLBACK y registrarlo
    en [INDICE_SCRIPTS_SQL.md](INDICE_SCRIPTS_SQL.md) (estado `Pendiente`). Confirmar antes de ejecutar en producción.
-2. Crear entidades EF en `Models/Contabilidad/` + configuración en `Data/ApplicationDbContext.cs` (o migración EF).
+2. Crear entidades EF en `Models/Contabilidad/` + configuración en `Data/Configuracion/ContabilidadConfiguracion.cs` (o migración EF).
 3. Crear `Services/Contabilidad/` (plan de cuentas, asientos, mayorización, reportes) con interfaz + DI.
 4. Implementar `ContabilidadEventHandler : IDomainEventHandler` y registrarlo en `Program.cs`.
 5. Crear páginas en `Pages/Contabilidad/` y enlazar la tarjeta del menú (`Pages/MainMenu.cshtml`, hoy "Próximamente").
