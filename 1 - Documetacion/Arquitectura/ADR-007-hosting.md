@@ -4,6 +4,8 @@
 - **Fecha:** 2026-10-10
 - **Decidió:** Emilio Garay (decisión D7 del plan)
 - **Fase:** comparación en F0 (F0.9); migración antes de F4
+- **Completada por:** [ADR-016](ADR-016-hosting-azure.md), que elige el proveedor (Azure App Service en Linux y Azure
+  SQL Database).
 
 ## Contexto
 

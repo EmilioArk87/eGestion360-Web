@@ -2,7 +2,8 @@
 
 Registro de las decisiones de arquitectura (ADR) que convierten eGestion360 en una plataforma ERP + CRM SaaS
 multi-tenant. Las 14 decisiones del plan se aprobaron el **2026-10-10**, y ese mismo día la decimoquinta (ADR-015),
-que salió de la prueba de concepto de RLS. El análisis completo (diagnóstico, diagramas,
+que salió de la prueba de concepto de RLS, y las dos que salieron de la comparación de hosting (ADR-016 y ADR-017). La
+comparación está en https://claude.ai/artifact/XBhZiWF8A8GEtK8nEUMQQG. El análisis completo (diagnóstico, diagramas,
 dependencias, MVP y roadmap) está en el artifact del plan:
 https://claude.ai/artifact/DCHBZVf4QPoqkdLBJ5xmEt (privado; solo lo abre quien tenga acceso).
 
@@ -77,6 +78,8 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-013](ADR-013-esquemas-sql.md) | Esquemas `saas` y `seg`; módulos ERP en `dbo` con prefijo | F1 en adelante | Aceptada 2026-10-10 |
 | [ADR-014](ADR-014-script-010-en-espera.md) | El script 010 no se aplica hasta rediseñarlo | F1–F3 | Aceptada 2026-10-10 |
 | [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md) | Predicados de RLS solo por tenant; la plataforma no lee datos de tenants (resultado de la PoC F0.5) | F1 | Aceptada 2026-10-10 |
+| [ADR-016](ADR-016-hosting-azure.md) | Producción en Azure App Service Linux (B1) y Azure SQL Database (S0); staging en el mismo plan | Staging en F1, corte antes de F4 | Aceptada 2026-10-10 |
+| [ADR-017](ADR-017-dotnet-10.md) | Actualizar a .NET 10 LTS y EF Core 10 antes del 10 nov 2026; en Somee, publicar autocontenido | F0.10 | Aceptada 2026-10-10 |
 
 ---
 
