@@ -142,7 +142,7 @@ namespace eGestion360Web.Tests.Arquitectura
             texto.AppendLine($"Tablas de tenant o mixtas fuera del modelo de EF (solo las protege RLS, no los filtros de EF): {string.Join(", ", fueraDeEf)}.");
 
             var legado = tablas.Where(t => t.Categoria == CategoriaTabla.Legado).Select(t => t.Tabla).OrderBy(t => t).ToList();
-            texto.AppendLine($"Legado a decidir en F0.7: {string.Join(", ", legado)}.");
+            texto.AppendLine($"Legado (el script 023 las retira, salvo la copia 019, que espera a F1): {string.Join(", ", legado)}.");
 
             _salida.WriteLine(texto.ToString());
         }

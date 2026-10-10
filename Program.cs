@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // AdminOnlyPageFilter cierra el acceso anónimo a las páginas de mantenimiento
-// (/ResetAdmin, /DebugUsers, /ResetCodesHistory, config SMTP…). Ver el filtro.
+// (/DebugUsers, /ResetCodesHistory, config SMTP…). Ver el filtro.
 // EmpresaRequeridaPageFilter desvía a quien no trae empresa en la sesión (el administrador general) de las pantallas
 // de Flota, que operan sobre una sola empresa y ya no caen en la empresa 1 por defecto. Ver el filtro.
 builder.Services.AddRazorPages()

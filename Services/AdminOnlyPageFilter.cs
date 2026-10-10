@@ -7,8 +7,9 @@ namespace eGestion360Web.Services
     /// Exige sesión de administrador del sistema en las páginas de mantenimiento y
     /// diagnóstico. Estas páginas no tenían ningún control de acceso y quedaban
     /// expuestas de forma anónima contra la BD real: volcado de la tabla de usuarios,
-    /// historial de códigos de recuperación, reseteo de la contraseña del admin y
-    /// configuración SMTP.
+    /// historial de códigos de recuperación y configuración SMTP. (Las páginas que reseteaban
+    /// la clave del admin en texto plano, cifraban contraseñas o configuraban Hostinger se
+    /// retiraron en el paso F0.7.)
     ///
     /// Se aplica como filtro global (y no como guardas por handler, que es el patrón
     /// del resto del sistema) porque así cubre de una sola vez todos los handlers
@@ -20,10 +21,7 @@ namespace eGestion360Web.Services
         public static readonly string[] PaginasProtegidas =
         {
             "/Admin/EmailConfig",
-            "/ConfigurarHostinger",
             "/DebugUsers",
-            "/EncryptPasswords",
-            "/ResetAdmin",
             "/ResetCodesHistory",
             "/ValidarEmails",
         };

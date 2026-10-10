@@ -1,5 +1,12 @@
 # 🛢️ Guía de Ejecución para DBeaver
 
+> **Retirado en el paso F0.7 (2026-10-10).** La página `/ConfigurarHostinger` se quitó de la aplicación y el script
+> `023_retirar_tablas_legado.sql` mueve al esquema `retirado` la tabla `EmailConfiguration` (singular) y sus
+> procedimientos `SP_ConfigurarHostingerEmail`, `sp_GetActiveEmailConfiguration`, `sp_SetDefaultEmailConfiguration`,
+> `sp_SetDefaultEmailConfigurationSafe` y `sp_UpdateEmailTestStats`. La aplicación nunca leyó esa tabla: el correo se
+> configura en **Admin > Configuración de correo** (`/admin/email-config`), sobre `EmailConfigurations` (plural).
+> Lo que sigue queda como referencia histórica.
+
 ## 🎯 **Diferencias Importantes: DBeaver vs SQL Server Management Studio**
 
 ### **Lo que DBeaver maneja diferente:**

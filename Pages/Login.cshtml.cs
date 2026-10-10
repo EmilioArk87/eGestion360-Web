@@ -13,11 +13,13 @@ namespace eGestion360Web.Pages
     {
         private readonly ApplicationDbContext _context;
         private readonly IPasswordService _passwordService;
+        private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(ApplicationDbContext context, IPasswordService passwordService)
+        public LoginModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<LoginModel> logger)
         {
             _context = context;
             _passwordService = passwordService;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -72,15 +74,11 @@ namespace eGestion360Web.Pages
                     }
                     else
                     {
-                        if (user.Password == Password)
-                        {
-                            isPasswordValid = true;
-
-                            // Migrar contraseña en texto plano a BCrypt
-                            user.Password = _passwordService.HashPassword(Password);
-                            _context.Users.Update(user);
-                            await _context.SaveChangesAsync();
-                        }
+                        // Las contraseñas se guardan solo con BCrypt (paso F0.7 del plan de arquitectura). Una
+                        // guardada de otra forma ya no se acepta ni se convierte: un administrador le asigna una
+                        // nueva desde Admin > Usuarios. El mensaje al usuario es el mismo que con una clave errónea.
+                        _logger.LogWarning(
+                            "Inicio de sesión rechazado: el usuario {UserId} tiene la contraseña guardada sin BCrypt.", user.Id);
                     }
 
                     if (isPasswordValid)

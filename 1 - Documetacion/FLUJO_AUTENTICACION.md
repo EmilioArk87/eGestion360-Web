@@ -37,8 +37,8 @@ Usuario accede a cualquier página protegida
               │
         ¿Password empieza con "$2"?
         ├── SÍ (BCrypt) → BCrypt.Verify()
-        └── NO (texto plano) → comparación directa
-                                + migra automáticamente a BCrypt
+        └── NO → se rechaza (mismo mensaje que una clave errónea)
+                 y se registra un aviso en el log
               │
         ¿Contraseña válida?
    ├── NO → "Usuario o contraseña incorrectos"
@@ -64,9 +64,12 @@ Usuario accede a cualquier página protegida
 - Al cerrar el navegador, la sesión expira según configuración en `Program.cs`.
 - Todas las páginas protegidas verifican `Session["UserId"]` via `AuthHelper.IsAuthenticated()`.
 
-### Migración automática de contraseñas
+### Solo contraseñas con BCrypt
 
-Si la contraseña en BD está en texto plano (legado), el login la convierte automáticamente a hash BCrypt en el mismo request. El usuario no nota ninguna diferencia.
+Desde el paso F0.7 (2026-10-10) el login solo acepta contraseñas guardadas con BCrypt. Antes aceptaba las guardadas en
+texto plano y las convertía en el mismo request; esa rama se quitó cuando se comprobó que ningún usuario tenía la
+clave sin cifrar. Si apareciera una, el login la rechaza con el mismo mensaje que una clave errónea y un administrador
+le asigna una nueva desde Admin > Usuarios.
 
 ---
 
@@ -135,7 +138,8 @@ Accesible desde `/ChangePassword` solo para usuarios con sesión activa.
 - Ver lista de usuarios del sistema.
 - Activar / desactivar usuarios (`IsActive`).
 - Forzar cambio de contraseña en próximo login (`RequirePasswordChange`).
-- Reset de contraseña por parte del admin (`/ResetAdmin`).
+- Reset de contraseña de un usuario por parte del admin, con BCrypt (Admin > Usuarios). La página `/ResetAdmin`, que
+  dejaba la clave del admin en texto plano, se retiró en el paso F0.7.
 
 ### Modelo de usuario (`tabla: usuarios`)
 
@@ -144,7 +148,7 @@ Accesible desde `/ChangePassword` solo para usuarios con sesión activa.
 | `id` | `Id` | PK autoincremental |
 | `username` | `Username` | Nombre de usuario (único, max 50) |
 | `email` | `Email` | Correo electrónico (único, max 100) |
-| `password` | `Password` | Hash BCrypt (max 500) o texto plano (legado) |
+| `password` | `Password` | Hash BCrypt (max 500) |
 | `created_at` | `CreatedAt` | Fecha de creación UTC |
 | `is_active` | `IsActive` | Si puede iniciar sesión |
 | `require_password_change` | `RequirePasswordChange` | Flag para forzar cambio |

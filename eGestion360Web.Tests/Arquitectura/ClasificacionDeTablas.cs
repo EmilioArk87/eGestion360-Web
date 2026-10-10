@@ -19,7 +19,7 @@ namespace eGestion360Web.Tests.Arquitectura
         /// <summary>Plano de control, identidad global o configuración de la plataforma: sin <c>id_tenant</c> y sin RLS.</summary>
         Plataforma,
 
-        /// <summary>Tabla que el código no usa (gemela, respaldo o resto de scripts viejos): se decide su retiro en F0.7.</summary>
+        /// <summary>Tabla que el código no usa (gemela o respaldo): el script 023 la retira, o se conserva hasta F1.</summary>
         Legado
     }
 
@@ -89,6 +89,10 @@ namespace eGestion360Web.Tests.Arquitectura
             new("ct_centros_costo", T, true, false, "Dimensión que sale del módulo contable al Core en F2 (ADR-014)."),
             new("ct_asientos", T, true, false, "Contabilidad; el 010 está en espera (ADR-014)."),
             new("ct_asiento_movimientos", T, true, false, "Contabilidad; el 010 está en espera (ADR-014)."),
+            new("ingresos_operativos", T, false, true,
+                "Tabla del KPI que nunca se conectó (0 filas, sin código); se conserva por decisión del 2026-10-10 y recibe id_tenant en F1."),
+            new("precios_combustible", T, false, true,
+                "Tabla del KPI que nunca se conectó (0 filas, sin código; enlaza boletines del SEN); se conserva por decisión del 2026-10-10."),
 
             // ── Filas globales y propias ─────────────────────────────────────────────────────────────────────────
             new("tasas_cambio", M, true, true, "Tasa oficial sin tenant y tasas propias del tenant (script 020)."),
@@ -116,15 +120,14 @@ namespace eGestion360Web.Tests.Arquitectura
             new("tasas_cambio_ejecuciones_detalle", P, true, true, "Detalle de la bitácora del job de la tasa oficial."),
             new("__EFMigrationsHistory", P, false, true, "Historial de migraciones de EF."),
 
-            // ── Legado: no las usa el código; su retiro se decide en F0.7 ────────────────────────────────────────
-            new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas."),
-            new("paises", L, false, true, "Gemela vieja de catalogo_paises."),
-            new("EmailConfiguration", L, false, true, "Gemela de EmailConfigurations que solo escriben los procedimientos sp_*."),
-            new("usuarios_empresas", L, false, true, "Resto de los scripts KPI; 0 filas."),
-            new("ingresos_operativos", L, false, true, "Resto de los scripts KPI; 0 filas."),
-            new("precios_combustible", L, false, true, "Resto de los scripts KPI; 0 filas."),
-            new("respaldo_personas_018", L, false, true, "Copia de la migración 018, con datos personales."),
-            new("respaldo_personas_019", L, false, true, "Copia de la migración 019 para su reversa, con datos personales."),
+            // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
+            new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),
+            new("usuarios_empresas", L, false, true, "Detalle de la gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),
+            new("paises", L, false, true, "Gemela vieja de catalogo_paises. El script 023 la mueve al esquema retirado."),
+            new("EmailConfiguration", L, false, true,
+                "Gemela de EmailConfigurations que solo escribían 5 procedimientos y la página /ConfigurarHostinger. El script 023 la mueve, con sus procedimientos, al esquema retirado."),
+            new("respaldo_personas_018", L, false, true, "Copia de la migración 018, con datos personales. El script 023 la borra."),
+            new("respaldo_personas_019", L, false, true, "Copia de la migración 019 para su reversa, con datos personales. Se conserva hasta F1."),
         };
 
         /// <summary>
