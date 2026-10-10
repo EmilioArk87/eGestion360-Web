@@ -46,6 +46,9 @@ Emilio pidió que cada usuario quede vinculado a la persona que lo usa antes de 
   plataforma (`Plataforma:IdEmpresaPropia`, SIP), que en F1 será el tenant interno de [ADR-006](ADR-006-factura-fiscal-de-la-plataforma.md).
 - **Varios usuarios por persona** mientras exista el modelo actual (`admin` y `egaray` son la misma persona). Obligatoria
   al crear usuarios nuevos; los existentes se vinculan desde Editar.
+- **Obligatoria para entrar** (cambio de U3 pedido por Emilio el mismo 2026-10-10): un usuario sin persona vinculada no
+  inicia sesión, y la barra y las bienvenidas muestran el nombre de la persona en lugar del nombre de usuario. En F1 la
+  regla pasa a la membresía: sin persona en la membresía del tenant elegido, no se entra a ese tenant.
 - **Migración en F1:** `PersonaId` pasa a `membresia.id_persona` del tenant de la empresa del usuario; `admin` y `egaray`
   se unen en una sola cuenta (operador de la plataforma y miembro del tenant de SIP); la columna se retira con `Users`.
 - Mientras tanto, una tabla de plataforma (`Users`) apunta a datos de un tenant (`personas`). Es temporal y aceptada

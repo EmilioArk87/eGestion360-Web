@@ -20,6 +20,9 @@ namespace eGestion360Web.Services.Personas
 
         private const string MensajeNoGuardado = "No se pudo guardar. Revisa los datos e intenta de nuevo.";
 
+        private const string MensajePropia =
+            "No puedes quitar la persona de tu propio usuario: sin ella ya no podrías iniciar sesión.";
+
         private readonly ApplicationDbContext _db;
         private readonly IPersonaValidacionService _validacion;
         private readonly PlataformaOptions _plataforma;
@@ -271,6 +274,10 @@ namespace eGestion360Web.Services.Personas
             if (usuario == null) return NoEncontrado("No se encontró al usuario.");
             if (usuario.PersonaId is not { } idPersona)
                 return new ResultadoUsuarioPersona(EstadoUsuarioPersona.SinCambios, null, Array.Empty<ErrorValidacion>(), Array.Empty<PersonaParecida>());
+
+            // Sin persona no se puede iniciar sesión: nadie se quita la suya y se queda fuera.
+            if (string.Equals(usuario.Username, quien.Usuario, StringComparison.OrdinalIgnoreCase))
+                return Rechazado(new[] { new ErrorValidacion(string.Empty, MensajePropia) });
 
             usuario.PersonaId = null;
             await CerrarRelacionSiQuedaSinUsuarioAsync(idPersona, EmpresaDeLaPersona(usuario), usuario.Id, quien.Usuario, Ahora(), ct);

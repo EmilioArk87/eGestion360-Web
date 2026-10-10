@@ -49,9 +49,10 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" 
                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user me-1"></i>@Context.Session.GetString("Username")
+                            <i class="fas fa-user me-1"></i>@eGestion360Web.Services.AuthHelper.NombreVisible(Context)
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li><span class="dropdown-item-text small text-muted"><i class="fas fa-user-lock me-2"></i>Usuario: @Context.Session.GetString("Username")</span></li>
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>Perfil</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" asp-page="/Logout" asp-page-handler="Logout">

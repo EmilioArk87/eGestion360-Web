@@ -92,5 +92,14 @@ namespace eGestion360Web.Services.Personas
         /// <summary>Compone el campo legado personas.apellidos con el primer y el segundo apellido.</summary>
         public static string ComponerApellidos(string? primerApellido, string? segundoApellido) =>
             Limpiar($"{Limpiar(primerApellido)} {Limpiar(segundoApellido)}");
+
+        /// <summary>
+        /// Nombre corto para saludar o mostrar en la barra: primer nombre y primer apellido («Emilio Garay»). Si la persona
+        /// todavía no tiene el nombre separado, el texto antiguo completo.
+        /// </summary>
+        public static string Corto(string? primerNombre, string? primerApellido, string? nombres, string? apellidos) =>
+            !string.IsNullOrWhiteSpace(primerNombre) && !string.IsNullOrWhiteSpace(primerApellido)
+                ? Limpiar($"{Limpiar(primerNombre)} {Limpiar(primerApellido)}")
+                : Limpiar($"{Limpiar(nombres)} {Limpiar(apellidos)}");
     }
 }

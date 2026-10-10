@@ -20,10 +20,14 @@ namespace eGestion360Web.Tests.Paginas
 
         public void Dispose() => _bd.Dispose();
 
-        private int CrearUsuario(string nombre, string claveGuardada)
+        /// <summary>Un usuario con su persona vinculada (script 021), salvo que se pida sin persona.</summary>
+        private int CrearUsuario(string nombre, string claveGuardada, bool conPersona = true)
         {
             using var db = _bd.Crear();
-            var usuario = new User { Email = $"{nombre}@prueba.local", Role = "admin", IsActive = true };
+            int? idPersona = conPersona
+                ? PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Emilio", "Garay", codigoInterno: "U-" + nombre).IdPersona
+                : null;
+            var usuario = new User { Email = $"{nombre}@prueba.local", Role = "admin", IsActive = true, PersonaId = idPersona };
             (usuario.Username, usuario.Password) = (nombre, claveGuardada);
             db.Users.Add(usuario);
             db.SaveChanges();
@@ -75,6 +79,76 @@ namespace eGestion360Web.Tests.Paginas
 
             using var verificacion = _bd.Crear();
             Assert.Equal("Clave-Plana-1", verificacion.Users.Single(u => u.Id == id).Password);
+        }
+
+        // ── Persona del usuario (script 021) ────────────────────────────────
+
+        [Fact]
+        public async Task Al_entrar_la_sesion_guarda_el_nombre_corto_de_su_persona()
+        {
+            CrearUsuario("con_persona", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-3", 4));
+            using var db = _bd.Crear();
+            var (pagina, http) = Pagina(db, "con_persona", "Clave-Segura-3");
+
+            await pagina.OnPostAsync();
+
+            Assert.Equal("Emilio Garay", http.Session.GetString(AuthHelper.ClaveNombrePersona));
+            Assert.Equal("con_persona", http.Session.GetString("Username"));   // la auditoría sigue usando el usuario
+        }
+
+        [Fact]
+        public async Task Un_usuario_sin_persona_no_inicia_sesion_aunque_la_clave_sea_correcta()
+        {
+            CrearUsuario("sin_persona", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-4", 4), conPersona: false);
+            using var db = _bd.Crear();
+            var (pagina, http) = Pagina(db, "sin_persona", "Clave-Segura-4");
+
+            var resultado = await pagina.OnPostAsync();
+
+            Assert.IsType<PageResult>(resultado);
+            Assert.Equal(LoginModel.MensajeSinPersona, Mensaje(pagina));
+            Assert.Null(http.Session.GetString("UserId"));
+        }
+
+        [Fact]
+        public async Task Un_usuario_cuya_persona_fue_eliminada_o_fusionada_no_inicia_sesion()
+        {
+            var idEliminada = CrearUsuario("persona_eliminada", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-5", 4));
+            var idFusionada = CrearUsuario("persona_fusionada", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-6", 4));
+            using (var db = _bd.Crear())
+            {
+                var idPersonaEliminada = db.Users.Single(u => u.Id == idEliminada).PersonaId;
+                var idPersonaFusionada = db.Users.Single(u => u.Id == idFusionada).PersonaId;
+                db.Personas.Single(p => p.IdPersona == idPersonaEliminada).Eliminado = true;
+                var otra = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Otra", "Persona", codigoInterno: "U-otra");
+                db.Personas.Single(p => p.IdPersona == idPersonaFusionada).IdPersonaPrincipal = otra.IdPersona;
+                db.SaveChanges();
+            }
+
+            using var lectura = _bd.Crear();
+            foreach (var (usuario, clave) in new[] { ("persona_eliminada", "Clave-Segura-5"), ("persona_fusionada", "Clave-Segura-6") })
+            {
+                var (pagina, http) = Pagina(lectura, usuario, clave);
+                await pagina.OnPostAsync();
+                Assert.Equal(LoginModel.MensajeSinPersona, Mensaje(pagina));
+                Assert.Null(http.Session.GetString("UserId"));
+            }
+        }
+
+        [Fact]
+        public async Task Sin_persona_y_con_clave_equivocada_el_mensaje_es_el_de_la_clave()
+        {
+            CrearUsuario("sin_persona_2", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-7", 4), conPersona: false);
+            CrearUsuario("con_bcrypt_3", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-8", 4));
+
+            using var db = _bd.Crear();
+            var (sinPersona, _) = Pagina(db, "sin_persona_2", "otra-clave");
+            var (equivocada, _) = Pagina(db, "con_bcrypt_3", "otra-clave");
+            await sinPersona.OnPostAsync();
+            await equivocada.OnPostAsync();
+
+            // Quien no sabe la clave no se entera de si el usuario tiene persona o no.
+            Assert.Equal(Mensaje(equivocada), Mensaje(sinPersona));
         }
 
         [Fact]

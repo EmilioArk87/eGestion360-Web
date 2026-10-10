@@ -19,7 +19,8 @@ namespace eGestion360Web.Tests.Services.Personas
         private readonly RelojFijo _reloj = RelojFijo.PorDefecto();
         private readonly ContextoAuditoriaFijo _auditoria = new() { Usuario = "admin", IdEmpresa = null };
 
-        private static readonly QuienOperaUsuarios Admin = new(true, null, "admin");
+        // El administrador general que opera en las pruebas no es el usuario «admin» sembrado, salvo donde se prueba eso.
+        private static readonly QuienOperaUsuarios Admin = new(true, null, "soporte");
         private static QuienOperaUsuarios AdminDe(int empresa) => new(false, empresa, "jefe");
 
         public void Dispose() => _bd.Dispose();
@@ -282,6 +283,19 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.True(reabierto.Activo);
             Assert.Null(reabierto.FechaFin);
             Assert.True((await final.Personas.AsNoTracking().SingleAsync(p => p.IdPersona == idPersona)).Activo);
+        }
+
+        [Fact]
+        public async Task Nadie_puede_quitar_la_persona_de_su_propio_usuario()
+        {
+            var creado = await Crear(Admin, IdAdmin, Datos());
+
+            var r = await Quitar(new QuienOperaUsuarios(true, null, "admin"), IdAdmin);   // el propio admin
+
+            Assert.Equal(EstadoUsuarioPersona.Rechazado, r.Estado);
+            Assert.Contains("tu propio usuario", Mensajes(r));
+            using var db = _bd.Crear();
+            Assert.Equal(creado.IdPersona, (await db.Users.AsNoTracking().SingleAsync(u => u.Id == IdAdmin)).PersonaId);
         }
 
         [Fact]

@@ -25,7 +25,7 @@
                     </div>
                 </div>
                 <form method="post" asp-page-handler="QuitarPersona" asp-route-id="@Model.Id"
-                      onsubmit="return confirm('¿Quitar la persona de este usuario? La persona no se borra.');">
+                      onsubmit="return confirm('¿Quitar la persona de este usuario? La persona no se borra, pero el usuario no podrá iniciar sesión hasta que tenga otra.');">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         <i class="fas fa-unlink me-1"></i>Quitar
                     </button>
@@ -36,7 +36,7 @@
         {
             <div class="alert alert-warning py-2 small" data-prueba="sin-persona">
                 <i class="fas fa-exclamation-triangle me-1"></i>
-                Este usuario todavía no está vinculado a ninguna persona. Búscala o créala abajo.
+                Este usuario todavía no está vinculado a ninguna persona y no puede iniciar sesión. Búscala o créala abajo.
             </div>
         }
 

@@ -22,6 +22,9 @@ namespace eGestion360Web.Pages
             _logger = logger;
         }
 
+        public const string MensajeSinPersona =
+            "Tu usuario todavía no está vinculado a una persona. Pide al administrador que lo vincule para poder entrar.";
+
         [BindProperty]
         [Required(ErrorMessage = "El nombre de usuario es requerido")]
         [Display(Name = "Usuario")]
@@ -83,6 +86,21 @@ namespace eGestion360Web.Pages
 
                     if (isPasswordValid)
                     {
+                        // Cada usuario entra como una persona (script 021): sin una persona vinculada y vigente, no hay
+                        // sesión. El mensaje solo aparece después de una clave correcta.
+                        var persona = user.PersonaId is { } idPersona
+                            ? await _context.Personas.AsNoTracking()
+                                .Where(p => p.IdPersona == idPersona && !p.Eliminado && p.IdPersonaPrincipal == null)
+                                .Select(p => new { p.PrimerNombre, p.PrimerApellido, p.Nombres, p.Apellidos })
+                                .FirstOrDefaultAsync()
+                            : null;
+                        if (persona == null)
+                        {
+                            _logger.LogWarning("Inicio de sesión rechazado: el usuario {UserId} no está vinculado a una persona.", user.Id);
+                            ModelState.AddModelError("", MensajeSinPersona);
+                            return Page();
+                        }
+
                         var role = AuthHelper.ResolveRole(user.Role);
 
                         if (user.EmpresaId.HasValue && role == AuthHelper.EmpresaUserRole)
@@ -101,6 +119,8 @@ namespace eGestion360Web.Pages
                         HttpContext.Session.SetString("Username", user.Username);
                         HttpContext.Session.SetString("Email",    user.Email);
                         HttpContext.Session.SetString("Role",     role);
+                        HttpContext.Session.SetString(AuthHelper.ClaveNombrePersona,
+                            Services.Personas.NombresPersona.Corto(persona.PrimerNombre, persona.PrimerApellido, persona.Nombres, persona.Apellidos));
 
                         // Cambio de contraseña obligatorio: no se cargan permisos ni se
                         // permite navegar hasta que el usuario establezca su nueva clave

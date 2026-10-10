@@ -71,6 +71,21 @@ texto plano y las convertía en el mismo request; esa rama se quitó cuando se c
 clave sin cifrar. Si apareciera una, el login la rechaza con el mismo mensaje que una clave errónea y un administrador
 le asigna una nueva desde Admin > Usuarios.
 
+### Solo usuarios vinculados a una persona
+
+Desde el 2026-10-10 (script 021 y decisión de Emilio del mismo día) cada usuario entra como una persona:
+
+- Después de comprobar la contraseña, el login exige que `Users.PersonaId` apunte a una persona viva y sin fusionar. Si
+  no, no abre sesión y muestra «Tu usuario todavía no está vinculado a una persona. Pide al administrador que lo vincule
+  para poder entrar.». Ese mensaje solo aparece con la clave correcta: con una equivocada, el mensaje es el de siempre.
+- Con persona, la sesión guarda además `NombrePersona` (primer nombre y primer apellido, `NombresPersona.Corto`). La
+  barra superior, la bienvenida del menú y la del inicio muestran ese nombre con `AuthHelper.NombreVisible`; el nombre de
+  usuario sigue en el menú desplegable y es el que se guarda en la auditoría.
+- Nadie puede quitar la persona de su propio usuario (se quedaría fuera). Al fusionar dos fichas de persona, los usuarios
+  de la sobrante pasan a la principal.
+- La regla aplica al iniciar sesión: una sesión abierta antes de quitar la persona sigue hasta que expire o se cierre.
+- Vincular se hace en Gestión de usuarios (ver [Vistas/Admin_Usuarios.md](Vistas/Admin_Usuarios.md)).
+
 ---
 
 ## 2. Flujo de Recuperación de Contraseña

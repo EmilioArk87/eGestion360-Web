@@ -7,6 +7,9 @@ namespace eGestion360Web.Pages
     public class MainMenuModel : PageModel
     {
         public string Username      { get; set; } = string.Empty;
+
+        /// <summary>El nombre de la persona que usa la cuenta («Emilio Garay»); el usuario si no lo hay.</summary>
+        public string NombrePersona { get; set; } = string.Empty;
         public string Email         { get; set; } = string.Empty;
         public bool   IsAdmin       { get; set; }
         public bool   IsEmpresaAdmin { get; set; }
@@ -18,6 +21,7 @@ namespace eGestion360Web.Pages
                 return RedirectToPage("/Login");
 
             Username       = HttpContext.Session.GetString("Username") ?? "Usuario";
+            NombrePersona  = AuthHelper.NombreVisible(HttpContext);
             Email          = HttpContext.Session.GetString("Email") ?? "";
             IsAdmin        = AuthHelper.IsAdmin(HttpContext);
             IsEmpresaAdmin = AuthHelper.IsEmpresaAdmin(HttpContext);

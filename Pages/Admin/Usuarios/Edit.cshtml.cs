@@ -133,6 +133,7 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             var r = await _usuarioPersona.VincularAsync(PersonaDeUsuarioPagina.Quien(HttpContext), id, idPersona);
+            if (r.Ok) await RefrescarNombreSiEsElPropioAsync(id);
             return VolverConMensaje(id, r, "Usuario vinculado con la persona.");
         }
 
@@ -155,7 +156,11 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             var r = await _usuarioPersona.CrearPersonaYVincularAsync(
                 PersonaDeUsuarioPagina.Quien(HttpContext), id, PersonaNueva.ADatos(), PersonaNueva.ConfirmarQueEsOtraPersona);
 
-            if (r.Ok) return VolverConMensaje(id, r, "Persona creada y vinculada al usuario.");
+            if (r.Ok)
+            {
+                await RefrescarNombreSiEsElPropioAsync(id);
+                return VolverConMensaje(id, r, "Persona creada y vinculada al usuario.");
+            }
             if (r.Estado == EstadoUsuarioPersona.NoEncontrado) return NotFound();
 
             // Se vuelve a mostrar la pantalla con lo escrito: solo cuentan los errores de la persona.
@@ -181,6 +186,20 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 TempData["ErrorMessage"] = string.Join(" ", r.Errores.Select(e => e.Mensaje));
 
             return RedirectToPage(new { id });
+        }
+
+        /// <summary>Si quien opera cambió la persona de su propio usuario, el nombre de la barra se actualiza sin volver a entrar.</summary>
+        private async Task RefrescarNombreSiEsElPropioAsync(int idUsuario)
+        {
+            if (HttpContext.Session.GetString("UserId") != idUsuario.ToString()) return;
+
+            var p = await _context.Users.AsNoTracking()
+                .Where(u => u.Id == idUsuario && u.Persona != null)
+                .Select(u => new { u.Persona!.PrimerNombre, u.Persona.PrimerApellido, u.Persona.Nombres, u.Persona.Apellidos })
+                .FirstOrDefaultAsync();
+            if (p != null)
+                HttpContext.Session.SetString(AuthHelper.ClaveNombrePersona,
+                    NombresPersona.Corto(p.PrimerNombre, p.PrimerApellido, p.Nombres, p.Apellidos));
         }
 
         private async Task<bool> CargarUsuarioAsync(int id)

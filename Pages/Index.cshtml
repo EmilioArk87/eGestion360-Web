@@ -20,7 +20,7 @@
                     @if (HttpContext.Session.GetString("UserId") != null)
                     {
                         <span class="btn btn-success btn-lg">
-                            <i class="fas fa-check-circle me-2"></i>Bienvenido, @HttpContext.Session.GetString("Username")
+                            <i class="fas fa-check-circle me-2"></i>Bienvenido, @eGestion360Web.Services.AuthHelper.NombreVisible(HttpContext)
                         </span>
                     }
                     else

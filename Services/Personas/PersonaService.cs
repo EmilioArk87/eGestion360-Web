@@ -567,6 +567,11 @@ namespace eGestion360Web.Services.Personas
                     principal.FechaModificacion = ahora;
                 }
 
+                // Los usuarios del sistema de la ficha sobrante pasan a la principal (script 021): con la sobrante
+                // fusionada no podrían iniciar sesión. Sus vínculos con la empresa ya se movieron arriba.
+                foreach (var cuenta in await _db.Users.Where(u => u.PersonaId == idSobrante).ToListAsync(ct))
+                    cuenta.PersonaId = idPrincipal;
+
                 await _db.SaveChangesAsync(ct);
 
                 // Registros operativos que apuntan a la persona: se reasignan a la principal.

@@ -127,6 +127,20 @@ namespace eGestion360Web.Services
             context.Session.SetString("Permisos",     JsonSerializer.Serialize(permisos));
         }
 
+        // ── Persona del usuario en sesión (script 021) ────────────────────────
+
+        /// <summary>Clave de sesión con el nombre corto de la persona que usa la cuenta.</summary>
+        public const string ClaveNombrePersona = "NombrePersona";
+
+        /// <summary>
+        /// Cómo se muestra a quien inició sesión: el nombre de su persona («Emilio Garay») o, si no lo hay, su usuario.
+        /// El nombre de usuario sigue siendo el que se guarda en la auditoría.
+        /// </summary>
+        public static string NombreVisible(HttpContext context) =>
+            context.Session.GetString(ClaveNombrePersona) is { Length: > 0 } nombre
+                ? nombre
+                : context.Session.GetString("Username") ?? "Usuario";
+
         public static void ClearSesionTenant(HttpContext context)
         {
             context.Session.Remove("EmpresaId");

@@ -32,8 +32,9 @@ namespace eGestion360Web.Services.Personas
             QuienOperaUsuarios quien, int idUsuario, PersonaDatosInput datos, bool confirmarQueEsOtraPersona, CancellationToken ct = default);
 
         /// <summary>
-        /// Quita la persona del usuario. Si era su único usuario en esa empresa y la relación con la empresa era solo la de
-        /// «usuario», esa relación se cierra (no se borra nada).
+        /// Quita la persona del usuario: desde ese momento no puede iniciar sesión. Nadie puede quitar la suya. Si era su
+        /// único usuario en esa empresa y la relación con la empresa era solo la de «usuario», esa relación se cierra (no
+        /// se borra nada).
         /// </summary>
         Task<ResultadoUsuarioPersona> QuitarAsync(QuienOperaUsuarios quien, int idUsuario, CancellationToken ct = default);
     }

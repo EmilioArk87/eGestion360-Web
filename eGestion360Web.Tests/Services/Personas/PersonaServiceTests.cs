@@ -706,6 +706,32 @@ namespace eGestion360Web.Tests.Services.Personas
         }
 
         [Fact]
+        public async Task Fusionar_pasa_a_la_principal_los_usuarios_del_sistema_de_la_sobrante()
+        {
+            int sobrante, principal, idUsuario;
+            using (var db = _bd.Crear())
+            {
+                var s = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Rosa", "Lagos", dni: "0801199011111", codigoInterno: "S1", nacimiento: new DateOnly(1980, 2, 2));
+                var p = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Rosa", "Lagos", codigoInterno: "P1", nacimiento: new DateOnly(1980, 2, 2));
+                sobrante = s.IdPersona; principal = p.IdPersona;
+                var usuario = new Models.User { Username = "rosa.lagos", Email = "rosa@prueba.hn", Password = "x", Role = "empresa_user", EmpresaId = DatosBase.EmpresaB, PersonaId = sobrante };
+                db.Users.Add(usuario);
+                db.SaveChanges();
+                idUsuario = usuario.Id;
+            }
+
+            using (var db = Contexto())
+                Assert.True((await Servicio(db).FusionarAsync(new FusionarPersonasInput { IdEmpresa = DatosBase.EmpresaB, IdPersonaSobrante = sobrante, IdPersonaPrincipal = principal, Usuario = "rrhh.ana" })).Ok);
+
+            // Con la sobrante fusionada el usuario no podría entrar: ahora es de la principal, y queda en la bitácora.
+            using var lectura = _bd.Crear();
+            Assert.Equal(principal, (await lectura.Users.AsNoTracking().SingleAsync(u => u.Id == idUsuario)).PersonaId);
+            var fila = await lectura.BitacoraCambios.AsNoTracking().SingleAsync(b => b.Entidad == "Users");
+            Assert.Equal(sobrante.ToString(), fila.ValorAnterior);
+            Assert.Equal(principal.ToString(), fila.ValorNuevo);
+        }
+
+        [Fact]
         public async Task Fusionar_pasa_a_la_principal_los_vinculos_de_otras_empresas_de_la_sobrante()
         {
             int sobrante, principal;

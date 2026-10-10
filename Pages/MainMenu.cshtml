@@ -10,7 +10,7 @@
             <div class="alert alert-info d-flex align-items-center" role="alert">
                 <i class="fas fa-user-circle fa-2x me-3"></i>
                 <div>
-                    <h4 class="alert-heading mb-1">Bienvenido, @Model.Username!</h4>
+                    <h4 class="alert-heading mb-1">Bienvenido, @Model.NombrePersona!</h4>
                     <p class="mb-0">Has iniciado sesión exitosamente en eGestion360</p>
                 </div>
             </div>
@@ -365,6 +365,7 @@
                         <div class="col-md-8">
                             <h5 class="mb-2"><i class="fas fa-info-circle me-2"></i>Información del Sistema</h5>
                             <p class="text-muted mb-0">
+                                <strong>Persona:</strong> @Model.NombrePersona<br>
                                 <strong>Usuario:</strong> @Model.Username<br>
                                 <strong>Email:</strong> @Model.Email<br>
                                 <strong>Última conexión:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")

@@ -50,7 +50,8 @@
             <div class="row align-items-center">
                 <div class="col-md-4 mb-2">
                     <span class="text-muted small">Usuario</span><br>
-                    <strong>@Model.Username</strong>
+                    <strong>@eGestion360Web.Services.AuthHelper.NombreVisible(HttpContext)</strong>
+                    <span class="text-muted small">(@Model.Username)</span>
                 </div>
                 <div class="col-md-4 mb-2">
                     <span class="text-muted small">Email</span><br>
@@ -145,8 +146,8 @@
                                             }
                                             else if (user.IsActive)
                                             {
-                                                <span class="badge bg-warning text-dark" title="Este usuario no está vinculado a la persona que lo usa. Vincúlalo desde Editar.">
-                                                    <i class="fas fa-exclamation-triangle me-1"></i>Sin persona
+                                                <span class="badge bg-danger" title="Este usuario no está vinculado a la persona que lo usa y no puede iniciar sesión. Vincúlalo desde Editar.">
+                                                    <i class="fas fa-ban me-1"></i>Sin persona · no puede entrar
                                                 </span>
                                             }
                                             else
