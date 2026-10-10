@@ -9,6 +9,7 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 | Documento | Descripción |
 |-----------|-------------|
 | [ESTANDARES_ERP.md](ESTANDARES_ERP.md) | Convenciones globales del ERP: stack real, arquitectura por capas, multitenant, nombres de BD, auditoría y control de cambios |
+| [Arquitectura/README.md](Arquitectura/README.md) | Arquitectura SaaS multi-tenant aprobada (2026-10-10): resumen, roadmap F0–F9 y registros de decisión ADR-001 a ADR-014 |
 | [PRUEBAS_AUTOMATIZADAS.md](PRUEBAS_AUTOMATIZADAS.md) | Proyecto de pruebas xUnit: cómo correrlas, qué cubren, la base SQLite de prueba y sus límites |
 
 ## Contabilidad

@@ -11,6 +11,27 @@ dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj
 
 No necesitan SQL Server, ni internet, ni secretos: usan SQLite en memoria. **Nunca tocan la base real.**
 
+## Integración continua
+
+`.github/workflows/ci.yml` corre en GitHub Actions en cada push a cualquier rama y en cada pull request (también se
+puede lanzar a mano desde la pestaña *Actions*). En una máquina Windows, igual que producción:
+
+1. Restaura los paquetes NuGet de la solución.
+2. Compila el sitio en Debug y en Release.
+3. Corre todas las pruebas de este proyecto.
+
+Si un paso falla, la corrida queda en rojo en GitHub. Los resultados (`resultados.trx`) quedan como artefacto de la
+corrida durante 14 días. No usa secretos: el flujo solo tiene permiso de lectura del repositorio.
+
+Para reproducir la corrida en local, los mismos comandos:
+
+```bash
+dotnet restore eGestion360-Web.sln
+dotnet build eGestion360Web.csproj --configuration Debug --no-restore
+dotnet build eGestion360Web.csproj --configuration Release --no-restore
+dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj --configuration Debug --no-restore
+```
+
 ## Qué cubren
 
 | Carpeta | Qué prueban |

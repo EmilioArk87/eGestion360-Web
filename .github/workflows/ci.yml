@@ -1,0 +1,63 @@
+# Integracion continua de eGestion360-Web (paso F0.3 del plan de arquitectura, ver 1 - Documetacion/Arquitectura/).
+#
+# En cada push a cualquier rama y en cada pull request: restaura paquetes, compila el sitio en Debug y en Release y
+# corre todas las pruebas xUnit. Las pruebas usan SQLite en memoria: no necesitan base de datos ni secretos, y nunca
+# tocan la base real. El unico acceso a internet es la restauracion de paquetes NuGet.
+#
+# Corre en Windows porque produccion corre en IIS sobre Windows: asi coinciden zona horaria, cultura y rutas.
+# Los resultados de las pruebas (.trx) quedan como artefacto de la corrida durante 14 dias.
+# Documentacion: 1 - Documetacion/PRUEBAS_AUTOMATIZADAS.md
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compilar-y-probar:
+    name: Compilar y probar
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+    steps:
+      - name: Obtener el codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restaurar paquetes
+        run: dotnet restore eGestion360-Web.sln
+
+      - name: Compilar el sitio (Debug)
+        run: dotnet build eGestion360Web.csproj --configuration Debug --no-restore
+
+      - name: Compilar el sitio (Release)
+        run: dotnet build eGestion360Web.csproj --configuration Release --no-restore
+
+      - name: Correr las pruebas
+        run: dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj --configuration Debug --no-restore --logger "trx;LogFileName=resultados.trx" --results-directory resultados-pruebas
+
+      - name: Guardar los resultados de las pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-pruebas
+          path: resultados-pruebas
+          retention-days: 14
+          if-no-files-found: ignore

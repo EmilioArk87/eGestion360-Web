@@ -65,7 +65,13 @@ registrados en DI. Es la vía oficial para reacciones entre módulos (p. ej. con
 
 ## 4. Multitenant (multiempresa)
 
-Modelo **single-DB / shared-schema**, discriminado por columna:
+> **Modelo objetivo aprobado el 2026-10-10.** La plataforma pasa a ser multi-tenant: Tenant → Empresa → Sucursal →
+> Punto de emisión, `id_tenant` en toda tabla de tenant, filtros globales de EF Core, Row-Level Security de SQL Server y
+> FK compuestas. Ver [Arquitectura/README.md](Arquitectura/README.md) (ADR-001 a ADR-004 y ADR-013). Se implementa en
+> las fases F1 y F2; **hasta entonces sigue vigente lo que describe esta sección**. Las sucursales ya están decididas
+> (ADR-002) y se crean en F2.
+
+Modelo actual: **single-DB / shared-schema**, discriminado por columna:
 
 - Toda tabla de negocio lleva `id_empresa INT NOT NULL` con **FK a `dbo.empresas(id_empresa)`**.
 - El tenant activo se guarda en **sesión** y se lee con `Services/AuthHelper.cs` (`GetEmpresaId`, `SetSesionTenant`).
