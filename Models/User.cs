@@ -35,5 +35,13 @@ namespace eGestion360Web.Models
         public Empresa? Empresa { get; set; }
 
         public EmpresaRol? EmpresaRol { get; set; }
+
+        /// <summary>
+        /// Persona que usa esta cuenta (script 021). Paso intermedio hasta F1: ahí el vínculo pasa a la membresía de la
+        /// cuenta en cada tenant (ADR-003). Mientras tanto una persona puede tener más de un usuario.
+        /// </summary>
+        public int? PersonaId { get; set; }
+
+        public eGestion360Web.Models.Flota.Persona? Persona { get; set; }
     }
 }

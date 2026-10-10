@@ -11,8 +11,12 @@ namespace eGestion360Web.Services.Auditoria
             ["persona_documentos"] = "Documento",
             ["persona_empresa"] = "Vínculo con la empresa",
             ["empleados"] = "Ficha de empleado",
-            ["clientes"] = "Ficha de cliente"
+            ["clientes"] = "Ficha de cliente",
+            ["Users"] = "Usuario del sistema"
         };
+
+        /// <summary>Entidad de la bitácora con el vínculo de un usuario con su persona (script 021).</summary>
+        public const string EntidadUsuarios = "Users";
 
         private static readonly Dictionary<string, string> Operaciones = new()
         {
@@ -80,7 +84,8 @@ namespace eGestion360Web.Services.Auditoria
             ["moneda_iso_default"] = "Moneda",
             ["id_condicion_pago_default"] = "Condición de pago",
             ["limite_credito"] = "Límite de crédito",
-            ["id_persona_empresa"] = "Vínculo con la empresa"
+            ["id_persona_empresa"] = "Vínculo con la empresa",
+            ["PersonaId"] = "Persona vinculada"
         };
 
         public static string Entidad(string entidad) =>
@@ -97,6 +102,15 @@ namespace eGestion360Web.Services.Auditoria
             var libre = campo.Replace('_', ' ');
             return char.ToUpperInvariant(libre[0]) + libre[1..];
         }
+
+        /// <summary>
+        /// El valor del campo «Persona vinculada» de un usuario, visto desde el historial de una persona: «Esta persona» u
+        /// «Otra persona». El número de la otra persona no se muestra.
+        /// </summary>
+        public static string? PersonaDeUsuario(string? valor, int idPersona) =>
+            valor == null ? null
+            : valor == idPersona.ToString(System.Globalization.CultureInfo.InvariantCulture) ? "Esta persona"
+            : "Otra persona";
 
         /// <summary>Un valor guardado como texto, listo para mostrar: los booleanos pasan a Sí/No.</summary>
         public static string? Valor(string? valor) => valor switch

@@ -49,6 +49,7 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 | [Vistas/Flota_Catalogos_Personas.md](Vistas/Flota_Catalogos_Personas.md) | Personal (personas maestras por empresa): listado, nuevo, editar e historial de cambios |
 | [Vistas/Catalogos_Clientes.md](Vistas/Catalogos_Clientes.md) | Clientes: alta con ficha de persona (reutilizada entre empresas), edición, baja y eliminación |
 | [Vistas/Admin_Personas.md](Vistas/Admin_Personas.md) | Personas del sistema (solo administrador general): todas las personas con sus empresas y roles, edición de datos personales e historial completo |
+| [Vistas/Admin_Usuarios.md](Vistas/Admin_Usuarios.md) | Usuarios y su persona: crear y editar usuarios vinculados a la persona que los usa (script 021) |
 | [Vistas/_PlantillaVista.md](Vistas/_PlantillaVista.md) | Plantilla para documentar una vista nueva |
 
 ## Base de Datos

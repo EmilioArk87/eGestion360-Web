@@ -113,5 +113,10 @@ namespace eGestion360Web.Services.Personas
         string CreadoPor,
         DateTime FechaCreacion,
         string? ModificadoPor,
-        DateTime? FechaModificacion);
+        DateTime? FechaModificacion,
+        IReadOnlyList<string>? Usuarios = null)
+    {
+        /// <summary>Los usuarios del sistema vinculados a esta persona (script 021), por nombre de usuario.</summary>
+        public IReadOnlyList<string> UsuariosDelSistema => Usuarios ?? Array.Empty<string>();
+    }
 }

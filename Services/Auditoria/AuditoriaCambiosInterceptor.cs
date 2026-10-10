@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
+using eGestion360Web.Models;
 using eGestion360Web.Models.Auditoria;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Flota;
@@ -19,6 +20,8 @@ namespace eGestion360Web.Services.Auditoria
     /// Escribe en bitacora_cambios, dentro del mismo guardado, el historial por campo de las entidades de
     /// la persona maestra: Persona, PersonaDocumento, PersonaEmpresa, Empleado y, cuando está enlazado a una
     /// persona, Cliente (decisión D9). Un cliente sin ficha de persona (un «consumidor final») no se audita.
+    /// De un usuario del sistema (User) solo se audita a qué persona está vinculado (script 021): nunca su
+    /// contraseña ni el resto de la cuenta.
     ///
     ///   * Modificación: una fila por cada campo cuyo valor cambió (valor anterior y valor nuevo).
     ///   * Alta y baja física: una fila con campo nulo y la foto del registro en JSON.
@@ -46,7 +49,14 @@ namespace eGestion360Web.Services.Auditoria
             [typeof(PersonaDocumento)] = "persona_documentos",
             [typeof(PersonaEmpresa)] = "persona_empresa",
             [typeof(Empleado)] = "empleados",
-            [typeof(Cliente)] = "clientes"
+            [typeof(Cliente)] = "clientes",
+            [typeof(User)] = "Users"
+        };
+
+        /// <summary>Entidades de las que solo se auditan algunas propiedades: de un usuario, solo su persona.</summary>
+        private static readonly Dictionary<Type, HashSet<string>> SoloEstasPropiedades = new()
+        {
+            [typeof(User)] = new HashSet<string> { nameof(User.PersonaId) }
         };
 
         private static readonly HashSet<string> PropiedadesIgnoradas = new()
@@ -146,11 +156,32 @@ namespace eGestion360Web.Services.Auditoria
         private static bool Auditable(EntityEntry entrada)
         {
             if (!Entidades.ContainsKey(entrada.Entity.GetType())) return false;
-            if (entrada.Entity is not Cliente cliente) return true;
 
-            return cliente.IdPersonaEmpresa != null
-                   || entrada.Property(nameof(Cliente.IdPersonaEmpresa)).OriginalValue != null;
+            switch (entrada.Entity)
+            {
+                case Cliente cliente:
+                    return cliente.IdPersonaEmpresa != null
+                           || entrada.Property(nameof(Cliente.IdPersonaEmpresa)).OriginalValue != null;
+
+                // Un usuario solo cuenta cuando cambia su persona (o nace o se borra teniendo una).
+                case User usuario:
+                    var persona = entrada.Property(nameof(User.PersonaId));
+                    return entrada.State switch
+                    {
+                        EntityState.Added => usuario.PersonaId != null,
+                        EntityState.Deleted => persona.OriginalValue != null,
+                        _ => persona.IsModified && !Equals(persona.OriginalValue, persona.CurrentValue)
+                    };
+
+                default:
+                    return true;
+            }
         }
+
+        /// <summary>Si la propiedad entra en la bitácora de su entidad (de un usuario, solo su persona).</summary>
+        private static bool SeAudita(IReadOnlyProperty propiedad) =>
+            !SoloEstasPropiedades.TryGetValue(propiedad.DeclaringType.ClrType, out var permitidas)
+            || permitidas.Contains(propiedad.Name);
 
         // ── Después de guardar ──────────────────────────────────────────────
 
@@ -246,7 +277,7 @@ namespace eGestion360Web.Services.Auditoria
 
             foreach (var propiedad in entrada.Properties)
             {
-                if (!propiedad.IsModified || Ignorar(propiedad.Metadata, enAlta: false)) continue;
+                if (!propiedad.IsModified || Ignorar(propiedad.Metadata, enAlta: false) || !SeAudita(propiedad.Metadata)) continue;
 
                 var antes = Texto(propiedad.Metadata, propiedad.OriginalValue);
                 var despues = Texto(propiedad.Metadata, propiedad.CurrentValue);
@@ -331,6 +362,11 @@ namespace eGestion360Web.Services.Auditoria
                                 .FirstOrDefaultAsync(ct);
                     return (c.IdEmpresa, idPersonaDelCliente, idRegistro);
 
+                // La fila queda en el historial de la persona nueva o, si se quitó, en el de la que tenía.
+                case User u:
+                    var idPersonaDelUsuario = u.PersonaId ?? (int?)entrada.Property(nameof(User.PersonaId)).OriginalValue;
+                    return (u.EmpresaId ?? _contexto.IdEmpresa, idPersonaDelUsuario, idRegistro);
+
                 default:
                     return (_contexto.IdEmpresa, null, idRegistro);
             }
@@ -352,7 +388,7 @@ namespace eGestion360Web.Services.Auditoria
             var datos = new Dictionary<string, object?>();
             foreach (var propiedad in entrada.Properties)
             {
-                if (Ignorar(propiedad.Metadata, enAlta: true)) continue;
+                if (Ignorar(propiedad.Metadata, enAlta: true) || !SeAudita(propiedad.Metadata)) continue;
 
                 var valor = original ? propiedad.OriginalValue : propiedad.CurrentValue;
                 if (valor == null) continue;

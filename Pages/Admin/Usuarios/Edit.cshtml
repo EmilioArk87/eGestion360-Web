@@ -26,6 +26,20 @@
 
     <div class="row justify-content-center">
         <div class="col-md-7">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-times-circle me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            }
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4">
                     <form method="post">
@@ -101,6 +115,8 @@
                     </form>
                 </div>
             </div>
+
+            <partial name="_PersonaDelUsuario" model="Model" />
         </div>
     </div>
 </div>

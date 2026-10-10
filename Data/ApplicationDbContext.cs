@@ -114,6 +114,15 @@ namespace eGestion360Web.Data
                       .HasForeignKey(e => e.EmpresaRolId)
                       .OnDelete(DeleteBehavior.Restrict)
                       .IsRequired(false);
+
+                // Script 021: la persona que usa la cuenta. Sin cascada; varias cuentas pueden ser de la misma persona.
+                entity.HasOne(e => e.Persona)
+                      .WithMany()
+                      .HasForeignKey(e => e.PersonaId)
+                      .HasConstraintName("FK_Users_personas_PersonaId")
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
+                entity.HasIndex(e => e.PersonaId).HasDatabaseName("IX_Users_PersonaId");
             });
 
             // Configure Modulo entity

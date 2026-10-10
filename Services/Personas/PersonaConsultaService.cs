@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
+using eGestion360Web.Models.Auditoria;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Services.Auditoria;
@@ -13,7 +14,8 @@ namespace eGestion360Web.Services.Personas
         /// Entidades de la bitácora que son datos de la relación con UNA empresa (laboral o comercial): privadas de
         /// ella. Que alguien sea cliente de una empresa no lo ve otra.
         /// </summary>
-        private static readonly string[] EntidadesDeLaRelacion = { "persona_empresa", "empleados", "clientes" };
+        private static readonly string[] EntidadesDeLaRelacion =
+            { "persona_empresa", "empleados", "clientes", EtiquetasBitacora.EntidadUsuarios };
 
         /// <summary>
         /// Columnas de dbo.personas que son de la relación con una empresa y no de la persona: las que retiró
@@ -257,6 +259,8 @@ namespace eGestion360Web.Services.Personas
                 .Take(maximo * 2 + 1)
                 .ToListAsync(ct);
 
+            var nombresDeUsuario = await NombresDeUsuarioAsync(_db, cambios, ct);
+
             var filas = new List<HistorialFila>();
             foreach (var b in cambios)
             {
@@ -265,6 +269,13 @@ namespace eGestion360Web.Services.Personas
                 // Los campos de la relación con una empresa que la bitácora guardó en "personas" tampoco se muestran si son de otra empresa.
                 if (deOtra && b.Entidad == "personas" && b.Campo != null && CamposLegadosDeLaRelacion.Contains(b.Campo))
                     continue;
+
+                if (b.Entidad == EtiquetasBitacora.EntidadUsuarios)
+                {
+                    filas.Add(FilaDeUsuario(b, idPersona, nombresDeUsuario, deOtra ? OtraEmpresa : b.Usuario, deOtra));
+                    if (filas.Count > maximo) break;
+                    continue;
+                }
 
                 var esFoto = b.Campo == null;
                 filas.Add(new HistorialFila(
@@ -287,6 +298,47 @@ namespace eGestion360Web.Services.Personas
             if (truncado) filas.RemoveAt(filas.Count - 1);
 
             return new HistorialPersona($"{persona.Nombres} {persona.Apellidos}".Trim(), filas, truncado);
+        }
+
+        /// <summary>El nombre de cada usuario del sistema que aparece en la bitácora (entidad Users, script 021).</summary>
+        internal static async Task<Dictionary<long, string>> NombresDeUsuarioAsync(
+            ApplicationDbContext db, IReadOnlyList<BitacoraCambio> cambios, CancellationToken ct)
+        {
+            var ids = cambios.Where(b => b.Entidad == EtiquetasBitacora.EntidadUsuarios)
+                             .Select(b => (int)b.IdRegistro).Distinct().ToList();
+            if (ids.Count == 0) return new Dictionary<long, string>();
+
+            return await db.Users.AsNoTracking()
+                .Where(u => ids.Contains(u.Id))
+                .ToDictionaryAsync(u => (long)u.Id, u => u.Username, ct);
+        }
+
+        /// <summary>
+        /// Una fila del vínculo de un usuario con su persona: qué usuario y si quedó con esta persona o con otra (el número
+        /// de la otra no se muestra).
+        /// </summary>
+        internal static HistorialFila FilaDeUsuario(
+            BitacoraCambio b, int idPersona, IReadOnlyDictionary<long, string> nombresDeUsuario, string usuario, bool deOtra,
+            string? empresa = null)
+        {
+            var nombre = nombresDeUsuario.TryGetValue(b.IdRegistro, out var u) ? u : $"#{b.IdRegistro}";
+            var anterior = b.Campo == null ? null : EtiquetasBitacora.PersonaDeUsuario(b.ValorAnterior, idPersona);
+            var nuevo = b.Campo == null ? "Esta persona" : EtiquetasBitacora.PersonaDeUsuario(b.ValorNuevo, idPersona);
+
+            // El nombre del usuario va en el campo: las vistas del historial solo muestran el detalle en las altas y bajas.
+            var campo = EtiquetasBitacora.Campo(nameof(Models.User.PersonaId));
+            return new HistorialFila(
+                b.FechaHora.AddHours(-6),
+                EtiquetasBitacora.Entidad(b.Entidad),
+                EtiquetasBitacora.Operacion(b.Operacion),
+                deOtra ? campo : $"{campo} del usuario {nombre}",
+                anterior,
+                nuevo,
+                null,
+                usuario,
+                b.IdTransaccion,
+                deOtra,
+                empresa);
         }
 
         // ──────────────────────────────────────────────────────────────────

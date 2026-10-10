@@ -118,6 +118,95 @@
                             </div>
                         </div>
 
+                        @* Persona que usará el usuario (script 021): obligatoria al crear. *@
+                        <fieldset class="border rounded p-3 mb-4" id="persona">
+                            <legend class="float-none w-auto px-2 fs-6 fw-bold mb-0">
+                                <i class="fas fa-id-card me-1 text-primary"></i>Persona
+                            </legend>
+                            <p class="text-muted small mb-2">Quién usará este usuario. Es obligatoria.</p>
+
+                            <div class="btn-group mb-3" role="group" aria-label="Persona existente o nueva">
+                                <input type="radio" class="btn-check" asp-for="ModoPersona" value="existente" id="modoExistente" />
+                                <label class="btn btn-outline-primary btn-sm" for="modoExistente">Ya está registrada</label>
+                                <input type="radio" class="btn-check" asp-for="ModoPersona" value="nueva" id="modoNueva" />
+                                <label class="btn btn-outline-primary btn-sm" for="modoNueva">Crearla</label>
+                            </div>
+
+                            <div data-modo="existente">
+                                <input type="hidden" asp-for="IdPersonaElegida" />
+                                <div class="input-group">
+                                    <input type="search" id="textoPersona" class="form-control" placeholder="Nombre, apellido o documento"
+                                           autocomplete="off" data-url="@Url.Page("Create", "BuscarPersonas")" />
+                                    <button type="button" class="btn btn-outline-primary" id="btnBuscarPersona">
+                                        <i class="fas fa-search me-1"></i>Buscar
+                                    </button>
+                                </div>
+                                @if (!Model.EsAdministradorGeneral)
+                                {
+                                    <div class="form-text">Solo aparecen personas de tu empresa.</div>
+                                }
+                                <div id="personaElegida" class="small mt-2 @(Model.NombrePersonaElegida == null ? "d-none" : "")">
+                                    <i class="fas fa-check-circle text-success me-1"></i>Elegida: <strong id="nombrePersonaElegida">@Model.NombrePersonaElegida</strong>
+                                </div>
+                                <span asp-validation-for="IdPersonaElegida" class="text-danger small"></span>
+                                <ul class="list-group mt-2" id="resultadosPersona" aria-live="polite"></ul>
+                            </div>
+
+                            <div data-modo="nueva">
+                                @if (Model.Parecidas.Count > 0)
+                                {
+                                    <div class="alert alert-warning small">
+                                        <div class="fw-semibold mb-1">¿Ya está registrada esta persona?</div>
+                                        <ul class="mb-2">
+                                            @foreach (var p in Model.Parecidas)
+                                            {
+                                                <li>@p.NombreCompleto @(p.FechaNacimiento?.ToString("dd/MM/yyyy"))</li>
+                                            }
+                                        </ul>
+                                        <div>Si es una de ellas, elige «Ya está registrada» y búscala. Si es otra persona, márcalo y vuelve a crear.</div>
+                                        <div class="form-check mt-2">
+                                            <input asp-for="PersonaNueva.ConfirmarQueEsOtraPersona" class="form-check-input" />
+                                            <label asp-for="PersonaNueva.ConfirmarQueEsOtraPersona" class="form-check-label">Es otra persona</label>
+                                        </div>
+                                    </div>
+                                }
+                                <div class="row g-2">
+                                    <div class="col-sm-5">
+                                        <label asp-for="PersonaNueva.TipoDocumento" class="form-label small fw-semibold">Documento</label>
+                                        <select asp-for="PersonaNueva.TipoDocumento" asp-items="Model.TiposDocumento" class="form-select"></select>
+                                    </div>
+                                    <div class="col-sm-7">
+                                        <label asp-for="PersonaNueva.Documento" class="form-label small fw-semibold">Número</label>
+                                        <input asp-for="PersonaNueva.Documento" class="form-control" autocomplete="off" />
+                                        <span asp-validation-for="PersonaNueva.Documento" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="PersonaNueva.PrimerNombre" class="form-label small fw-semibold">Primer nombre</label>
+                                        <input asp-for="PersonaNueva.PrimerNombre" class="form-control" autocomplete="off" />
+                                        <span asp-validation-for="PersonaNueva.PrimerNombre" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="PersonaNueva.SegundoNombre" class="form-label small fw-semibold">Segundo nombre</label>
+                                        <input asp-for="PersonaNueva.SegundoNombre" class="form-control" autocomplete="off" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="PersonaNueva.PrimerApellido" class="form-label small fw-semibold">Primer apellido</label>
+                                        <input asp-for="PersonaNueva.PrimerApellido" class="form-control" autocomplete="off" />
+                                        <span asp-validation-for="PersonaNueva.PrimerApellido" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="PersonaNueva.SegundoApellido" class="form-label small fw-semibold">Segundo apellido</label>
+                                        <input asp-for="PersonaNueva.SegundoApellido" class="form-control" autocomplete="off" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="PersonaNueva.FechaNacimiento" class="form-label small fw-semibold">Fecha de nacimiento</label>
+                                        <input asp-for="PersonaNueva.FechaNacimiento" class="form-control" type="date" />
+                                        <span asp-validation-for="PersonaNueva.FechaNacimiento" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-user-plus me-2"></i>Crear Usuario
@@ -137,6 +226,7 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script src="~/js/password-checklist.js" asp-append-version="true"></script>
     <script src="~/js/toggle-password.js" asp-append-version="true"></script>
+    <script src="~/js/usuarios-persona.js" asp-append-version="true"></script>
     <script>
         document.getElementById('btnToggle').addEventListener('click', function () {
             var input = document.getElementById('inputPassword');

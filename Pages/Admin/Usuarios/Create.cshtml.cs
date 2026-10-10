@@ -6,19 +6,43 @@ using System.ComponentModel.DataAnnotations;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Pages.Admin.Usuarios
 {
     public class CreateModel : PageModel
     {
+        private const string ModoExistente = "existente";
+        private const string ModoNueva = "nueva";
+
         private readonly ApplicationDbContext _context;
         private readonly IPasswordService _passwordService;
+        private readonly IUsuarioPersonaService _usuarioPersona;
 
-        public CreateModel(ApplicationDbContext context, IPasswordService passwordService)
+        public CreateModel(ApplicationDbContext context, IPasswordService passwordService, IUsuarioPersonaService usuarioPersona)
         {
             _context         = context;
             _passwordService = passwordService;
+            _usuarioPersona  = usuarioPersona;
         }
+
+        // ── Persona del usuario (script 021): obligatoria al crear ───────────
+
+        /// <summary>«existente» (se elige en la búsqueda) o «nueva» (se crea con los datos mínimos).</summary>
+        [BindProperty] public string ModoPersona { get; set; } = ModoExistente;
+
+        [BindProperty] public int? IdPersonaElegida { get; set; }
+
+        [BindProperty] public PersonaNuevaForm PersonaNueva { get; set; } = new();
+
+        /// <summary>Nombre de la persona elegida, para volver a mostrarlo si hay que corregir otro dato.</summary>
+        public string? NombrePersonaElegida { get; private set; }
+
+        public IReadOnlyList<PersonaParecida> Parecidas { get; private set; } = Array.Empty<PersonaParecida>();
+
+        public List<SelectListItem> TiposDocumento { get; set; } = new();
+
+        public bool EsAdministradorGeneral { get; private set; }
 
         [BindProperty]
         [Required(ErrorMessage = "El nombre de usuario es requerido")]
@@ -84,6 +108,23 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             return Page();
         }
 
+        /// <summary>Búsqueda de personas para elegir la del usuario (la usa usuarios-persona.js).</summary>
+        public async Task<IActionResult> OnGetBuscarPersonasAsync(string? texto)
+        {
+            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAnyAdmin(HttpContext))
+                return StatusCode(StatusCodes.Status403Forbidden);
+
+            var personas = await _usuarioPersona.BuscarPersonasAsync(PersonaDeUsuarioPagina.Quien(HttpContext), texto);
+            return new JsonResult(personas.Select(p => new
+            {
+                id = p.IdPersona,
+                nombre = p.NombreCompleto,
+                documento = p.Documento,
+                empresas = p.Empresas,
+                usuarios = p.Usuarios
+            }));
+        }
+
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
@@ -112,6 +153,14 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 return Page();
             }
 
+            var nueva = ModoPersona == ModoNueva;
+            if (!nueva && IdPersonaElegida is not > 0)
+            {
+                ModelState.AddModelError(nameof(IdPersonaElegida), "Elige la persona que usará este usuario, o créala.");
+                await CargarListasAsync();
+                return Page();
+            }
+
             var user = new User
             {
                 Username              = Username.Trim(),
@@ -125,15 +174,55 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 CreatedAt             = DateTime.UtcNow
             };
 
+            // El usuario y su persona se guardan juntos: si la persona no se puede vincular, el usuario no se crea.
+            await using var transaccion = await _context.Database.BeginTransactionAsync();
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"Usuario '{user.Username}' creado correctamente.";
+            var quien = PersonaDeUsuarioPagina.Quien(HttpContext);
+            var r = nueva
+                ? await _usuarioPersona.CrearPersonaYVincularAsync(quien, user.Id, PersonaNueva.ADatos(), PersonaNueva.ConfirmarQueEsOtraPersona)
+                : await _usuarioPersona.VincularAsync(quien, user.Id, IdPersonaElegida!.Value);
+
+            if (!r.Ok)
+            {
+                await transaccion.RollbackAsync();
+                _context.ChangeTracker.Clear();
+
+                if (nueva)
+                    PersonaDeUsuarioPagina.AgregarErrores(ModelState, r.Errores);
+                else
+                    foreach (var e in r.Errores) ModelState.AddModelError(nameof(IdPersonaElegida), e.Mensaje);
+                Parecidas = r.Parecidas;
+                await CargarListasAsync();
+                return Page();
+            }
+
+            await transaccion.CommitAsync();
+
+            TempData["SuccessMessage"] = $"Usuario '{user.Username}' creado correctamente y vinculado a su persona.";
             return RedirectToPage("/UserManagement");
         }
 
         private async Task CargarListasAsync()
         {
+            var quien = PersonaDeUsuarioPagina.Quien(HttpContext);
+            EsAdministradorGeneral = quien.EsAdministradorGeneral;
+
+            TiposDocumento = await _context.CatalogoTiposDocumento.AsNoTracking()
+                .Where(t => t.Activo && t.EsIdentidad)
+                .OrderBy(t => t.Codigo == "DNI" ? 0 : 1).ThenBy(t => t.Nombre)
+                .Select(t => new SelectListItem(t.Nombre, t.Codigo))
+                .ToListAsync();
+
+            // Si ya se había elegido una persona, se vuelve a mostrar su nombre (solo si quien opera puede verla).
+            NombrePersonaElegida = null;
+            if (ModoPersona == ModoExistente && IdPersonaElegida is > 0)
+            {
+                NombrePersonaElegida = (await _usuarioPersona.PersonaVisibleAsync(quien, IdPersonaElegida.Value))?.NombreCompleto;
+                if (NombrePersonaElegida == null) IdPersonaElegida = null;
+            }
+
             if (AuthHelper.IsAdmin(HttpContext))
             {
                 Empresas = await _context.Empresas

@@ -34,6 +34,23 @@
 Si una firma contable contrata la plataforma para todos sus clientes, la firma es un tenant con varias empresas; el
 modelo soporta los dos casos.
 
+## Anexo · Paso intermedio hasta F1: `Users.PersonaId` (2026-10-10)
+
+Emilio pidió que cada usuario quede vinculado a la persona que lo usa antes de construir el kernel de F1 (plan
+«Usuarios y personas», decisiones U1 a U5, aprobadas el 2026-10-10).
+
+- **Dónde:** columna `Users.PersonaId` (script 021), con clave foránea a `personas` y sin cascada. Hoy cada usuario
+  pertenece a una sola empresa, así que equivale a «la persona de su única membresía».
+- **La persona queda dentro de la empresa del usuario:** si no tiene relación con ella, se le registra un vínculo de tipo
+  `usuario` en `persona_empresa`. Para quien no tiene empresa (el administrador general) se usa la empresa dueña de la
+  plataforma (`Plataforma:IdEmpresaPropia`, SIP), que en F1 será el tenant interno de [ADR-006](ADR-006-factura-fiscal-de-la-plataforma.md).
+- **Varios usuarios por persona** mientras exista el modelo actual (`admin` y `egaray` son la misma persona). Obligatoria
+  al crear usuarios nuevos; los existentes se vinculan desde Editar.
+- **Migración en F1:** `PersonaId` pasa a `membresia.id_persona` del tenant de la empresa del usuario; `admin` y `egaray`
+  se unen en una sola cuenta (operador de la plataforma y miembro del tenant de SIP); la columna se retira con `Users`.
+- Mientras tanto, una tabla de plataforma (`Users`) apunta a datos de un tenant (`personas`). Es temporal y aceptada
+  aquí; en el arnés de F0.6 `Users` sigue clasificada como Plataforma.
+
 ## Consecuencias
 
 - Migración de los 7 usuarios actuales: el administrador general pasa a ser operador de la plataforma; los demás reciben

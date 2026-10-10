@@ -552,6 +552,41 @@ namespace eGestion360Web.Tests.Services.Personas
         }
 
         [Fact]
+        public async Task Dar_de_baja_a_quien_solo_es_cliente_apaga_a_la_persona_y_reactivarlo_la_vuelve_a_encender()
+        {
+            var r = await RegistrarOk(Alta());
+
+            using (var db = Contexto())
+                Assert.True((await Servicio(db).TerminarClienteAsync(new TerminarClienteInput { IdEmpresa = DatosBase.EmpresaA, IdCliente = r.IdCliente!.Value })).Ok);
+
+            using (var db = _bd.Crear())
+                Assert.False((await db.Personas.AsNoTracking().SingleAsync(p => p.IdPersona == r.IdPersona)).Activo);
+
+            using (var db = Contexto())
+                Assert.True((await Servicio(db).ReactivarClienteAsync(DatosBase.EmpresaA, r.IdCliente!.Value, "ventas.ana")).Ok);
+
+            using var lectura = _bd.Crear();
+            Assert.True((await lectura.Personas.AsNoTracking().SingleAsync(p => p.IdPersona == r.IdPersona)).Activo);
+            var cambios = await lectura.BitacoraCambios.AsNoTracking()
+                .Where(b => b.Entidad == "personas" && b.Campo == "activo").OrderBy(b => b.IdBitacora).ToListAsync();
+            Assert.Equal(new[] { "false", "true" }, cambios.Select(b => b.ValorNuevo).ToArray());
+        }
+
+        [Fact]
+        public async Task Dar_de_baja_al_cliente_que_tambien_es_empleado_deja_a_la_persona_activa()
+        {
+            var idPersona = Insertar(DatosBase.EmpresaA, "Luis", "Pérez", dni: DniNormalizado);
+            var r = await RegistrarOk(Alta());
+            Assert.Equal(idPersona, r.IdPersona);
+
+            using (var db = Contexto())
+                Assert.True((await Servicio(db).TerminarClienteAsync(new TerminarClienteInput { IdEmpresa = DatosBase.EmpresaA, IdCliente = r.IdCliente!.Value })).Ok);
+
+            using var lectura = _bd.Crear();
+            Assert.True((await lectura.Personas.AsNoTracking().SingleAsync(p => p.IdPersona == idPersona)).Activo);
+        }
+
+        [Fact]
         public async Task Reactivar_a_uno_que_ya_esta_activo_no_hace_nada_y_lo_avisa()
         {
             var r = await RegistrarOk(Alta());

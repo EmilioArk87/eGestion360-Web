@@ -235,6 +235,27 @@ namespace eGestion360Web.Services.Personas
                 Array.Empty<ErrorValidacion>(), validacion.Advertencias, Array.Empty<PersonaParecida>());
         }
 
+        /// <summary>
+        /// personas.activo es una sola columna: queda encendida mientras a la persona le quede algún vínculo activo, en esta
+        /// o en otra empresa (lo mismo que hace <c>PersonaService.CambiarEstadoAsync</c> con los empleados). Antes, dar de
+        /// baja a quien solo era cliente dejaba a la persona activa sin ningún vínculo activo. Quien llama guarda.
+        /// </summary>
+        private async Task RecalcularActivoDePersonaAsync(PersonaEmpresa cambiado, string usuario, DateTime ahora, CancellationToken ct)
+        {
+            var persona = await _db.Personas.FirstOrDefaultAsync(p => p.IdPersona == cambiado.IdPersona, ct);
+            if (persona == null) return;
+
+            var otroActivo = await _db.PersonaEmpresas.AnyAsync(v => v.IdPersona == cambiado.IdPersona
+                                                                     && v.IdPersonaEmpresa != cambiado.IdPersonaEmpresa
+                                                                     && v.Activo && !v.Eliminado, ct);
+            var activo = cambiado.Activo || otroActivo;
+            if (persona.Activo == activo) return;
+
+            persona.Activo = activo;
+            persona.ModificadoPor = usuario;
+            persona.FechaModificacion = ahora;
+        }
+
         private PersonaEmpresa NuevoVinculo(int idEmpresa, string usuario, DateTime ahora) => new()
         {
             IdEmpresa = idEmpresa,
@@ -411,6 +432,8 @@ namespace eGestion360Web.Services.Personas
             cliente.ModificadoPor = input.Usuario;
             cliente.FechaModificacion = ahora;
 
+            await RecalcularActivoDePersonaAsync(vinculo, input.Usuario, ahora, ct);
+
             try
             {
                 await _db.SaveChangesAsync(ct);
@@ -460,6 +483,8 @@ namespace eGestion360Web.Services.Personas
             cliente.Activo = true;
             cliente.ModificadoPor = usuario;
             cliente.FechaModificacion = ahora;
+
+            await RecalcularActivoDePersonaAsync(vinculo, usuario, ahora, ct);
 
             try
             {

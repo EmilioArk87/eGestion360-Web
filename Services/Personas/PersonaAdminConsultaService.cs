@@ -163,6 +163,11 @@ namespace eGestion360Web.Services.Personas
             if (persona == null) return null;
 
             var vinculos = await LeerVinculosAsync(new[] { idPersona }, ct);
+            var usuarios = await _db.Users.AsNoTracking()
+                .Where(u => u.PersonaId == idPersona)
+                .OrderBy(u => u.Username)
+                .Select(u => u.Username)
+                .ToListAsync(ct);
 
             return new PersonaAdminDetalle(
                 persona.IdPersona,
@@ -175,7 +180,8 @@ namespace eGestion360Web.Services.Personas
                     .Select(d => new PersonaAdminDocumento(d.TipoDocumento, d.Numero, d.EsPrincipal))
                     .ToList(),
                 vinculos.TryGetValue(idPersona, out var lista) ? lista.Select(v => v.Vinculo).ToList() : new List<PersonaAdminVinculo>(),
-                persona.CreadoPor, persona.FechaCreacion, persona.ModificadoPor, persona.FechaModificacion);
+                persona.CreadoPor, persona.FechaCreacion, persona.ModificadoPor, persona.FechaModificacion,
+                usuarios);
         }
 
         // ──────────────────────────────────────────────────────────────────
@@ -249,8 +255,14 @@ namespace eGestion360Web.Services.Personas
                     .ToListAsync(ct))
                   .ToDictionary(e => e.IdEmpresa, e => NombreDeEmpresa(e.NombreComercial, e.RazonSocial));
 
+            var nombresDeUsuario = await PersonaConsultaService.NombresDeUsuarioAsync(_db, cambios, ct);
+
             var filas = cambios.Select(b =>
             {
+                var empresa = b.IdEmpresa is { } idEmp && empresas.TryGetValue(idEmp, out var nombreEmpresa) ? nombreEmpresa : null;
+                if (b.Entidad == EtiquetasBitacora.EntidadUsuarios)
+                    return PersonaConsultaService.FilaDeUsuario(b, idPersona, nombresDeUsuario, b.Usuario, deOtra: false, empresa);
+
                 var esFoto = b.Campo == null;
 
                 // Lo que paga cada empresa no se muestra aquí: el cambio se ve, pero no el monto.

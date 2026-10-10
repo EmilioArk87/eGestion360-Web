@@ -1,0 +1,177 @@
+@model eGestion360Web.Pages.Admin.Usuarios.EditModel
+@*
+    La persona que usa el usuario (script 021): la actual, buscar y vincular otra, crearla o quitarla.
+    Cada acción es un formulario aparte (no se anidan en el del usuario).
+*@
+
+<div class="card border-0 shadow-sm mt-4" id="persona">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-1"><i class="fas fa-id-card me-2 text-primary"></i>Persona</h5>
+        <p class="text-muted small mb-3">
+            Quién usa este usuario. Sus datos personales se corrigen en Personal@(Model.EsAdministradorGeneral ? " o en Personas del sistema" : "").
+        </p>
+
+        @if (Model.PersonaActual != null)
+        {
+            <div class="d-flex justify-content-between align-items-center gap-3 border rounded p-3 mb-3">
+                <div>
+                    <div class="fw-semibold" data-prueba="persona-actual">@Model.PersonaActual.NombreCompleto</div>
+                    <div class="text-muted small">
+                        @(Model.PersonaActual.Documento ?? "Sin documento")
+                        @if (Model.PersonaActual.Usuarios.Count > 1)
+                        {
+                            <span> · Usuarios: @string.Join(", ", Model.PersonaActual.Usuarios)</span>
+                        }
+                    </div>
+                </div>
+                <form method="post" asp-page-handler="QuitarPersona" asp-route-id="@Model.Id"
+                      onsubmit="return confirm('¿Quitar la persona de este usuario? La persona no se borra.');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-unlink me-1"></i>Quitar
+                    </button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning py-2 small" data-prueba="sin-persona">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                Este usuario todavía no está vinculado a ninguna persona. Búscala o créala abajo.
+            </div>
+        }
+
+        <form method="get" class="mb-3" role="search">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <label for="BuscarPersona" class="form-label fw-semibold small mb-1">
+                @(Model.PersonaActual == null ? "Buscar a la persona" : "Cambiar por otra persona")
+            </label>
+            <div class="input-group">
+                <input type="search" id="BuscarPersona" name="BuscarPersona" value="@Model.BuscarPersona" class="form-control"
+                       placeholder="Nombre, apellido o documento" minlength="2" autocomplete="off" />
+                <button type="submit" class="btn btn-outline-primary"><i class="fas fa-search me-1"></i>Buscar</button>
+            </div>
+            @if (!Model.EsAdministradorGeneral)
+            {
+                <div class="form-text">Solo aparecen personas de tu empresa.</div>
+            }
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.BuscarPersona))
+        {
+            if (Model.Resultados.Count == 0)
+            {
+                <p class="text-muted small" data-prueba="sin-resultados">
+                    No se encontró a nadie con «@Model.BuscarPersona». Puedes crear la persona abajo.
+                </p>
+            }
+            else
+            {
+                <ul class="list-group mb-3" data-prueba="resultados">
+                    @foreach (var p in Model.Resultados)
+                    {
+                        var esLaActual = p.IdPersona == Model.PersonaActual?.IdPersona;
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="fw-semibold">@p.NombreCompleto</div>
+                                <div class="text-muted small">
+                                    @(p.Documento ?? "Sin documento")
+                                    @if (p.Empresas.Count > 0)
+                                    {
+                                        <span> · @string.Join(", ", p.Empresas)</span>
+                                    }
+                                    @if (p.Usuarios.Count > 0)
+                                    {
+                                        <span> · Usuarios: @string.Join(", ", p.Usuarios)</span>
+                                    }
+                                </div>
+                            </div>
+                            @if (esLaActual)
+                            {
+                                <span class="badge bg-secondary">Actual</span>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Vincular" asp-route-id="@Model.Id">
+                                    <input type="hidden" name="idPersona" value="@p.IdPersona" />
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-link me-1"></i>Vincular
+                                    </button>
+                                </form>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        }
+
+        <details open="@Model.MostrarCrearPersona" class="border rounded p-3">
+            <summary class="fw-semibold">Crear la persona</summary>
+            <p class="text-muted small mt-2 mb-3">
+                Si la persona aún no está registrada. Con su documento y su fecha de nacimiento; el resto de sus datos se
+                completa después en su ficha.
+            </p>
+            <form method="post" asp-page-handler="CrearPersona" asp-route-id="@Model.Id">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
+
+                @if (Model.Parecidas.Count > 0)
+                {
+                    <div class="alert alert-warning small" data-prueba="parecidas">
+                        <div class="fw-semibold mb-1">¿Ya está registrada esta persona?</div>
+                        <ul class="mb-2">
+                            @foreach (var p in Model.Parecidas)
+                            {
+                                <li>@p.NombreCompleto @(p.FechaNacimiento?.ToString("dd/MM/yyyy"))</li>
+                            }
+                        </ul>
+                        <div>Si es una de ellas, búscala arriba y vincúlala. Si es otra persona, márcalo y vuelve a crear.</div>
+                        <div class="form-check mt-2">
+                            <input asp-for="PersonaNueva.ConfirmarQueEsOtraPersona" class="form-check-input" />
+                            <label asp-for="PersonaNueva.ConfirmarQueEsOtraPersona" class="form-check-label">Es otra persona</label>
+                        </div>
+                    </div>
+                }
+
+                <div class="row g-2">
+                    <div class="col-sm-5">
+                        <label asp-for="PersonaNueva.TipoDocumento" class="form-label small fw-semibold">Documento</label>
+                        <select asp-for="PersonaNueva.TipoDocumento" asp-items="Model.TiposDocumento" class="form-select"></select>
+                    </div>
+                    <div class="col-sm-7">
+                        <label asp-for="PersonaNueva.Documento" class="form-label small fw-semibold">Número</label>
+                        <input asp-for="PersonaNueva.Documento" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="PersonaNueva.Documento" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="PersonaNueva.PrimerNombre" class="form-label small fw-semibold">Primer nombre</label>
+                        <input asp-for="PersonaNueva.PrimerNombre" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="PersonaNueva.PrimerNombre" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="PersonaNueva.SegundoNombre" class="form-label small fw-semibold">Segundo nombre</label>
+                        <input asp-for="PersonaNueva.SegundoNombre" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="PersonaNueva.SegundoNombre" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="PersonaNueva.PrimerApellido" class="form-label small fw-semibold">Primer apellido</label>
+                        <input asp-for="PersonaNueva.PrimerApellido" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="PersonaNueva.PrimerApellido" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="PersonaNueva.SegundoApellido" class="form-label small fw-semibold">Segundo apellido</label>
+                        <input asp-for="PersonaNueva.SegundoApellido" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="PersonaNueva.SegundoApellido" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="PersonaNueva.FechaNacimiento" class="form-label small fw-semibold">Fecha de nacimiento</label>
+                        <input asp-for="PersonaNueva.FechaNacimiento" class="form-control" type="date" />
+                        <span asp-validation-for="PersonaNueva.FechaNacimiento" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success mt-3">
+                    <i class="fas fa-user-plus me-1"></i>Crear y vincular
+                </button>
+            </form>
+        </details>
+    </div>
+</div>

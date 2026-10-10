@@ -118,6 +118,7 @@
                                 <tr>
                                     <th>Usuario</th>
                                     <th>Email</th>
+                                    <th>Persona</th>
                                     <th class="text-center">Estado</th>
                                     <th class="text-center">Requiere cambio</th>
                                     <th class="text-end">Acciones</th>
@@ -137,6 +138,22 @@
                                             </div>
                                         </td>
                                         <td class="text-muted">@user.Email</td>
+                                        <td>
+                                            @if (user.Persona != null)
+                                            {
+                                                <span>@user.Persona.NombreCompleto</span>
+                                            }
+                                            else if (user.IsActive)
+                                            {
+                                                <span class="badge bg-warning text-dark" title="Este usuario no está vinculado a la persona que lo usa. Vincúlalo desde Editar.">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Sin persona
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">—</span>
+                                            }
+                                        </td>
                                         <td class="text-center">
                                             @if (user.IsActive)
                                             {

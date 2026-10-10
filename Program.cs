@@ -100,6 +100,11 @@ builder.Services.AddScoped<IPersonaConsultaService, PersonaConsultaService>();
 builder.Services.AddScoped<IPersonaAdminConsultaService, PersonaAdminConsultaService>();
 builder.Services.AddScoped<IVinculoService, VinculoService>();
 
+// Usuarios ↔ personas (script 021): cada usuario del sistema vinculado a la persona que lo usa. La persona de un
+// usuario sin empresa (el administrador general) vive en la empresa dueña de la plataforma ("Plataforma:IdEmpresaPropia").
+builder.Services.Configure<PlataformaOptions>(builder.Configuration.GetSection("Plataforma"));
+builder.Services.AddScoped<IUsuarioPersonaService, UsuarioPersonaService>();
+
 // ── Tasas de cambio (script 020) ───────────────────────────────────────────
 // Job que obtiene USD y EUR en lempiras (BCH: API o Excel; euro derivado con el BCE), los valida y los guarda
 // versionados en tasas_cambio, con bitácora en tasas_cambio_ejecuciones. Sección "TasasCambio" de appsettings.

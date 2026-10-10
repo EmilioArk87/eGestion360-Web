@@ -50,6 +50,7 @@ Pantalla **solo para el administrador general** (rol `admin`, el que no trabaja 
 - Solo el administrador general entra. El administrador de una empresa y el resto vuelven al menú: ven a las personas de su empresa en Personal, no las de otras.
 - El administrador edita **solo datos personales**. Los vínculos (alta, baja, rol) y los datos de empleo siguen siendo de cada empresa.
 - Nada se borra desde aquí. Una persona sin vínculos sigue apareciendo (por ejemplo, quien fue cliente y ya no lo es).
+- La ficha muestra los **usuarios del sistema** vinculados a la persona (script 021). El vínculo se administra desde Gestión de usuarios (ver [Admin_Usuarios.md](Admin_Usuarios.md)); en el historial aparece como «Persona vinculada del usuario X».
 - La decisión D8 (una empresa solo ve a las personas con las que tiene vínculo) sigue valiendo para las empresas; esta pantalla es la excepción deliberada del administrador general.
 
 ## Manejo de errores

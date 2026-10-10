@@ -100,6 +100,18 @@
                                 </table>
                             </div>
                         }
+                        <div class="px-3 py-2 border-top small" data-prueba="usuarios-de-la-persona">
+                            <i class="fas fa-user-lock me-1 text-primary"></i>
+                            <span class="fw-semibold">Usuarios del sistema:</span>
+                            @if (detalle.UsuariosDelSistema.Any())
+                            {
+                                <span>@string.Join(", ", detalle.UsuariosDelSistema)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">ninguno</span>
+                            }
+                        </div>
                         <div class="small text-muted px-3 py-2 border-top">
                             <i class="fas fa-info-circle me-1"></i>
                             Los vínculos y los datos de empleo (cargo, código de empleado y tarifa) los administra cada empresa desde su pantalla;

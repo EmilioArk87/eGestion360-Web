@@ -116,7 +116,7 @@ namespace eGestion360Web.Pages
 
         private async Task CargarUsuarios()
         {
-            var query = _context.Users.AsQueryable();
+            var query = _context.Users.Include(u => u.Persona).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(Search))
                 query = query.Where(u => u.Username.Contains(Search) || u.Email.Contains(Search));
