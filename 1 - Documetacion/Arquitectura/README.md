@@ -48,6 +48,14 @@ Reglas de convivencia entre módulos:
 CRM y Talento Humano pueden avanzar en paralelo desde F2; las pasarelas de pago, desde F4. Cada fase cierra con
 pruebas, QA con el rol real, informe y autorización de Emilio.
 
+### Regla de aislamiento de cada tabla
+
+Cada tabla tiene su categoría (tenant, mixta, infraestructura, global, plataforma o legado) en
+`eGestion360Web.Tests/Arquitectura/ClasificacionDeTablas.cs`. El arnés `ArnesAislamientoTests` falla si se agrega una
+tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lista de tablas que aún no tienen
+`id_tenant` solo puede bajar; F1 termina cuando queda vacía. Ver
+[PRUEBAS_AUTOMATIZADAS.md](../PRUEBAS_AUTOMATIZADAS.md).
+
 ---
 
 ## Índice de ADR
