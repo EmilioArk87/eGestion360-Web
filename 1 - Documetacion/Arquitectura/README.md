@@ -79,7 +79,8 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-014](ADR-014-script-010-en-espera.md) | El script 010 no se aplica hasta rediseñarlo | F1–F3 | Aceptada 2026-10-10 |
 | [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md) | Predicados de RLS solo por tenant; la plataforma no lee datos de tenants (resultado de la PoC F0.5) | F1 | Aceptada 2026-10-10 |
 | [ADR-016](ADR-016-hosting-azure.md) | Producción en Azure App Service Linux (B1) y Azure SQL Database (S0); staging en el mismo plan | Staging en F1, corte antes de F4 | Aceptada 2026-10-10 |
-| [ADR-017](ADR-017-dotnet-10.md) | Actualizar a .NET 10 LTS y EF Core 10 antes del 10 nov 2026; en Somee, publicar autocontenido | F0.10 | Aceptada 2026-10-10 |
+| [ADR-017](ADR-017-dotnet-10.md) | Actualizar a .NET 10 LTS y EF Core 10 antes del 10 nov 2026 | F0.10 | Aceptada 2026-10-10; un punto modificado por ADR-018 |
+| [ADR-018](ADR-018-somee-dependiente-del-framework.md) | En Somee, publicar .NET 10 dependiente del framework; el `web.config` del servidor no se toca | F0.10 | Aceptada 2026-10-10 |
 
 ---
 

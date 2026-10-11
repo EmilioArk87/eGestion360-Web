@@ -1,6 +1,7 @@
 # ADR-017 · Actualizar a .NET 10 LTS y EF Core 10 antes del 10 de noviembre de 2026
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada; un punto modificado por [ADR-018](ADR-018-somee-dependiente-del-framework.md) (en Somee se
+  publica dependiente del framework, no autocontenido)
 - **Fecha:** 2026-10-10
 - **Decidió:** Emilio Garay (decisión D17 del plan)
 - **Fase:** paso F0.10, antes del 10 de noviembre de 2026; no depende de la migración de hosting
