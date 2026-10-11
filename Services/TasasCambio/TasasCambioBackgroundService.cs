@@ -5,7 +5,8 @@ namespace eGestion360Web.Services.TasasCambio
     /// <summary>
     /// Worker del job de tasas de cambio.
     ///
-    ///   * Con TasasCambio:Habilitado = false (por omisión) registra una línea y termina: no toca la base.
+    ///   * Con TasasCambio:Habilitado = false (por omisión) registra una línea y espera, sin tocar la base, a que se
+    ///     habilite (el interruptor se cambia desde la pantalla de configuración, script 024, sin reiniciar).
     ///   * Al arrancar, cada 10 minutos y cada vez que llega el disparador externo, pregunta a
     ///     <see cref="TasasCambioPlanificador"/> si toca ejecutar (primer intento del día, reintento vencido, barrido
     ///     matutino pendiente o hueco de puesta al día). Si no toca, no descarga nada ni escribe en la bitácora.
@@ -21,20 +22,27 @@ namespace eGestion360Web.Services.TasasCambio
     {
         public static readonly TimeSpan Intervalo = TimeSpan.FromMinutes(10);
         private static readonly TimeSpan EsperaInicial = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan EsperaDeshabilitadoPorOmision = TimeSpan.FromSeconds(30);
 
         private readonly IServiceScopeFactory _scopes;
         private readonly TasasCambioOptions _opt;
         private readonly ColaEjecucionTasasCambio _cola;
         private readonly TimeProvider _reloj;
         private readonly ILogger<TasasCambioBackgroundService> _log;
+        private readonly ITasasCambioConfiguracionService? _configuracion;
+
+        /// <summary>Cada cuánto se revisa el interruptor mientras el job está apagado (cambia solo en memoria, sin costo).</summary>
+        public TimeSpan EsperaDeshabilitado { get; init; } = EsperaDeshabilitadoPorOmision;
 
         public TasasCambioBackgroundService(
             IServiceScopeFactory scopes,
             IOptions<TasasCambioOptions> opciones,
             ColaEjecucionTasasCambio cola,
             TimeProvider reloj,
-            ILogger<TasasCambioBackgroundService> log)
+            ILogger<TasasCambioBackgroundService> log,
+            ITasasCambioConfiguracionService? configuracion = null)
         {
+            _configuracion = configuracion;
             _scopes = scopes;
             _opt = opciones.Value;
             _cola = cola;
@@ -44,11 +52,10 @@ namespace eGestion360Web.Services.TasasCambio
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            if (!_opt.Habilitado)
-            {
-                _log.LogInformation("Tasas de cambio: job deshabilitado (TasasCambio:Habilitado = false); el worker no hace nada.");
-                return;
-            }
+            // Lo guardado desde la pantalla (script 024) rige sobre appsettings; sin la tabla se queda appsettings.
+            if (_configuracion != null) await _configuracion.AplicarAsync(stoppingToken);
+
+            if (!await EsperarHabilitadoAsync(stoppingToken)) return;
 
             _log.LogInformation("Tasas de cambio: worker iniciado.");
 
@@ -60,6 +67,9 @@ namespace eGestion360Web.Services.TasasCambio
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                // Si lo apagan desde la pantalla, el worker queda en espera (sin tocar la base) hasta que lo vuelvan a encender.
+                if (!_opt.Habilitado && !await EsperarHabilitadoAsync(stoppingToken)) break;
+
                 SolicitudEjecucionTasas? solicitud;
                 try { solicitud = await EsperarAsync(stoppingToken); }
                 catch (OperationCanceledException) { break; }
@@ -71,6 +81,25 @@ namespace eGestion360Web.Services.TasasCambio
             }
 
             _log.LogInformation("Tasas de cambio: worker detenido.");
+        }
+
+        /// <summary>
+        /// Espera, sin tocar la base, a que el interruptor esté encendido (por la pantalla de configuración). Revisa
+        /// cada <see cref="EsperaDeshabilitado"/> porque el cambio es solo en memoria. Falso si la aplicación se detiene.
+        /// </summary>
+        private async Task<bool> EsperarHabilitadoAsync(CancellationToken ct)
+        {
+            if (_opt.Habilitado) return true;
+
+            _log.LogInformation("Tasas de cambio: job deshabilitado (TasasCambio:Habilitado = false); el worker espera a que se habilite.");
+            while (!_opt.Habilitado)
+            {
+                try { await Task.Delay(EsperaDeshabilitado, _reloj, ct); }
+                catch (OperationCanceledException) { return false; }
+            }
+
+            _log.LogInformation("Tasas de cambio: job habilitado; el worker continúa.");
+            return !ct.IsCancellationRequested;
         }
 
         /// <summary>Al arrancar el proceso: la misma evaluación que la vuelta de 10 minutos (pone al día solo si hay huecos).</summary>

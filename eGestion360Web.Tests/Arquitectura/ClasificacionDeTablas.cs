@@ -118,6 +118,7 @@ namespace eGestion360Web.Tests.Arquitectura
             new("EmailConfigurations", P, true, true, "Correo de notificaciones de la plataforma."),
             new("tasas_cambio_ejecuciones", P, true, true, "Bitácora del job de la tasa oficial."),
             new("tasas_cambio_ejecuciones_detalle", P, true, true, "Detalle de la bitácora del job de la tasa oficial."),
+            new("tasas_cambio_configuracion", P, true, true, "Opciones del job de la tasa oficial que edita el administrador del sistema (script 024); una sola fila."),
             new("__EFMigrationsHistory", P, false, true, "Historial de migraciones de EF."),
 
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────

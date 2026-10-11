@@ -214,17 +214,21 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public async Task Worker_deshabilitado_termina_enseguida_sin_hacer_nada()
+        public async Task Worker_deshabilitado_espera_sin_hacer_nada_y_se_detiene_limpiamente()
         {
             _e.Opciones.Habilitado = false;
             var (worker, sync, _) = Worker(Honduras(2, 17, 5));
 
             await worker.StartAsync(CancellationToken.None);
-            await worker.ExecuteTask!.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(200);
 
-            Assert.True(worker.ExecuteTask.IsCompletedSuccessfully);
+            // Sigue vivo (esperando que lo enciendan desde la pantalla de configuración) y no ejecutó nada.
+            Assert.False(worker.ExecuteTask!.IsCompleted);
             Assert.Empty(sync.Llamadas);
+
             await worker.StopAsync(CancellationToken.None);
+            Assert.True(worker.ExecuteTask.IsCompleted);
+            Assert.Empty(sync.Llamadas);
         }
 
         [Fact]

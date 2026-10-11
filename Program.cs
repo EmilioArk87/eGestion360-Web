@@ -122,6 +122,8 @@ builder.Services.AddSingleton<ITasaCambioProveedor, BchApiProveedor>();
 builder.Services.AddSingleton<ITasaCambioProveedor, BchExcelProveedor>();
 builder.Services.AddSingleton<ITasaCambioProveedor, BceProveedor>();
 builder.Services.AddSingleton<TasaCambioValidador>();
+// Opciones editables desde la pantalla (script 024): lo guardado en la base rige sobre appsettings, sin reiniciar.
+builder.Services.AddSingleton<ITasasCambioConfiguracionService, TasasCambioConfiguracionService>();
 builder.Services.AddSingleton<ColaEjecucionTasasCambio>();
 builder.Services.AddSingleton<DisparadorExternoTasasCambio>();
 builder.Services.AddScoped<IBloqueoJob, BloqueoJobSqlServer>();

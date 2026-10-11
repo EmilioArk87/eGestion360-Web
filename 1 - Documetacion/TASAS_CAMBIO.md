@@ -538,6 +538,29 @@ siguen el patrón PRG):
 | Aprobar / rechazar una tasa **oficial** | Solo el administrador del sistema |
 | Aprobar / rechazar una tasa **propia** | Un administrador (`admin` o `empresa_admin`) cuya sesión sea de esa empresa. Antes de llamar al servicio se comprueba que el id esté entre las pendientes de la empresa de la sesión: un id de otra empresa se rechaza |
 | Ejecutar ahora | Solo el administrador del sistema, y con `TasasCambio:Habilitado = true` |
+| Configuración (botón **Configuración** de la cabecera) | Solo el administrador del sistema, revisado en el GET y en el POST; los demás vuelven a la pantalla de tasas con un aviso |
+
+### 15.1 Configuración desde la pantalla (script 024)
+
+`/Catalogos/TiposCambio/Configuracion` (`Configuracion.cshtml`). Edita lo que antes solo se cambiaba en `appsettings.json`
+o con variables de entorno: **interruptor del job automático**, monedas, primer/último intento y barrido matutino (hora de
+Honduras), días de puesta al día, intentos por fecha, variación diaria máxima, diferencia compra/venta máxima, rangos
+aceptables del dólar y del euro y los correos de las alertas.
+
+- Se guarda en `dbo.tasas_cambio_configuracion` (una sola fila). **Un campo en blanco usa el valor de `appsettings.json`**;
+  sin fila, todo queda como antes. Rige al guardar, sin reiniciar el sitio: la pantalla actualiza la misma instancia de
+  `TasasCambioOptions` que leen el worker y el resto de los servicios (`TasasCambioConfiguracionService`).
+- Al arrancar, el worker lee la fila y la aplica. Con el job apagado el worker **no termina**: espera (cada 30 s, solo en
+  memoria, sin tocar la base) a que lo enciendan, y si lo apagan de nuevo vuelve a esperar.
+- **No guarda secretos.** `TasasCambio__Bch__ApiKey` y `TasasCambio__Disparador__Token` siguen en variables de entorno o
+  user-secrets; la pantalla solo informa si están puestas, nunca su valor. Tampoco se editan aquí las URL de las fuentes,
+  los indicadores del BCH, la zona horaria ni las esperas entre reintentos.
+- **En desarrollo (`ASPNETCORE_ENVIRONMENT=Development`) el interruptor guardado no se aplica** (rige `appsettings`), para que
+  correr la aplicación en una máquina de desarrollo contra la base real no encienda el job; el resto de las opciones sí.
+- Sin el script 024 aplicado, la aplicación sigue con `appsettings` y la pantalla avisa que falta la tabla.
+- Para activar el job en producción: aplicar el 024 (con `/alerta-bd`), entrar como administrador del sistema, **Tipos de
+  cambio → Configuración**, encender el interruptor y guardar. Los pasos 5-6 de la sección 12 (variables en el `web.config`)
+  siguen valiendo para las claves, pero `TasasCambio__Habilitado` ya no hace falta.
 
 Si la base no tiene las tablas del script 020 (errores 208/207 de SQL Server), la pantalla muestra "El módulo de tasas
 de cambio no está instalado en la base de datos: falta aplicar el script 020" en lugar de fallar, y registra el error

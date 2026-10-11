@@ -1,0 +1,167 @@
+@page
+@model eGestion360Web.Pages.Catalogos.TiposCambio.ConfiguracionModel
+@{
+    ViewData["Title"] = "Configuración de tasas de cambio";
+}
+
+@functions {
+    private Microsoft.AspNetCore.Html.IHtmlContent Campo(string etiqueta, string campo, string? valor, string? ayuda = null,
+        string? placeholder = null, string tipo = "text", string columnas = "col-sm-6 col-md-4")
+    {
+        var error = Model.Error(campo);
+        var html = new Microsoft.AspNetCore.Html.HtmlContentBuilder();
+        html.AppendHtml($"<div class=\"{columnas}\">");
+        html.AppendHtml($"<label for=\"Entrada_{campo}\" class=\"form-label small mb-1\">");
+        html.Append(etiqueta);
+        html.AppendHtml("</label>");
+        html.AppendHtml($"<input id=\"Entrada_{campo}\" name=\"Entrada.{campo}\" type=\"{tipo}\" class=\"form-control form-control-sm{(error != null ? " is-invalid" : "")}\" value=\"");
+        html.Append(valor ?? string.Empty);
+        html.AppendHtml("\"");
+        if (placeholder != null) { html.AppendHtml(" placeholder=\""); html.Append(placeholder); html.AppendHtml("\""); }
+        html.AppendHtml(" autocomplete=\"off\" />");
+        if (error != null) { html.AppendHtml("<div class=\"invalid-feedback d-block small\">"); html.Append(error); html.AppendHtml("</div>"); }
+        if (ayuda != null) { html.AppendHtml("<div class=\"form-text small\">"); html.Append(ayuda); html.AppendHtml("</div>"); }
+        html.AppendHtml("</div>");
+        return html;
+    }
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Tipos de cambio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Configuración</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-sliders-h me-2"></i>Configuración de tasas de cambio</h2>
+            <p class="text-muted mb-0">Job automático que busca el dólar y el euro: interruptor, horarios, validación y alertas</p>
+        </div>
+        <a asp-page="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    @if (Model.AvisoBaseDatos != null)
+    {
+        <div class="alert alert-warning d-flex align-items-start" role="alert">
+            <i class="fas fa-database fa-lg me-3 mt-1"></i>
+            <div>
+                <strong>@Model.AvisoBaseDatos</strong>
+                <div class="small mt-1">El script <code>024_tasas_cambio_configuracion.sql</code> se aplica con aprobación (<code>/alerta-bd</code>).</div>
+            </div>
+        </div>
+    }
+
+    @if (Model.IgnoraInterruptorGuardado)
+    {
+        <div class="alert alert-info small" role="alert">
+            <i class="fas fa-laptop-code me-1"></i>Esta copia corre en <strong>desarrollo</strong>: el interruptor guardado en la
+            base no se aplica aquí (rige <code>appsettings</code>), para que una máquina de desarrollo no encienda el job
+            contra la base real. El resto de las opciones sí se aplica.
+        </div>
+    }
+
+    <form method="post">
+        @if (Model.Errores.Count > 0)
+        {
+            <div class="alert alert-danger small" role="alert">
+                <i class="fas fa-times-circle me-1"></i>Revise los campos marcados: no se guardó nada.
+            </div>
+        }
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light"><strong><i class="fas fa-power-off me-2"></i>Tasa de cambio automática</strong></div>
+            <div class="card-body">
+                <div class="form-check form-switch fs-5">
+                    <input class="form-check-input" type="checkbox" role="switch" id="Entrada_Habilitado" name="Entrada.Habilitado"
+                           value="true" @(Model.Entrada.Habilitado ? "checked" : null) />
+                    <input type="hidden" name="Entrada.Habilitado" value="false" />
+                    <label class="form-check-label" for="Entrada_Habilitado">Habilitar la búsqueda automática de tasas</label>
+                </div>
+                <p class="small text-muted mt-2 mb-0">
+                    Encendido: la aplicación busca sola las tasas oficiales del BCH (y el euro con el BCE) en el horario de abajo y
+                    las guarda en <strong>Tipos de cambio</strong>. Apagado: no busca nada ni acepta el disparador externo; las
+                    tasas propias de cada empresa se siguen capturando a mano. El cambio rige al guardar, sin reiniciar el sitio.
+                </p>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light"><strong><i class="fas fa-clock me-2"></i>Qué se busca y cuándo (hora de Honduras)</strong></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @Campo("Monedas a buscar", nameof(Model.Entrada.Monedas), Model.Entrada.Monedas,
+                        $"Códigos separados por coma, contra {Model.MonedaLocal}.", "USD, EUR", "text", "col-md-6")
+                    @Campo("Primer intento del día", nameof(Model.Entrada.PrimerIntento), Model.Entrada.PrimerIntento, "HH:mm", "17:00")
+                    @Campo("Último intento del día", nameof(Model.Entrada.UltimoIntento), Model.Entrada.UltimoIntento, "Después no se programan reintentos.", "23:30")
+                    @Campo("Barrido matutino", nameof(Model.Entrada.BarridoMatutino), Model.Entrada.BarridoMatutino, "Revisa la tasa del día hábil anterior.", "07:00")
+                    @Campo("Días de puesta al día", nameof(Model.Entrada.DiasPuestaAlDia), Model.Entrada.DiasPuestaAlDia, "Cuántos días atrás se vuelven a leer (1-30).", "3", "number")
+                    @Campo("Intentos por fecha", nameof(Model.Entrada.MaxIntentosPorFecha), Model.Entrada.MaxIntentosPorFecha, "El primero cuenta (1-20).", "6", "number")
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light"><strong><i class="fas fa-shield-alt me-2"></i>Validación de lo que se lee</strong></div>
+            <div class="card-body">
+                <p class="small text-muted">
+                    Una tasa fuera de estas reglas no se descarta: se guarda <strong>en revisión</strong> y un administrador la aprueba o la rechaza.
+                    Un campo en blanco usa el valor de <code>appsettings.json</code>.
+                </p>
+                <div class="row g-3">
+                    @Campo("Variación diaria máxima (%)", nameof(Model.Entrada.VariacionDiariaMaxPct), Model.Entrada.VariacionDiariaMaxPct, "Contra la última tasa vigente.", "3", "text", "col-sm-6 col-md-3")
+                    @Campo("Diferencia compra/venta máxima (%)", nameof(Model.Entrada.DiferenciaCompraVentaMaxPct), Model.Entrada.DiferenciaCompraVentaMaxPct, "Del mismo día.", "2", "text", "col-sm-6 col-md-3")
+                </div>
+                <div class="row g-3 mt-1">
+                    @Campo("Dólar: mínimo aceptable", nameof(Model.Entrada.RangoUsdMin), Model.Entrada.RangoUsdMin, null, "15", "text", "col-sm-6 col-md-3")
+                    @Campo("Dólar: máximo aceptable", nameof(Model.Entrada.RangoUsdMax), Model.Entrada.RangoUsdMax, null, "45", "text", "col-sm-6 col-md-3")
+                    @Campo("Euro: mínimo aceptable", nameof(Model.Entrada.RangoEurMin), Model.Entrada.RangoEurMin, null, "15", "text", "col-sm-6 col-md-3")
+                    @Campo("Euro: máximo aceptable", nameof(Model.Entrada.RangoEurMax), Model.Entrada.RangoEurMax, null, "60", "text", "col-sm-6 col-md-3")
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light"><strong><i class="fas fa-bell me-2"></i>Alertas</strong></div>
+            <div class="card-body">
+                <label for="Entrada_Destinatarios" class="form-label small mb-1">Correos que reciben las alertas</label>
+                <textarea id="Entrada_Destinatarios" name="Entrada.Destinatarios" rows="3"
+                          class="form-control form-control-sm@(Model.Error("Destinatarios") != null ? " is-invalid" : "")"
+                          placeholder="un correo por línea o separados por coma">@Model.Entrada.Destinatarios</textarea>
+                @if (Model.Error("Destinatarios") is { } errorCorreos)
+                {
+                    <div class="invalid-feedback d-block small">@errorCorreos</div>
+                }
+                <div class="form-text small">Reciben aviso si una ejecución falla, una tasa queda en revisión o falta la tasa de un día hábil. En blanco: solo queda en el registro del servidor.</div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light"><strong><i class="fas fa-key me-2"></i>Claves y fuentes (solo lectura)</strong></div>
+            <div class="card-body small">
+                <p class="text-muted">
+                    Las claves secretas no se guardan en la base ni se editan aquí: van en variables de entorno del servidor
+                    (<code>TasasCambio__Bch__ApiKey</code>, <code>TasasCambio__Disparador__Token</code>). Solo se muestra si están puestas.
+                </p>
+                <ul class="mb-0">
+                    <li>Clave del API del BCH: <strong>@(Model.TieneClaveBch ? "puesta" : "no puesta")</strong>. API del BCH: <strong>@(Model.ApiBchHabilitado ? "habilitado" : "deshabilitado (se usa el Excel del BCH)")</strong>.</li>
+                    <li>Token del disparador externo: <strong>@(Model.TieneTokenDisparador ? "puesto" : "no puesto (el endpoint responde 404)")</strong>.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 mb-5">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar configuración</button>
+            <a asp-page="Index" class="btn btn-outline-secondary">Cancelar</a>
+            @if (Model.ActualizadoUtc is { } fecha)
+            {
+                <span class="small text-muted">Última vez: @Model.ActualizadoPor, @fecha.ToString("dd/MM/yyyy HH:mm") UTC</span>
+            }
+        </div>
+    </form>
+</div>

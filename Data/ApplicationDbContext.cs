@@ -68,6 +68,7 @@ namespace eGestion360Web.Data
         public DbSet<TasaCambio> TasasCambio { get; set; }
         public DbSet<TasaCambioEjecucion> TasasCambioEjecuciones { get; set; }
         public DbSet<TasaCambioEjecucionDetalle> TasasCambioEjecucionesDetalle { get; set; }
+        public DbSet<TasaCambioConfiguracion> TasasCambioConfiguracion { get; set; }
 
         // Outbox de eventos de dominio (Fase 0)
         public DbSet<DomainEvent> DomainEvents { get; set; }
