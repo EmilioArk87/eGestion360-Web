@@ -26,6 +26,22 @@
                 <dt class="col-sm-3">Código</dt>
                 <dd class="col-sm-9"><code>@Model.Empresa.Codigo</code></dd>
 
+                <dt class="col-sm-3">Tenant</dt>
+                <dd class="col-sm-9">
+                    @if (Model.TenantActual is { } tenant)
+                    {
+                        <code>@tenant.Codigo</code> <span>@tenant.Nombre</span>
+                        @if (tenant.Estado != "activo")
+                        {
+                            <span class="badge bg-secondary ms-1">@tenant.Estado</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">Sin tenant asignado</span>
+                    }
+                </dd>
+
                 <dt class="col-sm-3">Razón Social</dt>
                 <dd class="col-sm-9">@Model.Empresa.RazonSocial</dd>
 

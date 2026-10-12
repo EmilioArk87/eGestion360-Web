@@ -40,8 +40,12 @@ namespace eGestion360Web.Tests.Arquitectura
         private static Dictionary<string, TablaClasificada> Clasificacion()
             => ClasificacionDeTablas.Todas.ToDictionary(t => t.Tabla, StringComparer.Ordinal);
 
+        /// <summary>
+        /// La columna que separa los datos por tenant. La clave primaria de <c>saas.tenants</c> también se llama
+        /// <c>id_tenant</c>, pero identifica al tenant en lugar de separar filas: no cuenta.
+        /// </summary>
         private static IProperty? PropiedadTenant(IEntityType entidad)
-            => entidad.GetProperties().FirstOrDefault(p => p.GetColumnName() == ColumnaTenant);
+            => entidad.GetProperties().FirstOrDefault(p => p.GetColumnName() == ColumnaTenant && !p.IsPrimaryKey());
 
         private static bool TieneColumna(IEntityType entidad, params string[] columnas)
             => entidad.GetProperties().Any(p => columnas.Contains(p.GetColumnName()));

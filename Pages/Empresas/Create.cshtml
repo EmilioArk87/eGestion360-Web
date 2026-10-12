@@ -20,6 +20,17 @@
             <form method="post">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label asp-for="Empresa.IdTenant" class="form-label"></label>
+                        <select asp-for="Empresa.IdTenant" asp-items="ViewBag.Tenants" class="form-select" required>
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                        <span asp-validation-for="Empresa.IdTenant" class="text-danger"></span>
+                        <div class="form-text">La cuenta comercial a la que pertenece la empresa. No se puede cambiar después.</div>
+                    </div>
+                </div>
+
                 @{ await Html.RenderPartialAsync("_EmpresaForm", Model.Empresa, new ViewDataDictionary(ViewData) { TemplateInfo = { HtmlFieldPrefix = "Empresa" } }); }
 
                 <div class="d-flex gap-2 mt-4">

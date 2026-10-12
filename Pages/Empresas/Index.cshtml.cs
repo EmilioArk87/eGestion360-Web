@@ -18,6 +18,9 @@ namespace eGestion360Web.Pages.Empresas
 
         public IList<Empresa> Empresas { get; set; } = new List<Empresa>();
 
+        /// <summary>Código del tenant de cada empresa, por id de tenant.</summary>
+        public IDictionary<int, string> CodigosDeTenant { get; set; } = new Dictionary<int, string>();
+
         [BindProperty(SupportsGet = true)]
         public string? Search { get; set; }
 
@@ -46,6 +49,7 @@ namespace eGestion360Web.Pages.Empresas
             }
 
             Empresas = await query.OrderBy(e => e.RazonSocial).ToListAsync();
+            CodigosDeTenant = await _context.Tenants.AsNoTracking().ToDictionaryAsync(t => t.IdTenant, t => t.Codigo);
             return Page();
         }
     }

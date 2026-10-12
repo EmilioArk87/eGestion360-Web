@@ -21,6 +21,15 @@
                 <input type="hidden" asp-for="Empresa.IdEmpresa" />
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Tenant</label>
+                        <input type="text" class="form-control" readonly tabindex="-1"
+                               value="@(Model.TenantActual is { } tenant ? $"{tenant.Codigo} - {tenant.Nombre}" : "Sin tenant asignado")" />
+                        <div class="form-text">La empresa no cambia de tenant desde esta pantalla.</div>
+                    </div>
+                </div>
+
                 @{ await Html.RenderPartialAsync("_EmpresaForm", Model.Empresa, new ViewDataDictionary(ViewData) { TemplateInfo = { HtmlFieldPrefix = "Empresa" } }); }
 
                 <div class="d-flex gap-2 mt-4">

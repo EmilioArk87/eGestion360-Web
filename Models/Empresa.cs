@@ -50,6 +50,15 @@ namespace eGestion360Web.Models
         [Column("zona_horaria")]
         public string ZonaHoraria { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Tenant al que pertenece la empresa (ADR-002). La asigna quien la crea y no se cambia desde la pantalla de
+        /// edición. En la base la columna admite nulos hasta que F1.3 la deja obligatoria (script 025).
+        /// </summary>
+        [Required(ErrorMessage = "Selecciona el tenant al que pertenece la empresa.")]
+        [Display(Name = "Tenant")]
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
+
         [Display(Name = "Activa")]
         [Column("activa")]
         public bool Activa { get; set; } = true;

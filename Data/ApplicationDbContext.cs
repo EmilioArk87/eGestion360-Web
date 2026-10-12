@@ -7,6 +7,7 @@ using eGestion360Web.Models.Eventos;
 using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Data
 {
@@ -20,6 +21,7 @@ namespace eGestion360Web.Data
         public DbSet<User> Users { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<EmailConfiguration> EmailConfigurations { get; set; }
+        public DbSet<Tenant> Tenants { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
         public DbSet<Modulo> Modulos { get; set; }
         public DbSet<EmpresaModulo> EmpresaModulos { get; set; }

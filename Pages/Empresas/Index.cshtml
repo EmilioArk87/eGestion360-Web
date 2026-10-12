@@ -57,7 +57,7 @@
                         <tr>
                             <th>Código</th>
                             <th>Razón Social</th>
-                            <th>Nombre Comercial</th>
+                            <th>Tenant</th>
                             <th>País</th>
                             <th>Moneda</th>
                             <th class="text-center">Estado</th>
@@ -68,7 +68,7 @@
                         @if (!Model.Empresas.Any())
                         {
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                     No hay empresas registradas.
                                 </td>
@@ -87,6 +87,7 @@
                                             <br /><small class="text-muted">@empresa.NombreComercial</small>
                                         }
                                     </td>
+                                    <td><code>@(Model.CodigosDeTenant.TryGetValue(empresa.IdTenant, out var codigoTenant) ? codigoTenant : "—")</code></td>
                                     <td>@empresa.PaisIso</td>
                                     <td>@empresa.MonedaIso</td>
                                     <td class="text-center">

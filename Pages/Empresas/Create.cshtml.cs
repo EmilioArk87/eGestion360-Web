@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Models.Flota;
+using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
 
 namespace eGestion360Web.Pages.Empresas
@@ -53,6 +54,16 @@ namespace eGestion360Web.Pages.Empresas
             if (!AuthHelper.IsAdmin(HttpContext))
             {
                 return RedirectToPage("/MainMenu");
+            }
+
+            // Toda empresa pertenece a un tenant (ADR-002) y no se cambia después desde la pantalla de edición.
+            // El tenant se valida contra la base: el valor del formulario no se acepta tal cual.
+            var tenantValido = Empresa.IdTenant > 0 && await _context.Tenants.AsNoTracking()
+                .AnyAsync(t => t.IdTenant == Empresa.IdTenant && t.Estado != EstadoTenant.Cancelado);
+            if (!tenantValido && !(ModelState.TryGetValue("Empresa.IdTenant", out var enModelo) && enModelo.Errors.Count > 0))
+            {
+                // Si el formulario llegó vacío, el atributo [Required] del modelo ya dejó este mismo mensaje.
+                ModelState.AddModelError("Empresa.IdTenant", "Selecciona el tenant al que pertenece la empresa.");
             }
 
             if (!ModelState.IsValid)
@@ -145,6 +156,19 @@ namespace eGestion360Web.Pages.Empresas
                 .Select(m => new SelectListItem { Value = m.CodigoIso, Text = $"{m.CodigoIso} - {m.Nombre} ({m.Simbolo})" })
                 .ToList();
             ViewData["Monedas"] = new SelectList(monedas, "Value", "Text");
+
+            var tenants = _context.Tenants.AsNoTracking()
+                .Where(t => t.Estado != EstadoTenant.Cancelado)
+                .OrderBy(t => t.Codigo)
+                .Select(t => new { t.IdTenant, t.Codigo, t.Nombre, t.Estado })
+                .ToList()
+                .Select(t => new SelectListItem
+                {
+                    Value = t.IdTenant.ToString(),
+                    Text = t.Estado == EstadoTenant.Activo ? $"{t.Codigo} - {t.Nombre}" : $"{t.Codigo} - {t.Nombre} ({t.Estado})"
+                })
+                .ToList();
+            ViewData["Tenants"] = new SelectList(tenants, "Value", "Text");
         }
     }
 }

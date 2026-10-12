@@ -6,6 +6,7 @@ using eGestion360Web.Services.Eventos;
 using eGestion360Web.Services.Facturacion;
 using eGestion360Web.Services.Personas;
 using eGestion360Web.Services.TasasCambio;
+using eGestion360Web.Services.Tenancy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +69,13 @@ builder.Services.AddScoped<KpiService>();
 // ── Bus de eventos / Outbox (Fase 0 Sprint 2) ──────────────────────────────
 // HttpContextAccessor: el publisher necesita el username de sesión para auditoría.
 builder.Services.AddHttpContextAccessor();
+
+// ── Tenant de la petición (Fase 1, paso F1.1) ──────────────────────────────
+// El middleware fija el tenant (por ahora, el de la empresa de la sesión) y abre el ámbito de log con
+// tenant, empresa, usuario e id de correlación. ITenantContext lo leen EF, RLS y los servicios.
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IResolvedorDeTenant, ResolvedorDeTenantEf>();
+builder.Services.AddScoped<ITenantContext, TenantContext>();
 
 // Publisher: scoped (comparte DbContext con el caller para commit atómico).
 builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
@@ -217,6 +225,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseSession();
+app.UseMiddleware<TenantMiddleware>();   // después de la sesión: de ella sale la empresa y, de la empresa, el tenant
 
 app.UseAuthorization();
 

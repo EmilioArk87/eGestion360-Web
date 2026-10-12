@@ -2,6 +2,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Flota;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Tests.Infra
 {
@@ -13,6 +14,11 @@ namespace eGestion360Web.Tests.Infra
     {
         public const int EmpresaA = 1;   // equivale a una empresa cualquiera
         public const int EmpresaB = 4;   // otra empresa, para probar la separación entre empresas
+
+        public const int TenantA = 1;    // tenant de EmpresaA
+        public const int TenantB = 2;    // tenant de EmpresaB: dos tenants distintos, para probar el aislamiento entre tenants
+
+        public static int TenantDe(int idEmpresa) => idEmpresa == EmpresaA ? TenantA : TenantB;
 
         public static void Sembrar(ApplicationDbContext db)
         {
@@ -40,11 +46,15 @@ namespace eGestion360Web.Tests.Infra
             departamento.Municipios.Add(new CatalogoMunicipio { Codigo = "0802", Nombre = "Alubarén", FechaCreacion = ahora });
             db.CatalogoDepartamentos.Add(departamento);
 
+            db.Tenants.AddRange(
+                new Tenant { IdTenant = TenantA, UidPublico = Guid.NewGuid(), Codigo = "TENANT_A", Nombre = "Tenant de prueba A", Tipo = TipoTenant.Interno, Estado = EstadoTenant.Activo, FechaEstado = ahora, CreadoPor = "pruebas", FechaCreacion = ahora },
+                new Tenant { IdTenant = TenantB, UidPublico = Guid.NewGuid(), Codigo = "TENANT_B", Nombre = "Tenant de prueba B", Tipo = TipoTenant.Cliente, Estado = EstadoTenant.Activo, FechaEstado = ahora, CreadoPor = "pruebas", FechaCreacion = ahora });
+
             foreach (var id in new[] { EmpresaA, EmpresaB })
             {
                 db.Empresas.Add(new Empresa
                 {
-                    IdEmpresa = id, Codigo = "E" + id, RazonSocial = "Empresa de prueba " + id, PaisIso = "HN", MonedaIso = "HNL",
+                    IdEmpresa = id, IdTenant = TenantDe(id), Codigo = "E" + id, RazonSocial = "Empresa de prueba " + id, PaisIso = "HN", MonedaIso = "HNL",
                     ZonaHoraria = "America/Tegucigalpa", FechaActivacion = ahora, CreadoPor = "pruebas", FechaCreacion = ahora
                 });
 

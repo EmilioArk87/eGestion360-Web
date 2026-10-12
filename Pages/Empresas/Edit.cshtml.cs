@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
+using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
 
 namespace eGestion360Web.Pages.Empresas
@@ -19,6 +20,9 @@ namespace eGestion360Web.Pages.Empresas
 
         [BindProperty]
         public Empresa Empresa { get; set; } = new Empresa();
+
+        /// <summary>Tenant de la empresa, solo para mostrarlo: una empresa no cambia de tenant desde esta pantalla.</summary>
+        public Tenant? TenantActual { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -40,6 +44,7 @@ namespace eGestion360Web.Pages.Empresas
             }
 
             Empresa = empresa;
+            await CargarTenantActualAsync(empresa.IdEmpresa);
             CargarPaises();
             return Page();
         }
@@ -58,6 +63,7 @@ namespace eGestion360Web.Pages.Empresas
 
             if (!ModelState.IsValid)
             {
+                await CargarTenantActualAsync(Empresa.IdEmpresa);
                 CargarPaises();
                 return Page();
             }
@@ -92,6 +98,14 @@ namespace eGestion360Web.Pages.Empresas
 
             TempData["EmpresasMessage"] = "Empresa actualizada correctamente.";
             return RedirectToPage("Index");
+        }
+
+        private async Task CargarTenantActualAsync(int idEmpresa)
+        {
+            TenantActual = await (from e in _context.Empresas.AsNoTracking()
+                                  join t in _context.Tenants.AsNoTracking() on e.IdTenant equals t.IdTenant
+                                  where e.IdEmpresa == idEmpresa
+                                  select t).FirstOrDefaultAsync();
         }
 
         private void CargarPaises()

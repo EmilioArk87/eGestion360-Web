@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
+using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
 
 namespace eGestion360Web.Pages.Empresas
@@ -17,6 +18,8 @@ namespace eGestion360Web.Pages.Empresas
         }
 
         public Empresa Empresa { get; set; } = new Empresa();
+
+        public Tenant? TenantActual { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -38,6 +41,7 @@ namespace eGestion360Web.Pages.Empresas
             }
 
             Empresa = empresa;
+            TenantActual = await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.IdTenant == empresa.IdTenant);
             return Page();
         }
     }

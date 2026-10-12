@@ -113,6 +113,7 @@ namespace eGestion360Web.Tests.Arquitectura
             new("modulos", G, true, true, "Catálogo de módulos; en F1 se integra al catálogo de derechos de uso."),
 
             // ── Plataforma ───────────────────────────────────────────────────────────────────────────────────────
+            new("tenants", P, true, false, "La cuenta comercial (esquema saas, script 025, F1.1): define el tenant, así que no lleva id_tenant ni RLS. Existe desde el script 025."),
             new("Users", P, true, true, "Pasa a ser la cuenta de acceso global (ADR-003); empresa y rol se mueven a membresías y accesos por empresa, que serán tablas de tenant."),
             new("PasswordResetCodes", P, true, true, "Identidad: códigos de la cuenta global."),
             new("EmailConfigurations", P, true, true, "Correo de notificaciones de la plataforma."),
@@ -137,7 +138,7 @@ namespace eGestion360Web.Tests.Arquitectura
         /// </summary>
         public static readonly IReadOnlySet<string> PendientesDeIdTenant = new HashSet<string>(StringComparer.Ordinal)
         {
-            "empresas", "empresa_modulos", "empresa_roles", "empresa_rol_permisos", "personas", "persona_documentos",
+            "empresa_modulos", "empresa_roles", "empresa_rol_permisos", "personas", "persona_documentos",
             "persona_empresa", "empleados", "clientes", "proveedores", "productos_servicios", "impuestos", "formas_pago",
             "condiciones_pago", "condiciones_pago_cuotas", "cargos", "bitacora_cambios", "facturas", "factura_detalle",
             "factura_secuencias", "notas", "pagos", "pago_aplicaciones", "vehiculos", "tipos_vehiculo", "rutas", "talleres",

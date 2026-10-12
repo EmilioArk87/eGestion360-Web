@@ -48,8 +48,8 @@ Solución de **un solo proyecto** (`eGestion360Web.csproj`). Las "capas" son car
 |---|---|
 | `Data/ApplicationDbContext.cs` | Único `DbContext`: los `DbSet<>` y un `OnModelCreating` que aplica las configuraciones de `Data/Configuracion/`. |
 | `Data/Configuracion/` | Configuración Fluent de EF, un archivo por módulo (`FlotaConfiguracion.cs`, `ContabilidadConfiguracion.cs`…) con una clase `IEntityTypeConfiguration<T>` por entidad: claves, índices únicos, precisión decimal, FKs y `HasData` de semillas (paso F0.8). |
-| `Models/` | Entidades EF por dominio: `Catalogos/`, `Facturacion/`, `Flota/`, `Eventos/`, `Personas/` (vínculos, roles y documentos de la persona maestra), `Auditoria/` (bitácora de cambios). Algunos ViewModels sueltos. |
-| `Services/` | Lógica de negocio/infra: interfaz + implementación, registradas por **DI** en `Program.cs`. Subcarpetas `Eventos/`, `Facturacion/`, `Personas/`, `Auditoria/` (interceptor de la bitácora de cambios). |
+| `Models/` | Entidades EF por dominio: `Catalogos/`, `Facturacion/`, `Flota/`, `Eventos/`, `Personas/` (vínculos, roles y documentos de la persona maestra), `Auditoria/` (bitácora de cambios), `Plataforma/` (el `Tenant`, esquema `saas`). Algunos ViewModels sueltos. |
+| `Services/` | Lógica de negocio/infra: interfaz + implementación, registradas por **DI** en `Program.cs`. Subcarpetas `Eventos/`, `Facturacion/`, `Personas/`, `Auditoria/` (interceptor de la bitácora de cambios), `Tenancy/` (tenant de la petición: `ITenantContext`, `TenantMiddleware`, resolutor y ámbito de log; paso F1.1). |
 | `Pages/<Modulo>/` | Razor Pages por módulo (`Admin/`, `Catalogos/`, `Facturacion/`, `Flota/`, `Empresas/`, `Shared/`). |
 | `Migrations/` | Migraciones EF Core (C#). |
 | `eGestion360Web.Tests/` | Pruebas automatizadas xUnit sobre SQLite en memoria (ver `PRUEBAS_AUTOMATIZADAS.md`). Se excluye de la compilación y publicación del sitio. |
@@ -76,6 +76,11 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
 
 - Toda tabla de negocio lleva `id_empresa INT NOT NULL` con **FK a `dbo.empresas(id_empresa)`**.
 - El tenant activo se guarda en **sesión** y se lee con `Services/AuthHelper.cs` (`GetEmpresaId`, `SetSesionTenant`).
+- **Desde F1.1** cada empresa pertenece a un tenant (`empresas.id_tenant` → `saas.tenants`, script 025): el
+  `TenantMiddleware` lo deduce de la empresa de la sesión y lo ofrece como `ITenantContext` (`IdTenant`, `IdEmpresa`,
+  `IdCorrelacion`). Todavía **no filtra datos**: los filtros de EF, RLS y `id_tenant` en las demás tablas llegan en
+  F1.2 a F1.4. Una empresa nueva se crea eligiendo su tenant (no se cambia después) y todo registro de log de la petición
+  lleva `IdTenant`, `IdEmpresa`, `IdUsuario` e `IdCorrelacion` (el mismo valor viaja en el encabezado `X-Correlation-Id`).
 - **Filtrado manual obligatorio:** cada consulta debe incluir `.Where(x => x.IdEmpresa == empresaId)`. Hoy **no** hay
   Global Query Filters (`HasQueryFilter`); el aislamiento depende de que cada página filtre. ⚠️ Nunca devolver datos sin
   filtrar por empresa.
