@@ -46,7 +46,11 @@ namespace eGestion360Web.Services.TasasCambio
     }
 
     /// <param name="Vigente">Nulo si todavía no hay ninguna tasa para esa moneda y tipo.</param>
-    public sealed record TasaVigenteActual(string MonedaOrigen, string TipoTasa, TasaVigente? Vigente);
+    /// <param name="Proxima">
+    /// La VIGENTE más cercana con fecha de vigencia posterior a hoy (el BCH publica la del siguiente día hábil por
+    /// adelantado, p. ej. el domingo ya está la del lunes). Nulo si no hay ninguna publicada por adelantado.
+    /// </param>
+    public sealed record TasaVigenteActual(string MonedaOrigen, string TipoTasa, TasaVigente? Vigente, TasaVigente? Proxima = null);
 
     public sealed class FiltroHistoricoTasas
     {

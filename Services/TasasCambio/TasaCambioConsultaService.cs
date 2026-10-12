@@ -52,8 +52,37 @@ namespace eGestion360Web.Services.TasasCambio
             var resultado = new List<TasaVigenteActual>();
             foreach (var moneda in _opt.MonedasEfectivas)
                 foreach (var tipo in new[] { Cat.TipoTasa.Compra, Cat.TipoTasa.Venta })
-                    resultado.Add(new TasaVigenteActual(moneda, tipo, await ObtenerVigenteAsync(moneda, tipo, hoy, idEmpresa, local, ct)));
+                    resultado.Add(new TasaVigenteActual(moneda, tipo,
+                        await ObtenerVigenteAsync(moneda, tipo, hoy, idEmpresa, local, ct),
+                        await ObtenerProximaAsync(moneda, tipo, hoy, idEmpresa, local, ct)));
             return resultado;
+        }
+
+        /// <summary>
+        /// La tasa VIGENTE con la fecha de vigencia más cercana POSTERIOR a <paramref name="fecha"/> (misma regla de
+        /// empresa que <see cref="ObtenerVigenteAsync"/>: a igual fecha, la propia gana). Nulo si no hay.
+        /// </summary>
+        private async Task<TasaVigente?> ObtenerProximaAsync(string monedaOrigen, string tipoTasa, DateOnly fecha, int? idEmpresa,
+            string monedaDestino, CancellationToken ct)
+        {
+            var origen = Codigo(monedaOrigen);
+            var destino = Codigo(monedaDestino);
+            var tipo = Codigo(tipoTasa);
+
+            var consulta = _db.TasasCambio.AsNoTracking()
+                .Where(t => t.MonedaOrigen == origen && t.MonedaDestino == destino && t.TipoTasa == tipo
+                            && t.Estado == Cat.EstadoTasa.Vigente && !t.Eliminado && t.FechaVigencia > fecha);
+            consulta = idEmpresa is > 0
+                ? consulta.Where(t => t.IdEmpresa == null || t.IdEmpresa == idEmpresa)
+                : consulta.Where(t => t.IdEmpresa == null);
+
+            return await consulta
+                .OrderBy(t => t.FechaVigencia)
+                .ThenByDescending(t => t.IdEmpresa != null)
+                .ThenByDescending(t => t.IdTasaCambio)
+                .Select(t => new TasaVigente(t.IdTasaCambio, t.IdEmpresa, t.MonedaOrigen, t.MonedaDestino, t.TipoTasa, t.Tasa,
+                    t.FechaVigencia, t.Fuente, t.ReferenciaFuente, t.EsDerivada, t.Version, t.FechaHoraObtencion))
+                .FirstOrDefaultAsync(ct);
         }
 
         // ──────────────────────────────────────────────────────────────────

@@ -49,6 +49,14 @@
                                     {
                                         <div class="fs-5 text-muted">Sin tasa todavía</div>
                                     }
+                                    @if (v.Proxima is { } proxima)
+                                    {
+                                        <div class="small mt-2 text-primary" title="Ya publicada: empieza a regir en su fecha de vigencia">
+                                            <i class="fas fa-calendar-day me-1"></i>Próxima publicada:
+                                            <strong>@FormatoTasas.Tasa(proxima.Tasa)</strong>
+                                            desde el @FormatoTasas.Fecha(proxima.FechaVigencia)
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>

@@ -520,7 +520,7 @@ Honduras (la base guarda UTC); tasas con 4 decimales y el símbolo `L`. De arrib
 
 | Sección | Qué muestra |
 |---|---|
-| Tasas vigentes hoy | USD y EUR, compra y venta, con la regla de la sección 5 para la empresa de la sesión: tasa, fecha de vigencia (avisa si es la del último día publicado), fuente y los distintivos "Derivada" (euro calculado) y "Propia de la empresa". "Sin tasa todavía" si no hay. |
+| Tasas vigentes hoy | USD y EUR, compra y venta, con la regla de la sección 5 para la empresa de la sesión: tasa, fecha de vigencia (avisa si es la del último día publicado), fuente y los distintivos "Derivada" (euro calculado) y "Propia de la empresa". Si el BCH ya publicó por adelantado una tasa con vigencia posterior a hoy (p. ej. el domingo la del lunes), debajo aparece "Próxima publicada: tasa desde fecha"; no cambia la vigente de hoy. "Sin tasa todavía" si no hay. |
 | Pendientes de revisión | Las `EN_REVISION` oficiales y las propias de la empresa de la sesión, con la vigente actual, la variación y el motivo de la bitácora. Botones Aprobar y Rechazar (el rechazo exige motivo, hasta 300 caracteres). |
 | Registrar tasa propia de la empresa | Moneda (USD/EUR), tipo (compra/venta), fecha y tasa (hasta 4 decimales). Va a `RegistrarManualAsync`, que la valida (rango, fecha futura) y la versiona. |
 | Ejecutar ahora | Encola una ejecución forzada (`MANUAL`) y vuelve enseguida; el resultado aparece en la bitácora. Con el job deshabilitado, solo muestra el aviso. La carga manual de un rango no está en la pantalla. |

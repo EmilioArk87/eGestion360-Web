@@ -75,6 +75,52 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(27.1000m, (await Vigente("USD", "VENTA", EscenarioTasas.Jueves, DatosBase.EmpresaA))!.Tasa);
         }
 
+        // ── Próxima tasa publicada por adelantado ────────────────────────────
+
+        [Fact]
+        public async Task La_proxima_es_la_publicada_con_vigencia_posterior_a_hoy_y_no_cambia_la_vigente()
+        {
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Jueves, 27.0000m);
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Viernes, 27.0270m);
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Lunes, 27.0227m);   // el BCH publica el lunes por adelantado
+
+            using var db = _e.Bd.Crear();
+            var venta = (await _e.Consultas(db).VigentesActualesAsync())
+                .Single(a => a.MonedaOrigen == "USD" && a.TipoTasa == "VENTA");   // hoy es el viernes 2 en el reloj del escenario
+
+            Assert.Equal(27.0270m, venta.Vigente!.Tasa);
+            Assert.Equal(27.0227m, venta.Proxima!.Tasa);
+            Assert.Equal(EscenarioTasas.Lunes, venta.Proxima.FechaVigencia);
+        }
+
+        [Fact]
+        public async Task Sin_tasas_posteriores_a_hoy_no_hay_proxima()
+        {
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Viernes, 27.0270m);
+
+            using var db = _e.Bd.Crear();
+            var venta = (await _e.Consultas(db).VigentesActualesAsync())
+                .Single(a => a.MonedaOrigen == "USD" && a.TipoTasa == "VENTA");
+
+            Assert.Null(venta.Proxima);
+        }
+
+        [Fact]
+        public async Task La_proxima_de_la_empresa_A_no_aparece_para_la_B_y_la_propia_gana_a_igual_fecha()
+        {
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Lunes, 27.0227m);
+            _e.Sembrar("USD", "VENTA", EscenarioTasas.Lunes, 27.5000m, DatosBase.EmpresaA);
+
+            using var db = _e.Bd.Crear();
+            var consultas = _e.Consultas(db);
+
+            var paraB = (await consultas.VigentesActualesAsync(DatosBase.EmpresaB)).Single(a => a.MonedaOrigen == "USD" && a.TipoTasa == "VENTA");
+            var paraA = (await consultas.VigentesActualesAsync(DatosBase.EmpresaA)).Single(a => a.MonedaOrigen == "USD" && a.TipoTasa == "VENTA");
+
+            Assert.Equal(27.0227m, paraB.Proxima!.Tasa);
+            Assert.Equal(27.5000m, paraA.Proxima!.Tasa);
+        }
+
         // ── Aislamiento entre empresas (obligatorio) ────────────────────────
 
         [Fact]
