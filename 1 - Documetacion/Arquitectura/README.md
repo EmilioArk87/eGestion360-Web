@@ -81,6 +81,7 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-016](ADR-016-hosting-azure.md) | Producción en Azure App Service Linux (B1) y Azure SQL Database (S0); staging en el mismo plan | Staging en F1, corte antes de F4 | Aceptada 2026-10-10 |
 | [ADR-017](ADR-017-dotnet-10.md) | Actualizar a .NET 10 LTS y EF Core 10 antes del 10 nov 2026 | F0.10 | Aceptada 2026-10-10; un punto modificado por ADR-018 |
 | [ADR-018](ADR-018-somee-dependiente-del-framework.md) | En Somee, publicar .NET 10 dependiente del framework; el `web.config` del servidor no se toca | F0.10 | Aceptada 2026-10-10 |
+| [ADR-019](ADR-019-arranque-fase-1.md) | Decisiones de arranque de la Fase 1 (D18 a D25): tenants iniciales, cuentas en `saas`, `domain_events` sin RLS, ensayos con copia real, MFA, operador, cuentas inactivas y orden con .NET 10 | F1 | Aceptada 2026-10-11 |
 
 ---
 
