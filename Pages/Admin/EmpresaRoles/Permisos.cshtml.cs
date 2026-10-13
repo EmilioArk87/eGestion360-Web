@@ -42,6 +42,10 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
 
             RolId = rolId;
 
+            // El rol se carga para que los permisos nuevos hereden su tenant (TenantAlGuardarInterceptor) y para no
+            // guardar permisos de un rol que no existe.
+            if (await _context.EmpresaRoles.FindAsync(rolId) == null) return NotFound();
+
             var existentes = await _context.EmpresaRolPermisos
                 .Where(p => p.IdRol == rolId)
                 .ToListAsync();

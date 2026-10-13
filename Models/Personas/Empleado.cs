@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Personas
 {
@@ -10,7 +11,7 @@ namespace eGestion360Web.Models.Personas
     /// a que TipoVinculo sea 'empleado'; el servicio que guarda debe poner ambos valores.
     /// </summary>
     [Table("empleados")]
-    public class Empleado
+    public class Empleado : ITenantEntity
     {
         [Key]
         [Column("id_empleado")]
@@ -21,6 +22,9 @@ namespace eGestion360Web.Models.Personas
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Required]
         [StringLength(20)]

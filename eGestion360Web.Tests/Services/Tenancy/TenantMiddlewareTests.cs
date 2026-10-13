@@ -22,6 +22,8 @@ namespace eGestion360Web.Tests.Services.Tenancy
                 Consultas.Add(idEmpresa);
                 return Task.FromResult<int?>(_tenants.TryGetValue(idEmpresa, out var tenant) ? tenant : null);
             }
+
+            public Task<int?> ResolverPorPersonaAsync(int idPersona, CancellationToken ct = default) => Task.FromResult<int?>(null);
         }
 
         /// <summary>Lo que ve la petición mientras corre el resto del pipeline.</summary>

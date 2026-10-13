@@ -39,10 +39,13 @@ if (string.IsNullOrWhiteSpace(connectionString))
 // El usuario y la empresa salen de la sesión.
 builder.Services.AddScoped<IContextoAuditoria, ContextoAuditoriaHttp>();
 builder.Services.AddScoped<AuditoriaCambiosInterceptor>();
+// El interceptor del tenant va DESPUES del de auditoria: este agrega las filas de la bitacora antes de guardar (F1.2).
+builder.Services.AddScoped<TenantAlGuardarInterceptor>();
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
     options.UseSqlServer(connectionString);
-    options.AddInterceptors(sp.GetRequiredService<AuditoriaCambiosInterceptor>());
+    options.AddInterceptors(sp.GetRequiredService<AuditoriaCambiosInterceptor>(),
+        sp.GetRequiredService<TenantAlGuardarInterceptor>());
 });
 
 // Add Password Service

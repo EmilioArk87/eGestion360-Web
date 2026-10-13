@@ -180,7 +180,7 @@ namespace eGestion360Web.Tests.Services.Personas
         [Fact]
         public async Task Un_administrador_de_empresa_vincula_a_una_persona_de_otra_empresa_solo_si_coinciden_nombre_y_apellido()
         {
-            var idOtra = Persona(DatosBase.EmpresaB, "Ana", "Paz", dni: "0801-1990-12345");
+            var idOtra = Persona(DatosBase.EmpresaA2, "Ana", "Paz", dni: "0801-1990-12345");
             var idUsuario = Usuario("ana.paz", Plataforma);
 
             var mal = await Crear(AdminDe(Plataforma), idUsuario, Datos("Otra", "Gente"));

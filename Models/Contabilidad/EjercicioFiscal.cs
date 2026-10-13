@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Contabilidad
 {
     /// <summary>Ejercicio fiscal anual (tabla <c>ct_ejercicios</c>). Agrupa los períodos contables.</summary>
     [Table("ct_ejercicios")]
-    public class EjercicioFiscal
+    public class EjercicioFiscal : ITenantEntity
     {
         [Key]
         [Column("id_ejercicio")]
@@ -13,6 +14,9 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("anio")]
         public int Anio { get; set; }

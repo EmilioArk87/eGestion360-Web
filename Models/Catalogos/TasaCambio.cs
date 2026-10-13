@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Catalogos
 {
@@ -13,7 +14,7 @@ namespace eGestion360Web.Models.Catalogos
     /// tasa propia de esa empresa, que prevalece sobre la oficial para ella.
     /// </summary>
     [Table("tasas_cambio")]
-    public class TasaCambio
+    public class TasaCambio : ITenantOpcionalEntity
     {
         [Key]
         [Column("id_tasa_cambio")]
@@ -21,6 +22,9 @@ namespace eGestion360Web.Models.Catalogos
 
         [Column("id_empresa")]
         public int? IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int? IdTenant { get; set; }
 
         [Required]
         [StringLength(3)]

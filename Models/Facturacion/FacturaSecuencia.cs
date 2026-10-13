@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Facturacion
 {
@@ -10,7 +11,7 @@ namespace eGestion360Web.Models.Facturacion
     /// para reservar el siguiente número.
     /// </summary>
     [Table("factura_secuencias")]
-    public class FacturaSecuencia
+    public class FacturaSecuencia : ITenantEntity
     {
         [Key]
         [Column("id_secuencia")]
@@ -18,6 +19,9 @@ namespace eGestion360Web.Models.Facturacion
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         /// <summary>factura | nota_credito | nota_debito</summary>
         [Required, StringLength(20)]

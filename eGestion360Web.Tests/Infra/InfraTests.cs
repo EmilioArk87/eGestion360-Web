@@ -16,8 +16,8 @@ namespace eGestion360Web.Tests
             Assert.Equal(4, await db.CatalogoTiposDocumento.CountAsync());
             Assert.Equal(9, await db.CatalogoTiposLicencia.CountAsync());
             Assert.Equal(2, await db.CatalogoMunicipios.CountAsync());
-            Assert.Equal(2, await db.Empresas.CountAsync());
-            Assert.Equal(10, await db.Cargos.CountAsync());
+            Assert.Equal(3, await db.Empresas.CountAsync());      // A, A2 (mismo tenant que A) y B
+            Assert.Equal(15, await db.Cargos.CountAsync());
             Assert.False((await db.Monedas.FirstAsync(m => m.CodigoIso == "ANG")).Activo);
         }
     }

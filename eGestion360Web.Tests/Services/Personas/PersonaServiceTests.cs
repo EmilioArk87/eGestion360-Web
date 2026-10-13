@@ -563,11 +563,11 @@ namespace eGestion360Web.Tests.Services.Personas
         // ── Actualizar: documento de otra empresa → fusión ──────────────────
 
         /// <summary>Una persona ya existente con DNI en la empresa A y otra sin DNI en la empresa B que en realidad es la misma.</summary>
-        private (int PrincipalEnA, int SobranteEnB) LaMismaPersonaEnDosEmpresas()
+        private (int PrincipalEnA, int SobranteEnA2) LaMismaPersonaEnDosEmpresas()
         {
             using var db = _bd.Crear();
             var a = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Mario", "Mejía", dni: "0801199077777", nacimiento: new DateOnly(1988, 3, 4));
-            var b = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Mario", "Mejia", codigoInterno: "B900", nacimiento: new DateOnly(1988, 3, 4));
+            var b = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA2, "Mario", "Mejia", codigoInterno: "B900", nacimiento: new DateOnly(1988, 3, 4));
             return (a.IdPersona, b.IdPersona);
         }
 
@@ -575,7 +575,7 @@ namespace eGestion360Web.Tests.Services.Personas
         public async Task Capturar_un_documento_que_ya_es_de_otra_empresa_ofrece_la_fusion_sin_guardar_nada()
         {
             var (principal, sobrante) = LaMismaPersonaEnDosEmpresas();
-            var edicion = await Edicion(sobrante, DatosBase.EmpresaB, d => { d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; });
+            var edicion = await Edicion(sobrante, DatosBase.EmpresaA2, d => { d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; });
 
             using (var db = Contexto())
             {
@@ -596,7 +596,7 @@ namespace eGestion360Web.Tests.Services.Personas
         public async Task Con_la_fusion_confirmada_la_ficha_sobrante_pasa_a_la_persona_existente()
         {
             var (principal, sobrante) = LaMismaPersonaEnDosEmpresas();
-            var edicion = await Edicion(sobrante, DatosBase.EmpresaB, d => { d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; });
+            var edicion = await Edicion(sobrante, DatosBase.EmpresaA2, d => { d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; });
             edicion.ConfirmarFusion = true;
 
             using (var db = Contexto())
@@ -613,14 +613,41 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal(principal, fusionada.IdPersonaPrincipal);
 
             var vinculos = await lectura.PersonaEmpresas.AsNoTracking().Where(v => v.IdPersona == principal && !v.Eliminado).ToListAsync();
-            Assert.Equal(new[] { DatosBase.EmpresaA, DatosBase.EmpresaB }, vinculos.Select(v => v.IdEmpresa).Order().ToArray());
+            Assert.Equal(new[] { DatosBase.EmpresaA, DatosBase.EmpresaA2 }, vinculos.Select(v => v.IdEmpresa).Order().ToArray());
+        }
+
+        [Fact]
+        public async Task La_fusion_confirmada_entre_personas_de_tenants_distintos_se_rechaza_y_no_cambia_nada()
+        {
+            int sobrante;
+            using (var db = _bd.Crear())
+            {
+                PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Mario", "Mejía", dni: "0801199077777", nacimiento: new DateOnly(1988, 3, 4));
+                sobrante = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Mario", "Mejia", codigoInterno: "B900", nacimiento: new DateOnly(1988, 3, 4)).IdPersona;
+            }
+
+            var edicion = await Edicion(sobrante, DatosBase.EmpresaB, d => { d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; });
+            edicion.ConfirmarFusion = true;
+
+            using (var db = Contexto())
+            {
+                var r = await Servicio(db).ActualizarAsync(edicion);
+                Assert.False(r.Ok);
+                Assert.NotEqual(EstadoActualizarPersona.Fusionada, r.Estado);
+                Assert.Contains(r.Errores, e => e.Mensaje.Contains("tenants distintos"));
+            }
+
+            using var lectura = _bd.Crear();
+            var persona = await lectura.Personas.AsNoTracking().SingleAsync(x => x.IdPersona == sobrante);
+            Assert.False(persona.Eliminado);
+            Assert.Null(persona.IdPersonaPrincipal);
         }
 
         [Fact]
         public async Task Capturar_un_documento_de_otra_empresa_sin_que_coincida_la_verificacion_se_rechaza_igual_que_siempre()
         {
             var (_, sobrante) = LaMismaPersonaEnDosEmpresas();
-            var edicion = await Edicion(sobrante, DatosBase.EmpresaB, d =>
+            var edicion = await Edicion(sobrante, DatosBase.EmpresaA2, d =>
             {
                 d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; d.PrimerApellido = "Otro";
             });
@@ -737,8 +764,8 @@ namespace eGestion360Web.Tests.Services.Personas
             int sobrante, principal;
             using (var db = _bd.Crear())
             {
-                var s = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Rosa", "Lagos", codigoInterno: "S1");
-                var p = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Rosa", "Lagos", codigoInterno: "P1");
+                var s = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA2, "Rosa", "Lagos", codigoInterno: "S1");
+                var p = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA2, "Rosa", "Lagos", codigoInterno: "P1");
                 sobrante = s.IdPersona; principal = p.IdPersona;
 
                 // La sobrante además trabajó en la empresa A (vínculo ya terminado) y es cliente de la B
@@ -748,7 +775,7 @@ namespace eGestion360Web.Tests.Services.Personas
 
             using (var db = Contexto())
             {
-                var r = await Servicio(db).FusionarAsync(new FusionarPersonasInput { IdEmpresa = DatosBase.EmpresaB, IdPersonaSobrante = sobrante, IdPersonaPrincipal = principal, Usuario = "rrhh.ana" });
+                var r = await Servicio(db).FusionarAsync(new FusionarPersonasInput { IdEmpresa = DatosBase.EmpresaA2, IdPersonaSobrante = sobrante, IdPersonaPrincipal = principal, Usuario = "rrhh.ana" });
                 Assert.True(r.Ok);
                 Assert.Equal(1, r.Resumen!.Vinculos);
                 Assert.Equal(1, r.Resumen.VinculosEnConflicto);
@@ -910,20 +937,20 @@ namespace eGestion360Web.Tests.Services.Personas
                 var p = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Mario", "Mejía", dni: "0801199077777", codigoInterno: "A1");
                 p.Vinculos.Add(new PersonaEmpresa
                 {
-                    IdEmpresa = DatosBase.EmpresaB, TipoVinculo = TiposVinculo.Empleado, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow,
-                    Empleado = new Empleado { IdEmpresa = DatosBase.EmpresaB, Cargo = "MECANICO", CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow }
+                    IdEmpresa = DatosBase.EmpresaA2, TipoVinculo = TiposVinculo.Empleado, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow,
+                    Empleado = new Empleado { IdEmpresa = DatosBase.EmpresaA2, Cargo = "MECANICO", CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow }
                 });
                 db.SaveChanges();
                 id = p.IdPersona;
             }
 
             using (var db = Contexto())
-                Assert.True((await Servicio(db).CambiarEstadoAsync(Estado(id, DatosBase.EmpresaB, activo: false))).Ok);
+                Assert.True((await Servicio(db).CambiarEstadoAsync(Estado(id, DatosBase.EmpresaA2, activo: false))).Ok);
 
             using var lectura = _bd.Crear();
             var persona = await lectura.Personas.AsNoTracking().Include(x => x.Vinculos).SingleAsync(x => x.IdPersona == id);
             Assert.True(persona.Activo);   // sigue activa en la empresa A
-            Assert.False(persona.Vinculos.Single(v => v.IdEmpresa == DatosBase.EmpresaB).Activo);
+            Assert.False(persona.Vinculos.Single(v => v.IdEmpresa == DatosBase.EmpresaA2).Activo);
             Assert.True(persona.Vinculos.Single(v => v.IdEmpresa == DatosBase.EmpresaA).Activo);
 
             using (var db = Contexto())

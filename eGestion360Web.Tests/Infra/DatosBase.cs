@@ -14,11 +14,12 @@ namespace eGestion360Web.Tests.Infra
     {
         public const int EmpresaA = 1;   // equivale a una empresa cualquiera
         public const int EmpresaB = 4;   // otra empresa, para probar la separación entre empresas
+        public const int EmpresaA2 = 3;  // otra empresa del MISMO tenant que la A: para compartir personas entre empresas (ADR-004)
 
         public const int TenantA = 1;    // tenant de EmpresaA
         public const int TenantB = 2;    // tenant de EmpresaB: dos tenants distintos, para probar el aislamiento entre tenants
 
-        public static int TenantDe(int idEmpresa) => idEmpresa == EmpresaA ? TenantA : TenantB;
+        public static int TenantDe(int idEmpresa) => idEmpresa is EmpresaA or EmpresaA2 ? TenantA : TenantB;
 
         public static void Sembrar(ApplicationDbContext db)
         {
@@ -50,7 +51,7 @@ namespace eGestion360Web.Tests.Infra
                 new Tenant { IdTenant = TenantA, UidPublico = Guid.NewGuid(), Codigo = "TENANT_A", Nombre = "Tenant de prueba A", Tipo = TipoTenant.Interno, Estado = EstadoTenant.Activo, FechaEstado = ahora, CreadoPor = "pruebas", FechaCreacion = ahora },
                 new Tenant { IdTenant = TenantB, UidPublico = Guid.NewGuid(), Codigo = "TENANT_B", Nombre = "Tenant de prueba B", Tipo = TipoTenant.Cliente, Estado = EstadoTenant.Activo, FechaEstado = ahora, CreadoPor = "pruebas", FechaCreacion = ahora });
 
-            foreach (var id in new[] { EmpresaA, EmpresaB })
+            foreach (var id in new[] { EmpresaA, EmpresaA2, EmpresaB })
             {
                 db.Empresas.Add(new Empresa
                 {

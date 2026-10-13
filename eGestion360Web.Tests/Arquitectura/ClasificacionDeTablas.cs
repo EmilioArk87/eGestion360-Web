@@ -133,18 +133,12 @@ namespace eGestion360Web.Tests.Arquitectura
         };
 
         /// <summary>
-        /// Tablas de tenant, mixtas o de infraestructura que todavía no tienen <c>id_tenant</c> en el modelo de EF. En F0 son
-        /// todas; en F1 la lista solo puede bajar, hasta quedar vacía. Ver <see cref="ArnesAislamientoTests"/>.
+        /// Tablas de tenant, mixtas o de infraestructura que todavía no tienen <c>id_tenant</c> en el modelo de EF. En F0 eran
+        /// 43; el paso F1.2 las agregó todas y la lista quedó vacía: una tabla de tenant nueva que no nazca con la columna
+        /// hace fallar la prueba. Ver <see cref="ArnesAislamientoTests"/>.
         /// </summary>
         public static readonly IReadOnlySet<string> PendientesDeIdTenant = new HashSet<string>(StringComparer.Ordinal)
         {
-            "empresa_modulos", "empresa_roles", "empresa_rol_permisos", "personas", "persona_documentos",
-            "persona_empresa", "empleados", "clientes", "proveedores", "productos_servicios", "impuestos", "formas_pago",
-            "condiciones_pago", "condiciones_pago_cuotas", "cargos", "bitacora_cambios", "facturas", "factura_detalle",
-            "factura_secuencias", "notas", "pagos", "pago_aplicaciones", "vehiculos", "tipos_vehiculo", "rutas", "talleres",
-            "categorias_repuesto", "cargas_combustible", "odometro_diario", "control_salidas", "peajes", "salarios_diarios",
-            "gastos_repuestos", "ordenes_mantenimiento", "polizas_seguros", "ct_cuentas", "ct_ejercicios", "ct_periodos",
-            "ct_centros_costo", "ct_asientos", "ct_asiento_movimientos", "tasas_cambio", "domain_events",
         };
 
         public static bool LlevaIdTenant(CategoriaTabla categoria)

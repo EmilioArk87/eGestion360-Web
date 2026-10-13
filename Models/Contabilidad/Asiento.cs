@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Contabilidad
 {
@@ -10,7 +11,7 @@ namespace eGestion360Web.Models.Contabilidad
     /// <c>domain_events.id_evento</c> que lo generó (idempotencia).
     /// </summary>
     [Table("ct_asientos")]
-    public class Asiento
+    public class Asiento : ITenantEntity
     {
         [Key]
         [Column("id_asiento")]
@@ -18,6 +19,9 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_periodo")]
         public int IdPeriodo { get; set; }

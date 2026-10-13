@@ -81,6 +81,12 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   `IdCorrelacion`). Todavía **no filtra datos**: los filtros de EF, RLS y `id_tenant` en las demás tablas llegan en
   F1.2 a F1.4. Una empresa nueva se crea eligiendo su tenant (no se cambia después) y todo registro de log de la petición
   lleva `IdTenant`, `IdEmpresa`, `IdUsuario` e `IdCorrelacion` (el mismo valor viaja en el encabezado `X-Correlation-Id`).
+- **Desde F1.2** las 40 tablas de tenant de la base llevan `id_tenant` (nulable hasta F1.3; scripts 026 a 030) y todas las
+  entidades de EF lo declaran (`ITenantEntity`; `ITenantOpcionalEntity` en las tablas mixtas, donde nulo es una fila global). El
+  `TenantAlGuardarInterceptor` lo asigna al insertar, siempre en el servidor y en este orden: la empresa de la fila, su registro
+  padre, sus hijos, su persona (la bitácora) y, al final, el tenant de la petición. Si ninguno lo da, no guarda. **El código de las
+  pantallas y los servicios no asigna `IdTenant`.** Tampoco deja cambiarlo en una fila guardada, ni que una fila apunte a un
+  registro de otro tenant, y `PersonaService` no fusiona personas de tenants distintos. Sigue sin filtrar datos (F1.3).
 - **Filtrado manual obligatorio:** cada consulta debe incluir `.Where(x => x.IdEmpresa == empresaId)`. Hoy **no** hay
   Global Query Filters (`HasQueryFilter`); el aislamiento depende de que cada página filtre. ⚠️ Nunca devolver datos sin
   filtrar por empresa.

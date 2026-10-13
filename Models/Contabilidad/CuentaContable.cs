@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Contabilidad
 {
@@ -8,7 +9,7 @@ namespace eGestion360Web.Models.Contabilidad
     /// La jerarquía se arma con <see cref="IdCuentaPadre"/> (auto-referencia).
     /// </summary>
     [Table("ct_cuentas")]
-    public class CuentaContable
+    public class CuentaContable : ITenantEntity
     {
         [Key]
         [Column("id_cuenta")]
@@ -16,6 +17,9 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Required, StringLength(30)]
         [Column("codigo")]

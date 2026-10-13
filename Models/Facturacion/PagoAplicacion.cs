@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Facturacion
 {
@@ -9,11 +10,14 @@ namespace eGestion360Web.Models.Facturacion
     /// múltiples aplicaciones de distintos pagos.
     /// </summary>
     [Table("pago_aplicaciones")]
-    public class PagoAplicacion
+    public class PagoAplicacion : ITenantEntity
     {
         [Key]
         [Column("id_aplicacion")]
         public int IdAplicacion { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_pago")]
         public int IdPago { get; set; }

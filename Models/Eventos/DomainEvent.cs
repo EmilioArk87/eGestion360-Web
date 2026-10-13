@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Eventos
 {
@@ -15,7 +16,7 @@ namespace eGestion360Web.Models.Eventos
     ///   - El worker reclama eventos con UPDATE atómico (locked_until + worker_id).
     /// </summary>
     [Table("domain_events")]
-    public class DomainEvent
+    public class DomainEvent : ITenantEntity
     {
         [Key]
         [Column("id_evento")]
@@ -23,6 +24,9 @@ namespace eGestion360Web.Models.Eventos
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         /// <summary>
         /// Identificador del tipo de evento, ej. "factura.emitida.credito".

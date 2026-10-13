@@ -17,8 +17,7 @@ namespace eGestion360Web.Tests.Services.Tenancy
 
         private async Task<int?> Resolver(int idEmpresa, IMemoryCache? cache = null)
         {
-            using var db = _bd.Crear();
-            return await new ResolvedorDeTenantEf(db, cache ?? NuevaCache()).ResolverPorEmpresaAsync(idEmpresa);
+            return await _bd.NuevoResolvedor(cache ?? NuevaCache()).ResolverPorEmpresaAsync(idEmpresa);
         }
 
         [Fact]

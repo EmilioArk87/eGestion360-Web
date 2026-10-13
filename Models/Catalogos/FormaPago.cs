@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Catalogos
 {
     [Table("formas_pago")]
-    public class FormaPago
+    public class FormaPago : ITenantEntity
     {
         [Key]
         [Column("id_forma_pago")]
@@ -12,6 +13,9 @@ namespace eGestion360Web.Models.Catalogos
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Required]
         [StringLength(20)]

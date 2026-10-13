@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models
 {
     [Table("empresa_modulos")]
-    public class EmpresaModulo
+    public class EmpresaModulo : ITenantEntity
     {
         [Key]
         [Column("id")]
@@ -12,6 +13,9 @@ namespace eGestion360Web.Models
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_modulo")]
         public int IdModulo { get; set; }

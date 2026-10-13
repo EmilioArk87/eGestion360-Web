@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Flota;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Personas
 {
@@ -12,11 +13,14 @@ namespace eGestion360Web.Models.Personas
     /// El número de empleado NO va aquí: vive en <see cref="Empleado.CodigoInterno"/>.
     /// </summary>
     [Table("persona_documentos")]
-    public class PersonaDocumento
+    public class PersonaDocumento : ITenantEntity
     {
         [Key]
         [Column("id_persona_documento")]
         public int IdPersonaDocumento { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_persona")]
         public int IdPersona { get; set; }

@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Flota
 {
     [Table("categorias_repuesto")]
-    public class CategoriaRepuesto
+    public class CategoriaRepuesto : ITenantEntity
     {
         [Key]
         [Column("id_categoria_repuesto")]
@@ -12,6 +13,9 @@ namespace eGestion360Web.Models.Flota
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Required(ErrorMessage = "El nombre es requerido")]
         [StringLength(100)]

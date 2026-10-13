@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Contabilidad
 {
     /// <summary>Período contable (mes) dentro de un ejercicio fiscal (tabla <c>ct_periodos</c>).</summary>
     [Table("ct_periodos")]
-    public class PeriodoContable
+    public class PeriodoContable : ITenantEntity
     {
         [Key]
         [Column("id_periodo")]
@@ -16,6 +17,9 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         /// <summary>1..12 (13 reservado para ajustes/cierre).</summary>
         [Column("numero")]

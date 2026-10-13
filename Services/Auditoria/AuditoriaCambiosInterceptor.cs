@@ -13,6 +13,7 @@ using eGestion360Web.Models.Auditoria;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Services.Auditoria
 {
@@ -25,9 +26,9 @@ namespace eGestion360Web.Services.Auditoria
     ///
     ///   * Modificación: una fila por cada campo cuyo valor cambió (valor anterior y valor nuevo).
     ///   * Alta y baja física: una fila con campo nulo y la foto del registro en JSON.
-    ///   * No se registran token_concurrencia, fecha_modificacion ni modificado_por (son consecuencia del
-    ///     cambio y no el cambio), ni las claves ni las columnas calculadas. Las altas tampoco repiten
-    ///     creado_por ni fecha_creacion: ya van en las columnas usuario y fecha_hora de la fila.
+    ///   * No se registran token_concurrencia, fecha_modificacion, modificado_por ni id_tenant (son consecuencia
+    ///     del cambio y no el cambio; el tenant de una fila nunca cambia), ni las claves ni las columnas calculadas.
+    ///     Las altas tampoco repiten creado_por ni fecha_creacion: ya van en las columnas usuario y fecha_hora de la fila.
     ///   * El número de documento se guarda enmascarado (solo los 4 últimos dígitos): la bitácora no se
     ///     puede borrar y no debe conservar el documento completo.
     ///
@@ -61,7 +62,7 @@ namespace eGestion360Web.Services.Auditoria
 
         private static readonly HashSet<string> PropiedadesIgnoradas = new()
         {
-            "TokenConcurrencia", "FechaModificacion", "ModificadoPor"
+            "TokenConcurrencia", "FechaModificacion", "ModificadoPor", "IdTenant"
         };
 
         private static readonly HashSet<string> PropiedadesIgnoradasEnAltas = new()
@@ -311,6 +312,7 @@ namespace eGestion360Web.Services.Auditoria
         {
             IdTransaccion = idTransaccion,
             IdEmpresa = idEmpresa,
+            IdTenant = (entrada.Entity as ITenantEntity)?.IdTenant ?? 0,
             IdPersona = idPersona,
             Entidad = Entidades[entrada.Entity.GetType()],
             IdRegistro = idRegistro,

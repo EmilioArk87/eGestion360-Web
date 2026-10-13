@@ -1,12 +1,16 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models
 {
     [Table("empresa_rol_permisos")]
-    public class EmpresaRolPermiso
+    public class EmpresaRolPermiso : ITenantEntity
     {
         [Column("id_rol")]
         public int IdRol { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_modulo")]
         public int IdModulo { get; set; }

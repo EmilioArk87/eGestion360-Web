@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using eGestion360Web.Models.Flota;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Personas
 {
@@ -11,7 +12,7 @@ namespace eGestion360Web.Models.Personas
     /// <see cref="Empleado"/> y en Cliente, que apuntan a este vínculo.
     /// </summary>
     [Table("persona_empresa")]
-    public class PersonaEmpresa
+    public class PersonaEmpresa : ITenantEntity
     {
         [Key]
         [Column("id_persona_empresa")]
@@ -19,6 +20,9 @@ namespace eGestion360Web.Models.Personas
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_persona")]
         public int IdPersona { get; set; }

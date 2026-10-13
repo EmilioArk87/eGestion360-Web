@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Auditoria
 {
@@ -9,7 +10,7 @@ namespace eGestion360Web.Models.Auditoria
     /// propósito: la bitácora nunca debe bloquear ni ser afectada por cambios en otras tablas.
     /// </summary>
     [Table("bitacora_cambios")]
-    public class BitacoraCambio
+    public class BitacoraCambio : ITenantEntity
     {
         [Key]
         [Column("id_bitacora")]
@@ -21,6 +22,9 @@ namespace eGestion360Web.Models.Auditoria
 
         [Column("id_empresa")]
         public int? IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         /// <summary>Da el historial completo de una persona aunque el registro modificado sea un documento, un vínculo o un rol.</summary>
         [Column("id_persona")]

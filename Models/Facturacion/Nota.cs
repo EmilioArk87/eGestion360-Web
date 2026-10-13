@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using eGestion360Web.Models.Catalogos;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Facturacion
 {
@@ -11,7 +12,7 @@ namespace eGestion360Web.Models.Facturacion
     /// El correlativo se reserva en factura_secuencias con tipo_documento='nota_credito'|'nota_debito'.
     /// </summary>
     [Table("notas")]
-    public class Nota
+    public class Nota : ITenantEntity
     {
         [Key]
         [Column("id_nota")]
@@ -19,6 +20,9 @@ namespace eGestion360Web.Models.Facturacion
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         /// <summary>credito | debito</summary>
         [Required, StringLength(20)]

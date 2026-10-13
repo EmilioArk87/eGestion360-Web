@@ -4,29 +4,37 @@ using eGestion360Web.Data;
 
 namespace eGestion360Web.Services.Tenancy
 {
-    /// <summary>Averigua a qué tenant pertenece una empresa.</summary>
+    /// <summary>Averigua a qué tenant pertenece una empresa o una persona.</summary>
     public interface IResolvedorDeTenant
     {
         /// <summary>Tenant de la empresa, o nulo si la empresa no existe, está eliminada o aún no tiene tenant.</summary>
         Task<int?> ResolverPorEmpresaAsync(int idEmpresa, CancellationToken ct = default);
+
+        /// <summary>Tenant de la persona, o nulo si la persona no existe o aún no tiene tenant.</summary>
+        Task<int?> ResolverPorPersonaAsync(int idPersona, CancellationToken ct = default);
     }
 
     /// <summary>
-    /// Resuelve el tenant desde <c>empresas.id_tenant</c> y recuerda el resultado unos minutos, para no consultar la base en
-    /// cada petición. Una empresa no cambia de tenant en F1 (la pantalla de edición no lo permite), así que el desfase
-    /// posible es de pocos minutos y solo si alguien lo cambia directo en la base. Los resultados nulos no se guardan:
-    /// una empresa sin tenant es un error que hay que ver, no una respuesta que repetir.
+    /// Resuelve el tenant desde <c>empresas.id_tenant</c> (o <c>personas.id_tenant</c>) y recuerda el resultado unos minutos,
+    /// para no consultar la base en cada petición. Una empresa o una persona no cambia de tenant (el interceptor de guardado
+    /// lo impide y la pantalla de edición no lo permite), así que el desfase posible es de pocos minutos y solo si alguien lo
+    /// cambia directo en la base. Los resultados nulos no se guardan: una empresa sin tenant es un error que hay que ver, no
+    /// una respuesta que repetir.
+    ///
+    /// Consulta con su propio <see cref="ApplicationDbContext"/>, en un ámbito aparte: así no se mezcla con el contexto que
+    /// está guardando (lo llama <see cref="TenantAlGuardarInterceptor"/> en pleno <c>SaveChanges</c>, y el contexto no admite
+    /// otra consulta en paralelo) y no hay dependencia circular entre el contexto, sus interceptores y este servicio.
     /// </summary>
     public sealed class ResolvedorDeTenantEf : IResolvedorDeTenant
     {
         private static readonly TimeSpan Vigencia = TimeSpan.FromMinutes(10);
 
-        private readonly ApplicationDbContext _db;
+        private readonly IServiceScopeFactory _ambitos;
         private readonly IMemoryCache _cache;
 
-        public ResolvedorDeTenantEf(ApplicationDbContext db, IMemoryCache cache)
+        public ResolvedorDeTenantEf(IServiceScopeFactory ambitos, IMemoryCache cache)
         {
-            _db = db;
+            _ambitos = ambitos;
             _cache = cache;
         }
 
@@ -34,15 +42,31 @@ namespace eGestion360Web.Services.Tenancy
         {
             if (idEmpresa <= 0) return null;
 
-            var clave = $"tenant-de-empresa:{idEmpresa}";
+            // Consulta escalar en lugar de una proyección de la entidad: mientras la columna admite nulos (scripts 025 a 029,
+            // hasta F1.3), una fila creada por la versión anterior de la aplicación trae id_tenant nulo, y EF no puede leer un
+            // nulo en la propiedad obligatoria del modelo. Así devuelve nulo y quien llama lo avisa.
+            return await ResolverAsync($"tenant-de-empresa:{idEmpresa}", ct, db => db.Database
+                .SqlQuery<int?>($"SELECT id_tenant AS [Value] FROM empresas WHERE id_empresa = {idEmpresa} AND eliminado = 0"));
+        }
+
+        public async Task<int?> ResolverPorPersonaAsync(int idPersona, CancellationToken ct = default)
+        {
+            if (idPersona <= 0) return null;
+
+            return await ResolverAsync($"tenant-de-persona:{idPersona}", ct, db => db.Database
+                .SqlQuery<int?>($"SELECT id_tenant AS [Value] FROM personas WHERE id_persona = {idPersona}"));
+        }
+
+        private async Task<int?> ResolverAsync(string clave, CancellationToken ct, Func<ApplicationDbContext, IQueryable<int?>> consulta)
+        {
             if (_cache.TryGetValue(clave, out int enCache)) return enCache;
 
-            // Consulta escalar en lugar de una proyección de la entidad: mientras la columna admite nulos (script 025, hasta
-            // F1.3), una empresa creada por la versión anterior de la aplicación trae id_tenant nulo, y EF no puede leer un
-            // nulo en la propiedad obligatoria del modelo. Así devuelve nulo y el middleware lo avisa en el log.
-            var idTenant = await _db.Database
-                .SqlQuery<int?>($"SELECT id_tenant AS [Value] FROM empresas WHERE id_empresa = {idEmpresa} AND eliminado = 0")
-                .FirstOrDefaultAsync(ct);
+            int? idTenant;
+            using (var ambito = _ambitos.CreateScope())
+            {
+                var db = ambito.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                idTenant = await consulta(db).FirstOrDefaultAsync(ct);
+            }
 
             if (idTenant is not > 0) return null;
 

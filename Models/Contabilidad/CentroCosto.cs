@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Contabilidad
 {
     /// <summary>Centro de costo (opcional por línea de asiento) — tabla <c>ct_centros_costo</c>.</summary>
     [Table("ct_centros_costo")]
-    public class CentroCosto
+    public class CentroCosto : ITenantEntity
     {
         [Key]
         [Column("id_centro_costo")]
@@ -13,6 +14,9 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Required, StringLength(30)]
         [Column("codigo")]

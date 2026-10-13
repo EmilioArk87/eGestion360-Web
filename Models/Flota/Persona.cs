@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Personas;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Flota
 {
@@ -18,11 +19,14 @@ namespace eGestion360Web.Models.Flota
     /// <see cref="NombreCompleto"/>.
     /// </summary>
     [Table("personas")]
-    public class Persona
+    public class Persona : ITenantEntity
     {
         [Key]
         [Column("id_persona")]
         public int IdPersona { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         /// <summary>COMPUESTO: se arma con <see cref="PrimerNombre"/> y <see cref="SegundoNombre"/> al guardar.</summary>
         [Required(ErrorMessage = "Los nombres son requeridos")]

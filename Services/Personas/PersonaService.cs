@@ -504,6 +504,9 @@ namespace eGestion360Web.Services.Personas
                 if (principal.Eliminado || principal.IdPersonaPrincipal != null)
                     return ErrorFusion("La persona principal ya fue fusionada o eliminada.");
 
+                if (sobrante.IdTenant != principal.IdTenant)
+                    return ErrorFusion("No se puede fusionar a personas de tenants distintos: cada tenant tiene sus propias personas.");
+
                 var ahora = Ahora();
                 int documentosMovidos = 0, documentosRepetidos = 0, vinculosMovidos = 0, vinculosEnConflicto = 0;
 

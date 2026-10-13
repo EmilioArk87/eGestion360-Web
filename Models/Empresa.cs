@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models
 {
     [Table("empresas")]
-    public class Empresa
+    public class Empresa : ITenantEntity
     {
         [Key]
         [Column("id_empresa")]

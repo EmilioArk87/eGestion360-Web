@@ -1,15 +1,19 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using eGestion360Web.Models.Catalogos;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Facturacion
 {
     [Table("factura_detalle")]
-    public class FacturaDetalle
+    public class FacturaDetalle : ITenantEntity
     {
         [Key]
         [Column("id_factura_detalle")]
         public int IdFacturaDetalle { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("id_factura")]
         public int IdFactura { get; set; }

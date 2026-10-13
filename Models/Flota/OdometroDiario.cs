@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Flota
 {
     [Table("odometro_diario")]
-    public class OdometroDiario
+    public class OdometroDiario : ITenantEntity
     {
         [Key]
         [Column("id_odometro_diario")]
@@ -12,6 +13,9 @@ namespace eGestion360Web.Models.Flota
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Required(ErrorMessage = "El vehículo es requerido")]
         [Display(Name = "Vehículo")]

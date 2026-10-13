@@ -5,11 +5,10 @@ using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Tests.Infra
 {
-    /// <summary>Crea personas completas (persona + vínculo + empleado + documento) directamente en la base de prueba.</summary>
+    /// <summary>Crea personas completas (persona + vínculo + empleado + documento): las arma, o las inserta directamente en la base de prueba.</summary>
     public static class PersonasDePrueba
     {
-        public static Persona Insertar(
-            ApplicationDbContext db,
+        public static Persona Armar(
             int idEmpresa,
             string primerNombre,
             string primerApellido,
@@ -65,6 +64,14 @@ namespace eGestion360Web.Tests.Infra
                 });
             }
 
+            return persona;
+        }
+
+        public static Persona Insertar(
+            ApplicationDbContext db, int idEmpresa, string primerNombre, string primerApellido, string? dni = null,
+            string? codigoInterno = null, string cargo = "MECANICO", DateOnly? nacimiento = null, bool vigente = true)
+        {
+            var persona = Armar(idEmpresa, primerNombre, primerApellido, dni, codigoInterno, cargo, nacimiento, vigente);
             db.Personas.Add(persona);
             db.SaveChanges();
             return persona;

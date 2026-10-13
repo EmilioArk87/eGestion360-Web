@@ -101,7 +101,7 @@ namespace eGestion360Web.Tests.Services.Personas
             using var db = _bd.Crear();
             Insertar(db, DatosBase.EmpresaA, "Luz", "Mora", codigo: "OK1");
             var eliminada = Insertar(db, DatosBase.EmpresaA, "Eli", "Mina", codigo: "E1");
-            var principal = Insertar(db, DatosBase.EmpresaB, "Pri", "Ncipal", codigo: "P1");
+            var principal = Insertar(db, DatosBase.EmpresaA2, "Pri", "Ncipal", codigo: "P1");
             var fusionada = Insertar(db, DatosBase.EmpresaA, "Fus", "Ion", codigo: "F1");
             var sinVinculos = Insertar(db, DatosBase.EmpresaA, "Sin", "Vinculo", codigo: "S1");
 
@@ -275,7 +275,7 @@ namespace eGestion360Web.Tests.Services.Personas
 
             var empresas = await Servicio(db).EmpresasAsync();
 
-            Assert.Equal(new[] { DatosBase.EmpresaA.ToString() }, empresas.Select(e => e.Valor));
+            Assert.Equal(new[] { DatosBase.EmpresaA.ToString(), DatosBase.EmpresaA2.ToString() }, empresas.Select(e => e.Valor));
         }
 
         // ── Detalle ─────────────────────────────────────────────────────────

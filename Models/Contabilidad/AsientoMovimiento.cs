@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Models.Contabilidad
 {
@@ -8,7 +9,7 @@ namespace eGestion360Web.Models.Contabilidad
     /// Regla: exactamente uno de <see cref="Debito"/> / <see cref="Credito"/> es &gt; 0.
     /// </summary>
     [Table("ct_asiento_movimientos")]
-    public class AsientoMovimiento
+    public class AsientoMovimiento : ITenantEntity
     {
         [Key]
         [Column("id_movimiento")]
@@ -19,6 +20,9 @@ namespace eGestion360Web.Models.Contabilidad
 
         [Column("id_empresa")]
         public int IdEmpresa { get; set; }
+
+        [Column("id_tenant")]
+        public int IdTenant { get; set; }
 
         [Column("numero_linea")]
         public int NumeroLinea { get; set; }

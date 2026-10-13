@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using eGestion360Web.Data;
 using eGestion360Web.Services.Tenancy;
 
@@ -170,8 +171,11 @@ SELECT 'esquema ' + s.name FROM sys.schemas s WHERE s.name IN ('saas')";
                 // La versión anterior de la aplicación crea empresas sin tocar la columna nueva: id_tenant queda nulo.
                 await EjecutarAsync(cadena, "INSERT INTO dbo.empresas (id_empresa, codigo, razon_social) VALUES (5, N'E5', N'Empresa 5')");
 
-                await using var db = Contexto(cadena);
-                var resolvedor = new ResolvedorDeTenantEf(db, new MemoryCache(new MemoryCacheOptions()));
+                var servicios = new ServiceCollection();
+                servicios.AddScoped<ApplicationDbContext>(_ => Contexto(cadena));
+                await using var proveedor = servicios.BuildServiceProvider();
+                var resolvedor = new ResolvedorDeTenantEf(
+                    proveedor.GetRequiredService<IServiceScopeFactory>(), new MemoryCache(new MemoryCacheOptions()));
 
                 Assert.Null(await resolvedor.ResolverPorEmpresaAsync(5));
                 Assert.Equal(1, await resolvedor.ResolverPorEmpresaAsync(1));

@@ -369,7 +369,7 @@ namespace eGestion360Web.Tests.Services.Personas
             {
                 // La misma persona trabaja en las dos empresas.
                 var p = Insertar(db, DatosBase.EmpresaA, "Mario", "Mejía", dni: "0801199077777", codigo: "A1");
-                db.PersonaEmpresas.Add(new PersonaEmpresa { IdEmpresa = DatosBase.EmpresaB, IdPersona = p.IdPersona, TipoVinculo = TiposVinculo.Empleado, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow });
+                db.PersonaEmpresas.Add(new PersonaEmpresa { IdEmpresa = DatosBase.EmpresaA2, IdPersona = p.IdPersona, TipoVinculo = TiposVinculo.Empleado, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow });
                 id = p.IdPersona;
 
                 db.BitacoraCambios.AddRange(
@@ -386,12 +386,12 @@ namespace eGestion360Web.Tests.Services.Personas
                     // De la empresa A: la foto del alta de la persona lleva cargo y tarifa (no se detalla)
                     Fila(id, DatosBase.EmpresaA, "personas", "INSERT", null, null, "{\"primer_nombre\":\"Mario\",\"cargo\":\"MECANICO\",\"tarifa_diaria\":300}", usuario: "usuario.de.A"),
                     // De la empresa B (la que mira)
-                    Fila(id, DatosBase.EmpresaB, "empleados", "UPDATE", "cargo", "OTRO", "CONDUCTOR", usuario: "usuario.de.B"));
+                    Fila(id, DatosBase.EmpresaA2, "empleados", "UPDATE", "cargo", "OTRO", "CONDUCTOR", usuario: "usuario.de.B"));
                 db.SaveChanges();
             }
 
             using var lectura = _bd.Crear();
-            var h = (await Servicio(lectura).HistorialAsync(DatosBase.EmpresaB, id))!;
+            var h = (await Servicio(lectura).HistorialAsync(DatosBase.EmpresaA2, id))!;
             var filas = h.Filas;
 
             // Visibles de la A, con el usuario oculto
@@ -570,7 +570,7 @@ namespace eGestion360Web.Tests.Services.Personas
         public async Task Personal_para_seleccion_incluye_a_quien_trabaja_en_dos_empresas_en_cada_una()
         {
             using var db = _bd.Crear();
-            var persona = Insertar(db, DatosBase.EmpresaB, "Dos", "Empresas", dni: "0801199012345", codigo: "B1", cargo: "CONDUCTOR");
+            var persona = Insertar(db, DatosBase.EmpresaA2, "Dos", "Empresas", dni: "0801199012345", codigo: "B1", cargo: "CONDUCTOR");
 
             db.PersonaEmpresas.Add(new PersonaEmpresa
             {
@@ -581,7 +581,7 @@ namespace eGestion360Web.Tests.Services.Personas
             db.SaveChanges();
 
             // Con las columnas viejas, esta persona solo aparecía en la empresa que quedó en personas.id_empresa.
-            Assert.Single(await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaB, "CONDUCTOR"));
+            Assert.Single(await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaA2, "CONDUCTOR"));
             Assert.Single(await Servicio(db).PersonalParaSeleccionAsync(DatosBase.EmpresaA, "CONDUCTOR"));
         }
 
