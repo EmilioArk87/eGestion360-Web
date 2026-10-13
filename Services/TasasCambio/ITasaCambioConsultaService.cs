@@ -17,6 +17,14 @@ namespace eGestion360Web.Services.TasasCambio
         /// <summary>Para cada moneda del job (USD, EUR) y tipo (COMPRA, VENTA), la tasa que rige hoy en Honduras.</summary>
         Task<IReadOnlyList<TasaVigenteActual>> VigentesActualesAsync(int? idEmpresa = null, CancellationToken ct = default);
 
+        /// <summary>
+        /// La serie de tasas VIGENTES de una moneda para la gráfica de tendencias: un punto por fecha de vigencia entre
+        /// <paramref name="dias"/> días antes de hoy y hoy (<paramref name="dias"/> = 0: todo lo guardado, hasta
+        /// <see cref="TendenciaTasas.MaxDias"/>). Misma regla de empresa que la vigente: a igual fecha gana la propia,
+        /// y nunca aparece la tasa de otra empresa.
+        /// </summary>
+        Task<TendenciaTasas> TendenciaAsync(string monedaOrigen, int dias, int? idEmpresa = null, CancellationToken ct = default);
+
         /// <summary>Histórico filtrable y paginado, de la fecha más reciente a la más antigua.</summary>
         Task<PaginaTasas> HistoricoAsync(FiltroHistoricoTasas filtro, CancellationToken ct = default);
 
@@ -51,6 +59,17 @@ namespace eGestion360Web.Services.TasasCambio
     /// adelantado, p. ej. el domingo ya está la del lunes). Nulo si no hay ninguna publicada por adelantado.
     /// </param>
     public sealed record TasaVigenteActual(string MonedaOrigen, string TipoTasa, TasaVigente? Vigente, TasaVigente? Proxima = null);
+
+    /// <summary>Un día de la serie: la compra y la venta vigentes en esa fecha (nulo si ese tipo no se publicó).</summary>
+    public sealed record PuntoTendencia(DateOnly Fecha, decimal? Compra, decimal? Venta);
+
+    /// <param name="Puntos">De la fecha más antigua a la más reciente.</param>
+    /// <param name="Anterior">El último día publicado ANTES del primer punto (para el cambio del primer punto), o nulo.</param>
+    public sealed record TendenciaTasas(string MonedaOrigen, IReadOnlyList<PuntoTendencia> Puntos, PuntoTendencia? Anterior)
+    {
+        /// <summary>Tope de la serie cuando se pide "todo": dos años hacia atrás.</summary>
+        public const int MaxDias = 730;
+    }
 
     public sealed class FiltroHistoricoTasas
     {

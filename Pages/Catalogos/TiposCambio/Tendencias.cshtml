@@ -1,0 +1,204 @@
+@page
+@model eGestion360Web.Pages.Catalogos.TiposCambio.TendenciasModel
+@using System.Globalization
+@using eGestion360Web.Services.TasasCambio
+@{
+    ViewData["Title"] = "Tendencias de las tasas de cambio";
+    var elegido = Model.Elegido;
+
+    // Los controles son enlaces que conservan lo demás; la fecha se conserva solo si sigue dentro de la serie.
+    string Enlace(string? moneda = null, string? serie = null, string? rango = null, DateOnly? fecha = null) =>
+        Url.Page("Tendencias", new
+        {
+            moneda = moneda ?? Model.Moneda,
+            serie = serie ?? Model.Serie,
+            rango = rango ?? Model.Rango,
+            fecha = (fecha ?? (moneda == null && serie == null && rango == null ? elegido?.Fecha : null))?.ToString("yyyy-MM-dd")
+        })!;
+
+    string Clase(bool activo) => activo ? "tc-seg-btn on" : "tc-seg-btn";
+}
+
+@section Head {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/tasas-cambio.css" asp-append-version="true" />
+}
+
+<div class="tc-page">
+    <partial name="_TasasEncabezado" model="@(new TasasEncabezado("Tendencias", Model.EsAdminSistema))" />
+
+    <div class="tc-head">
+        <div>
+            <h1 class="tc-title">Tendencias</h1>
+            <p class="tc-sub">Cómo se han movido la compra y la venta en lempiras. Cada punto es una tasa publicada; los días sin publicación no tienen punto.</p>
+        </div>
+    </div>
+
+    @if (Model.AvisoBaseDatos != null)
+    {
+        <div class="alert alert-warning d-flex align-items-start" role="alert">
+            <i class="fas fa-database fa-lg me-3 mt-1"></i>
+            <div><strong>@Model.AvisoBaseDatos</strong></div>
+        </div>
+    }
+
+    <div class="tc-controls">
+        <div class="tc-seg" role="group" aria-label="Moneda">
+            @foreach (var m in Model.Monedas)
+            {
+                <a class="@Clase(m == Model.Moneda)" href="@Enlace(moneda: m)" aria-current="@(m == Model.Moneda ? "true" : null)">@FormatoTasas.NombreMoneda(m)</a>
+            }
+        </div>
+        <div class="tc-controls-right">
+            <div class="tc-seg" role="group" aria-label="Serie">
+                @foreach (var s in SerieTendencia.Todas)
+                {
+                    <a class="@Clase(s == Model.Serie)" href="@Enlace(serie: s)" aria-current="@(s == Model.Serie ? "true" : null)">@TendenciasModel.NombreSerie(s)</a>
+                }
+            </div>
+            <div class="tc-seg" role="group" aria-label="Período">
+                @foreach (var r in TendenciasModel.Rangos)
+                {
+                    <a class="@Clase(r == Model.Rango)" href="@Enlace(rango: r)" aria-current="@(r == Model.Rango ? "true" : null)">@TendenciasModel.NombreRango(r)</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.HayDatos)
+    {
+        <section class="tc-empty">
+            <i class="fas fa-chart-line fa-2x" aria-hidden="true"></i>
+            <div class="tc-empty-title">Todavía no hay tasas de @FormatoTasas.NombreMoneda(Model.Moneda ?? "")</div>
+            <p>
+                @if (Model.Moneda == "EUR")
+                {
+                    @:El euro se calcula con el EUR/USD del Banco Central Europeo por el USD/HNL del BCH. Su tendencia aparecerá aquí cuando el job guarde las primeras tasas.
+                }
+                else
+                {
+                    @:No hay tasas guardadas en este período. Pruebe con otro período o revise el histórico.
+                }
+            </p>
+        </section>
+    }
+    else
+    {
+        var primero = Model.Primero!;
+        var ultimo = Model.Ultimo!;
+
+        <div class="tc-tiles">
+            <div class="tc-tile">
+                <div class="tc-tile-label">Compra actual</div>
+                <div class="tc-tile-num tc-tile-num-sm">L @TendenciasModel.Tasa4(ultimo.Compra)</div>
+                <div class="tc-tile-note tc-mono">@TendenciasModel.Cambio(ultimo.Compra, primero.Compra, true) en el período</div>
+            </div>
+            <div class="tc-tile">
+                <div class="tc-tile-label">Venta actual</div>
+                <div class="tc-tile-num tc-tile-num-sm">L @TendenciasModel.Tasa4(ultimo.Venta)</div>
+                <div class="tc-tile-note tc-mono">@TendenciasModel.Cambio(ultimo.Venta, primero.Venta, true) en el período</div>
+            </div>
+            <div class="tc-tile">
+                <div class="tc-tile-label">Diferencia compra/venta</div>
+                <div class="tc-tile-num tc-tile-num-sm">@TendenciasModel.Diferencia(ultimo)</div>
+                <div class="tc-tile-note">en la última publicación</div>
+            </div>
+            <div class="tc-tile">
+                <div class="tc-tile-label">Publicaciones</div>
+                <div class="tc-tile-num tc-tile-num-sm">@Model.Tendencia.Puntos.Count</div>
+                <div class="tc-tile-note">@primero.Fecha.ToString("dd/MM", CultureInfo.InvariantCulture) → @ultimo.Fecha.ToString("dd/MM", CultureInfo.InvariantCulture)</div>
+            </div>
+        </div>
+
+        <section class="card mb-4" aria-label="Gráfica de tendencia">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <strong>@FormatoTasas.NombreMoneda(Model.Moneda!) · @Model.Moneda → @Model.MonedaLocal</strong>
+                <div class="tc-legend">
+                    @if (Model.VerCompra) { <span><i class="tc-swatch tc-swatch-compra" aria-hidden="true"></i>Compra</span> }
+                    @if (Model.VerVenta) { <span><i class="tc-swatch tc-swatch-venta" aria-hidden="true"></i>Venta</span> }
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tc-chart">
+                    <svg viewBox="0 0 @GraficaTendencia.Ancho @GraficaTendencia.Alto" preserveAspectRatio="none" role="img" aria-label="@Model.Descripcion">
+                        <path d="@Model.Grafica.Cuadricula" class="tc-grid" />
+                        @if (Model.Grafica.Banda.Length > 0) { <polygon points="@Model.Grafica.Banda" class="tc-band" /> }
+                        <path d="@Model.Grafica.LineaElegida" class="tc-pick" />
+                        @if (Model.Grafica.TrazoCompra.Length > 0) { <path d="@Model.Grafica.TrazoCompra" class="tc-line tc-line-compra" /> }
+                        @if (Model.Grafica.TrazoVenta.Length > 0) { <path d="@Model.Grafica.TrazoVenta" class="tc-line tc-line-venta" /> }
+                    </svg>
+                    @foreach (var y in Model.Grafica.EjeY)
+                    {
+                        <span class="tc-axis-y" style="top: @y.Posicion">@y.Texto</span>
+                    }
+                    @foreach (var x in Model.Grafica.EjeX)
+                    {
+                        <span class="tc-axis-x" style="left: @x.Posicion">@x.Texto</span>
+                    }
+                    @foreach (var p in Model.Grafica.Puntos)
+                    {
+                        var nombre = p.Serie == SerieTendencia.Compra ? "Compra" : "Venta";
+                        <a class="tc-dot @(p.Serie == SerieTendencia.Compra ? "tc-dot-compra" : "tc-dot-venta") @(p.Seleccionado ? "on" : "")"
+                           style="left: @p.Izquierda; top: @p.Arriba"
+                           href="@Enlace(fecha: p.Fecha)"
+                           aria-label="@($"{nombre} {FormatoTasas.Fecha(p.Fecha)}: L {TendenciasModel.Tasa4(p.Valor)}")"
+                           title="@($"{nombre} {FormatoTasas.Fecha(p.Fecha)}: L {TendenciasModel.Tasa4(p.Valor)}")"></a>
+                    }
+                </div>
+
+                <div class="tc-chips" role="group" aria-label="Elegir una fecha">
+                    @foreach (var p in Model.Tendencia.Puntos)
+                    {
+                        <a class="tc-chip @(p.Fecha == elegido!.Fecha ? "on" : "")" href="@Enlace(fecha: p.Fecha)"
+                           aria-current="@(p.Fecha == elegido!.Fecha ? "true" : null)">@p.Fecha.ToString("dd/MM", CultureInfo.InvariantCulture)</a>
+                    }
+                </div>
+
+                <div class="tc-readout">
+                    <div><div class="tc-tile-label">Fecha</div><div class="fw-bold mt-1">@FormatoTasas.Fecha(elegido!.Fecha)</div></div>
+                    <div><div class="tc-tile-label">Compra</div><div class="tc-mono mt-1">L @TendenciasModel.Tasa4(elegido.Compra)</div></div>
+                    <div><div class="tc-tile-label">Venta</div><div class="tc-mono mt-1">L @TendenciasModel.Tasa4(elegido.Venta)</div></div>
+                    <div>
+                        <div class="tc-tile-label">Cambio vs. anterior</div>
+                        <div class="tc-mono mt-1">@(Model.Previo(elegido) is { } previo ? TendenciasModel.Cambio(elegido.Compra, previo.Compra) + " (compra)" : "—")</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card mb-4" aria-label="Datos de la gráfica">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <strong>Datos de la gráfica</strong>
+                <a asp-page="Historico" asp-route-moneda="@Model.Moneda" class="small fw-bold text-decoration-none">Ver el histórico completo →</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle small">
+                        <thead>
+                            <tr>
+                                <th>Vigencia</th>
+                                <th class="text-end">Compra</th>
+                                <th class="text-end">Venta</th>
+                                <th class="text-end">Diferencia</th>
+                                <th class="text-end">Cambio compra</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Tendencia.Puntos.Reverse())
+                            {
+                                <tr>
+                                    <td class="fw-bold">@FormatoTasas.Fecha(p.Fecha)</td>
+                                    <td class="text-end tc-mono">@TendenciasModel.Tasa4(p.Compra)</td>
+                                    <td class="text-end tc-mono">@TendenciasModel.Tasa4(p.Venta)</td>
+                                    <td class="text-end tc-mono text-muted">@TendenciasModel.Diferencia(p)</td>
+                                    <td class="text-end tc-mono text-muted">@(Model.Previo(p) is { } anterior ? TendenciasModel.Cambio(p.Compra, anterior.Compra) : "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    }
+</div>

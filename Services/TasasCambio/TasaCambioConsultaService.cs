@@ -86,6 +86,61 @@ namespace eGestion360Web.Services.TasasCambio
         }
 
         // ──────────────────────────────────────────────────────────────────
+        //  TENDENCIA
+        // ──────────────────────────────────────────────────────────────────
+
+        public async Task<TendenciaTasas> TendenciaAsync(string monedaOrigen, int dias, int? idEmpresa = null, CancellationToken ct = default)
+        {
+            var origen = Codigo(monedaOrigen);
+            var destino = Codigo(_opt.MonedaLocalEfectiva);
+            var hoy = _calendario.Hoy;
+            var ventana = dias <= 0 ? TendenciaTasas.MaxDias : Math.Min(dias, TendenciaTasas.MaxDias);
+            var desde = hoy.AddDays(-ventana);
+            var empresa = idEmpresa is > 0 ? idEmpresa : null;
+
+            IQueryable<Models.Catalogos.TasaCambio> Base() => _db.TasasCambio.AsNoTracking()
+                .Where(t => t.MonedaOrigen == origen && t.MonedaDestino == destino
+                            && (t.TipoTasa == Cat.TipoTasa.Compra || t.TipoTasa == Cat.TipoTasa.Venta)
+                            && t.Estado == Cat.EstadoTasa.Vigente && !t.Eliminado
+                            && (t.IdEmpresa == null || (empresa != null && t.IdEmpresa == empresa)));
+
+            var filas = await Base()
+                .Where(t => t.FechaVigencia >= desde && t.FechaVigencia <= hoy)
+                .Select(t => new FilaSerie(t.FechaVigencia, t.TipoTasa, t.Tasa, t.IdEmpresa != null))
+                .ToListAsync(ct);
+
+            // El último día publicado antes de la ventana: solo sirve para calcular el cambio del primer punto.
+            var fechaAnterior = await Base().Where(t => t.FechaVigencia < desde)
+                .OrderByDescending(t => t.FechaVigencia).Select(t => (DateOnly?)t.FechaVigencia).FirstOrDefaultAsync(ct);
+            PuntoTendencia? anterior = null;
+            if (fechaAnterior is { } fa)
+            {
+                var previas = await Base().Where(t => t.FechaVigencia == fa)
+                    .Select(t => new FilaSerie(t.FechaVigencia, t.TipoTasa, t.Tasa, t.IdEmpresa != null))
+                    .ToListAsync(ct);
+                anterior = Agrupar(previas).FirstOrDefault();
+            }
+
+            return new TendenciaTasas(origen, Agrupar(filas), anterior);
+        }
+
+        private sealed record FilaSerie(DateOnly Fecha, string Tipo, decimal Tasa, bool EsPropia);
+
+        /// <summary>Un punto por fecha; por cada tipo, la propia de la empresa gana a la oficial de la misma fecha.</summary>
+        private static List<PuntoTendencia> Agrupar(IEnumerable<FilaSerie> filas) => filas
+            .GroupBy(f => f.Fecha)
+            .OrderBy(g => g.Key)
+            .Select(g => new PuntoTendencia(g.Key, Elegida(g, Cat.TipoTasa.Compra), Elegida(g, Cat.TipoTasa.Venta)))
+            .ToList();
+
+        private static decimal? Elegida(IEnumerable<FilaSerie> delDia, string tipo)
+        {
+            var candidatas = delDia.Where(f => f.Tipo == tipo).ToList();
+            if (candidatas.Count == 0) return null;
+            return (candidatas.FirstOrDefault(f => f.EsPropia) ?? candidatas[0]).Tasa;
+        }
+
+        // ──────────────────────────────────────────────────────────────────
         //  HISTÓRICO
         // ──────────────────────────────────────────────────────────────────
 

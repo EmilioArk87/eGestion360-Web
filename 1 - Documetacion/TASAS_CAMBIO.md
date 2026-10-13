@@ -565,3 +565,9 @@ aceptables del dólar y del euro y los correos de las alertas.
 Si la base no tiene las tablas del script 020 (errores 208/207 de SQL Server), la pantalla muestra "El módulo de tasas
 de cambio no está instalado en la base de datos: falta aplicar el script 020" en lugar de fallar, y registra el error
 en el log. Otro error de la base muestra un aviso genérico.
+
+### 15.2 Pantallas separadas: Histórico, Bitácora y Tendencias
+
+Desde el rediseño del 2026-10-12, el **Histórico** y la **Bitácora del job** de la tabla anterior ya no están en Tipos de cambio: son pantallas propias (`/Catalogos/TiposCambio/Historico` y `/Bitacora`) a las que se llega con botones en la barra superior, junto con **Tendencias** y **Configuración** (solo admin del sistema). Las tres usan `TasasCambioPaginaBase` (acceso, sesión, horas de Honduras, aviso de tablas faltantes) y las mismas reglas de antes: la empresa sale de la sesión y la bitácora no muestra endpoint ni detalle del error a quien no es admin del sistema. "Ejecutar ahora" lleva a la Bitácora.
+
+**Tendencias** (`/Catalogos/TiposCambio/Tendencias`): gráfica de líneas de la compra y la venta de una moneda (`ITasaCambioConsultaService.TendenciaAsync`), con contadores (compra y venta actuales y su cambio en el período, diferencia compra/venta, publicaciones), el detalle de la fecha elegida y la tabla de los mismos puntos. Se elige con enlaces la moneda, la serie (compra, venta o ambas), el período (7, 30, 90 días o todo, con tope de 730 días) y la fecha; no usa JavaScript. Un punto por fecha de vigencia hasta hoy: la tasa publicada por adelantado ("Próxima publicada") no entra a la gráfica. Misma regla de empresa que la vigente: a igual fecha gana la propia y nunca aparece la de otra empresa. La geometría (trazos, banda entre compra y venta, ejes) se calcula en el servidor en `GraficaTendencia`, con punto decimal invariante.

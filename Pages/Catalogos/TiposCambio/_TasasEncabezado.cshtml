@@ -25,6 +25,10 @@
         {
             <a asp-page="Bitacora" class="tc-btn tc-btn-dark"><i class="fas fa-clipboard-list" aria-hidden="true"></i>Bitácora del job</a>
         }
+        @if (Model.Actual != "Tendencias")
+        {
+            <a asp-page="Tendencias" class="tc-btn tc-btn-dark"><i class="fas fa-chart-line" aria-hidden="true"></i>Tendencias</a>
+        }
         @if (Model.EsAdminSistema)
         {
             <a asp-page="Configuracion" class="tc-btn"><i class="fas fa-sliders-h" aria-hidden="true"></i>Configuración</a>

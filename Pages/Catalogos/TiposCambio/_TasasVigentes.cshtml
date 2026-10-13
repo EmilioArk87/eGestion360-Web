@@ -79,7 +79,8 @@
                         {
                             <span>Diferencia compra/venta <strong class="tc-mono text-white">@diferencia</strong></span>
                         }
-                        <a asp-page="Historico" asp-route-moneda="@moneda.Key">Ver histórico →</a>
+                        <a asp-page="Tendencias" asp-route-moneda="@moneda.Key">Ver tendencia →</a>
+                        <a asp-page="Historico" asp-route-moneda="@moneda.Key" style="margin-left: 0">Ver histórico →</a>
                     </div>
                 }
                 else
