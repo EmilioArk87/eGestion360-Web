@@ -1,0 +1,113 @@
+/* Pantallas de tasas de cambio: Tipos de cambio, Histórico, Bitácora del job y Configuración.
+   Todo cuelga de .tc-page para no tocar el resto del sitio. */
+
+.tc-page {
+    --tc-ink: #0E1A2B;
+    --tc-muted: #5B6B80;
+    --tc-line: #E3E8EF;
+    --tc-line-strong: #C9D3E0;
+    --tc-ground: #F3F5F8;
+    --tc-accent: #0A5FD6;
+    --tc-ok-bg: #E5F5EC;
+    --tc-ok-fg: #0B6B43;
+    font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--tc-ink);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 12px 24px;
+}
+
+body:has(.tc-page) { background: var(--tc-ground); }
+
+.tc-mono { font-family: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace; }
+
+/* ── Barra superior ─────────────────────────────────────────── */
+.tc-topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 0 8px; }
+.tc-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 14px; color: var(--tc-muted); }
+.tc-crumbs a { color: var(--tc-muted); text-decoration: none; }
+.tc-crumbs a:hover { color: var(--tc-ink); text-decoration: underline; }
+.tc-crumbs strong { color: var(--tc-ink); font-weight: 700; }
+.tc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.tc-btn {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px;
+    border-radius: 12px; border: 1px solid var(--tc-line-strong); background: #fff; color: var(--tc-ink);
+    font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.tc-btn:hover { background: var(--tc-ground); color: var(--tc-ink); }
+.tc-btn:focus-visible { outline: 3px solid rgba(10, 95, 214, .45); outline-offset: 2px; }
+.tc-btn-dark { background: var(--tc-ink); border-color: var(--tc-ink); color: #fff; }
+.tc-btn-dark:hover { background: #1B2B45; color: #fff; }
+.tc-btn-ghost { border-color: transparent; background: transparent; color: var(--tc-muted); }
+.tc-btn-ghost:hover { background: rgba(14, 26, 43, .06); color: var(--tc-ink); }
+
+/* ── Título ─────────────────────────────────────────────────── */
+.tc-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 18px 0 28px; }
+.tc-title { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
+.tc-sub { margin: 10px 0 0; max-width: 640px; font-size: 16px; line-height: 1.55; color: var(--tc-muted); }
+.tc-status {
+    display: inline-flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 14px;
+    background: #fff; border: 1px solid var(--tc-line); text-decoration: none; color: var(--tc-ink);
+}
+.tc-status strong { display: block; font-size: 14px; font-weight: 800; }
+.tc-status small { display: block; font-size: 13px; color: var(--tc-muted); }
+.tc-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: #8A97A8; }
+.tc-dot-ok { background: #0F9D63; }
+.tc-dot-warn { background: #E0A100; }
+.tc-dot-bad { background: #D43F3F; }
+
+/* ── Panel de tasas vigentes ────────────────────────────────── */
+.tc-hero { background: #0E1A2B; color: #fff; border-radius: 24px; padding: 32px; }
+.tc-hero-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+.tc-eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8FB4E8; }
+.tc-hero-date { font-size: 15px; color: #C5D3E8; margin-top: 4px; }
+.tc-hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; }
+.tc-cur { background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); border-radius: 20px; padding: 28px; }
+.tc-cur-empty { background: rgba(255, 255, 255, .03); border-style: dashed; border-color: rgba(255, 255, 255, .22); }
+.tc-cur-head { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+.tc-cur-mark {
+    width: 48px; height: 48px; border-radius: 14px; background: var(--tc-accent); color: #fff; flex: none;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800;
+}
+.tc-cur-name { font-size: 20px; font-weight: 800; }
+.tc-cur-pair { font-size: 14px; color: #C5D3E8; }
+.tc-rates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.tc-kind { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #8FB4E8; }
+.tc-rate { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 34px; font-weight: 500; line-height: 1.15; margin-top: 6px; letter-spacing: -0.02em; white-space: nowrap; }
+.tc-rate-none { font-size: 20px; font-weight: 700; color: #AFC0D8; margin-top: 12px; }
+.tc-meta { font-size: 13px; color: #C5D3E8; margin-top: 6px; line-height: 1.5; }
+.tc-meta strong { color: #fff; }
+.tc-next { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #E4EEFF; background: rgba(143, 180, 232, .16); border: 1px solid rgba(143, 180, 232, .4); }
+.tc-flag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(255, 200, 87, .18); color: #FFD98A; }
+.tc-flag-info { background: rgba(143, 180, 232, .2); color: #BFD8FF; }
+.tc-cur-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .12); font-size: 13px; color: #C5D3E8; }
+.tc-cur-foot a { margin-left: auto; color: #BFD8FF; font-weight: 700; text-decoration: none; }
+.tc-cur-foot a:hover { color: #fff; text-decoration: underline; }
+.tc-hero-note { margin: 22px 0 0; font-size: 13px; line-height: 1.6; color: #AFC0D8; }
+
+/* ── Tarjetas (las que ya usan las vistas parciales) ────────── */
+.tc-page .card { border: 1px solid var(--tc-line) !important; border-radius: 20px; box-shadow: none !important; overflow: hidden; }
+.tc-page .card-header { background: #fff !important; border-bottom: 1px solid var(--tc-line); padding: 18px 24px; font-size: 18px; }
+.tc-page .card-header small { font-size: 13px; }
+.tc-page .card-body { padding: 24px; }
+.tc-page .card-body.p-0 { padding: 0; }
+.tc-page .card-footer { padding: 14px 24px; }
+.tc-page .table thead th { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tc-muted); background: #fff; border-bottom: 1px solid var(--tc-line); padding: 12px 16px; }
+.tc-page .table tbody td { padding: 14px 16px; }
+.tc-page .table-light { --bs-table-bg: #fff; }
+.tc-page .btn { border-radius: 12px; font-weight: 700; }
+.tc-page .form-control, .tc-page .form-select { border-radius: 12px; border-color: var(--tc-line-strong); }
+.tc-page .badge { border-radius: 999px; padding: 5px 12px; font-weight: 800; font-size: 12px; }
+
+/* ── Contadores de la bitácora ──────────────────────────────── */
+.tc-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.tc-tile { background: #fff; border: 1px solid var(--tc-line); border-radius: 18px; padding: 20px 22px; }
+.tc-tile-label { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tc-muted); }
+.tc-tile-num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 34px; font-weight: 500; margin-top: 6px; }
+
+@media (max-width: 575.98px) {
+    .tc-title { font-size: 30px; }
+    .tc-hero { padding: 20px; border-radius: 20px; }
+    .tc-cur { padding: 20px; }
+    .tc-rate { font-size: 26px; }
+}

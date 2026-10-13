@@ -2,33 +2,61 @@
 @model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
 @{
     ViewData["Title"] = "Tipos de cambio";
+    var ultima = Model.UltimaEjecucion;
 }
 
-<div class="container">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
-            <li class="breadcrumb-item"><a asp-page="/Catalogos/Index">Catálogos</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Tipos de cambio</li>
-        </ol>
-    </nav>
+@section Head {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/tasas-cambio.css" asp-append-version="true" />
+}
 
-    <div class="d-flex justify-content-between align-items-start mb-4">
+<div class="tc-page">
+    <partial name="_TasasEncabezado" model="@(new TasasEncabezado("Tipos de cambio", Model.EsAdminSistema))" />
+
+    <div class="tc-head">
         <div>
-            <h2 class="mb-1"><i class="fas fa-exchange-alt me-2"></i>Tipos de cambio</h2>
-            <p class="text-muted mb-0">Dólar y euro en lempiras: tasas oficiales del BCH y tasas propias de la empresa</p>
+            <h1 class="tc-title">Tipos de cambio</h1>
+            <p class="tc-sub">Dólar y euro en lempiras: tasas oficiales del BCH y tasas propias de cada empresa.</p>
         </div>
-        <div class="d-flex gap-2">
-            @if (Model.EsAdminSistema)
-            {
-                <a asp-page="Configuracion" class="btn btn-outline-primary">
-                    <i class="fas fa-sliders-h me-2"></i>Configuración
-                </a>
-            }
-            <a asp-page="/Catalogos/Index" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Volver
-            </a>
-        </div>
+        @if (Model.JobHabilitado)
+        {
+            <div class="tc-status" role="status">
+                <span class="tc-dot @(ultima?.Estado == "FALLIDA" ? "tc-dot-bad" : "tc-dot-ok")" aria-hidden="true"></span>
+                <div>
+                    <strong>Job automático activo</strong>
+                    <small>
+                        @if (ultima != null)
+                        {
+                            @($"Última ejecución {Model.HoraHonduras(ultima.InicioUtc)} · {FormatoTasas.NombreEstadoEjecucion(ultima.Estado).ToLowerInvariant()}")
+                        }
+                        else
+                        {
+                            @("Todavía no hay ejecuciones")
+                        }
+                    </small>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="tc-status" role="status">
+                <span class="tc-dot" aria-hidden="true"></span>
+                <div>
+                    <strong>Job automático apagado</strong>
+                    <small>
+                        @if (Model.EsAdminSistema)
+                        {
+                            <a asp-page="Configuracion">Habilitarlo en Configuración</a>
+                        }
+                        else
+                        {
+                            @("Las tasas oficiales no se buscan solas")
+                        }
+                    </small>
+                </div>
+            </div>
+        }
     </div>
 
     @if (TempData[IndexModel.ClaveMensaje] != null)
@@ -67,9 +95,7 @@
     else
     {
         <partial name="_TasasVigentes" model="Model" />
-        <partial name="_TasasPendientes" model="Model" />
+        <div class="mt-4"><partial name="_TasasPendientes" model="Model" /></div>
         <partial name="_TasasAcciones" model="Model" />
-        <partial name="_TasasHistorico" model="Model" />
-        <partial name="_TasasBitacora" model="Model" />
     }
 </div>

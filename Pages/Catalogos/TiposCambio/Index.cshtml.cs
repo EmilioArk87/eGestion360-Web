@@ -23,11 +23,9 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
     ///     empresa de la sesión. AprobarAsync/RechazarAsync no reciben empresa, así que antes se comprueba que el id
     ///     esté entre las pendientes que la empresa de la sesión puede ver: un id de otra empresa se rechaza.
     /// </summary>
-    public class IndexModel : PageModel
+    public class IndexModel : TasasCambioPaginaBase
     {
         public const string Modulo = "catalogos";
-        public const int TamanoPagina = 25;
-        public const int MaxEjecuciones = 20;
         public const int LargoMaximoMotivo = 300;
 
         public const string AvisoNoInstalado =
@@ -44,8 +42,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         private readonly ITasaCambioConsultaService _consultas;
         private readonly ITasaCambioSyncService _sync;
         private readonly ColaEjecucionTasasCambio _cola;
-        private readonly TasasCambioOptions _opt;
-        private readonly CalendarioTasasCambio _calendario;
         private readonly ILogger<IndexModel> _log;
 
         public IndexModel(
@@ -54,56 +50,31 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
             ColaEjecucionTasasCambio cola,
             IOptions<TasasCambioOptions> opciones,
             TimeProvider reloj,
-            ILogger<IndexModel> log)
+            ILogger<IndexModel> log) : base(opciones, reloj)
         {
             _consultas = consultas;
             _sync = sync;
             _cola = cola;
-            _opt = opciones.Value;
-            _calendario = new CalendarioTasasCambio(reloj, _opt);
             _log = log;
         }
 
-        // ── Filtros del histórico ─────────────────────────────────────────────
-
-        [BindProperty(SupportsGet = true)] public string? Moneda { get; set; }
-        [BindProperty(SupportsGet = true)] public string? Tipo { get; set; }
-        [BindProperty(SupportsGet = true)] public string? Estado { get; set; }
-        [BindProperty(SupportsGet = true)] public DateOnly? Desde { get; set; }
-        [BindProperty(SupportsGet = true)] public DateOnly? Hasta { get; set; }
-        [BindProperty(SupportsGet = true)] public int Pagina { get; set; } = 1;
-
         // ── Datos de la pantalla ──────────────────────────────────────────────
+        // El histórico y la bitácora del job tienen su propia pantalla (HistoricoModel y BitacoraModel).
 
         public IReadOnlyList<TasaVigenteActual> Vigentes { get; private set; } = Array.Empty<TasaVigenteActual>();
         public IReadOnlyList<TasaPendienteRevision> Pendientes { get; private set; } = Array.Empty<TasaPendienteRevision>();
-        public PaginaTasas Historico { get; private set; } = HistoricoVacio(1);
 
-        /// <summary>
-        /// Últimas ejecuciones. Para quien no es administrador del sistema llegan sin Endpoint ni DetalleError: no
-        /// basta con no pintarlos en la vista.
-        /// </summary>
-        public IReadOnlyList<EjecucionTasasResumen> Ejecuciones { get; private set; } = Array.Empty<EjecucionTasasResumen>();
+        /// <summary>La última ejecución del job (para el estado de la cabecera), sin endpoint ni detalle del error.</summary>
+        public EjecucionTasasResumen? UltimaEjecucion { get; private set; }
 
         /// <summary>Formulario de la tasa propia (para volver a mostrarlo con sus errores).</summary>
         public RegistroTasaInput Registro { get; set; } = new();
 
-        /// <summary>Aviso en lugar de los datos cuando la base no respondió.</summary>
-        public string? AvisoBaseDatos { get; private set; }
-
-        /// <summary>Verdadero si el aviso es porque faltan las tablas del script 020.</summary>
-        public bool ModuloNoInstalado { get; private set; }
-
         // ── Contexto y permisos (los usan la vista y los handlers) ────────────
 
-        public DateOnly Hoy => _calendario.Hoy;
-        public IReadOnlyList<string> Monedas => _opt.MonedasEfectivas;
-        public string MonedaLocal => _opt.MonedaLocalEfectiva;
-        public bool JobHabilitado => _opt.Habilitado;
+        public bool JobHabilitado => Opciones.Habilitado;
         public int SolicitudesEnCola => _cola.Pendientes;
 
-        public int? IdEmpresaSesion => AuthHelper.GetEmpresaId(HttpContext) is int id && id > 0 ? id : null;
-        public bool EsAdminSistema => AuthHelper.IsAdmin(HttpContext);
         public bool TienePermisoCrear => AuthHelper.PuedeCrear(HttpContext, Modulo);
         public bool PuedeRegistrar => TienePermisoCrear && IdEmpresaSesion != null;
         public bool PuedeEjecutar => EsAdminSistema && JobHabilitado;
@@ -112,9 +83,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         public bool PuedeRevisar(int? idEmpresaTasa) => idEmpresaTasa == null
             ? EsAdminSistema
             : AuthHelper.IsAnyAdmin(HttpContext) && idEmpresaTasa == IdEmpresaSesion;
-
-        private string Usuario => HttpContext.Session.GetString("Username") ?? "system";
-        private CancellationToken Ct => HttpContext.RequestAborted;
 
         // ──────────────────────────────────────────────────────────────────
         //  GET
@@ -277,9 +245,10 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
                 return Volver(error: "Ya hay varias ejecuciones esperando turno. Intente de nuevo en unos minutos.", seccion: "ejecutar");
 
             _log.LogInformation("Tasas de cambio: {Usuario} pidió ejecutar el job desde la pantalla.", Usuario);
-            return Volver(mensaje: "Ejecución solicitada. Corre en segundo plano: el resultado aparecerá en la bitácora en unos minutos " +
-                                   "(puede tardar si las fuentes no responden).",
-                seccion: "bitacora");
+            // El resultado se ve en la bitácora, que es su propia pantalla: se lleva a quien lo pidió hacia allá.
+            TempData[ClaveMensaje] = "Ejecución solicitada. Corre en segundo plano: el resultado aparecerá en la bitácora en unos minutos " +
+                                     "(puede tardar si las fuentes no responden).";
+            return RedirectToPage("Bitacora");
         }
 
         // ──────────────────────────────────────────────────────────────────
@@ -288,7 +257,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
 
         private async Task CargarAsync()
         {
-            NormalizarFiltros();
             var empresa = IdEmpresaSesion;
 
             // Una consulta tras otra: comparten el DbContext de la petición.
@@ -297,64 +265,19 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
                 Vigentes = await _consultas.VigentesActualesAsync(empresa, Ct);
                 Pendientes = await _consultas.PendientesRevisionAsync(empresa, Ct);
 
-                Historico = await _consultas.HistoricoAsync(Filtro(empresa), Ct);
-                if (Historico.Filas.Count == 0 && Historico.Total > 0 && Pagina > 1)
-                {
-                    Pagina = Math.Max(1, Historico.TotalPaginas);
-                    Historico = await _consultas.HistoricoAsync(Filtro(empresa), Ct);
-                }
-
-                var ejecuciones = await _consultas.UltimasEjecucionesAsync(MaxEjecuciones, Ct);
-                Ejecuciones = EsAdminSistema
-                    ? ejecuciones
-                    : ejecuciones.Select(e => e with { Endpoint = null, DetalleError = null }).ToList();
+                // Solo para el estado de la cabecera: nada de endpoint ni detalle del error.
+                var ultimas = await _consultas.UltimasEjecucionesAsync(1, Ct);
+                UltimaEjecucion = ultimas.Select(e => e with { Endpoint = null, DetalleError = null }).FirstOrDefault();
             }
             catch (Exception ex) when (EsErrorDeBaseDeDatos(ex))
             {
-                ModuloNoInstalado = FaltanTablas(ex);
-                AvisoBaseDatos = ModuloNoInstalado ? AvisoNoInstalado : AvisoErrorBaseDatos;
-                _log.LogError(ex, ModuloNoInstalado
-                    ? "Tasas de cambio: faltan las tablas del script 020; la pantalla muestra el aviso."
-                    : "Tasas de cambio: no se pudo consultar la base de datos para la pantalla.");
+                AvisarErrorBaseDatos(ex, _log, "la pantalla");
 
                 Vigentes = Array.Empty<TasaVigenteActual>();
                 Pendientes = Array.Empty<TasaPendienteRevision>();
-                Historico = HistoricoVacio(Pagina);
-                Ejecuciones = Array.Empty<EjecucionTasasResumen>();
+                UltimaEjecucion = null;
             }
         }
-
-        private FiltroHistoricoTasas Filtro(int? empresa) => new()
-        {
-            IdEmpresa = empresa,
-            IncluirOficiales = true,
-            MonedaOrigen = Moneda,
-            TipoTasa = Tipo,
-            Estado = Estado,
-            Desde = Desde,
-            Hasta = Hasta,
-            Pagina = Pagina,
-            TamanoPagina = TamanoPagina
-        };
-
-        /// <summary>Un valor de filtro que no existe se ignora (no se manda tal cual a la consulta).</summary>
-        private void NormalizarFiltros()
-        {
-            Moneda = Elegir(Moneda, Monedas);
-            Tipo = Elegir(Tipo, Cat.TipoTasa.Todos);
-            Estado = Elegir(Estado, Cat.EstadoTasa.Todos);
-            if (Desde is { } d && Hasta is { } h && d > h) (Desde, Hasta) = (h, d);
-            if (Pagina < 1) Pagina = 1;
-        }
-
-        private static string? Elegir(string? valor, IEnumerable<string> permitidos)
-        {
-            var codigo = valor?.Trim().ToUpperInvariant();
-            return string.IsNullOrEmpty(codigo) || !permitidos.Contains(codigo) ? null : codigo;
-        }
-
-        private static PaginaTasas HistoricoVacio(int pagina) =>
-            new(Array.Empty<TasaHistorialFila>(), 0, Math.Max(1, pagina), TamanoPagina);
 
         // ──────────────────────────────────────────────────────────────────
         //  VALIDACIÓN DEL FORMULARIO
@@ -418,14 +341,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         //  ACCESO, RESULTADOS Y ERRORES
         // ──────────────────────────────────────────────────────────────────
 
-        /// <summary>Igual que Clientes: sin sesión al login; sin el módulo, al menú.</summary>
-        private IActionResult? Acceso()
-        {
-            if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, Modulo)) return RedirectToPage("/MainMenu");
-            return null;
-        }
-
         /// <summary>Patrón PRG: el resultado va en TempData y se vuelve a la pantalla (a la sección indicada).</summary>
         private IActionResult Volver(string? mensaje = null, string? error = null, string? seccion = null)
         {
@@ -469,21 +384,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
             DbException db => db.Message.Contains("no such table", StringComparison.OrdinalIgnoreCase),
             _ => false
         });
-
-        // ── Para la vista ─────────────────────────────────────────────────────
-
-        /// <summary>Instante UTC de la base en hora de Honduras.</summary>
-        public string HoraHonduras(DateTime? utc) =>
-            utc is { } valor ? _calendario.AHonduras(valor).ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture) : "—";
-
-        /// <summary>Fin de una ejecución en hora de Honduras: solo la hora si terminó el mismo día en que empezó.</summary>
-        public string FinHonduras(DateTime inicioUtc, DateTime? finUtc)
-        {
-            if (finUtc is not { } fin) return "—";
-            var inicio = _calendario.AHonduras(inicioUtc);
-            var final = _calendario.AHonduras(fin);
-            return final.ToString(final.Date == inicio.Date ? "HH:mm" : "dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
-        }
     }
 
     /// <summary>

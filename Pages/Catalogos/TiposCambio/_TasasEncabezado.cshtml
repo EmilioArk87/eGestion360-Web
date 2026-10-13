@@ -1,0 +1,41 @@
+@* Barra superior compartida por las pantallas de tasas de cambio: ruta, botones hacia las otras pantallas y volver.
+   Model: TasasEncabezado. *@
+@model eGestion360Web.Pages.Catalogos.TiposCambio.TasasEncabezado
+
+<div class="tc-topbar">
+    <nav class="tc-crumbs" aria-label="Ruta de navegación">
+        <a asp-page="/MainMenu">Menú principal</a><span aria-hidden="true">/</span>
+        <a asp-page="/Catalogos/Index">Catálogos</a><span aria-hidden="true">/</span>
+        @if (Model.Actual == "Tipos de cambio")
+        {
+            <strong>Tipos de cambio</strong>
+        }
+        else
+        {
+            <a asp-page="Index">Tipos de cambio</a><span aria-hidden="true">/</span>
+            <strong>@Model.Actual</strong>
+        }
+    </nav>
+    <div class="tc-actions">
+        @if (Model.Actual != "Histórico")
+        {
+            <a asp-page="Historico" class="tc-btn tc-btn-dark"><i class="fas fa-history" aria-hidden="true"></i>Histórico</a>
+        }
+        @if (Model.Actual != "Bitácora del job")
+        {
+            <a asp-page="Bitacora" class="tc-btn tc-btn-dark"><i class="fas fa-clipboard-list" aria-hidden="true"></i>Bitácora del job</a>
+        }
+        @if (Model.EsAdminSistema)
+        {
+            <a asp-page="Configuracion" class="tc-btn"><i class="fas fa-sliders-h" aria-hidden="true"></i>Configuración</a>
+        }
+        @if (Model.Actual == "Tipos de cambio")
+        {
+            <a asp-page="/Catalogos/Index" class="tc-btn tc-btn-ghost"><i class="fas fa-arrow-left" aria-hidden="true"></i>Volver</a>
+        }
+        else
+        {
+            <a asp-page="Index" class="tc-btn tc-btn-ghost"><i class="fas fa-arrow-left" aria-hidden="true"></i>Tipos de cambio</a>
+        }
+    </div>
+</div>

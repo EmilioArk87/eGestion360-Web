@@ -1,11 +1,38 @@
-@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+@page
+@model eGestion360Web.Pages.Catalogos.TiposCambio.HistoricoModel
 @using Cat = eGestion360Web.Models.Catalogos.TasasCambioCatalogo
 @{
+    ViewData["Title"] = "Histórico de tasas";
     var h = Model.Historico;
     var desde = Model.Desde?.ToString("yyyy-MM-dd");
     var hasta = Model.Hasta?.ToString("yyyy-MM-dd");
-    var hayFiltros = Model.Moneda != null || Model.Tipo != null || Model.Estado != null || Model.Desde != null || Model.Hasta != null;
+    var hayFiltros = Model.HayFiltros;
 }
+
+@section Head {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/tasas-cambio.css" asp-append-version="true" />
+}
+
+<div class="tc-page">
+    <partial name="_TasasEncabezado" model="@(new TasasEncabezado("Histórico", Model.EsAdminSistema))" />
+
+    <div class="tc-head">
+        <div>
+            <h1 class="tc-title">Histórico de tasas</h1>
+            <p class="tc-sub">Todas las tasas guardadas, de la más reciente a la más antigua: oficiales del BCH y propias de la empresa, con su fuente, estado y versión.</p>
+        </div>
+    </div>
+
+    @if (Model.AvisoBaseDatos != null)
+    {
+        <div class="alert alert-warning d-flex align-items-start" role="alert">
+            <i class="fas fa-database fa-lg me-3 mt-1"></i>
+            <div><strong>@Model.AvisoBaseDatos</strong></div>
+        </div>
+    }
+
 
 <div class="card border-0 shadow-sm mb-4" id="historico">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
@@ -13,7 +40,7 @@
         <small class="text-muted">@h.Total.ToString("N0") tasas · oficiales y propias de la empresa</small>
     </div>
     <div class="card-body border-bottom">
-        <form method="get" asp-page="Index" asp-fragment="historico" class="row g-2 align-items-end">
+        <form method="get" asp-page="Historico" class="row g-2 align-items-end">
             <div class="col-6 col-md-2">
                 <label asp-for="Moneda" class="form-label small mb-1">Moneda</label>
                 <select asp-for="Moneda" class="form-select form-select-sm">
@@ -58,7 +85,7 @@
                 </button>
                 @if (hayFiltros)
                 {
-                    <a asp-page="Index" asp-fragment="historico" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+                    <a asp-page="Historico" class="btn btn-sm btn-outline-secondary">Limpiar</a>
                 }
             </div>
         </form>
@@ -135,12 +162,12 @@
             <nav aria-label="Páginas del histórico">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(h.Pagina <= 1 ? "disabled" : "")">
-                        <a class="page-link" asp-page="Index" asp-fragment="historico"
+                        <a class="page-link" asp-page="Historico"
                            asp-route-moneda="@Model.Moneda" asp-route-tipo="@Model.Tipo" asp-route-estado="@Model.Estado"
                            asp-route-desde="@desde" asp-route-hasta="@hasta" asp-route-pagina="@(h.Pagina - 1)">Anterior</a>
                     </li>
                     <li class="page-item @(h.Pagina >= h.TotalPaginas ? "disabled" : "")">
-                        <a class="page-link" asp-page="Index" asp-fragment="historico"
+                        <a class="page-link" asp-page="Historico"
                            asp-route-moneda="@Model.Moneda" asp-route-tipo="@Model.Tipo" asp-route-estado="@Model.Estado"
                            asp-route-desde="@desde" asp-route-hasta="@hasta" asp-route-pagina="@(h.Pagina + 1)">Siguiente</a>
                     </li>
@@ -148,4 +175,5 @@
             </nav>
         </div>
     }
+</div>
 </div>

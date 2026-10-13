@@ -1,74 +1,98 @@
 @model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
 
-<div class="card border-0 shadow-sm mb-4" id="vigentes">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <strong><i class="fas fa-coins me-2"></i>Tasas vigentes hoy</strong>
-        <small class="text-muted">@FormatoTasas.Fecha(Model.Hoy) · hora de Honduras</small>
+@* Panel de tasas vigentes hoy: una tarjeta por moneda, con compra y venta. *@
+<section class="tc-hero" id="vigentes" aria-label="Tasas vigentes hoy">
+    <div class="tc-hero-top">
+        <div>
+            <div class="tc-eyebrow">Tasas vigentes hoy</div>
+            <div class="tc-hero-date">@FormatoTasas.Fecha(Model.Hoy) · hora de Honduras</div>
+        </div>
     </div>
-    <div class="card-body">
-        <div class="row g-3">
-            @foreach (var moneda in Model.Vigentes.GroupBy(v => v.MonedaOrigen))
-            {
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="fw-bold mb-3">
-                            @FormatoTasas.NombreMoneda(moneda.Key)
-                            <small class="text-muted fw-normal">→ @Model.MonedaLocal</small>
-                        </h6>
-                        <div class="row g-3">
-                            @foreach (var v in moneda)
+
+    <div class="tc-hero-grid">
+        @foreach (var moneda in Model.Vigentes.GroupBy(v => v.MonedaOrigen))
+        {
+            var compra = moneda.FirstOrDefault(v => v.TipoTasa == "COMPRA");
+            var venta = moneda.FirstOrDefault(v => v.TipoTasa == "VENTA");
+            var hayTasa = moneda.Any(v => v.Vigente != null);
+            var diferencia = compra?.Vigente is { } c && venta?.Vigente is { } v2 ? (v2.Tasa - c.Tasa).ToString("0.0000", System.Globalization.CultureInfo.InvariantCulture) : null;
+            var marca = moneda.Key == "USD" ? "US$" : moneda.Key == "EUR" ? "€" : moneda.Key;
+
+            <div class="tc-cur @(hayTasa ? "" : "tc-cur-empty")">
+                <div class="tc-cur-head">
+                    <div class="tc-cur-mark" aria-hidden="true">@marca</div>
+                    <div>
+                        <div class="tc-cur-name">@FormatoTasas.NombreMoneda(moneda.Key)</div>
+                        <div class="tc-cur-pair">@moneda.Key → @Model.MonedaLocal · 1 @moneda.Key = tasa en lempiras</div>
+                    </div>
+                </div>
+
+                <div class="tc-rates">
+                    @foreach (var v in moneda)
+                    {
+                        <div>
+                            <div class="tc-kind">@FormatoTasas.NombreTipo(v.TipoTasa)</div>
+                            @if (v.Vigente is { } t)
                             {
-                                <div class="col-6">
-                                    <div class="text-muted small text-uppercase">@FormatoTasas.NombreTipo(v.TipoTasa)</div>
-                                    @if (v.Vigente is { } t)
+                                <div class="tc-rate">@FormatoTasas.Tasa(t.Tasa)</div>
+                                <div class="tc-meta">
+                                    Vigencia <strong>@FormatoTasas.Fecha(t.FechaVigencia)</strong>
+                                    @if (t.FechaVigencia < Model.Hoy)
                                     {
-                                        <div class="fs-4 fw-bold">@FormatoTasas.Tasa(t.Tasa)</div>
-                                        <div class="small text-muted">
-                                            Vigencia: @FormatoTasas.Fecha(t.FechaVigencia)
-                                            @if (t.FechaVigencia < Model.Hoy)
-                                            {
-                                                <span title="Hoy no hay publicación: se usa la del último día publicado">(último publicado)</span>
-                                            }
-                                        </div>
-                                        <div class="small text-muted">Fuente: @FormatoTasas.NombreFuente(t.Fuente)</div>
-                                        @if (t.EsDerivada || t.EsPropiaEmpresa)
+                                        <span class="tc-flag" title="Hoy no hay publicación: se usa la del último día publicado">Último publicado</span>
+                                    }
+                                    <br />Fuente <strong>@FormatoTasas.NombreFuente(t.Fuente)</strong>
+                                </div>
+                                @if (t.EsDerivada || t.EsPropiaEmpresa)
+                                {
+                                    <div class="mt-2">
+                                        @if (t.EsDerivada)
                                         {
-                                            <div class="mt-1">
-                                                @if (t.EsDerivada)
-                                                {
-                                                    <span class="badge bg-info text-dark" title="@t.ReferenciaFuente">Derivada</span>
-                                                }
-                                                @if (t.EsPropiaEmpresa)
-                                                {
-                                                    <span class="badge bg-primary">Propia de la empresa</span>
-                                                }
-                                            </div>
+                                            <span class="tc-flag tc-flag-info" title="@t.ReferenciaFuente">Derivada</span>
                                         }
-                                    }
-                                    else
-                                    {
-                                        <div class="fs-5 text-muted">Sin tasa todavía</div>
-                                    }
-                                    @if (v.Proxima is { } proxima)
-                                    {
-                                        <div class="small mt-2 text-primary" title="Ya publicada: empieza a regir en su fecha de vigencia">
-                                            <i class="fas fa-calendar-day me-1"></i>Próxima publicada:
-                                            <strong>@FormatoTasas.Tasa(proxima.Tasa)</strong>
-                                            desde el @FormatoTasas.Fecha(proxima.FechaVigencia)
-                                        </div>
-                                    }
+                                        @if (t.EsPropiaEmpresa)
+                                        {
+                                            <span class="tc-flag tc-flag-info">Propia de la empresa</span>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="tc-rate-none">Sin tasa todavía</div>
+                            }
+                            @if (v.Proxima is { } p)
+                            {
+                                <div class="tc-next" title="Ya publicada: empieza a regir en su fecha de vigencia">
+                                    <i class="fas fa-calendar-day" aria-hidden="true"></i>
+                                    Próxima publicada: @FormatoTasas.Tasa(p.Tasa) desde el @FormatoTasas.Fecha(p.FechaVigencia)
                                 </div>
                             }
                         </div>
-                    </div>
+                    }
                 </div>
-            }
-        </div>
-        <p class="small text-muted mt-3 mb-0">
-            <i class="fas fa-info-circle me-1"></i>
-            1 dólar o 1 euro = la tasa en lempiras. Sábados, domingos y feriados rige la del último día publicado.
-            Una tasa propia de la empresa prevalece, para ella, sobre la oficial de la misma fecha.
-            El euro <em>derivado</em> se calcula con el EUR/USD del Banco Central Europeo por el USD/HNL del BCH.
-        </p>
+
+                @if (hayTasa)
+                {
+                    <div class="tc-cur-foot">
+                        @if (diferencia != null)
+                        {
+                            <span>Diferencia compra/venta <strong class="tc-mono text-white">@diferencia</strong></span>
+                        }
+                        <a asp-page="Historico" asp-route-moneda="@moneda.Key">Ver histórico →</a>
+                    </div>
+                }
+                else
+                {
+                    <p class="tc-meta mt-4 mb-0">El euro derivado se calcula con el EUR/USD del Banco Central Europeo por el USD/HNL del BCH. Aparecerá aquí cuando el job lo guarde.</p>
+                }
+            </div>
+        }
     </div>
-</div>
+
+    <p class="tc-hero-note">
+        Sábados, domingos y feriados rige la tasa del último día publicado. Una tasa propia de la empresa prevalece, para ella,
+        sobre la oficial de la misma fecha. El euro <em>derivado</em> se calcula con el EUR/USD del Banco Central Europeo por el
+        USD/HNL del BCH.
+    </p>
+</section>

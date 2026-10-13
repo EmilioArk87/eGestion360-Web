@@ -78,6 +78,28 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             return modelo;
         }
 
+        private HistoricoModel PaginaHistorico(HttpContext http, ITasaCambioConsultaService? consultas = null)
+        {
+            var db = _e.Bd.Crear();
+            _desechables.Add(db);
+            return new HistoricoModel(consultas ?? _e.Consultas(db), Options.Create(_e.Opciones), _e.Reloj, new LogQueGuarda<HistoricoModel>())
+            {
+                PageContext = new PageContext(new ActionContext(http, new RouteData(), new CompiledPageActionDescriptor())),
+                TempData = new TempDataDictionary(http, new TempDataEnMemoria())
+            };
+        }
+
+        private BitacoraModel PaginaBitacora(HttpContext http, ITasaCambioConsultaService? consultas = null)
+        {
+            var db = _e.Bd.Crear();
+            _desechables.Add(db);
+            return new BitacoraModel(consultas ?? _e.Consultas(db), Options.Create(_e.Opciones), _e.Reloj, new LogQueGuarda<BitacoraModel>())
+            {
+                PageContext = new PageContext(new ActionContext(http, new RouteData(), new CompiledPageActionDescriptor())),
+                TempData = new TempDataDictionary(http, new TempDataEnMemoria())
+            };
+        }
+
         private static RegistroTasaInput RegistroValido() =>
             new() { Moneda = "USD", Tipo = Cat.TipoTasa.Venta, Fecha = Viernes, Tasa = "27.1000" };
 
@@ -371,7 +393,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         {
             var pagina = Pagina(AdminSistema());
 
-            Redirige(pagina.OnPostEjecutar(), "Index");
+            Redirige(pagina.OnPostEjecutar(), "Bitacora");   // el resultado se ve en la bitácora, que es su propia pantalla
 
             Assert.Contains("Ejecución solicitada", Mensaje(pagina));
             Assert.Equal(1, _cola.Pendientes);
@@ -588,12 +610,51 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Null(pendiente.IdEmpresa);
             Assert.Equal("EUR", pendiente.MonedaOrigen);
 
+            // La última ejecución se resume en la cabecera (la bitácora completa es otra pantalla).
+            Assert.NotNull(pagina.UltimaEjecucion);
+            Assert.Equal(Cat.EstadoEjecucion.Parcial, pagina.UltimaEjecucion!.Estado);
+        }
+
+        [Fact]
+        public async Task El_historico_es_su_propia_pantalla_y_trae_oficiales_y_propias_de_la_empresa()
+        {
+            SembrarEscenarioCompleto();
+            var pagina = PaginaHistorico(UsuarioQueCrea(A));
+
+            Assert.IsType<PageResult>(await pagina.OnGetAsync());
+
+            Assert.Null(pagina.AvisoBaseDatos);
             Assert.Equal(6, pagina.Historico.Total);              // 4 oficiales + 1 en revisión + 1 propia de A
             Assert.DoesNotContain(pagina.Historico.Filas, f => f.IdEmpresa == B);
+            Assert.False(pagina.HayFiltros);
+        }
 
+        [Fact]
+        public async Task La_bitacora_es_su_propia_pantalla_con_el_detalle_por_moneda()
+        {
+            SembrarEscenarioCompleto();
+            var pagina = PaginaBitacora(UsuarioQueCrea(A));
+
+            Assert.IsType<PageResult>(await pagina.OnGetAsync());
+
+            Assert.Null(pagina.AvisoBaseDatos);
             var ejecucion = Assert.Single(pagina.Ejecuciones);
             Assert.Equal(Cat.EstadoEjecucion.Parcial, ejecucion.Estado);
             Assert.Equal(2, ejecucion.Detalles.Count);
+        }
+
+        [Theory]
+        [InlineData("historico")]
+        [InlineData("bitacora")]
+        public async Task Las_pantallas_nuevas_piden_sesion_y_modulo_igual_que_Tipos_de_cambio(string cual)
+        {
+            async Task<IActionResult> Abrir(HttpContext http) => cual == "historico"
+                ? await PaginaHistorico(http).OnGetAsync()
+                : await PaginaBitacora(http).OnGetAsync();
+
+            Redirige(await Abrir(Sesion(rol: null, empresa: null, conModulo: false, autenticado: false)), "/Login");
+            Redirige(await Abrir(Sesion("empresa_admin", A, new[] { "ver" }, conModulo: false)), "/MainMenu");
+            Assert.IsType<PageResult>(await Abrir(UsuarioSoloLectura(A)));
         }
 
         [Fact]
@@ -607,8 +668,15 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(4, pagina.Vigentes.Count);
             Assert.All(pagina.Vigentes, v => Assert.Null(v.Vigente));
             Assert.Empty(pagina.Pendientes);
-            Assert.Equal(0, pagina.Historico.Total);
-            Assert.Empty(pagina.Ejecuciones);
+            Assert.Null(pagina.UltimaEjecucion);
+
+            var historico = PaginaHistorico(UsuarioSoloLectura(A));
+            await historico.OnGetAsync();
+            Assert.Equal(0, historico.Historico.Total);
+
+            var bitacora = PaginaBitacora(UsuarioSoloLectura(A));
+            await bitacora.OnGetAsync();
+            Assert.Empty(bitacora.Ejecuciones);
         }
 
         [Fact]
@@ -622,19 +690,25 @@ namespace eGestion360Web.Tests.Services.TasasCambio
 
             Assert.Equal(26.9500m, deB.Vigentes.Single(v => v.MonedaOrigen == "USD" && v.TipoTasa == Cat.TipoTasa.Compra).Vigente!.Tasa);
             Assert.Equal(27.0270m, deB.Vigentes.Single(v => v.MonedaOrigen == "USD" && v.TipoTasa == Cat.TipoTasa.Venta).Vigente!.Tasa);
-            Assert.DoesNotContain(deB.Historico.Filas, f => f.IdEmpresa == A);
             Assert.DoesNotContain(deB.Pendientes, p => p.IdEmpresa == A);
+            var historicoB = PaginaHistorico(AdminEmpresa(B));
+            await historicoB.OnGetAsync();
+            Assert.DoesNotContain(historicoB.Historico.Filas, f => f.IdEmpresa == A);
 
             var deA = Pagina(AdminEmpresa(A));
             await deA.OnGetAsync();
             Assert.DoesNotContain(deA.Pendientes, p => p.IdEmpresa == B);
-            Assert.DoesNotContain(deA.Historico.Filas, f => f.IdEmpresa == B);
+            var historicoA = PaginaHistorico(AdminEmpresa(A));
+            await historicoA.OnGetAsync();
+            Assert.DoesNotContain(historicoA.Historico.Filas, f => f.IdEmpresa == B);
 
             // El administrador del sistema sin empresa ve solo las oficiales.
             var admin = Pagina(AdminSistema());
             await admin.OnGetAsync();
-            Assert.All(admin.Historico.Filas, f => Assert.Null(f.IdEmpresa));
             Assert.All(admin.Pendientes, p => Assert.Null(p.IdEmpresa));
+            var historicoAdmin = PaginaHistorico(AdminSistema());
+            await historicoAdmin.OnGetAsync();
+            Assert.All(historicoAdmin.Historico.Filas, f => Assert.Null(f.IdEmpresa));
         }
 
         [Fact]
@@ -644,7 +718,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
 
             foreach (var http in new[] { UsuarioSoloLectura(A), AdminEmpresa(A) })
             {
-                var pagina = Pagina(http);
+                var pagina = PaginaBitacora(http);
                 await pagina.OnGetAsync();
                 var e = Assert.Single(pagina.Ejecuciones);
                 Assert.Null(e.Endpoint);
@@ -652,7 +726,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
                 Assert.Equal("Falta el euro: el BCE no respondió.", e.Mensaje);
             }
 
-            var admin = Pagina(AdminSistema());
+            var admin = PaginaBitacora(AdminSistema());
             await admin.OnGetAsync();
             var completa = Assert.Single(admin.Ejecuciones);
             Assert.Equal(EscenarioTasas.UrlExcel, completa.Endpoint);
@@ -665,7 +739,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             SembrarEscenarioCompleto();
             _e.Sembrar("USD", Cat.TipoTasa.Venta, Jueves, 27.0132m);
 
-            var soloEuro = Pagina(UsuarioSoloLectura(A));
+            var soloEuro = PaginaHistorico(UsuarioSoloLectura(A));
             soloEuro.Moneda = "eur";
             soloEuro.Estado = "vigente";
             await soloEuro.OnGetAsync();
@@ -673,7 +747,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(2, soloEuro.Historico.Total);
             Assert.All(soloEuro.Historico.Filas, f => Assert.Equal("EUR", f.MonedaOrigen));
 
-            var desconocidos = Pagina(UsuarioSoloLectura(A));
+            var desconocidos = PaginaHistorico(UsuarioSoloLectura(A));
             desconocidos.Moneda = "XYZ";
             desconocidos.Tipo = "'; DROP TABLE x; --";
             desconocidos.Estado = "OTRO";
@@ -685,7 +759,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(1, desconocidos.Pagina);
             Assert.Equal(7, desconocidos.Historico.Total);
 
-            var rango = Pagina(UsuarioSoloLectura(A));
+            var rango = PaginaHistorico(UsuarioSoloLectura(A));
             rango.Desde = Viernes;   // al revés: se intercambian
             rango.Hasta = Jueves;
             rango.Tipo = "venta";
@@ -745,9 +819,24 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Contains("falta aplicar el script 020", pagina.AvisoBaseDatos);
             Assert.Empty(pagina.Vigentes);
             Assert.Empty(pagina.Pendientes);
-            Assert.Empty(pagina.Ejecuciones);
-            Assert.Equal(0, pagina.Historico.Total);
+            Assert.Null(pagina.UltimaEjecucion);
             Assert.Contains(_log.Entradas, l => l.Nivel == LogLevel.Error && l.Error != null && l.Mensaje.Contains("script 020"));
+        }
+
+        [Fact]
+        public async Task Sin_las_tablas_del_script_020_el_historico_y_la_bitacora_tambien_muestran_el_aviso()
+        {
+            var historico = PaginaHistorico(AdminSistema(), ConsultasSinTablas());
+            Assert.IsType<PageResult>(await historico.OnGetAsync());
+            Assert.True(historico.ModuloNoInstalado);
+            Assert.Equal(Pantalla.AvisoNoInstalado, historico.AvisoBaseDatos);
+            Assert.Equal(0, historico.Historico.Total);
+
+            var bitacora = PaginaBitacora(AdminSistema(), ConsultasSinTablas());
+            Assert.IsType<PageResult>(await bitacora.OnGetAsync());
+            Assert.True(bitacora.ModuloNoInstalado);
+            Assert.Equal(Pantalla.AvisoNoInstalado, bitacora.AvisoBaseDatos);
+            Assert.Empty(bitacora.Ejecuciones);
         }
 
         [Fact]

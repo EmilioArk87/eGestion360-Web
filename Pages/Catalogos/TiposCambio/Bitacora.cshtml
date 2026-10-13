@@ -1,9 +1,57 @@
-@model eGestion360Web.Pages.Catalogos.TiposCambio.IndexModel
+@page
+@model eGestion360Web.Pages.Catalogos.TiposCambio.BitacoraModel
+@{
+    ViewData["Title"] = "Bitácora del job de tasas de cambio";
+    var total = Model.Ejecuciones.Count;
+    var exitosas = Model.Ejecuciones.Count(e => e.Estado == "EXITOSA");
+    var omitidas = Model.Ejecuciones.Count(e => e.Estado.StartsWith("OMITIDA"));
+    var fallidas = Model.Ejecuciones.Count(e => e.Estado == "FALLIDA");
+}
+
+@section Head {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/tasas-cambio.css" asp-append-version="true" />
+}
+
+<div class="tc-page">
+    <partial name="_TasasEncabezado" model="@(new TasasEncabezado("Bitácora del job", Model.EsAdminSistema))" />
+
+    <div class="tc-head">
+        <div>
+            <h1 class="tc-title">Bitácora del job</h1>
+            <p class="tc-sub">Cada vez que el job busca las tasas deja una fila: qué fecha buscaba, quién lo disparó, cómo terminó y cuántas tasas leyó.</p>
+        </div>
+    </div>
+
+    @if (TempData[IndexModel.ClaveMensaje] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData[IndexModel.ClaveMensaje]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (Model.AvisoBaseDatos != null)
+    {
+        <div class="alert alert-warning d-flex align-items-start" role="alert">
+            <i class="fas fa-database fa-lg me-3 mt-1"></i>
+            <div><strong>@Model.AvisoBaseDatos</strong></div>
+        </div>
+    }
+
+    <div class="tc-tiles">
+        <div class="tc-tile"><div class="tc-tile-label">Ejecuciones mostradas</div><div class="tc-tile-num">@total</div></div>
+        <div class="tc-tile"><div class="tc-tile-label">Exitosas</div><div class="tc-tile-num">@exitosas</div></div>
+        <div class="tc-tile"><div class="tc-tile-label">Omitidas</div><div class="tc-tile-num">@omitidas</div></div>
+        <div class="tc-tile"><div class="tc-tile-label">Fallidas</div><div class="tc-tile-num">@fallidas</div></div>
+    </div>
+
 
 <div class="card border-0 shadow-sm mb-4" id="bitacora">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
         <strong><i class="fas fa-clipboard-list me-2"></i>Bitácora del job</strong>
-        <small class="text-muted">Últimas @IndexModel.MaxEjecuciones ejecuciones · horas de Honduras</small>
+        <small class="text-muted">Últimas @BitacoraModel.MaxEjecuciones ejecuciones · horas de Honduras</small>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -142,4 +190,5 @@
             </table>
         </div>
     </div>
+</div>
 </div>
