@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -114,10 +115,14 @@ namespace eGestion360Web.Tests.Services.Tenancy
             var archivos = carpetas.SelectMany(c => Directory.EnumerateFiles(Path.Combine(raiz, c), "*.cs", SearchOption.AllDirectories))
                 .Append(Path.Combine(raiz, "Program.cs")).ToList();
 
-            var conIgnorar = archivos.Where(f => File.ReadAllText(f).Contains("IgnoreQueryFilters")).Select(f => Path.GetRelativePath(raiz, f)).ToList();
+            // Solo se admite ignorar el filtro de BORRADO (ADR-022), nombrándolo; ignorar el de tenant o todos a la vez, nunca.
+            var permitido = new Regex(@"IgnoreQueryFilters\(\s*(\[|new\[\]\s*\{)\s*ApplicationDbContext\.FiltroBorrado\s*(\]|\})\s*\)");
+            var conIgnorar = archivos.Where(f => File.ReadAllText(f) is var texto
+                    && Regex.Matches(texto, "IgnoreQueryFilters").Count != permitido.Matches(texto).Count)
+                .Select(f => Path.GetRelativePath(raiz, f)).ToList();
             var conContextoPropio = archivos.Where(f => File.ReadAllText(f).Contains("new ApplicationDbContext(")).Select(f => Path.GetRelativePath(raiz, f)).ToList();
 
-            Assert.True(conIgnorar.Count == 0, "El ámbito de plataforma se declara en AmbitoDePlataformaPageFilter, no con IgnoreQueryFilters: " + string.Join(", ", conIgnorar));
+            Assert.True(conIgnorar.Count == 0, "El ámbito de plataforma se declara en AmbitoDePlataformaPageFilter; solo se puede ignorar el filtro de borrado (ApplicationDbContext.FiltroBorrado): " + string.Join(", ", conIgnorar));
             Assert.True(conContextoPropio.Count == 0, "Un contexto armado a mano no lleva el filtro por tenant; pídelo por inyección: " + string.Join(", ", conContextoPropio));
         }
 

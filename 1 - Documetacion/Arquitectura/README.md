@@ -84,6 +84,7 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-019](ADR-019-arranque-fase-1.md) | Decisiones de arranque de la Fase 1 (D18 a D25): tenants iniciales, cuentas en `saas`, `domain_events` sin RLS, ensayos con copia real, MFA, operador, cuentas inactivas y orden con .NET 10 | F1 | Aceptada 2026-10-11 |
 | [ADR-020](ADR-020-filtro-global-de-tenant-en-ef.md) | Filtro global de tenant en EF y ámbito de plataforma interino (D26 a D28): cerrado por defecto, lista revisada de rutas de plataforma, F1.3 en tres partes | F1 | Propuesta 2026-10-12
 | [ADR-021](ADR-021-contraer-id-tenant-y-claves-compuestas.md) | Contraer id_tenant y claves foráneas compuestas (D29 a D32): 78 compuestas, modelo de EF sin cambios, índices por empresa intactos, aplicar tras una semana sin nulos | F1 | Propuesta 2026-10-13
+| [ADR-022](ADR-022-filtro-de-borrado-logico-solo-en-hojas.md) | Filtro de borrado lógico solo en las 13 entidades que nadie referencia (D33 y D34); ignorarlo se pide por su nombre | F1 | Propuesta 2026-10-13
 
 ---
 

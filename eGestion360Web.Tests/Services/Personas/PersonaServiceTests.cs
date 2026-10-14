@@ -679,14 +679,14 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.NotNull(fusionada.FechaEliminado);
 
             // El documento pasó a la principal, que queda verificada
-            var documento = await lectura.PersonaDocumentos.AsNoTracking().SingleAsync();
+            var documento = await lectura.PersonaDocumentos.AsNoTracking().IgnoreQueryFilters([ApplicationDbContext.FiltroBorrado]).SingleAsync();
             Assert.Equal(principal, documento.IdPersona);
             Assert.True(documento.EsPrincipal);
             Assert.False(documento.Eliminado);
             Assert.Equal(EstadosIdentidad.Verificada, (await lectura.Personas.AsNoTracking().SingleAsync(x => x.IdPersona == principal)).EstadoIdentidad);
 
             // Las dos tenían un vínculo vigente de empleado en la empresa B: el de la sobrante se da de baja con su ficha
-            var vinculos = await lectura.PersonaEmpresas.AsNoTracking().Include(v => v.Empleado).ToListAsync();
+            var vinculos = await lectura.PersonaEmpresas.AsNoTracking().IgnoreQueryFilters([ApplicationDbContext.FiltroBorrado]).Include(v => v.Empleado).ToListAsync();
             var deLaSobrante = vinculos.Single(v => v.IdPersona == sobrante);
             Assert.True(deLaSobrante.Eliminado); Assert.False(deLaSobrante.Activo);
             Assert.True(deLaSobrante.Empleado!.Eliminado);
@@ -784,7 +784,7 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal(1, r.Resumen.DocumentosRepetidos);
 
             using var lectura = _bd.Crear();
-            var documentos = await lectura.PersonaDocumentos.AsNoTracking().ToListAsync();
+            var documentos = await lectura.PersonaDocumentos.AsNoTracking().IgnoreQueryFilters([ApplicationDbContext.FiltroBorrado]).ToListAsync();
             Assert.Single(documentos, d => !d.Eliminado && d.IdPersona == principal);
             Assert.Single(documentos, d => d.Eliminado && d.IdPersona == sobrante);
         }

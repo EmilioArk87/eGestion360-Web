@@ -17,6 +17,9 @@ namespace eGestion360Web.Data
         /// <summary>Nombre del filtro global por tenant (EF 10 admite varios filtros con nombre por entidad).</summary>
         public const string FiltroTenant = "tenant";
 
+        /// <summary>Nombre del filtro global de borrado lógico: las filas con <c>eliminado = 1</c> no aparecen en las consultas.</summary>
+        public const string FiltroBorrado = "borrado";
+
         private readonly ITenantContext? _tenant;
 
         /// <param name="options">Opciones de EF.</param>
@@ -129,6 +132,17 @@ namespace eGestion360Web.Data
                 else if (typeof(ITenantOpcionalEntity).IsAssignableFrom(entidad.ClrType))
                     MetodoFiltroDeTenantMixto.MakeGenericMethod(entidad.ClrType).Invoke(this, new object[] { modelBuilder });
             }
+
+            // Filtro global de borrado lógico (F1.3c, ADR-022): aparte del de tenant, para poder ignorar uno sin el otro. Solo en las
+            // entidades con Eliminado que NINGUNA otra referencia (hojas: cargas, peajes, documentos...). Una entidad que otras
+            // referencian (vehículo, persona, cliente...) no lo lleva: con él, el historial que apunta a una fila borrada
+            // desaparecería de las consultas que la incluyen. Esas siguen filtrando con !Eliminado donde corresponde.
+            foreach (var entidad in modelBuilder.Model.GetEntityTypes().Where(e => e.BaseType == null && !e.IsOwned()).ToList())
+            {
+                var eliminado = entidad.FindProperty("Eliminado");
+                if (eliminado != null && eliminado.ClrType == typeof(bool) && !entidad.GetReferencingForeignKeys().Any())
+                    MetodoFiltroDeBorrado.MakeGenericMethod(entidad.ClrType).Invoke(this, new object[] { modelBuilder });
+            }
         }
 
         private static readonly System.Reflection.MethodInfo MetodoFiltroDeTenant =
@@ -139,6 +153,12 @@ namespace eGestion360Web.Data
 
         private void AplicarFiltroDeTenant<T>(ModelBuilder modelBuilder) where T : class, ITenantEntity
             => modelBuilder.Entity<T>().HasQueryFilter(FiltroTenant, e => !FiltraPorTenant || e.IdTenant == IdTenantFiltro);
+
+        private static readonly System.Reflection.MethodInfo MetodoFiltroDeBorrado =
+            typeof(ApplicationDbContext).GetMethod(nameof(AplicarFiltroDeBorrado), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        private void AplicarFiltroDeBorrado<T>(ModelBuilder modelBuilder) where T : class
+            => modelBuilder.Entity<T>().HasQueryFilter(FiltroBorrado, e => !EF.Property<bool>(e, "Eliminado"));
 
         private void AplicarFiltroDeTenantMixto<T>(ModelBuilder modelBuilder) where T : class, ITenantOpcionalEntity
             => modelBuilder.Entity<T>().HasQueryFilter(FiltroTenant, e => !FiltraPorTenant || e.IdTenant == null || e.IdTenant == IdTenantFiltro);

@@ -100,6 +100,12 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   una fila no puede apuntar a la de otro tenant ni aunque falle la aplicacion. `id_tenant` es `NOT NULL` salvo en las tablas mixtas.
   Una tabla de tenant nueva nace asi; `ScriptsContraerTests` falla si una relacion de EF no es compuesta en algun script. El
   borrado `SET NULL` no es posible en una clave compuesta (pondria `id_tenant` en nulo): se usa borrado logico.
+- **Borrado lógico (desde F1.3c, ADR-022):** las 13 entidades con `Eliminado` que ninguna otra referencia (cargas, peajes, salidas,
+  odómetro, salarios, órdenes de mantenimiento, documentos de personas, empleados, proveedores, cargos, notas, pólizas y gastos de
+  repuestos) llevan el filtro global `borrado`: una baja no aparece en listas ni en `Find`. Las que otras referencian (vehículo, ruta,
+  persona, cliente, factura…) NO lo llevan, para no perder el historial que las apunta: ahí cada consulta sigue con `!Eliminado`. Para
+  ver filas borradas de una hoja: `IgnoreQueryFilters([ApplicationDbContext.FiltroBorrado])`; ignorar el filtro de tenant está
+  prohibido. Una entidad nueva con `Eliminado` debe quedar en una de las dos listas de `FiltroDeBorradoTests`.
 - **Índices por `id_empresa`:** todo índice de consulta debe empezar por `id_empresa` (ej. `IX_facturas_empresa_fecha`).
 - **Sucursales:** hoy **no existen** (`id_sucursal` no está en el modelo). Queda como columna **opcional/futura**;
   no inventar tablas de sucursal salvo que se decida explícitamente.
