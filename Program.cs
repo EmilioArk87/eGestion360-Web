@@ -20,6 +20,7 @@ builder.Services.AddRazorPages()
     {
         options.Filters.Add<AdminOnlyPageFilter>();
         options.Filters.Add<EmpresaRequeridaPageFilter>();
+        options.Filters.Add<AmbitoDePlataformaPageFilter>();   // F1.3: pantallas que ven todos los tenants (lista revisada)
     });
 
 // Add Entity Framework with SQL Server.
@@ -78,7 +79,8 @@ builder.Services.AddHttpContextAccessor();
 // tenant, empresa, usuario e id de correlación. ITenantContext lo leen EF, RLS y los servicios.
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IResolvedorDeTenant, ResolvedorDeTenantEf>();
-builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddScoped<TenantContext>();
+builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());   // los procesos de fondo fijan su tenant en TenantContext
 
 // Publisher: scoped (comparte DbContext con el caller para commit atómico).
 builder.Services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();

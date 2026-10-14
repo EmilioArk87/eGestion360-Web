@@ -87,9 +87,14 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   padre, sus hijos, su persona (la bitácora) y, al final, el tenant de la petición. Si ninguno lo da, no guarda. **El código de las
   pantallas y los servicios no asigna `IdTenant`.** Tampoco deja cambiarlo en una fila guardada, ni que una fila apunte a un
   registro de otro tenant, y `PersonaService` no fusiona personas de tenants distintos. Sigue sin filtrar datos (F1.3).
-- **Filtrado manual obligatorio:** cada consulta debe incluir `.Where(x => x.IdEmpresa == empresaId)`. Hoy **no** hay
-  Global Query Filters (`HasQueryFilter`); el aislamiento depende de que cada página filtre. ⚠️ Nunca devolver datos sin
-  filtrar por empresa.
+- **Filtro global por tenant (desde F1.3a, ADR-020):** toda entidad de tenant lleva el filtro con nombre `tenant` de EF, cerrado
+  por defecto: una petición sin tenant no ve filas de tenant y una tabla mixta deja ver además las filas globales. El código de
+  las pantallas no escribe filtros de tenant ni usa `IgnoreQueryFilters` (una prueba lo prohíbe); ver sin filtro es un ámbito de
+  plataforma y solo lo dan la lista revisada de rutas de `AmbitoDePlataformaPageFilter` (login y pantallas del administrador
+  general) y los procesos de fondo con `TenantContext.Fijar` / `FijarPlataforma`. Un `DbContext` no se arma a mano: se pide por
+  inyección.
+- **Filtro por empresa:** dentro de un tenant sigue siendo regla de negocio: cada consulta incluye `.Where(x => x.IdEmpresa == empresaId)`
+  (una empresa no ve a las otras empresas de su tenant). ⚠️ Nunca devolver datos sin filtrar por empresa.
 - **Índices por `id_empresa`:** todo índice de consulta debe empezar por `id_empresa` (ej. `IX_facturas_empresa_fecha`).
 - **Sucursales:** hoy **no existen** (`id_sucursal` no está en el modelo). Queda como columna **opcional/futura**;
   no inventar tablas de sucursal salvo que se decida explícitamente.

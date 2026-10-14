@@ -20,7 +20,7 @@ namespace eGestion360Web.Tests.Infra
     /// </summary>
     public sealed class ContextoDePrueba : ApplicationDbContext
     {
-        public ContextoDePrueba(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ContextoDePrueba(DbContextOptions<ApplicationDbContext> options, ITenantContext? tenant = null) : base(options, tenant) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,8 +34,18 @@ namespace eGestion360Web.Tests.Infra
                 token.ValueGenerated = ValueGenerated.Never;
             }
 
+            // Las columnas calculadas de SQL Server (totales, subtotales, km recorridos) no existen como calculadas en SQLite:
+            // pasan a ser columnas normales con valor 0, para poder insertar cualquier entidad en las pruebas.
+            foreach (var propiedad in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetProperties()).ToList())
+            {
+                if (propiedad.ValueGenerated is not (ValueGenerated.OnAddOrUpdate or ValueGenerated.OnUpdate)) continue;
+                propiedad.SetComputedColumnSql(null);
+                propiedad.ValueGenerated = ValueGenerated.Never;
+            }
+
             modelBuilder.Entity<PersonaDocumento>()
                 .Property(d => d.NumeroNormalizado)
+                .ValueGeneratedOnAddOrUpdate()
                 .HasComputedColumnSql("upper(replace(replace(replace(numero, '-', ''), ' ', ''), '.', ''))", stored: true);
         }
     }
@@ -90,6 +100,19 @@ namespace eGestion360Web.Tests.Infra
             var todos = interceptores.Append(new TenantAlGuardarInterceptor(Tenant, Resolvedor)).ToArray();
             constructor.AddInterceptors(todos);
             return new ContextoDePrueba(constructor.Options);
+        }
+
+
+        /// <summary>
+        /// Un contexto CON el filtro global por tenant (F1.3), como el de la aplicación: ve solo las filas del tenant dado, o
+        /// todas si <paramref name="plataforma"/>, o ninguna de tenant si <paramref name="idTenant"/> es nulo. Los demás
+        /// contextos de esta clase no lo llevan, para que las pruebas que arman datos de varios tenants los vean todos.
+        /// </summary>
+        public ApplicationDbContext CrearComo(int? idTenant, bool plataforma = false)
+        {
+            var opciones = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_conexion)
+                .AddInterceptors(new TenantAlGuardarInterceptor(Tenant, Resolvedor)).Options;
+            return new ContextoDePrueba(opciones, new TenantContextFijo { IdTenant = idTenant, EsPlataforma = plataforma });
         }
 
         public void Dispose()

@@ -8,15 +8,34 @@ using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        /// <summary>Nombre del filtro global por tenant (EF 10 admite varios filtros con nombre por entidad).</summary>
+        public const string FiltroTenant = "tenant";
+
+        private readonly ITenantContext? _tenant;
+
+        /// <param name="options">Opciones de EF.</param>
+        /// <param name="tenant">
+        /// Tenant de la petición. La aplicación siempre lo recibe por inyección de dependencias y entonces todas las
+        /// entidades de tenant llevan el filtro <see cref="FiltroTenant"/> (F1.3). Sin él (un contexto armado a mano, como en
+        /// algunas pruebas) el filtro no se aplica.
+        /// </param>
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContext? tenant = null)
             : base(options)
         {
+            _tenant = tenant;
         }
+
+        /// <summary>Verdadero si las consultas de este contexto se limitan al tenant de la petición.</summary>
+        public bool FiltraPorTenant => _tenant != null && !_tenant.EsPlataforma;
+
+        /// <summary>Tenant al que se limitan las consultas; 0 (ningún tenant) cuando la petición no trae uno: así no ve nada.</summary>
+        public int IdTenantFiltro => _tenant?.IdTenant ?? 0;
 
         public DbSet<User> Users { get; set; }
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
@@ -99,6 +118,29 @@ namespace eGestion360Web.Data
             // arquitectura). Una entidad nueva se configura con su clase IEntityTypeConfiguration en el archivo de su módulo.
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly,
                 tipo => tipo.Namespace == typeof(ApplicationDbContext).Namespace + ".Configuracion");
+
+            // Filtro global por tenant (paso F1.3): primera barrera del aislamiento; la segunda será RLS (F1.4). Las tablas
+            // mixtas (ADR-015) dejan ver además las filas globales, las de id_tenant nulo. En ámbito de plataforma
+            // (ITenantContext.EsPlataforma) el filtro no se aplica; una petición sin tenant no ve ninguna fila de tenant.
+            foreach (var entidad in modelBuilder.Model.GetEntityTypes().Where(e => e.BaseType == null && !e.IsOwned()).ToList())
+            {
+                if (typeof(ITenantEntity).IsAssignableFrom(entidad.ClrType))
+                    MetodoFiltroDeTenant.MakeGenericMethod(entidad.ClrType).Invoke(this, new object[] { modelBuilder });
+                else if (typeof(ITenantOpcionalEntity).IsAssignableFrom(entidad.ClrType))
+                    MetodoFiltroDeTenantMixto.MakeGenericMethod(entidad.ClrType).Invoke(this, new object[] { modelBuilder });
+            }
         }
+
+        private static readonly System.Reflection.MethodInfo MetodoFiltroDeTenant =
+            typeof(ApplicationDbContext).GetMethod(nameof(AplicarFiltroDeTenant), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        private static readonly System.Reflection.MethodInfo MetodoFiltroDeTenantMixto =
+            typeof(ApplicationDbContext).GetMethod(nameof(AplicarFiltroDeTenantMixto), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        private void AplicarFiltroDeTenant<T>(ModelBuilder modelBuilder) where T : class, ITenantEntity
+            => modelBuilder.Entity<T>().HasQueryFilter(FiltroTenant, e => !FiltraPorTenant || e.IdTenant == IdTenantFiltro);
+
+        private void AplicarFiltroDeTenantMixto<T>(ModelBuilder modelBuilder) where T : class, ITenantOpcionalEntity
+            => modelBuilder.Entity<T>().HasQueryFilter(FiltroTenant, e => !FiltraPorTenant || e.IdTenant == null || e.IdTenant == IdTenantFiltro);
     }
 }

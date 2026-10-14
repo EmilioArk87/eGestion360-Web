@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Eventos;
+using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Services.Eventos
 {
@@ -89,6 +90,10 @@ namespace eGestion360Web.Services.Eventos
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            // El despachador recorre los eventos de todos los tenants (D20): lee la cola en ámbito de plataforma y, para cada
+            // evento, fija el tenant de su empresa antes de llamar a los manejadores, para que estos solo vean lo de ese tenant.
+            var tenant = scope.ServiceProvider.GetRequiredService<TenantContext>();
+            tenant.FijarPlataforma();
             var handlers = scope.ServiceProvider.GetServices<IDomainEventHandler>().ToList();
 
             var now = DateTime.UtcNow;
@@ -143,6 +148,8 @@ WHERE status IN ('pending', 'failed')
             {
                 if (ct.IsCancellationRequested) break;
 
+                tenant.Fijar(evt.IdTenant, evt.IdEmpresa);
+
                 var dispatch = new DomainEventDispatch(
                     evt.IdEvento, evt.IdEmpresa, evt.EventType, evt.AggregateType,
                     evt.AggregateId, evt.EventVersion, evt.Payload, evt.OccurredAt);
@@ -166,6 +173,8 @@ WHERE status IN ('pending', 'failed')
                             handler.Name, evt.IdEvento, evt.EventType);
                     }
                 }
+
+                tenant.FijarPlataforma();   // el estado del evento se guarda en ámbito de plataforma
 
                 var ahora = DateTime.UtcNow;
 

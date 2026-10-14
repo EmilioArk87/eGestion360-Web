@@ -15,6 +15,9 @@ namespace eGestion360Web.Services.Tenancy
         /// <summary>Clave de <c>HttpContext.Items</c> con el id de la empresa (un <see cref="int"/>; ausente si no hay).</summary>
         public const string ClaveIdEmpresa = "eg360.id_empresa";
 
+        /// <summary>Clave de <c>HttpContext.Items</c> que marca la petición como de ámbito de plataforma (<see langword="true"/>; ausente si no).</summary>
+        public const string ClaveEsPlataforma = "eg360.es_plataforma";
+
         /// <summary>Encabezado de la respuesta con el id de correlación, para que soporte lo cruce con los logs.</summary>
         public const string EncabezadoCorrelacion = "X-Correlation-Id";
 
