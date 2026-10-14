@@ -327,7 +327,7 @@ namespace eGestion360Web.Tests.Services.Personas
         [Fact]
         public async Task Si_la_persona_es_de_otra_empresa_y_la_verificacion_coincide_la_reutiliza()
         {
-            var idPersona = Insertar(DatosBase.EmpresaB, "Luis", "Pérez", dni: DniNormalizado);
+            var idPersona = Insertar(DatosBase.EmpresaA2, "Luis", "Pérez", dni: DniNormalizado);
 
             var r = await RegistrarOk(Alta(empresa: DatosBase.EmpresaA, nombre: "luis", apellido: "PEREZ"));
 
@@ -338,13 +338,13 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal(1, await db.Personas.CountAsync());
             var vinculos = await db.PersonaEmpresas.AsNoTracking().Where(v => v.IdPersona == idPersona).ToListAsync();
             Assert.Contains(vinculos, v => v.IdEmpresa == DatosBase.EmpresaA && v.TipoVinculo == TiposVinculo.Cliente);
-            Assert.Contains(vinculos, v => v.IdEmpresa == DatosBase.EmpresaB && v.TipoVinculo == TiposVinculo.Empleado);
+            Assert.Contains(vinculos, v => v.IdEmpresa == DatosBase.EmpresaA2 && v.TipoVinculo == TiposVinculo.Empleado);
         }
 
         [Fact]
         public async Task Si_la_verificacion_no_coincide_responde_un_mensaje_generico_y_no_vincula_nada()
         {
-            Insertar(DatosBase.EmpresaB, "Luis", "Pérez", dni: DniNormalizado);
+            Insertar(DatosBase.EmpresaA2, "Luis", "Pérez", dni: DniNormalizado);
 
             var r = await Registrar(Alta(empresa: DatosBase.EmpresaA, nombre: "Mario", apellido: "Pérez"));
 
@@ -645,7 +645,7 @@ namespace eGestion360Web.Tests.Services.Personas
         {
             var idPersona = Insertar(DatosBase.EmpresaA, "Luis", "Pérez", dni: DniNormalizado);
             await RegistrarOk(Alta(empresa: DatosBase.EmpresaA));
-            await RegistrarOk(Alta(empresa: DatosBase.EmpresaB, codigo: "B-1"));
+            await RegistrarOk(Alta(empresa: DatosBase.EmpresaA2, codigo: "B-1"));
 
             using var db = _bd.Crear();
             var servicio = Servicio(db);
@@ -654,7 +654,7 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.Equal(new[] { TiposVinculo.Cliente, TiposVinculo.Empleado }, enA.Select(v => v.TipoVinculo).ToArray());
             Assert.All(enA, v => Assert.True(v.Vigente));
 
-            var enB = await servicio.ListarVinculosAsync(DatosBase.EmpresaB, idPersona);
+            var enB = await servicio.ListarVinculosAsync(DatosBase.EmpresaA2, idPersona);
             Assert.Equal(new[] { TiposVinculo.Cliente }, enB.Select(v => v.TipoVinculo).ToArray());
         }
 
@@ -774,9 +774,9 @@ namespace eGestion360Web.Tests.Services.Personas
         public async Task Al_cambiar_el_nombre_de_la_persona_se_actualiza_la_razon_social_de_sus_clientes_en_todas_las_empresas()
         {
             // Luis es empleado de B y cliente de A y de B; también hay un cliente jurídico y uno sin ficha, que no se tocan.
-            var idPersona = Insertar(DatosBase.EmpresaB, "Luis", "Pérez", dni: DniNormalizado, codigo: "E1");
+            var idPersona = Insertar(DatosBase.EmpresaA2, "Luis", "Pérez", dni: DniNormalizado, codigo: "E1");
             await RegistrarOk(Alta(empresa: DatosBase.EmpresaA, codigo: "A-1"));
-            await RegistrarOk(Alta(empresa: DatosBase.EmpresaB, codigo: "B-1"));
+            await RegistrarOk(Alta(empresa: DatosBase.EmpresaA2, codigo: "B-1"));
             using (var db = _bd.Crear())
             {
                 db.Clientes.AddRange(
@@ -794,7 +794,7 @@ namespace eGestion360Web.Tests.Services.Personas
                     Usuario = "rrhh.ana",
                     Datos = new PersonaDatosInput
                     {
-                        IdEmpresa = DatosBase.EmpresaB, IdPersona = idPersona,
+                        IdEmpresa = DatosBase.EmpresaA2, IdPersona = idPersona,
                         PrimerNombre = "Luis", SegundoNombre = "Alberto", PrimerApellido = "Pérez", SegundoApellido = "Gómez",
                         TipoDocumento = "DNI", Documento = DniNormalizado,
                         Empleado = new EmpleadoDatosInput { Cargo = "MECANICO", CodigoInterno = "E1" }
@@ -903,7 +903,7 @@ namespace eGestion360Web.Tests.Services.Personas
         [Fact]
         public async Task Que_alguien_sea_cliente_de_una_empresa_no_lo_ve_otra_en_el_historial_de_la_persona()
         {
-            var idPersona = Insertar(DatosBase.EmpresaB, "Luis", "Pérez", dni: DniNormalizado);
+            var idPersona = Insertar(DatosBase.EmpresaA2, "Luis", "Pérez", dni: DniNormalizado);
             await RegistrarOk(Alta(empresa: DatosBase.EmpresaA));
 
             using var db = _bd.Crear();
@@ -913,7 +913,7 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.NotNull(desdeA);
             Assert.Contains(desdeA!.Filas, f => f.Entidad == "Ficha de cliente" && !f.DeOtraEmpresa);
 
-            var desdeB = await consulta.HistorialAsync(DatosBase.EmpresaB, idPersona);
+            var desdeB = await consulta.HistorialAsync(DatosBase.EmpresaA2, idPersona);
             Assert.NotNull(desdeB);
             Assert.DoesNotContain(desdeB!.Filas, f => f.Entidad == "Ficha de cliente");
         }

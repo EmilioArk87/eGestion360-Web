@@ -7,8 +7,8 @@ using eGestion360Web.Models.Plataforma;
 namespace eGestion360Web.Models.Personas
 {
     /// <summary>
-    /// Documento de identidad de una persona (script 014). El índice único global
-    /// UX_persona_documentos_identidad garantiza que un documento (tipo + país + número normalizado)
+    /// Documento de identidad de una persona (script 014). El índice único por tenant (script 032)
+    /// UX_persona_documentos_identidad garantiza que, dentro de un tenant, un documento (tipo + país + número normalizado)
     /// pertenece a una sola persona, sin importar la empresa.
     /// El número de empleado NO va aquí: vive en <see cref="Empleado.CodigoInterno"/>.
     /// </summary>

@@ -95,6 +95,11 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   inyección.
 - **Filtro por empresa:** dentro de un tenant sigue siendo regla de negocio: cada consulta incluye `.Where(x => x.IdEmpresa == empresaId)`
   (una empresa no ve a las otras empresas de su tenant). ⚠️ Nunca devolver datos sin filtrar por empresa.
+- **Claves foraneas compuestas (desde F1.3b, ADR-021):** toda clave foranea entre dos tablas de tenant incluye `id_tenant` en los dos
+  lados (`FOREIGN KEY (id_tenant, id_x) REFERENCES padre (id_tenant, id_x)`), y el padre lleva una clave unica `(id_tenant, id_x)`:
+  una fila no puede apuntar a la de otro tenant ni aunque falle la aplicacion. `id_tenant` es `NOT NULL` salvo en las tablas mixtas.
+  Una tabla de tenant nueva nace asi; `ScriptsContraerTests` falla si una relacion de EF no es compuesta en algun script. El
+  borrado `SET NULL` no es posible en una clave compuesta (pondria `id_tenant` en nulo): se usa borrado logico.
 - **Índices por `id_empresa`:** todo índice de consulta debe empezar por `id_empresa` (ej. `IX_facturas_empresa_fecha`).
 - **Sucursales:** hoy **no existen** (`id_sucursal` no está en el modelo). Queda como columna **opcional/futura**;
   no inventar tablas de sucursal salvo que se decida explícitamente.

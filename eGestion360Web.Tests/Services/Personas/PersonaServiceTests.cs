@@ -221,7 +221,7 @@ namespace eGestion360Web.Tests.Services.Personas
 
         private static CrearPersonaInput AltaDelDocumentoDeOtraEmpresa(string apellido = "MEJIA", DateOnly? nacimiento = null)
         {
-            var input = Alta(DatosBase.EmpresaB);
+            var input = Alta(DatosBase.EmpresaA2);
             input.Datos.PrimerNombre = "Mario"; input.Datos.PrimerApellido = apellido;
             input.Datos.Documento = "0801199077777";
             input.Datos.FechaNacimiento = nacimiento ?? new DateOnly(1988, 3, 4);
@@ -248,7 +248,7 @@ namespace eGestion360Web.Tests.Services.Personas
             var p = await lectura.Personas.AsNoTracking().Include(x => x.Vinculos).ThenInclude(v => v.Empleado).SingleAsync();
 
             Assert.Equal(2, p.Vinculos.Count);
-            var nuevo = p.Vinculos.Single(v => v.IdEmpresa == DatosBase.EmpresaB);
+            var nuevo = p.Vinculos.Single(v => v.IdEmpresa == DatosBase.EmpresaA2);
             Assert.Equal("M300", nuevo.Empleado!.CodigoInterno);
             Assert.Equal("MECANICO", nuevo.Empleado.Cargo);
 
@@ -614,33 +614,6 @@ namespace eGestion360Web.Tests.Services.Personas
 
             var vinculos = await lectura.PersonaEmpresas.AsNoTracking().Where(v => v.IdPersona == principal && !v.Eliminado).ToListAsync();
             Assert.Equal(new[] { DatosBase.EmpresaA, DatosBase.EmpresaA2 }, vinculos.Select(v => v.IdEmpresa).Order().ToArray());
-        }
-
-        [Fact]
-        public async Task La_fusion_confirmada_entre_personas_de_tenants_distintos_se_rechaza_y_no_cambia_nada()
-        {
-            int sobrante;
-            using (var db = _bd.Crear())
-            {
-                PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Mario", "Mejía", dni: "0801199077777", nacimiento: new DateOnly(1988, 3, 4));
-                sobrante = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Mario", "Mejia", codigoInterno: "B900", nacimiento: new DateOnly(1988, 3, 4)).IdPersona;
-            }
-
-            var edicion = await Edicion(sobrante, DatosBase.EmpresaB, d => { d.TipoDocumento = "DNI"; d.Documento = "0801199077777"; });
-            edicion.ConfirmarFusion = true;
-
-            using (var db = Contexto())
-            {
-                var r = await Servicio(db).ActualizarAsync(edicion);
-                Assert.False(r.Ok);
-                Assert.NotEqual(EstadoActualizarPersona.Fusionada, r.Estado);
-                Assert.Contains(r.Errores, e => e.Mensaje.Contains("tenants distintos"));
-            }
-
-            using var lectura = _bd.Crear();
-            var persona = await lectura.Personas.AsNoTracking().SingleAsync(x => x.IdPersona == sobrante);
-            Assert.False(persona.Eliminado);
-            Assert.Null(persona.IdPersonaPrincipal);
         }
 
         [Fact]
@@ -1069,7 +1042,7 @@ namespace eGestion360Web.Tests.Services.Personas
         [Fact]
         public async Task El_administrador_no_puede_poner_un_documento_que_ya_tiene_otra_persona_de_cualquier_empresa()
         {
-            var ana = await CrearPersona(Alta());                       // empresa B, DNI 0801-1990-12345
+            var ana = await CrearPersona(Alta(DatosBase.EmpresaA2));        // empresa A2 (mismo tenant que la A), DNI 0801-1990-12345
             int otra;
             using (var db = _bd.Crear())
                 otra = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Beto", "Rivas", dni: "0801-1985-11111", codigoInterno: "A1").IdPersona;
@@ -1167,7 +1140,7 @@ namespace eGestion360Web.Tests.Services.Personas
         [Fact]
         public async Task Al_cambiar_el_nombre_el_administrador_actualiza_la_razon_social_de_sus_clientes_en_cualquier_empresa()
         {
-            var id = await CrearPersona(Alta());                       // empleado en la empresa B
+            var id = await CrearPersona(Alta(DatosBase.EmpresaA2));        // empleado en la empresa A2 (mismo tenant que la A)
             using (var db = _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaA })))
             {
                 var vinculos = new VinculoService(db,

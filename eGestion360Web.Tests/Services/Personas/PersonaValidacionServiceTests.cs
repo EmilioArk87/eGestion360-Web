@@ -263,7 +263,7 @@ namespace eGestion360Web.Tests.Services.Personas
             using var db = _bd.Crear();
             var existente = PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Beto", "Rivera", dni: "0801199022222");
 
-            var i = Alta(DatosBase.EmpresaB); i.Documento = "0801199022222";
+            var i = Alta(DatosBase.EmpresaA2); i.Documento = "0801199022222";
             var r = await Servicio(db).ValidarAsync(i);
 
             Assert.True(r.Ok, Detalle(r));
@@ -272,6 +272,34 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.NotNull(r.DocumentoExistente);
             Assert.Equal(existente.IdPersona, r.DocumentoExistente!.IdPersona);
             Assert.False(r.DocumentoExistente.TieneVinculoEnEstaEmpresa);
+        }
+
+        [Fact]
+        public async Task El_mismo_documento_en_otro_tenant_no_es_un_duplicado_ni_se_revela_ADR_004()
+        {
+            using var db = _bd.Crear();
+            PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Eva", "Rivas", dni: "0801199055555");   // tenant A
+
+            var i = Alta(DatosBase.EmpresaB); i.Documento = "0801199055555";                          // tenant B
+            var r = await Servicio(db).ValidarAsync(i);
+
+            Assert.True(r.Ok, Detalle(r));
+            Assert.Null(r.DocumentoExistente);
+        }
+
+        [Fact]
+        public async Task El_administrador_general_tampoco_ve_como_duplicado_un_documento_de_otro_tenant()
+        {
+            using var db = _bd.Crear();
+            PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Eva", "Rivas", dni: "0801199066666");
+            var deB = PersonasDePrueba.Insertar(db, DatosBase.EmpresaB, "Hugo", "Rivas", dni: "0801199077771");
+
+            var i = Alta(DatosBase.EmpresaB);
+            i.Modo = ModoValidacionPersona.EdicionAdministrador; i.IdPersona = deB.IdPersona; i.Documento = "0801199066666";
+            var r = await Servicio(db).ValidarAsync(i);
+
+            Assert.True(r.Ok, Detalle(r));
+            Assert.Null(r.DocumentoExistente);
         }
 
         [Fact]

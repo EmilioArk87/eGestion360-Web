@@ -174,11 +174,18 @@ namespace eGestion360Web.Services.Personas
 
             d.TieneDocumentoDeIdentidad = catalogo.EsIdentidad;
 
-            // Unicidad global del documento (índice UX_persona_documentos_identidad), sin contar a la propia persona.
+            // Unicidad del documento por tenant (índice UX_persona_documentos_identidad, script 032; ADR-004), sin contar a la
+            // propia persona. El tenant es el de la persona que se edita o, si se crea, el de la empresa: el administrador
+            // general ve todos los tenants, y el mismo documento en otro tenant no es un duplicado.
             var excluir = i.IdPersona ?? 0;
+            var idTenant = excluir > 0
+                ? await _db.Personas.AsNoTracking().Where(p => p.IdPersona == excluir).Select(p => (int?)p.IdTenant).FirstOrDefaultAsync(ct)
+                : null;
+            idTenant ??= await _db.Empresas.AsNoTracking().Where(e => e.IdEmpresa == i.IdEmpresa).Select(e => (int?)e.IdTenant).FirstOrDefaultAsync(ct);
             var otraPersona = await _db.PersonaDocumentos.AsNoTracking()
                 .Where(x => !x.Eliminado && x.TipoDocumento == tipo && x.PaisEmisor == pais
-                            && x.NumeroNormalizado == numero && x.IdPersona != excluir)
+                            && x.NumeroNormalizado == numero && x.IdPersona != excluir
+                            && (idTenant == null || x.IdTenant == idTenant))
                 .Select(x => (int?)x.IdPersona)
                 .FirstOrDefaultAsync(ct);
             if (otraPersona == null) return null;

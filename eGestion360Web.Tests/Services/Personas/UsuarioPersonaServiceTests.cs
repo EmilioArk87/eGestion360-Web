@@ -169,7 +169,7 @@ namespace eGestion360Web.Tests.Services.Personas
         [Fact]
         public async Task El_administrador_general_que_escribe_un_documento_de_otra_empresa_tambien_debe_buscar_a_la_persona()
         {
-            Persona(DatosBase.EmpresaB, "Emilio", "Garay", dni: "0801-1990-12345");
+            Persona(DatosBase.EmpresaA2, "Emilio", "Garay", dni: "0801-1990-12345");
 
             var r = await Crear(Admin, IdAdmin, Datos());
 

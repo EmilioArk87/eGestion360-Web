@@ -68,11 +68,11 @@ namespace eGestion360Web.Tests.Services.Personas
             using (var db = _bd.Crear())
             {
                 idAna = Insertar(db, DatosBase.EmpresaA, "Ana", "Paz", DniAna, "A1", cargo: "CONDUCTOR").IdPersona;
-                Insertar(db, DatosBase.EmpresaB, "Beto", "Rivas", DniBeto, "B1");
+                Insertar(db, DatosBase.EmpresaA2, "Beto", "Rivas", DniBeto, "B1");
             }
             // Ana es además cliente de la otra empresa: una sola persona con dos roles.
-            await RegistrarCliente(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaB },
-                DatosBase.EmpresaB, "Ana", "Paz", DniAna, "C-0001");
+            await RegistrarCliente(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaA2 },
+                DatosBase.EmpresaA2, "Ana", "Paz", DniAna, "C-0001");
 
             using var lectura = _bd.Crear();
             var pagina = await Servicio(lectura).ListarAsync(Todos(), 1, 50);
@@ -88,7 +88,7 @@ namespace eGestion360Web.Tests.Services.Personas
             Assert.True(empleado.Vigente);
 
             var cliente = Assert.Single(ana.Vinculos, v => v.TipoVinculo == TiposVinculo.Cliente);
-            Assert.Equal(DatosBase.EmpresaB, cliente.IdEmpresa);
+            Assert.Equal(DatosBase.EmpresaA2, cliente.IdEmpresa);
             Assert.Equal("cód. C-0001", cliente.Detalle);
 
             var beto = Assert.Single(pagina.Filas, f => f.NombreCompleto == "Rivas, Beto");
@@ -252,8 +252,8 @@ namespace eGestion360Web.Tests.Services.Personas
                 db.PersonaEmpresas.Single(v => v.IdPersona == id).FechaFin = new DateOnly(2026, 1, 31);   // empleo terminado en A
                 db.SaveChanges();
             }
-            await RegistrarCliente(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaB },
-                DatosBase.EmpresaB, "Ana", "Paz", DniAna, "C-9");
+            await RegistrarCliente(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaA2 },
+                DatosBase.EmpresaA2, "Ana", "Paz", DniAna, "C-9");
 
             using var lectura = _bd.Crear();
             var fila = Assert.Single((await Servicio(lectura).ListarAsync(Todos(), 1, 50)).Filas);
@@ -290,8 +290,8 @@ namespace eGestion360Web.Tests.Services.Personas
                 db.PersonaEmpresas.Single(v => v.IdPersona == id).FechaFin = new DateOnly(2026, 1, 31);
                 db.SaveChanges();
             }
-            await RegistrarCliente(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaB },
-                DatosBase.EmpresaB, "Ana", "Paz", DniAna, "C-1");
+            await RegistrarCliente(new ContextoAuditoriaFijo { Usuario = "ventas", IdEmpresa = DatosBase.EmpresaA2 },
+                DatosBase.EmpresaA2, "Ana", "Paz", DniAna, "C-1");
 
             using var lectura = _bd.Crear();
             var detalle = await Servicio(lectura).ObtenerAsync(id);
@@ -368,14 +368,14 @@ namespace eGestion360Web.Tests.Services.Personas
         {
             // Alta como empleado en la empresa B y como cliente en la A: cada una deja sus filas en la bitácora.
             int id;
-            using (var db = _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "rrhh.b", IdEmpresa = DatosBase.EmpresaB })))
+            using (var db = _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "rrhh.b", IdEmpresa = DatosBase.EmpresaA2 })))
             {
                 var r = await ServicioPersonas(db).CrearAsync(new CrearPersonaInput
                 {
                     Usuario = "rrhh.b",
                     Datos = new PersonaDatosInput
                     {
-                        IdEmpresa = DatosBase.EmpresaB, PrimerNombre = "Ana", PrimerApellido = "Paz",
+                        IdEmpresa = DatosBase.EmpresaA2, PrimerNombre = "Ana", PrimerApellido = "Paz",
                         TipoDocumento = "DNI", Documento = DniAna, FechaNacimiento = new DateOnly(1990, 5, 10),
                         Empleado = new EmpleadoDatosInput { Cargo = "MECANICO", CodigoInterno = "B1", TarifaDiaria = 400m }
                     }
@@ -384,7 +384,7 @@ namespace eGestion360Web.Tests.Services.Personas
                 id = r.IdPersona!.Value;
             }
             // La empresa B le sube la tarifa: el administrador verá que cambió, pero no cuánto paga.
-            using (var db = _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "rrhh.b", IdEmpresa = DatosBase.EmpresaB })))
+            using (var db = _bd.Crear(new AuditoriaCambiosInterceptor(new ContextoAuditoriaFijo { Usuario = "rrhh.b", IdEmpresa = DatosBase.EmpresaA2 })))
             {
                 var empleado = await db.Empleados.SingleAsync();
                 empleado.TarifaDiaria = 555m;
@@ -402,7 +402,7 @@ namespace eGestion360Web.Tests.Services.Personas
 
             // La ficha de empleado y el vínculo de la empresa B, que la empresa A no ve, el administrador sí.
             var fichaB = Assert.Single(admin.Filas, f => f.Entidad == "Ficha de empleado" && f.Operacion == "Alta");
-            Assert.Equal("Empresa de prueba 4", fichaB.Empresa);
+            Assert.Equal("Empresa de prueba 3", fichaB.Empresa);
             Assert.Equal("rrhh.b", fichaB.Usuario);
             Assert.NotNull(fichaB.Detalle);
 
