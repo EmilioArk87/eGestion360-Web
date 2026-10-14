@@ -7,16 +7,19 @@ using eGestion360Web.Models;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Pages.Empresas
 {
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly TenantContext? _tenant;
 
-        public CreateModel(ApplicationDbContext context)
+        public CreateModel(ApplicationDbContext context, TenantContext? tenant = null)
         {
             _context = context;
+            _tenant = tenant;
         }
 
         [BindProperty]
@@ -85,6 +88,11 @@ namespace eGestion360Web.Pages.Empresas
             Empresa.FechaCreacion = now;
             Empresa.ModificadoPor = null;
             Empresa.FechaModificacion = null;
+
+            // Con la política RLS encendida la base solo deja guardar una empresa dentro del contexto de SU tenant (bloqueo de
+            // empresas, ADR-023): el tenant elegido y validado arriba pasa a ser el de esta petición, aunque la sesión del
+            // administrador general no tenga ninguno (F1.4c, ADR-025). Las categorías de abajo se guardan con el mismo contexto.
+            _tenant?.Fijar(Empresa.IdTenant, null);
 
             _context.Empresas.Add(Empresa);
             await _context.SaveChangesAsync();   // genera Empresa.IdEmpresa

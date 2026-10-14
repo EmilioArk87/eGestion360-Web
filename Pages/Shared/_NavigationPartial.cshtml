@@ -44,6 +44,15 @@
                 </li>
             </ul>
             <ul class="navbar-nav">
+                @if (eGestion360Web.Services.AuthHelper.GetCodigoTenantDeSoporte(Context) is { Length: > 0 } codigoSoporte)
+                {
+                    <li class="nav-item d-flex align-items-center me-2">
+                        <a class="badge bg-warning text-dark text-decoration-none" asp-page="/Admin/Soporte/Index"
+                           title="Estás trabajando en un tenant de soporte; haz clic para cambiar o salir">
+                            <i class="fas fa-life-ring me-1"></i>Soporte: @codigoSoporte
+                        </a>
+                    </li>
+                }
                 @if (Context.Session.GetString("UserId") != null)
                 {
                     <li class="nav-item dropdown">

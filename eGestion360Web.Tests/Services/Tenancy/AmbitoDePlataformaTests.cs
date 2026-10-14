@@ -24,7 +24,25 @@ namespace eGestion360Web.Tests.Services.Tenancy
 
         [Fact]
         public void La_lista_de_pantallas_del_administrador_general_es_la_revisada()
-            => Assert.Equal(new[] { "/Empresas", "/Admin", "/UserManagement", "/Catalogos/TiposCambio" }, AmbitoDePlataformaPageFilter.RutasDelAdministradorGeneral);
+            => Assert.Equal(
+                new[]
+                {
+                    "/Empresas", "/UserManagement", "/Catalogos/TiposCambio",
+                    "/Admin/Soporte", "/Admin/Modulos", "/Admin/Outbox", "/Admin/EmailConfig", "/Admin/ResetPassword"
+                },
+                AmbitoDePlataformaPageFilter.RutasDelAdministradorGeneral);
+
+        [Fact]
+        public void Las_pantallas_que_trabajan_con_datos_de_un_tenant_no_son_de_plataforma()
+        {
+            // Con la política RLS encendida la plataforma no ve datos de tenant (ADR-023, D36): esas pantallas trabajan dentro del
+            // tenant de soporte y conservan el filtro de EF de ese tenant.
+            foreach (var ruta in TenantDeSoporteRequeridoPageFilter.RutasQueExigenTenantDeSoporte)
+            {
+                Assert.False(AmbitoDePlataformaPageFilter.EsRutaDelAdministradorGeneral(ruta + "/Index"), ruta);
+                Assert.False(AmbitoDePlataformaPageFilter.EsRutaSinSesion(ruta + "/Index"), ruta);
+            }
+        }
 
         [Fact]
         public void Cada_ruta_de_la_lista_existe_en_Pages()
@@ -41,8 +59,11 @@ namespace eGestion360Web.Tests.Services.Tenancy
         [Theory]
         [InlineData("/Empresas/Index", true)]
         [InlineData("/Empresas", true)]
-        [InlineData("/Admin/Personas/Index", true)]
-        [InlineData("/Admin/EmpresaRoles/Permisos", true)]
+        [InlineData("/Admin/Personas/Index", false)]
+        [InlineData("/Admin/EmpresaRoles/Permisos", false)]
+        [InlineData("/Admin/Soporte/Index", true)]
+        [InlineData("/Admin/Outbox/Index", true)]
+        [InlineData("/Admin/Modulos/Index", true)]
         [InlineData("/UserManagement", true)]
         [InlineData("/Catalogos/TiposCambio/Configuracion", true)]
         [InlineData("/empresas/index", true)]
@@ -61,7 +82,9 @@ namespace eGestion360Web.Tests.Services.Tenancy
         [InlineData("/Login", false, null, true)]
         [InlineData("/ForgotPassword", false, null, true)]
         [InlineData("/Empresas/Index", true, "admin", true)]
-        [InlineData("/Admin/Personas/Index", true, "admin", true)]
+        [InlineData("/Admin/Soporte/Index", true, "admin", true)]
+        [InlineData("/Admin/Personas/Index", true, "admin", false)]
+        [InlineData("/Admin/Soporte/Index", true, "empresa_admin", false)]
         [InlineData("/Empresas/Index", true, "empresa_admin", false)]
         [InlineData("/Admin/EmpresaRoles/Index", true, "empresa_admin", false)]
         [InlineData("/Admin/EmpresaRoles/Index", true, "empresa_user", false)]

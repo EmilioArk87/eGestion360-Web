@@ -21,6 +21,7 @@ builder.Services.AddRazorPages()
         options.Filters.Add<AdminOnlyPageFilter>();
         options.Filters.Add<EmpresaRequeridaPageFilter>();
         options.Filters.Add<AmbitoDePlataformaPageFilter>();   // F1.3: pantallas que ven todos los tenants (lista revisada)
+        options.Filters.Add<TenantDeSoporteRequeridoPageFilter>();   // F1.4c: pantallas de datos de un tenant: el administrador general elige antes cuál
     });
 
 // Add Entity Framework with SQL Server.

@@ -31,6 +31,7 @@ namespace eGestion360Web.Services.Tenancy
             context.Response.Headers[EncabezadoCorrelacion] = correlacion;
 
             int? idEmpresa = null;
+            int? idSoporte = null;
             string? idUsuario = null;
             try
             {
@@ -38,6 +39,7 @@ namespace eGestion360Web.Services.Tenancy
                 await context.Session.LoadAsync(context.RequestAborted);
                 idEmpresa = AuthHelper.GetEmpresaId(context);
                 idUsuario = context.Session.GetString("UserId");
+                idSoporte = AuthHelper.GetTenantDeSoporte(context);
             }
             catch (InvalidOperationException)
             {
@@ -50,10 +52,16 @@ namespace eGestion360Web.Services.Tenancy
                 idTenant = await resolvedor.ResolverPorEmpresaAsync(idEmpresa.Value, context.RequestAborted);
                 context.Items[ClaveIdEmpresa] = idEmpresa.Value;
             }
+            else if (idSoporte != null)
+            {
+                // El administrador general sin empresa trabaja en el tenant que eligió (F1.4c, ADR-025); lo guardó el servidor en
+                // su sesión, no viene de la petición.
+                idTenant = idSoporte;
+            }
 
             if (idTenant != null) context.Items[ClaveIdTenant] = idTenant.Value;
 
-            using (log.BeginScope(new AmbitoDeLog(idTenant, idEmpresa, idUsuario, correlacion)))
+            using (log.BeginScope(new AmbitoDeLog(idTenant, idEmpresa, idUsuario, correlacion, enSoporte: idSoporte != null && idEmpresa is not > 0)))
             {
                 if (idEmpresa is > 0 && idTenant == null)
                     log.LogWarning("La empresa {IdEmpresa} de la sesión no tiene tenant asignado.", idEmpresa.Value);
@@ -71,15 +79,18 @@ namespace eGestion360Web.Services.Tenancy
         {
             private readonly KeyValuePair<string, object?>[] _pares;
 
-            public AmbitoDeLog(int? idTenant, int? idEmpresa, string? idUsuario, string idCorrelacion)
+            public AmbitoDeLog(int? idTenant, int? idEmpresa, string? idUsuario, string idCorrelacion, bool enSoporte)
             {
-                _pares =
-                [
+                var pares = new List<KeyValuePair<string, object?>>
+                {
                     new("IdTenant", idTenant),
                     new("IdEmpresa", idEmpresa),
                     new("IdUsuario", idUsuario),
                     new("IdCorrelacion", idCorrelacion)
-                ];
+                };
+                // Solo en soporte: así cada línea de log de esa petición dice que fue un acceso de soporte.
+                if (enSoporte) pares.Add(new("Soporte", true));
+                _pares = pares.ToArray();
             }
 
             public int Count => _pares.Length;

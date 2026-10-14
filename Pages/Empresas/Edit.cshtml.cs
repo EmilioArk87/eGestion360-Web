@@ -6,16 +6,19 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Pages.Empresas
 {
     public class EditModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly TenantContext? _tenant;
 
-        public EditModel(ApplicationDbContext context)
+        public EditModel(ApplicationDbContext context, TenantContext? tenant = null)
         {
             _context = context;
+            _tenant = tenant;
         }
 
         [BindProperty]
@@ -94,6 +97,9 @@ namespace eGestion360Web.Pages.Empresas
             existing.ModificadoPor = user;
             existing.FechaModificacion = now;
 
+            // La base solo deja modificar una empresa dentro del contexto de su tenant (ADR-023): el de la empresa, que ya se
+            // leyó del directorio, pasa a ser el de esta petición (F1.4c, ADR-025).
+            _tenant?.Fijar(existing.IdTenant, null);
             await _context.SaveChangesAsync();
 
             TempData["EmpresasMessage"] = "Empresa actualizada correctamente.";

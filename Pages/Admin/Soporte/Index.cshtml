@@ -1,0 +1,128 @@
+@page
+@model eGestion360Web.Pages.Admin.Soporte.IndexModel
+@{
+    ViewData["Title"] = "Soporte por tenant";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Soporte por tenant</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <div class="me-3 bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                 style="width:3rem;height:3rem;min-width:3rem;">
+                <i class="fas fa-life-ring"></i>
+            </div>
+            <div>
+                <h2 class="mb-0">Soporte por tenant</h2>
+                <p class="text-muted mb-0">Elige el tenant con el que vas a trabajar: las pantallas de datos de un tenant verán y guardarán solo lo suyo</p>
+            </div>
+        </div>
+        <a asp-page="/MainMenu" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    @if (TempData["SoporteMensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SoporteMensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["SoporteError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["SoporteError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Volver) && Model.TenantDeSoporte == null)
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>La pantalla que pediste trabaja con los datos de un tenant. Elige cuál y te llevo de vuelta a ella.
+        </div>
+    }
+
+    @if (Model.TenantDeSoporte != null)
+    {
+        <div class="card border-primary shadow-sm mb-4">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted">Trabajando en el tenant</span>
+                    <strong class="ms-1">@Model.CodigoDeSoporte</strong>
+                </div>
+                <form method="post" asp-page-handler="Salir">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-sign-out-alt me-2"></i>Salir de soporte
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Empresas</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in Model.Tenants)
+                        {
+                            <tr class="@(t.IdTenant == Model.TenantDeSoporte ? "table-primary" : "")">
+                                <td><code>@t.Codigo</code></td>
+                                <td>@t.Nombre</td>
+                                <td>@t.Tipo</td>
+                                <td class="text-center">
+                                    @if (t.Estado == eGestion360Web.Models.Plataforma.EstadoTenant.Activo)
+                                    {
+                                        <span class="badge bg-success">@t.Estado</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">@t.Estado</span>
+                                    }
+                                </td>
+                                <td class="text-center">@t.Empresas</td>
+                                <td class="text-end">
+                                    @if (t.IdTenant == Model.TenantDeSoporte)
+                                    {
+                                        <span class="text-muted">Tenant actual</span>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="Entrar" asp-route-volver="@Model.Volver" class="d-inline">
+                                            <input type="hidden" name="idTenant" value="@t.IdTenant" />
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-right-to-bracket me-1"></i>Trabajar aquí
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <p class="text-muted small mt-3">
+        Cada entrada y salida queda en el registro de la aplicación con tu usuario y el tenant. El directorio de empresas y las tasas de cambio no necesitan un tenant de soporte.
+    </p>
+</div>

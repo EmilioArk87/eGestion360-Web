@@ -63,6 +63,41 @@ namespace eGestion360Web.Services
             return int.TryParse(val, out var id) ? id : null;
         }
 
+        // ── Tenant de soporte del administrador general (F1.4c, ADR-025) ──────
+
+        /// <summary>Clave de sesión con el id del tenant con el que trabaja el administrador general.</summary>
+        public const string ClaveTenantDeSoporte = "TenantDeSoporte";
+
+        /// <summary>Clave de sesión con el código del tenant de soporte, solo para mostrarlo.</summary>
+        public const string ClaveCodigoTenantDeSoporte = "TenantDeSoporteCodigo";
+
+        /// <summary>
+        /// El tenant de soporte: el que el administrador general eligió para ver y mantener los datos de un tenant. Solo existe
+        /// para el administrador sin empresa en la sesión (con empresa, el tenant es el de su empresa); para cualquier otra
+        /// sesión es nulo aunque la clave esté en la sesión.
+        /// </summary>
+        public static int? GetTenantDeSoporte(HttpContext context)
+        {
+            if (!IsAdmin(context) || GetEmpresaId(context) is > 0) return null;
+            return int.TryParse(context.Session.GetString(ClaveTenantDeSoporte), out var id) && id > 0 ? id : null;
+        }
+
+        /// <summary>Código del tenant de soporte, para mostrarlo en pantalla; nulo si no hay tenant de soporte.</summary>
+        public static string? GetCodigoTenantDeSoporte(HttpContext context)
+            => GetTenantDeSoporte(context) != null ? context.Session.GetString(ClaveCodigoTenantDeSoporte) : null;
+
+        public static void EntrarEnSoporte(HttpContext context, int idTenant, string codigoTenant)
+        {
+            context.Session.SetString(ClaveTenantDeSoporte, idTenant.ToString());
+            context.Session.SetString(ClaveCodigoTenantDeSoporte, codigoTenant);
+        }
+
+        public static void SalirDeSoporte(HttpContext context)
+        {
+            context.Session.Remove(ClaveTenantDeSoporte);
+            context.Session.Remove(ClaveCodigoTenantDeSoporte);
+        }
+
         // ── Acceso a módulos ──────────────────────────────────────────────────
 
         /// <summary>Devuelve los códigos de módulo accesibles para el usuario en sesión.</summary>

@@ -46,7 +46,7 @@ ni él ni `KpiSyncBackgroundService` corren hoy).
   1. `/Admin/Personas/Index` queda vacía (de 26 a 2 filas): lista las personas de todos los tenants, lo que D36 ya no permite.
   2. Crear una empresa falla (el bloqueo de `empresas` rechaza insertar sin el tenant elegido en el contexto), así que hay que
      fijarlo antes de guardar.
-  Por eso el script 037 **no se aplica** hasta que F1.4c esté publicada.
+  Por eso el script 037 **no se aplica** hasta que F1.4c esté publicada (la resuelve [ADR-025](ADR-025-tenant-de-soporte.md)).
 - Una consulta o un proceso nuevo que cambie de tenant con una conexión o transacción abierta falla con un mensaje que lo explica;
   la solución es cerrar la conexión antes de cambiar de tenant.
 

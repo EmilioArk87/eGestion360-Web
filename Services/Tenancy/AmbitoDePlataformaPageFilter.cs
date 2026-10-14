@@ -9,13 +9,14 @@ namespace eGestion360Web.Services.Tenancy
     ///
     ///   * Antes de la sesión (login, olvidé mi clave, restablecer, registro): todavía no hay tenant que filtrar. Cada una
     ///     busca a la persona que entra y arma su sesión; F1.5 lo resuelve con el tenant dentro de la cookie.
-    ///   * Del administrador general (hoy el operador de la plataforma, D23): empresas, administración, usuarios y las
-    ///     tasas de cambio. Solo si la sesión es la suya: un administrador de empresa que entre a las mismas rutas conserva el
-    ///     filtro de su tenant.
+    ///   * Del administrador general (hoy el operador de la plataforma, D23): el directorio de empresas, los usuarios, las
+    ///     tasas de cambio y las herramientas de la plataforma. Solo si la sesión es la suya: un administrador de empresa que
+    ///     entre a las mismas rutas conserva el filtro de su tenant. Con la política RLS encendida la plataforma no ve datos de
+    ///     tenant (ADR-023, D36): las pantallas que los muestran ya no están aquí y trabajan dentro del tenant de soporte que el
+    ///     administrador elige (<see cref="TenantDeSoporteRequeridoPageFilter"/>, F1.4c, ADR-025).
     ///
     /// Es un filtro global por prefijo de ruta, como <see cref="AdminOnlyPageFilter"/> y
-    /// <see cref="EmpresaRequeridaPageFilter"/>, para cubrir de una vez todos los handlers de la carpeta. Este es el interino
-    /// de F1.3: F1.4 (RLS sin excepción para la plataforma) y F1.6 (acceso de soporte con motivo) lo van estrechando.
+    /// <see cref="EmpresaRequeridaPageFilter"/>, para cubrir de una vez todos los handlers de la carpeta.
     /// </summary>
     public class AmbitoDePlataformaPageFilter : IPageFilter
     {
@@ -25,10 +26,16 @@ namespace eGestion360Web.Services.Tenancy
             "/Login", "/ForgotPassword", "/ResetPassword", "/Register",
         };
 
-        /// <summary>Pantallas del administrador general; con otra sesión, el filtro del tenant sigue aplicando.</summary>
+        /// <summary>
+        /// Pantallas del administrador general que no trabajan con los datos de un tenant: el directorio de empresas, los usuarios
+        /// (tabla de la plataforma), las tasas oficiales (filas globales), el soporte y los catálogos y herramientas de la
+        /// plataforma. Con otra sesión, el filtro del tenant sigue aplicando. Las pantallas de <see cref="TenantDeSoporteRequeridoPageFilter"/>
+        /// ya no están aquí: trabajan dentro de un tenant de soporte (F1.4c, ADR-025).
+        /// </summary>
         public static readonly string[] RutasDelAdministradorGeneral =
         {
-            "/Empresas", "/Admin", "/UserManagement", "/Catalogos/TiposCambio",
+            "/Empresas", "/UserManagement", "/Catalogos/TiposCambio",
+            "/Admin/Soporte", "/Admin/Modulos", "/Admin/Outbox", "/Admin/EmailConfig", "/Admin/ResetPassword",
         };
 
         public static bool EsRutaSinSesion(string? ruta) => Coincide(ruta, RutasSinSesion);

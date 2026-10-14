@@ -87,6 +87,7 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-022](ADR-022-filtro-de-borrado-logico-solo-en-hojas.md) | Filtro de borrado lógico solo en las 13 entidades que nadie referencia (D33 y D34); ignorarlo se pide por su nombre | F1 | Propuesta 2026-10-13
 | [ADR-023](ADR-023-politica-rls-por-tenant.md) | Política RLS por tenant (D35 a D37): `empresas` con lectura abierta y escritura aislada, la plataforma no lee datos de tenant sin «tenant de soporte», planes de consulta tolerados hasta que la tabla crezca | F1 | Propuesta 2026-10-13
 | [ADR-024](ADR-024-contexto-de-sesion-por-conexion.md) | Contexto de sesión por conexión (D38 a D40): un interceptor de EF fija tenant y ámbito al abrir cada conexión y vigila que no quede viejo; el inicio de sesión fija el tenant del usuario; todo proceso con ámbito propio declara su tenant | F1 | Propuesta 2026-10-13
+| [ADR-025](ADR-025-tenant-de-soporte.md) | Tenant de soporte del administrador general (D41 a D43): elige con qué tenant trabaja, las pantallas de datos de un tenant lo exigen, y crear, editar y eliminar empresas fijan el tenant de la empresa antes de guardar | F1 | Propuesta 2026-10-13
 
 ---
 

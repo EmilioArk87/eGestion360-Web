@@ -63,6 +63,7 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             if (!await CargarUsuarioAsync(id)) return NotFound();
             if (AuthHelper.IsEmpresaAdmin(HttpContext) && EmpresaId != AuthHelper.GetEmpresaId(HttpContext))
                 return RedirectToPage("/MainMenu");
+            if (await EsDeOtroTenantAsync(EmpresaId)) return AElegirTenantDelUsuario();
 
             await CargarListasAsync();
             await CargarPersonaAsync(buscar: true);
@@ -90,6 +91,7 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             // empresa_admin solo puede editar usuarios de su empresa
             if (AuthHelper.IsEmpresaAdmin(HttpContext) && user.EmpresaId != AuthHelper.GetEmpresaId(HttpContext))
                 return RedirectToPage("/MainMenu");
+            if (await EsDeOtroTenantAsync(user.EmpresaId)) return AElegirTenantDelUsuario();
 
             if (await _context.Users.AnyAsync(u => u.Id != Id && u.Username == Username))
             {
@@ -200,6 +202,21 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             if (p != null)
                 HttpContext.Session.SetString(AuthHelper.ClaveNombrePersona,
                     NombresPersona.Corto(p.PrimerNombre, p.PrimerApellido, p.Nombres, p.Apellidos));
+        }
+
+        /// <summary>
+        /// Un usuario de otro tenant no se edita desde el tenant de soporte equivocado: la lista de empresas solo trae las del
+        /// tenant de soporte, y guardar sin su empresa la dejaría en blanco (F1.4c, ADR-025). Solo aplica al administrador
+        /// general; el de empresa ya queda acotado a su empresa.
+        /// </summary>
+        private async Task<bool> EsDeOtroTenantAsync(int? empresaDelUsuario)
+            => AuthHelper.IsAdmin(HttpContext) && empresaDelUsuario is > 0
+               && !await _context.Empresas.AsNoTracking().AnyAsync(e => e.IdEmpresa == empresaDelUsuario);
+
+        private IActionResult AElegirTenantDelUsuario()
+        {
+            TempData["SoporteError"] = "El usuario pertenece a otro tenant. Entra al tenant de su empresa y vuelve a abrirlo.";
+            return RedirectToPage("/Admin/Soporte/Index");
         }
 
         private async Task<bool> CargarUsuarioAsync(int id)

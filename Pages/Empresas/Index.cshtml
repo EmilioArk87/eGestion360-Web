@@ -101,16 +101,21 @@
                                         }
                                     </td>
                                     <td class="text-end">
-                                        <a asp-page="/Admin/EmpresaModulos/Index"
-                                           asp-route-empresaId="@empresa.IdEmpresa"
-                                           class="btn btn-sm btn-outline-dark" title="Módulos contratados">
-                                            <i class="fas fa-puzzle-piece me-1"></i>Módulos
-                                        </a>
-                                        <a asp-page="/Admin/EmpresaRoles/Index"
-                                           asp-route-empresaId="@empresa.IdEmpresa"
-                                           class="btn btn-sm btn-outline-warning" title="Roles y permisos">
-                                            <i class="fas fa-user-tag me-1"></i>Roles
-                                        </a>
+                                        @* Módulos y roles son datos del tenant de la empresa: el botón entra primero al soporte de ese tenant (F1.4c). *@
+                                        <form method="post" asp-page="/Admin/Soporte/Index" asp-page-handler="EntrarEnEmpresa" class="d-inline">
+                                            <input type="hidden" name="idEmpresa" value="@empresa.IdEmpresa" />
+                                            <input type="hidden" name="destino" value="modulos" />
+                                            <button type="submit" class="btn btn-sm btn-outline-dark" title="Módulos contratados">
+                                                <i class="fas fa-puzzle-piece me-1"></i>Módulos
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page="/Admin/Soporte/Index" asp-page-handler="EntrarEnEmpresa" class="d-inline">
+                                            <input type="hidden" name="idEmpresa" value="@empresa.IdEmpresa" />
+                                            <input type="hidden" name="destino" value="roles" />
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Roles y permisos">
+                                                <i class="fas fa-user-tag me-1"></i>Roles
+                                            </button>
+                                        </form>
                                         <a asp-page="Edit" asp-route-id="@empresa.IdEmpresa"
                                            class="btn btn-sm btn-outline-primary" title="Editar empresa">
                                             <i class="fas fa-edit"></i>

@@ -119,6 +119,13 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   según trabaje para un tenant o escriba filas globales; (3) no cambiar de tenant con una conexión o transacción abierta (el
   siguiente comando falla). El inicio de sesión fija el tenant del usuario (el de su empresa o el interno) antes de leer su persona,
   módulos y permisos. `ConexionesDirectasTests` vigila (1) y (2).
+- **Tenant de soporte (desde F1.4c, ADR-025):** el administrador general no pertenece a un tenant y la plataforma no ve datos de
+  tenant (D36). Para ver o mantener los de uno elige el tenant en `/Admin/Soporte`; queda en su sesión, cada entrada y salida se
+  registra en el log y las peticiones llevan `Soporte:True`. Las pantallas de datos de un tenant (módulos y roles de sus empresas,
+  personas del sistema, usuarios) están en `TenantDeSoporteRequeridoPageFilter.RutasQueExigenTenantDeSoporte` y corren como las de
+  un administrador de ese tenant; las de `AmbitoDePlataformaPageFilter.RutasDelAdministradorGeneral` no tocan datos de tenant.
+  Una pantalla nueva del administrador general se clasifica en una de las dos listas (las pruebas lo vigilan). Crear, editar y
+  eliminar una empresa fijan el tenant de esa empresa antes de guardar.
 - **Índices por `id_empresa`:** todo índice de consulta debe empezar por `id_empresa` (ej. `IX_facturas_empresa_fecha`).
 - **Sucursales:** hoy **no existen** (`id_sucursal` no está en el modelo). Queda como columna **opcional/futura**;
   no inventar tablas de sucursal salvo que se decida explícitamente.

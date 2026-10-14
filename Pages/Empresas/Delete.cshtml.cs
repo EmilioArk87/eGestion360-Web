@@ -4,16 +4,19 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Pages.Empresas
 {
     public class DeleteModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly TenantContext? _tenant;
 
-        public DeleteModel(ApplicationDbContext context)
+        public DeleteModel(ApplicationDbContext context, TenantContext? tenant = null)
         {
             _context = context;
+            _tenant = tenant;
         }
 
         [BindProperty]
@@ -70,6 +73,8 @@ namespace eGestion360Web.Pages.Empresas
             empresa.ModificadoPor = user;
             empresa.FechaModificacion = now;
 
+            // La base solo deja modificar una empresa dentro del contexto de su tenant (ADR-023; F1.4c, ADR-025).
+            _tenant?.Fijar(empresa.IdTenant, null);
             await _context.SaveChangesAsync();
 
             TempData["EmpresasMessage"] = "Empresa eliminada correctamente.";
