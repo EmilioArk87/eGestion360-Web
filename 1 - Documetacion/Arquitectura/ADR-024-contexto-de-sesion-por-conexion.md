@@ -1,8 +1,8 @@
 # ADR-024 · Contexto de sesión por conexión, tenant del inicio de sesión y procesos de fondo (D38 a D40)
 
-- **Estado:** Propuesta (implementada en F1.4b; pendiente de confirmación de Emilio)
+- **Estado:** Aceptada (implementada en F1.4b; confirmada por Emilio el 2026-10-14)
 - **Fecha:** 2026-10-13
-- **Decidió:** Claude, al implementar F1.4b del plan de la Fase 1; Emilio las confirma o las cambia
+- **Decidió:** Claude las propuso al implementar F1.4b del plan de la Fase 1; Emilio las aceptó el 2026-10-14
 - **Fase:** F1
 - **Completa:** [ADR-023](ADR-023-politica-rls-por-tenant.md) (la política RLS, F1.4a) y
   [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md); usa `ITenantContext` de [ADR-001](ADR-001-aislamiento-multitenant.md).

@@ -1,8 +1,8 @@
 # ADR-025 · Tenant de soporte del administrador general (D41 a D43)
 
-- **Estado:** Propuesta (implementada en F1.4c; pendiente de confirmación de Emilio)
+- **Estado:** Aceptada (implementada en F1.4c; confirmada por Emilio el 2026-10-14)
 - **Fecha:** 2026-10-13
-- **Decidió:** Claude, al implementar F1.4c del plan de la Fase 1; Emilio las confirma o las cambia
+- **Decidió:** Claude las propuso al implementar F1.4c del plan de la Fase 1; Emilio las aceptó el 2026-10-14
 - **Fase:** F1
 - **Completa:** [ADR-023](ADR-023-politica-rls-por-tenant.md) (D36: la plataforma no lee datos de tenant) y
   [ADR-024](ADR-024-contexto-de-sesion-por-conexion.md) (el contexto de sesión por conexión). Anticipa la consola del operador

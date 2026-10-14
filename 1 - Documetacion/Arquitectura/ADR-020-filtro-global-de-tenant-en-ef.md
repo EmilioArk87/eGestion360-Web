@@ -1,8 +1,8 @@
 # ADR-020 · Filtro global de tenant en EF y ámbito de plataforma interino (D26 a D28)
 
-- **Estado:** Propuesta (implementada en F1.3a; pendiente de confirmación de Emilio)
+- **Estado:** Aceptada (implementada en F1.3a; confirmada por Emilio el 2026-10-14)
 - **Fecha:** 2026-10-12
-- **Decidió:** Claude, al implementar F1.3 del plan de la Fase 1; Emilio las confirma o las cambia
+- **Decidió:** Claude las propuso al implementar F1.3 del plan de la Fase 1; Emilio las aceptó el 2026-10-14
 - **Fase:** F1
 - **Completa:** [ADR-001](ADR-001-aislamiento-multitenant.md) (capa 4: EF Core) y
   [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md); usa los filtros con nombre de EF 10 ([ADR-017](ADR-017-dotnet-10.md)).

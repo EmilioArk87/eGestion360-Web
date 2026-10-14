@@ -1,8 +1,8 @@
 # ADR-022 · Filtro de borrado lógico solo en las entidades que nadie referencia (D33 y D34)
 
-- **Estado:** Propuesta (implementada en F1.3c; pendiente de confirmación de Emilio)
+- **Estado:** Aceptada (implementada en F1.3c; confirmada por Emilio el 2026-10-14)
 - **Fecha:** 2026-10-13
-- **Decidió:** Claude, al implementar F1.3c del plan de la Fase 1; Emilio las confirma o las cambia
+- **Decidió:** Claude las propuso al implementar F1.3c del plan de la Fase 1; Emilio las aceptó el 2026-10-14
 - **Fase:** F1
 - **Completa:** [ADR-020](ADR-020-filtro-global-de-tenant-en-ef.md) (D28: F1.3 en tres partes) y
   [ADR-001](ADR-001-aislamiento-multitenant.md) (capa 4); usa los filtros con nombre de EF 10 ([ADR-017](ADR-017-dotnet-10.md)).

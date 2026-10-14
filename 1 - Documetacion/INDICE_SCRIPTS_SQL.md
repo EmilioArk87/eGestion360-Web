@@ -64,6 +64,20 @@ agregar cambios (ver ADR-023). Despues de usarlo hay que informar a Emilio y rev
 |---|---|---|---|
 | emergencia_rls_apagar.sql | `ALTER SECURITY POLICY seg.pol_tenant WITH (STATE = OFF)` si la politica existe; no toca datos ni estructura | 2026-10-13 | Disponible (no se ha usado) |
 
+### Comprobaciones de solo lectura de la salida de F1 (sin numero de orden)
+
+No son migraciones: viven en `1 - Documetacion/Operacion/F1/` (no en `2 - Script SQL/`) y solo hacen SELECT. Se corren antes y
+despues de cada ventana de la salida a produccion (plan en el artifact "Salida de F1 a produccion") con
+`ejecutar_verificacion.ps1`, que rechaza cualquier escritura y siempre revierte su transaccion. Cada una devuelve una fila
+por comprobacion (`esperado`, `obtenido`, `OK` o `FALLA`) y un resumen. Cada archivo comprueba el estado exacto de su ventana.
+
+| Archivo | Cuando se corre | Resultado esperado |
+|---|---|---|
+| verificar_antes_ventana_1.sql | Antes de 025 | 11 OK (produccion el 2026-10-14: 11 de 11) |
+| verificar_despues_ventana_1.sql | Despues de 030 | 65 OK |
+| verificar_despues_ventana_2.sql | Despues de 036 | 32 OK |
+| verificar_despues_ventana_3.sql | Despues de 037 | 48 OK |
+
 ## Scripts de datos de Demo sin numero
 
 Se ejecutan a mano contra la empresa Demo. No forman parte de la cadena de creacion de una BD limpia y no usan un

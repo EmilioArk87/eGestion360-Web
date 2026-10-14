@@ -1,8 +1,8 @@
 # ADR-023 · Política de Row-Level Security por tenant: directorio de empresas abierto, plataforma sin lectura de tenant y planes (D35 a D37)
 
-- **Estado:** Propuesta (implementada en F1.4a; pendiente de confirmación de Emilio)
+- **Estado:** Aceptada (implementada en F1.4a; confirmada por Emilio el 2026-10-14)
 - **Fecha:** 2026-10-13
-- **Decidió:** Claude, al implementar F1.4a del plan de la Fase 1; Emilio las confirma o las cambia
+- **Decidió:** Claude las propuso al implementar F1.4a del plan de la Fase 1; Emilio las aceptó el 2026-10-14
 - **Fase:** F1
 - **Completa:** [ADR-015](ADR-015-predicados-rls-solo-por-tenant.md) (predicados solo por tenant) y
   [ADR-001](ADR-001-aislamiento-multitenant.md) (capa 3: la base como segunda barrera); se apoya en el piloto de F0.5.

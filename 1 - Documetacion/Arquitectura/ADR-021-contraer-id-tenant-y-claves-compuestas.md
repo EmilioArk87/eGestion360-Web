@@ -1,8 +1,8 @@
 # ADR-021 · Contraer id_tenant y claves foráneas compuestas (D29 a D32)
 
-- **Estado:** Propuesta (implementada en F1.3b; pendiente de confirmación de Emilio)
+- **Estado:** Aceptada (implementada en F1.3b; confirmada por Emilio el 2026-10-14)
 - **Fecha:** 2026-10-13
-- **Decidió:** Claude, al implementar F1.3b del plan de la Fase 1; Emilio las confirma o las cambia
+- **Decidió:** Claude las propuso al implementar F1.3b del plan de la Fase 1; Emilio las aceptó el 2026-10-14
 - **Fase:** F1
 - **Completa:** [ADR-001](ADR-001-aislamiento-multitenant.md) (capa 7: claves foráneas compuestas),
   [ADR-004](ADR-004-persona-maestra-por-tenant.md) y [ADR-020](ADR-020-filtro-global-de-tenant-en-ef.md).
