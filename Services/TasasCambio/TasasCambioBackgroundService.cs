@@ -113,6 +113,7 @@ namespace eGestion360Web.Services.TasasCambio
         public async Task<DecisionProgramada?> EvaluarProgramacionAsync(string? disparador = null, CancellationToken ct = default)
         {
             await using var scope = _scopes.CreateAsyncScope();
+            FijarPlataforma(scope);
             var planificador = scope.ServiceProvider.GetRequiredService<TasasCambioPlanificador>();
             var decision = await planificador.DecidirAsync(ct);
             if (decision == null)
@@ -138,6 +139,7 @@ namespace eGestion360Web.Services.TasasCambio
             }
 
             await using var scope = _scopes.CreateAsyncScope();
+            FijarPlataforma(scope);
             var sync = scope.ServiceProvider.GetRequiredService<ITasaCambioSyncService>();
             var resultado = solicitud is { Desde: { } desde, Hasta: { } hasta }
                 ? await sync.EjecutarAsync(solicitud.Disparador, solicitud.EjecutadoPor, desde, hasta, ct)
@@ -191,5 +193,12 @@ namespace eGestion360Web.Services.TasasCambio
                 _log.LogError(ex, "Tasas de cambio: error inesperado en el worker.");
             }
         }
+
+        /// <summary>
+        /// El job escribe las filas globales de la tasa oficial (<c>id_tenant</c> nulo): la política RLS solo lo permite en ámbito de
+        /// plataforma (ADR-023). El resto de sus tablas son de la plataforma y no llevan política.
+        /// </summary>
+        private static void FijarPlataforma(IServiceScope scope)
+            => scope.ServiceProvider.GetService<eGestion360Web.Services.Tenancy.TenantContext>()?.FijarPlataforma();
     }
 }

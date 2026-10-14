@@ -6,6 +6,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Pages;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Tenancy;
 using eGestion360Web.Tests.Infra;
 
 namespace eGestion360Web.Tests.Paginas
@@ -21,23 +22,31 @@ namespace eGestion360Web.Tests.Paginas
         public void Dispose() => _bd.Dispose();
 
         /// <summary>Un usuario con su persona vinculada (script 021), salvo que se pida sin persona.</summary>
-        private int CrearUsuario(string nombre, string claveGuardada, bool conPersona = true)
+        private int CrearUsuario(string nombre, string claveGuardada, bool conPersona = true, int? idEmpresa = null)
         {
             using var db = _bd.Crear();
             int? idPersona = conPersona
-                ? PersonasDePrueba.Insertar(db, DatosBase.EmpresaA, "Emilio", "Garay", codigoInterno: "U-" + nombre).IdPersona
+                ? PersonasDePrueba.Insertar(db, idEmpresa ?? DatosBase.EmpresaA, "Emilio", "Garay", codigoInterno: "U-" + nombre).IdPersona
                 : null;
-            var usuario = new User { Email = $"{nombre}@prueba.local", Role = "admin", IsActive = true, PersonaId = idPersona };
+            var usuario = new User
+            {
+                Email = $"{nombre}@prueba.local", Role = idEmpresa == null ? "admin" : AuthHelper.EmpresaUserRole,
+                IsActive = true, PersonaId = idPersona, EmpresaId = idEmpresa
+            };
             (usuario.Username, usuario.Password) = (nombre, claveGuardada);
             db.Users.Add(usuario);
             db.SaveChanges();
             return usuario.Id;
         }
 
-        private static (LoginModel Pagina, HttpContext Http) Pagina(ApplicationDbContext db, string usuario, string clave)
+        /// <summary>El tenant que la última página creada dejó fijado al iniciar sesión.</summary>
+        private TenantContext _tenantDelLogin = null!;
+
+        private (LoginModel Pagina, HttpContext Http) Pagina(ApplicationDbContext db, string usuario, string clave)
         {
             var http = new DefaultHttpContext { Session = new SesionFalsa() };
-            var pagina = new LoginModel(db, new PasswordService(), NullLogger<LoginModel>.Instance)
+            _tenantDelLogin = new TenantContext(new HttpContextAccessor { HttpContext = http });
+            var pagina = new LoginModel(db, new PasswordService(), NullLogger<LoginModel>.Instance, _bd.NuevoResolvedor(), _tenantDelLogin)
             {
                 PageContext = new PageContext { HttpContext = http }
             };
@@ -164,6 +173,46 @@ namespace eGestion360Web.Tests.Paginas
             await equivocada.OnPostAsync();
 
             Assert.Equal(Mensaje(equivocada), Mensaje(textoPlano));
+        }
+
+        [Fact]
+        public async Task Al_entrar_un_usuario_de_empresa_el_tenant_queda_fijado_al_de_su_empresa()
+        {
+            CrearUsuario("de_empresa_b", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-9", 4), idEmpresa: DatosBase.EmpresaB);
+            using var db = _bd.Crear();
+            var (pagina, _) = Pagina(db, "de_empresa_b", "Clave-Segura-9");
+
+            Assert.IsType<RedirectToPageResult>(await pagina.OnPostAsync());
+
+            Assert.Equal(DatosBase.TenantB, _tenantDelLogin.IdTenant);
+            Assert.Equal(DatosBase.EmpresaB, _tenantDelLogin.IdEmpresa);
+            Assert.False(_tenantDelLogin.EsPlataforma);
+        }
+
+        [Fact]
+        public async Task Al_entrar_el_personal_de_la_plataforma_sin_empresa_el_tenant_queda_fijado_al_interno()
+        {
+            CrearUsuario("de_plataforma", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-10", 4));
+            using var db = _bd.Crear();
+            var (pagina, _) = Pagina(db, "de_plataforma", "Clave-Segura-10");
+
+            Assert.IsType<RedirectToPageResult>(await pagina.OnPostAsync());
+
+            Assert.Equal(DatosBase.TenantA, _tenantDelLogin.IdTenant);   // en los datos de prueba el tenant A es el interno
+            Assert.Null(_tenantDelLogin.IdEmpresa);
+            Assert.False(_tenantDelLogin.EsPlataforma);
+        }
+
+        [Fact]
+        public async Task Una_clave_equivocada_no_fija_ningun_tenant()
+        {
+            CrearUsuario("clave_mala", BCrypt.Net.BCrypt.HashPassword("Clave-Segura-11", 4), idEmpresa: DatosBase.EmpresaB);
+            using var db = _bd.Crear();
+            var (pagina, _) = Pagina(db, "clave_mala", "otra-clave");
+
+            await pagina.OnPostAsync();
+
+            Assert.Null(_tenantDelLogin.IdTenant);
         }
     }
 }

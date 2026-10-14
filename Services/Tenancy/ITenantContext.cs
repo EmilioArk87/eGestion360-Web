@@ -53,13 +53,17 @@ namespace eGestion360Web.Services.Tenancy
             ? _plataforma
             : _http.HttpContext?.Items.TryGetValue(TenantMiddleware.ClaveEsPlataforma, out var valor) == true && valor is true;
 
-        /// <summary>Trabaja para un tenant (y una empresa) concretos, sin ámbito de plataforma. Para procesos de fondo.</summary>
-        public void Fijar(int? idTenant, int? idEmpresa)
+        /// <summary>
+        /// Trabaja para un tenant (y una empresa) concretos, sin ámbito de plataforma. Para procesos de fondo y para el inicio
+        /// de sesión, que averigua el tenant después de la petición.
+        /// </summary>
+        /// <param name="plataforma">Copia el ámbito de otro contexto (por ejemplo, el de quien pide una consulta en un ámbito aparte).</param>
+        public void Fijar(int? idTenant, int? idEmpresa, bool plataforma = false)
         {
             _manual = true;
             _idTenant = idTenant;
             _idEmpresa = idEmpresa;
-            _plataforma = false;
+            _plataforma = plataforma;
         }
 
         /// <summary>Trabaja en ámbito de plataforma: ve todos los tenants. Para procesos de fondo que los recorren.</summary>

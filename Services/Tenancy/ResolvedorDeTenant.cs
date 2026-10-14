@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using eGestion360Web.Data;
+using eGestion360Web.Models.Plataforma;
 
 namespace eGestion360Web.Services.Tenancy
 {
@@ -12,6 +13,12 @@ namespace eGestion360Web.Services.Tenancy
 
         /// <summary>Tenant de la persona, o nulo si la persona no existe o aún no tiene tenant.</summary>
         Task<int?> ResolverPorPersonaAsync(int idPersona, CancellationToken ct = default);
+
+        /// <summary>
+        /// Tenant interno: el de la propia plataforma (<c>saas.tenants.tipo = 'interno'</c>, ADR-006), al que pertenece el personal
+        /// de la plataforma. Nulo si no hay.
+        /// </summary>
+        Task<int?> ResolverInternoAsync(CancellationToken ct = default);
     }
 
     /// <summary>
@@ -31,11 +38,15 @@ namespace eGestion360Web.Services.Tenancy
 
         private readonly IServiceScopeFactory _ambitos;
         private readonly IMemoryCache _cache;
+        private readonly ITenantContext? _llamador;
 
-        public ResolvedorDeTenantEf(IServiceScopeFactory ambitos, IMemoryCache cache)
+        /// <param name="llamador">El contexto de quien pide: la consulta, que corre en un ámbito aparte, trabaja con el mismo tenant
+        /// (con la RLS encendida una persona solo se ve desde su tenant).</param>
+        public ResolvedorDeTenantEf(IServiceScopeFactory ambitos, IMemoryCache cache, ITenantContext? llamador = null)
         {
             _ambitos = ambitos;
             _cache = cache;
+            _llamador = llamador;
         }
 
         public async Task<int?> ResolverPorEmpresaAsync(int idEmpresa, CancellationToken ct = default)
@@ -57,6 +68,9 @@ namespace eGestion360Web.Services.Tenancy
                 .SqlQuery<int?>($"SELECT id_tenant AS [Value] FROM personas WHERE id_persona = {idPersona}"));
         }
 
+        public async Task<int?> ResolverInternoAsync(CancellationToken ct = default)
+            => await ResolverAsync("tenant-interno", ct, db => db.Tenants.AsNoTracking().Where(t => t.Tipo == TipoTenant.Interno).Select(t => (int?)t.IdTenant));
+
         private async Task<int?> ResolverAsync(string clave, CancellationToken ct, Func<ApplicationDbContext, IQueryable<int?>> consulta)
         {
             if (_cache.TryGetValue(clave, out int enCache)) return enCache;
@@ -64,6 +78,7 @@ namespace eGestion360Web.Services.Tenancy
             int? idTenant;
             using (var ambito = _ambitos.CreateScope())
             {
+                HeredarContexto(ambito.ServiceProvider);
                 var db = ambito.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 idTenant = await consulta(db).FirstOrDefaultAsync(ct);
             }
@@ -72,6 +87,14 @@ namespace eGestion360Web.Services.Tenancy
 
             _cache.Set(clave, idTenant.Value, Vigencia);
             return idTenant;
+        }
+
+        /// <summary>El ámbito de la consulta trabaja con el mismo tenant y ámbito que quien la pide.</summary>
+        private void HeredarContexto(IServiceProvider servicios)
+        {
+            if (_llamador == null) return;
+
+            servicios.GetService<TenantContext>()?.Fijar(_llamador.IdTenant, _llamador.IdEmpresa, _llamador.EsPlataforma);
         }
     }
 }

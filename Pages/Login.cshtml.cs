@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Tenancy;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
@@ -14,12 +15,17 @@ namespace eGestion360Web.Pages
         private readonly ApplicationDbContext _context;
         private readonly IPasswordService _passwordService;
         private readonly ILogger<LoginModel> _logger;
+        private readonly IResolvedorDeTenant _resolvedor;
+        private readonly TenantContext _tenant;
 
-        public LoginModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<LoginModel> logger)
+        public LoginModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<LoginModel> logger,
+            IResolvedorDeTenant resolvedor, TenantContext tenant)
         {
             _context = context;
             _passwordService = passwordService;
             _logger = logger;
+            _resolvedor = resolvedor;
+            _tenant = tenant;
         }
 
         public const string MensajeSinPersona =
@@ -86,6 +92,10 @@ namespace eGestion360Web.Pages
 
                     if (isPasswordValid)
                     {
+                        // La sesión aún no tiene empresa: el tenant del usuario se fija aquí, antes de leer su persona, sus módulos y
+                        // sus permisos (con la RLS encendida, una conexión sin tenant no ve datos de tenant).
+                        await FijarTenantDelUsuarioAsync(user);
+
                         // Cada usuario entra como una persona (script 021): sin una persona vinculada y vigente, no hay
                         // sesión. El mensaje solo aparece después de una clave correcta.
                         var persona = user.PersonaId is { } idPersona
@@ -178,6 +188,22 @@ namespace eGestion360Web.Pages
             }
 
             return Page();
+        }
+
+        /// <summary>
+        /// El tenant del usuario: el de su empresa o, si no tiene empresa (personal de la plataforma), el tenant interno (ADR-006).
+        /// </summary>
+        private async Task FijarTenantDelUsuarioAsync(User user)
+        {
+            var idTenant = user.EmpresaId is > 0
+                ? await _resolvedor.ResolverPorEmpresaAsync(user.EmpresaId.Value, HttpContext.RequestAborted)
+                : await _resolvedor.ResolverInternoAsync(HttpContext.RequestAborted);
+
+            if (idTenant == null)
+                _logger.LogWarning("El usuario {UserId} no tiene tenant: su empresa {EmpresaId} no existe o no tiene tenant, o no hay tenant interno.",
+                    user.Id, user.EmpresaId);
+
+            _tenant.Fijar(idTenant, user.EmpresaId);
         }
     }
 }

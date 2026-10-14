@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
+using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Services;
 
@@ -65,9 +66,13 @@ public class SenCombustibleService
 
         int nuevos = 0;
         await using var scope = _scopes.CreateAsyncScope();
+        // Los boletines son públicos: filas globales (id_tenant nulo), que la política RLS solo deja escribir en ámbito de
+        // plataforma (ADR-023).
+        scope.ServiceProvider.GetService<TenantContext>()?.FijarPlataforma();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        // Se abre por EF y no directo sobre la DbConnection: así el interceptor fija el contexto de sesión de la conexión.
+        await db.Database.OpenConnectionAsync(ct);
         var conn = db.Database.GetDbConnection();
-        await conn.OpenAsync(ct);
 
         foreach (var item in mondays)
         {

@@ -24,6 +24,8 @@ namespace eGestion360Web.Tests.Services.Tenancy
             }
 
             public Task<int?> ResolverPorPersonaAsync(int idPersona, CancellationToken ct = default) => Task.FromResult<int?>(null);
+
+            public Task<int?> ResolverInternoAsync(CancellationToken ct = default) => Task.FromResult<int?>(null);
         }
 
         /// <summary>Lo que ve la petición mientras corre el resto del pipeline.</summary>

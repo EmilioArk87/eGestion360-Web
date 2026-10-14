@@ -14,14 +14,22 @@ namespace eGestion360Web.Services.TasasCambio
         ApplicationDbContext Crear();
     }
 
-    /// <summary>Contextos con las mismas opciones que el de la petición (cadena de conexión e interceptores).</summary>
+    /// <summary>
+    /// Contextos con las mismas opciones que el de la petición (cadena de conexión e interceptores) y con el mismo contexto de
+    /// tenant del ámbito: el job lo fija en plataforma y los contextos nuevos lo siguen.
+    /// </summary>
     public sealed class TasasCambioContextos : ITasasCambioContextos
     {
         private readonly DbContextOptions<ApplicationDbContext> _opciones;
+        private readonly eGestion360Web.Services.Tenancy.ITenantContext? _tenant;
 
-        public TasasCambioContextos(DbContextOptions<ApplicationDbContext> opciones) => _opciones = opciones;
+        public TasasCambioContextos(DbContextOptions<ApplicationDbContext> opciones, eGestion360Web.Services.Tenancy.ITenantContext? tenant = null)
+        {
+            _opciones = opciones;
+            _tenant = tenant;
+        }
 
-        public ApplicationDbContext Crear() => new(_opciones);
+        public ApplicationDbContext Crear() => new(_opciones, _tenant);
     }
 
     /// <summary>Alertas del job (FALLIDA, EN_REVISION, días hábiles sin tasa).</summary>

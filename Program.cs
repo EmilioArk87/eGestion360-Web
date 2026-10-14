@@ -42,11 +42,15 @@ builder.Services.AddScoped<IContextoAuditoria, ContextoAuditoriaHttp>();
 builder.Services.AddScoped<AuditoriaCambiosInterceptor>();
 // El interceptor del tenant va DESPUES del de auditoria: este agrega las filas de la bitacora antes de guardar (F1.2).
 builder.Services.AddScoped<TenantAlGuardarInterceptor>();
+// F1.4b: cada conexión que abre EF lleva en SESSION_CONTEXT el tenant y el ámbito de ITenantContext (de solo lectura): es lo
+// que lee la política RLS de los scripts 036 y 037. Con la política apagada no cambia ningún resultado.
+builder.Services.AddScoped<ContextoDeSesionInterceptor>();
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
     options.UseSqlServer(connectionString);
     options.AddInterceptors(sp.GetRequiredService<AuditoriaCambiosInterceptor>(),
-        sp.GetRequiredService<TenantAlGuardarInterceptor>());
+        sp.GetRequiredService<TenantAlGuardarInterceptor>(),
+        sp.GetRequiredService<ContextoDeSesionInterceptor>());
 });
 
 // Add Password Service

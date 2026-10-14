@@ -112,6 +112,13 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   política. El tenant sale de `SESSION_CONTEXT('id_tenant')` y el ámbito de `SESSION_CONTEXT('ambito')`, fijados de solo lectura al abrir
   la conexión (F1.4b). Una tabla de tenant nueva debe entrar en la política (`ScriptsRlsTests` falla si no). Se crea apagada (036) y
   se enciende aparte (037), solo con la aplicación que fija el contexto ya publicada; `emergencia_rls_apagar.sql` la apaga al instante.
+- **Contexto de la conexión (desde F1.4b, ADR-024):** `ContextoDeSesionInterceptor` fija `id_tenant` y `ambito` en `SESSION_CONTEXT`
+  (de solo lectura) cada vez que EF abre una conexión, con lo que diga `ITenantContext`. Reglas para el código nuevo: (1) nunca abrir
+  la conexión a mano (`new SqlConnection`, `GetDbConnection().OpenAsync`): usar el `ApplicationDbContext` o `Database.OpenConnectionAsync()`;
+  (2) todo proceso con su propio ámbito de servicios (`CreateScope`) llama a `TenantContext.Fijar(tenant, empresa)` o `FijarPlataforma()`
+  según trabaje para un tenant o escriba filas globales; (3) no cambiar de tenant con una conexión o transacción abierta (el
+  siguiente comando falla). El inicio de sesión fija el tenant del usuario (el de su empresa o el interno) antes de leer su persona,
+  módulos y permisos. `ConexionesDirectasTests` vigila (1) y (2).
 - **Índices por `id_empresa`:** todo índice de consulta debe empezar por `id_empresa` (ej. `IX_facturas_empresa_fecha`).
 - **Sucursales:** hoy **no existen** (`id_sucursal` no está en el modelo). Queda como columna **opcional/futura**;
   no inventar tablas de sucursal salvo que se decida explícitamente.
