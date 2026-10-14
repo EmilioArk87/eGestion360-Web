@@ -106,6 +106,12 @@ Modelo actual: **single-DB / shared-schema**, discriminado por columna:
   persona, cliente, factura…) NO lo llevan, para no perder el historial que las apunta: ahí cada consulta sigue con `!Eliminado`. Para
   ver filas borradas de una hoja: `IgnoreQueryFilters([ApplicationDbContext.FiltroBorrado])`; ignorar el filtro de tenant está
   prohibido. Una entidad nueva con `Eliminado` debe quedar en una de las dos listas de `FiltroDeBorradoTests`.
+- **Row-Level Security (scripts 036 y 037, F1.4a, ADR-015 y ADR-023):** la política `seg.pol_tenant` filtra y bloquea por `id_tenant`
+  en las 37 tablas de tenant y en las 2 mixtas (`tasas_cambio`, `sen_boletines`: ven las filas globales, solo la plataforma las
+  escribe); `empresas` solo bloquea escrituras (su lectura queda abierta como directorio de cuentas) y `domain_events` no lleva
+  política. El tenant sale de `SESSION_CONTEXT('id_tenant')` y el ámbito de `SESSION_CONTEXT('ambito')`, fijados de solo lectura al abrir
+  la conexión (F1.4b). Una tabla de tenant nueva debe entrar en la política (`ScriptsRlsTests` falla si no). Se crea apagada (036) y
+  se enciende aparte (037), solo con la aplicación que fija el contexto ya publicada; `emergencia_rls_apagar.sql` la apaga al instante.
 - **Índices por `id_empresa`:** todo índice de consulta debe empezar por `id_empresa` (ej. `IX_facturas_empresa_fecha`).
 - **Sucursales:** hoy **no existen** (`id_sucursal` no está en el modelo). Queda como columna **opcional/futura**;
   no inventar tablas de sucursal salvo que se decida explícitamente.
