@@ -26,7 +26,7 @@
 
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <partial name="_VehiculoForm" model="Model.Vehiculo" />
+                <partial name="_VehiculoForm" model="Model.Vehiculo" view-data="@(new ViewDataDictionary(ViewData) { TemplateInfo = { HtmlFieldPrefix = nameof(Model.Vehiculo) } })" />
             </div>
             <div class="card-footer bg-transparent border-0 px-4 pb-4 d-flex gap-2">
                 <button type="submit" class="btn text-white" style="background-color:#6610f2;">
