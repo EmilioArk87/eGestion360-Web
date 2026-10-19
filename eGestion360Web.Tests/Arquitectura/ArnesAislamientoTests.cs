@@ -42,10 +42,14 @@ namespace eGestion360Web.Tests.Arquitectura
 
         /// <summary>
         /// La columna que separa los datos por tenant. La clave primaria de <c>saas.tenants</c> también se llama
-        /// <c>id_tenant</c>, pero identifica al tenant en lugar de separar filas: no cuenta.
+        /// <c>id_tenant</c>, pero identifica al tenant en lugar de separar filas: no cuenta. Tampoco cuenta la de las tablas del
+        /// plano de control (esquema <c>saas</c>, ADR-013), como <c>saas.tenant_planes</c> (script 040): ahí <c>id_tenant</c> es una
+        /// clave foránea que dice de quién es la fila, y esas tablas no llevan ni <c>id_tenant</c> de aislamiento ni RLS.
         /// </summary>
         private static IProperty? PropiedadTenant(IEntityType entidad)
-            => entidad.GetProperties().FirstOrDefault(p => p.GetColumnName() == ColumnaTenant && !p.IsPrimaryKey());
+            => entidad.GetSchema() == "saas"
+                ? null
+                : entidad.GetProperties().FirstOrDefault(p => p.GetColumnName() == ColumnaTenant && !p.IsPrimaryKey());
 
         private static bool TieneColumna(IEntityType entidad, params string[] columnas)
             => entidad.GetProperties().Any(p => columnas.Contains(p.GetColumnName()));

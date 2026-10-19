@@ -8,9 +8,18 @@ namespace eGestion360Web.Tests.Arquitectura
     /// dentro la lista de las 41 tablas con <c>id_tenant</c> y los nombres de las 18 claves únicas. Estas pruebas vigilan que esas
     /// listas no se desvíen de lo que clasifica el arnés y de lo que crean los scripts 031 a 035, y que los archivos sigan siendo
     /// de solo lectura. No ejecutan SQL: las comprobaciones se corren contra LocalDB y producción con <c>ejecutar_verificacion.ps1</c>.
+    /// Las verificaciones de la identidad global (F1.5: <c>verificar_despues_038.sql</c> y <c>verificar_despues_f15.sql</c>) comparten
+    /// carpeta y las mismas garantías de solo lectura, pero sus listas las vigila <see cref="ScriptsIdentidadGlobalTests"/>.
     /// </summary>
     public class VerificacionesDeSalidaF1Tests
     {
+        /// <summary>Las cuatro verificaciones de la salida de F1 (scripts 025 a 037): describen el estado exacto de su ventana y no se editan.</summary>
+        private static readonly string[] Historicas =
+            { "verificar_antes_ventana_1.sql", "verificar_despues_ventana_1.sql", "verificar_despues_ventana_2.sql", "verificar_despues_ventana_3.sql" };
+
+        /// <summary>Las de F1.5 (scripts 038 y 039) y F1.7 (script 040), posteriores a la salida de F1.</summary>
+        private static readonly string[] DeF15 = { "verificar_despues_038.sql", "verificar_despues_f15.sql", "verificar_despues_f17.sql" };
+
         private static readonly Regex TablaDeLaLista = new(@"^\s*\((\d+), N'([a-z_]+)', N'([TMI])'\)", RegexOptions.Multiline);
         private static readonly Regex ClaveUnicaDeLaLista = new(@"\(N'([a-z_]+)', N'(UX_[A-Za-z0-9_]+)'\)");
         private static readonly Regex PalabrasDeEscritura = new(
@@ -37,8 +46,10 @@ namespace eGestion360Web.Tests.Arquitectura
                 .OrderBy(t => t.Tabla, StringComparer.Ordinal)
                 .ToList();
 
-            var esperadas = ClasificacionDeTablas.Todas
-                .Where(t => t.EnBaseReal && ClasificacionDeTablas.LlevaIdTenant(t.Categoria))
+            // Las listas de estos archivos son las de la salida de F1: no incluyen las tablas que crean scripts posteriores (038 en
+            // adelante, p. ej. accesos_empresa), que tienen su propia verificación. Por eso se compara con DeLaSalidaDeF1 y no con todas.
+            var esperadas = ClasificacionDeTablas.DeLaSalidaDeF1
+                .Where(t => ClasificacionDeTablas.LlevaIdTenant(t.Categoria))
                 .Select(t => (Tabla: t.Tabla, Tipo: t.Categoria switch
                 {
                     CategoriaTabla.Tenant => "T",
@@ -50,6 +61,10 @@ namespace eGestion360Web.Tests.Arquitectura
 
             Assert.Equal(41, esperadas.Count);
             Assert.Equal(esperadas, enElSql);
+
+            // Ninguna tabla posterior a la salida de F1 se cuela en la lista histórica.
+            var colada = ClasificacionDeTablas.PosterioresASalidaDeF1.Select(t => t.Tabla).Intersect(enElSql.Select(t => t.Tabla)).ToList();
+            Assert.True(colada.Count == 0, "Tablas posteriores a F1 dentro de una verificación histórica: " + string.Join(", ", colada));
         }
 
         [Fact]
@@ -73,7 +88,10 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             var carpeta = Path.Combine(Raiz(), "1 - Documetacion", "Operacion", "F1");
             var archivos = Directory.GetFiles(carpeta, "*.sql");
-            Assert.Equal(4, archivos.Length);
+
+            // Cada archivo de la carpeta está nombrado aquí: uno nuevo sin registrar (y sin pasar estas garantías) hace fallar la prueba.
+            Assert.Equal(Historicas.Concat(DeF15).Order(StringComparer.Ordinal).ToList(),
+                         archivos.Select(a => Path.GetFileName(a)!).Order(StringComparer.Ordinal).ToList());
 
             foreach (var archivo in archivos)
             {
@@ -92,8 +110,7 @@ namespace eGestion360Web.Tests.Arquitectura
         [Fact]
         public void Cada_verificacion_termina_con_una_fila_de_resumen()
         {
-            foreach (var archivo in new[]
-                     { "verificar_antes_ventana_1.sql", "verificar_despues_ventana_1.sql", "verificar_despues_ventana_2.sql", "verificar_despues_ventana_3.sql" })
+            foreach (var archivo in Historicas.Concat(DeF15))
             {
                 var texto = Verificacion(archivo);
                 Assert.Contains("RESUMEN", texto);

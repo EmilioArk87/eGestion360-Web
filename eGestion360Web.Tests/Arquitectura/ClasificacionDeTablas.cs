@@ -26,14 +26,21 @@ namespace eGestion360Web.Tests.Arquitectura
     /// <param name="Tabla">Nombre de la tabla en eBD_SPD (esquema dbo).</param>
     /// <param name="Categoria">Regla de aislamiento que le corresponde.</param>
     /// <param name="EnModeloEf">true si <c>ApplicationDbContext</c> la mapea; false si solo existe en la base.</param>
-    /// <param name="EnBaseReal">true si existía en eBD_SPD el 2026-10-10 (consulta de solo lectura).</param>
+    /// <param name="EnBaseReal">true si existía en eBD_SPD el 2026-10-10 (consulta de solo lectura). Es una fecha fija: una tabla
+    /// que crea un script posterior sigue en false y declara su script en <paramref name="CreadaPorScript"/>.</param>
     /// <param name="Motivo">Por qué tiene esa categoría y qué cambia en F1.</param>
-    public sealed record TablaClasificada(string Tabla, CategoriaTabla Categoria, bool EnModeloEf, bool EnBaseReal, string Motivo);
+    /// <param name="CreadaPorScript">Número del script que la crea cuando es POSTERIOR a la salida de F1 a producción (scripts 025 a
+    /// 037), por ejemplo <c>"038"</c>; nulo en las demás. Esas tablas no entran en <see cref="ClasificacionDeTablas.DeLaSalidaDeF1"/>,
+    /// que es el conjunto que recorren las verificaciones históricas de <c>1 - Documetacion/Operacion/F1</c> (41 tablas con
+    /// <c>id_tenant</c>) y los scripts 026 a 037.</param>
+    public sealed record TablaClasificada(string Tabla, CategoriaTabla Categoria, bool EnModeloEf, bool EnBaseReal, string Motivo,
+        string? CreadaPorScript = null);
 
     /// <summary>
     /// Inventario de todas las tablas, con la regla de aislamiento de cada una (paso F0.6). Cubre las 60 tablas de eBD_SPD
-    /// del 2026-10-10 y las 6 del módulo contable que solo existen en el modelo de EF (el script 010 está en espera,
-    /// ADR-014). <see cref="ArnesAislamientoTests"/> falla si aparece una tabla sin clasificar.
+    /// del 2026-10-10, las 6 del módulo contable que solo existen en el modelo de EF (el script 010 está en espera,
+    /// ADR-014) y las 9 de la identidad global que crea el script 038 (F1.5). <see cref="ArnesAislamientoTests"/> falla si
+    /// aparece una tabla sin clasificar.
     /// </summary>
     public static class ClasificacionDeTablas
     {
@@ -114,6 +121,12 @@ namespace eGestion360Web.Tests.Arquitectura
 
             // ── Plataforma ───────────────────────────────────────────────────────────────────────────────────────
             new("tenants", P, true, false, "La cuenta comercial (esquema saas, script 025, F1.1): define el tenant, así que no lleva id_tenant ni RLS. Existe desde el script 025."),
+            new("planes", P, false, false, "Catálogo de planes (esquema saas, script 040, F1.7): plano de control, sin RLS (ADR-013). El código de la aplicación nunca nombra un plan: pregunta por derechos.", "040"),
+            new("plan_versiones", P, false, false, "Versiones de cada plan, con vigencia (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
+            new("derechos", P, false, false, "Catálogo de derechos de uso: modulo.*, caracteristica.* y limite.* (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
+            new("plan_version_derechos", P, false, false, "Derechos de cada versión de plan, con el tope de los límites (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
+            new("tenant_planes", P, false, false,
+                "Plan vigente de cada tenant y su historial (esquema saas, script 040, F1.7): su id_tenant apunta a saas.tenants para saber de quién es la fila, no para filtrarla; plano de control, sin RLS.", "040"),
             new("Users", P, true, true, "Pasa a ser la cuenta de acceso global (ADR-003); empresa y rol se mueven a membresías y accesos por empresa, que serán tablas de tenant."),
             new("PasswordResetCodes", P, true, true, "Identidad: códigos de la cuenta global."),
             new("EmailConfigurations", P, true, true, "Correo de notificaciones de la plataforma."),
@@ -121,6 +134,19 @@ namespace eGestion360Web.Tests.Arquitectura
             new("tasas_cambio_ejecuciones_detalle", P, true, true, "Detalle de la bitácora del job de la tasa oficial."),
             new("tasas_cambio_configuracion", P, true, true, "Opciones del job de la tasa oficial que edita el administrador del sistema (script 024); una sola fila."),
             new("__EFMigrationsHistory", P, false, true, "Historial de migraciones de EF."),
+
+            // ── Identidad global con membresías (F1.5, script 038): posteriores a la salida de F1 ────────────────────
+            new("accesos_empresa", T, false, false,
+                "Membresía ↔ empresa ↔ rol (ADR-003, D19): tabla de TENANT con RLS; entra a seg.pol_tenant en el script 038 con las mismas funciones " +
+                "(1 filtro y 4 bloqueos). Aún no está en el modelo de EF.", "038"),
+            new("cuentas", P, false, false, "Cuenta de acceso global, una por ser humano (ADR-003, D19); sin id_tenant ni RLS: se lee antes de conocer el tenant.", "038"),
+            new("cuenta_alias", P, false, false, "Nombres de usuario de transición y correos secundarios de la cuenta (D44/D45).", "038"),
+            new("membresias", P, false, false, "Cuenta ↔ tenant con estado y persona del tenant; lleva id_tenant como referencia, pero es plano de control: sin RLS.", "038"),
+            new("cuenta_intentos", P, false, false, "Intentos fallidos y bloqueo temporal de la cuenta (ADR-008).", "038"),
+            new("cuenta_mfa", P, false, false, "Secreto TOTP protegido por la aplicación (D22).", "038"),
+            new("cuenta_mfa_recuperacion", P, false, false, "Hash de los códigos de recuperación de MFA.", "038"),
+            new("invitaciones", P, false, false, "Invitaciones a un tenant; solo el hash del token. Lleva id_tenant como referencia, sin RLS.", "038"),
+            new("llaves_proteccion_datos", P, false, false, "Almacén de llaves de ASP.NET Core Data Protection (ADR-008, D19).", "038"),
 
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
             new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),
@@ -140,6 +166,16 @@ namespace eGestion360Web.Tests.Arquitectura
         public static readonly IReadOnlySet<string> PendientesDeIdTenant = new HashSet<string>(StringComparer.Ordinal)
         {
         };
+
+        /// <summary>
+        /// Las tablas que ya existían en eBD_SPD al salir F1 a producción (scripts 025 a 037): las que clasifican las verificaciones
+        /// históricas de <c>1 - Documetacion/Operacion/F1</c> y las que cubren los scripts 026 a 037. Las tablas posteriores
+        /// (<see cref="PosterioresASalidaDeF1"/>) no entran aquí: esos archivos describen el estado exacto de su ventana y no se editan.
+        /// </summary>
+        public static IEnumerable<TablaClasificada> DeLaSalidaDeF1 => Todas.Where(t => t.EnBaseReal);
+
+        /// <summary>Las tablas que crea un script posterior a la salida de F1 (038 en adelante), con su <c>CreadaPorScript</c>.</summary>
+        public static IEnumerable<TablaClasificada> PosterioresASalidaDeF1 => Todas.Where(t => t.CreadaPorScript != null);
 
         public static bool LlevaIdTenant(CategoriaTabla categoria)
             => categoria is CategoriaTabla.Tenant or CategoriaTabla.Mixta or CategoriaTabla.Infraestructura;
