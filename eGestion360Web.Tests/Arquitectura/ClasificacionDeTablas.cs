@@ -121,11 +121,11 @@ namespace eGestion360Web.Tests.Arquitectura
 
             // ── Plataforma ───────────────────────────────────────────────────────────────────────────────────────
             new("tenants", P, true, false, "La cuenta comercial (esquema saas, script 025, F1.1): define el tenant, así que no lleva id_tenant ni RLS. Existe desde el script 025."),
-            new("planes", P, false, false, "Catálogo de planes (esquema saas, script 040, F1.7): plano de control, sin RLS (ADR-013). El código de la aplicación nunca nombra un plan: pregunta por derechos.", "040"),
-            new("plan_versiones", P, false, false, "Versiones de cada plan, con vigencia (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
-            new("derechos", P, false, false, "Catálogo de derechos de uso: modulo.*, caracteristica.* y limite.* (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
-            new("plan_version_derechos", P, false, false, "Derechos de cada versión de plan, con el tope de los límites (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
-            new("tenant_planes", P, false, false,
+            new("planes", P, true, false, "Catálogo de planes (esquema saas, script 040, F1.7): plano de control, sin RLS (ADR-013). El código de la aplicación nunca nombra un plan: pregunta por derechos.", "040"),
+            new("plan_versiones", P, true, false, "Versiones de cada plan, con vigencia (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
+            new("derechos", P, true, false, "Catálogo de derechos de uso: modulo.*, caracteristica.* y limite.* (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
+            new("plan_version_derechos", P, true, false, "Derechos de cada versión de plan, con el tope de los límites (esquema saas, script 040, F1.7): plano de control, sin RLS.", "040"),
+            new("tenant_planes", P, true, false,
                 "Plan vigente de cada tenant y su historial (esquema saas, script 040, F1.7): su id_tenant apunta a saas.tenants para saber de quién es la fila, no para filtrarla; plano de control, sin RLS.", "040"),
             new("Users", P, true, true, "Pasa a ser la cuenta de acceso global (ADR-003); empresa y rol se mueven a membresías y accesos por empresa, que serán tablas de tenant."),
             new("PasswordResetCodes", P, true, true, "Identidad: códigos de la cuenta global."),

@@ -108,6 +108,14 @@ Resultados del ensayo del 2026-10-18 (LocalDB, sobre la copia de producción tra
 
 No se ensayaron aún todas las ediciones a mano del verificador. Contra producción no se ha ejecutado nada.
 
+## El código de F1.7 y el orden de publicación
+
+El código que usa estas tablas está en `Services/Derechos/` (decisiones en [ADR-026](../../Arquitectura/ADR-026-derechos-de-uso-y-estado-del-tenant.md)): `DerechosDeUso` (lee plan, derechos, estado y módulos activos; recuerda 30 s), `EstadoDelTenantMiddleware` (bloquea suspendidos y cancelados; el administrador general nunca), `DerechoDeModuloPageFilter` (cada carpeta de módulo exige su derecho) y la página `/SinAcceso`. `Empresas/Create` y `Admin/Usuarios/Create` aplican `limite.empresas` y `limite.usuarios`; `/Admin/Soporte` muestra plan y modo de cada tenant.
+
+**El script 040 se aplica ANTES de publicar este código**: la aplicación lee `saas.planes`, `saas.tenant_planes` y `saas.tenants.modo_suspension`, y sin ellas la aplicación falla en cuanto lee los derechos del tenant (casi cada petición de un usuario de tenant). Al revés (040 aplicado con el código anterior) no pasa nada: el código anterior ignora las tablas y la columna nuevas. Pasos: `/alerta-bd` → 040 → `verificar_despues_f17.sql` (46 OK) → publicar → mirar el log (`no tiene un plan vigente` no debe aparecer).
+
+Recorrido de la aplicación del 2026-10-18 sobre una copia con 025 a 037 + 040 y la política encendida (servidor local `localhost,1433`): los cinco comportamientos de ADR-026, más que el administrador general entra a un tenant en bloqueo y que `/Admin/Soporte` muestra el plan. Lo único que no se probó es la publicación misma.
+
 ## Límites y requisitos
 
 - **Nivel de compatibilidad ≥ 140** (`STRING_AGG`), igual que los demás.

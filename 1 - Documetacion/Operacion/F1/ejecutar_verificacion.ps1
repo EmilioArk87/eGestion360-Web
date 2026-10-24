@@ -23,7 +23,7 @@
   Archivo .sql a ejecutar. Puede ser una ruta o solo el nombre si esta en la misma carpeta que este script.
 
 .PARAMETER Destino
-  Produccion (cadena de user-secrets del proyecto) o LocalDb (servidor (localdb)\MSSQLLocalDB con autenticacion de Windows).
+  Produccion (cadena de user-secrets del proyecto) o LocalDb (el SQL Server de esta maquina en localhost,1433 con autenticacion de Windows; el nombre LocalDb se conserva por compatibilidad).
 
 .PARAMETER Base
   Nombre de la base de LocalDB. Obligatorio con -Destino LocalDb y no se admite con Produccion.
@@ -134,7 +134,7 @@ if ($lotes.Count -eq 0) { Salir-Con-Error 'El archivo SQL no tiene ninguna sente
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 if ($Destino -eq 'LocalDb') {
     if (-not $Base) { Salir-Con-Error 'Con -Destino LocalDb hay que indicar -Base <nombre de la base>.' }
-    $cadena = "Server=(localdb)\MSSQLLocalDB;Database=$Base;Integrated Security=true;TrustServerCertificate=true"
+    $cadena = "Server=localhost,1433;Database=$Base;Integrated Security=true;TrustServerCertificate=true"
 }
 else {
     if ($Base) { Salir-Con-Error '-Base solo se usa con -Destino LocalDb. Con Produccion la base sale de user-secrets.' }
@@ -168,7 +168,7 @@ if ($Destino -eq 'Produccion') {
     Write-Host ('Destino : PRODUCCION, base ' + $nombreBase + ' (solo lectura; la transaccion siempre se revierte)') -ForegroundColor Yellow
 }
 else {
-    Write-Host ('Destino : LocalDB, base ' + $nombreBase)
+    Write-Host ('Destino : SQL Server local (localhost,1433), base ' + $nombreBase)
 }
 Write-Host ('Inicio  : ' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
 

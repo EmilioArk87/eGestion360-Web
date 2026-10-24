@@ -36,7 +36,11 @@ namespace eGestion360Web.Pages.Admin.Soporte
 
         public string? CodigoDeSoporte { get; private set; }
 
-        public sealed record FilaTenant(int IdTenant, string Codigo, string Nombre, string Tipo, string Estado, int Empresas);
+        /// <param name="Plan">Código del plan vigente (F1.7); nulo si el tenant no tiene plan.</param>
+        /// <param name="ModoSuspension">Qué hace su suspensión (solo importa si está suspendido).</param>
+        /// <param name="Derechos">Cuántos derechos concede su plan.</param>
+        public sealed record FilaTenant(int IdTenant, string Codigo, string Nombre, string Tipo, string Estado, int Empresas,
+            string? Plan = null, string ModoSuspension = ModoDeSuspension.Lectura, int Derechos = 0);
 
         public async Task<IActionResult> OnGetAsync(CancellationToken ct)
         {
@@ -147,12 +151,29 @@ namespace eGestion360Web.Pages.Admin.Soporte
             var tenants = await _context.Tenants.AsNoTracking()
                 .Where(t => t.Estado != EstadoTenant.Cancelado)
                 .OrderBy(t => t.Codigo)
-                .Select(t => new { t.IdTenant, t.Codigo, t.Nombre, t.Tipo, t.Estado })
+                .Select(t => new { t.IdTenant, t.Codigo, t.Nombre, t.Tipo, t.Estado, t.ModoSuspension })
                 .ToListAsync(ct);
 
+            // Plan vigente de cada tenant y cuántos derechos concede (F1.7; solo lectura: cambiarlos llega con la consola del operador).
+            var planes = await (from tp in _context.TenantPlanes.AsNoTracking()
+                                where tp.VigenteHasta == null
+                                join pv in _context.PlanVersiones.AsNoTracking() on tp.IdPlanVersion equals pv.IdPlanVersion
+                                join p in _context.Planes.AsNoTracking() on pv.IdPlan equals p.IdPlan
+                                select new { tp.IdTenant, p.Codigo, tp.IdPlanVersion }).ToListAsync(ct);
+            var derechosPorVersion = await _context.PlanVersionDerechos.AsNoTracking()
+                .GroupBy(d => d.IdPlanVersion)
+                .Select(g => new { IdPlanVersion = g.Key, Cantidad = g.Count() })
+                .ToDictionaryAsync(g => g.IdPlanVersion, g => g.Cantidad, ct);
+
             Tenants = tenants
-                .Select(t => new FilaTenant(t.IdTenant, t.Codigo, t.Nombre, t.Tipo, t.Estado,
-                    empresasPorTenant.TryGetValue(t.IdTenant, out var n) ? n : 0))
+                .Select(t =>
+                {
+                    var plan = planes.FirstOrDefault(p => p.IdTenant == t.IdTenant);
+                    return new FilaTenant(t.IdTenant, t.Codigo, t.Nombre, t.Tipo, t.Estado,
+                        empresasPorTenant.TryGetValue(t.IdTenant, out var n) ? n : 0,
+                        plan?.Codigo, t.ModoSuspension,
+                        plan != null && derechosPorVersion.TryGetValue(plan.IdPlanVersion, out var d) ? d : 0);
+                })
                 .ToList();
         }
     }

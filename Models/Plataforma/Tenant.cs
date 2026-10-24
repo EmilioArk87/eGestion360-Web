@@ -56,6 +56,17 @@ namespace eGestion360Web.Models.Plataforma
         [Column("motivo_estado")]
         public string? MotivoEstado { get; set; }
 
+        /// <summary>
+        /// Qué hace la suspensión de este tenant (uno de <see cref="ModoDeSuspension"/>): por defecto solo lectura (D53). Solo
+        /// importa mientras <see cref="Estado"/> es suspendido. Script 040 (F1.7); el código que lee esta columna se publica DESPUÉS de
+        /// aplicarlo.
+        /// </summary>
+        [Required]
+        [StringLength(10)]
+        [Display(Name = "Modo de suspensión")]
+        [Column("modo_suspension")]
+        public string ModoSuspension { get; set; } = ModoDeSuspension.Lectura;
+
         [StringLength(100)]
         [Column("creado_por")]
         public string CreadoPor { get; set; } = string.Empty;

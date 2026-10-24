@@ -77,6 +77,7 @@
                             <th>Nombre</th>
                             <th>Tipo</th>
                             <th class="text-center">Estado</th>
+                            <th>Plan</th>
                             <th class="text-center">Empresas</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -96,6 +97,20 @@
                                     else
                                     {
                                         <span class="badge bg-warning text-dark">@t.Estado</span>
+                                        @if (t.Estado == eGestion360Web.Models.Plataforma.EstadoTenant.Suspendido)
+                                        {
+                                            <div class="small text-muted">@(t.ModoSuspension == eGestion360Web.Models.Plataforma.ModoDeSuspension.Bloqueo ? "bloqueo" : "solo lectura")</div>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @if (t.Plan == null)
+                                    {
+                                        <span class="badge bg-danger" title="Sin plan vigente no concede ningún derecho">sin plan</span>
+                                    }
+                                    else
+                                    {
+                                        <code>@t.Plan</code><div class="small text-muted">@t.Derechos derechos</div>
                                     }
                                 </td>
                                 <td class="text-center">@t.Empresas</td>

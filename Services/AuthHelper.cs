@@ -108,10 +108,19 @@ namespace eGestion360Web.Services
             return JsonSerializer.Deserialize<HashSet<string>>(json) ?? new HashSet<string>();
         }
 
-        /// <summary>True si el usuario tiene acceso al módulo indicado.</summary>
+        /// <summary>
+        /// True si el usuario tiene acceso al módulo indicado. Desde F1.7 lo deciden, en cada petición, el plan del tenant (el derecho
+        /// <c>modulo.&lt;código&gt;</c>) y la activación vigente de la empresa; ya no la copia de módulos que el inicio de sesión dejó
+        /// en la sesión. Si la petición no pasó por <see cref="Derechos.EstadoDelTenantMiddleware"/> (pruebas, procesos sin petición
+        /// web), se usa la copia de la sesión como antes.
+        /// </summary>
         public static bool HasModulo(HttpContext context, string moduloCodigo)
         {
             if (IsAdmin(context)) return true;
+            if (context.Items.TryGetValue(Derechos.EstadoDelTenantMiddleware.ClaveDerechos, out var evaluados)
+                && evaluados is Derechos.DerechosDeLaPeticion derechos)
+                return derechos.TieneModulo(moduloCodigo);
+
             return GetModulos(context).Contains(moduloCodigo.ToLowerInvariant());
         }
 

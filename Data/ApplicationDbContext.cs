@@ -44,6 +44,11 @@ namespace eGestion360Web.Data
         public DbSet<PasswordResetCode> PasswordResetCodes { get; set; }
         public DbSet<EmailConfiguration> EmailConfigurations { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<Plan> Planes { get; set; }
+        public DbSet<PlanVersion> PlanVersiones { get; set; }
+        public DbSet<Derecho> Derechos { get; set; }
+        public DbSet<PlanVersionDerecho> PlanVersionDerechos { get; set; }
+        public DbSet<TenantPlan> TenantPlanes { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
         public DbSet<Modulo> Modulos { get; set; }
         public DbSet<EmpresaModulo> EmpresaModulos { get; set; }

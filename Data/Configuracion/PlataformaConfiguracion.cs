@@ -21,6 +21,8 @@ namespace eGestion360Web.Data.Configuracion
             entity.Property(t => t.Codigo).IsUnicode(false);
             entity.Property(t => t.Tipo).IsUnicode(false);
             entity.Property(t => t.Estado).IsUnicode(false);
+            // F1.7 (script 040): una suspensión es de solo lectura salvo que el tenant diga otra cosa (D53).
+            entity.Property(t => t.ModoSuspension).IsUnicode(false).HasDefaultValue(ModoDeSuspension.Lectura);
 
             entity.HasIndex(t => t.Codigo).IsUnique().HasDatabaseName("UX_tenants_codigo");
             entity.HasIndex(t => t.UidPublico).IsUnique().HasDatabaseName("UX_tenants_uid_publico");
@@ -32,7 +34,73 @@ namespace eGestion360Web.Data.Configuracion
             {
                 tabla.HasCheckConstraint("CK_tenants_tipo", "[tipo] IN ('interno', 'cliente', 'demo')");
                 tabla.HasCheckConstraint("CK_tenants_estado", "[estado] IN ('activo', 'suspendido', 'cancelado')");
+                tabla.HasCheckConstraint("CK_tenants_modo_suspension", "[modo_suspension] IN ('lectura', 'bloqueo')");
             });
+        }
+    }
+
+    // ── Planes, derechos de uso y plan de cada tenant (F1.7; script 040) ────────────────────────────────────────────
+
+    public sealed class PlanConfiguracion : IEntityTypeConfiguration<Plan>
+    {
+        public void Configure(EntityTypeBuilder<Plan> entity)
+        {
+            entity.HasKey(p => p.IdPlan).HasName("PK_planes");
+            entity.Property(p => p.Codigo).IsUnicode(false);
+            entity.HasIndex(p => p.Codigo).IsUnique().HasDatabaseName("UX_planes_codigo");
+        }
+    }
+
+    public sealed class PlanVersionConfiguracion : IEntityTypeConfiguration<PlanVersion>
+    {
+        public void Configure(EntityTypeBuilder<PlanVersion> entity)
+        {
+            entity.HasKey(v => v.IdPlanVersion).HasName("PK_plan_versiones");
+            entity.HasOne<Plan>().WithMany().HasForeignKey(v => v.IdPlan)
+                  .HasConstraintName("FK_plan_versiones_planes").OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(v => new { v.IdPlan, v.Numero }).IsUnique().HasDatabaseName("UX_plan_versiones_plan_numero");
+        }
+    }
+
+    public sealed class DerechoConfiguracion : IEntityTypeConfiguration<Derecho>
+    {
+        public void Configure(EntityTypeBuilder<Derecho> entity)
+        {
+            entity.HasKey(d => d.IdDerecho).HasName("PK_derechos");
+            entity.Property(d => d.Codigo).IsUnicode(false);
+            entity.Property(d => d.Tipo).IsUnicode(false);
+            entity.HasIndex(d => d.Codigo).IsUnique().HasDatabaseName("UX_derechos_codigo");
+            // Clave de apoyo para que plan_version_derechos compruebe el tipo con una clave foránea compuesta.
+            entity.HasAlternateKey(d => new { d.IdDerecho, d.Tipo }).HasName("UX_derechos_id_tipo");
+        }
+    }
+
+    public sealed class PlanVersionDerechoConfiguracion : IEntityTypeConfiguration<PlanVersionDerecho>
+    {
+        public void Configure(EntityTypeBuilder<PlanVersionDerecho> entity)
+        {
+            entity.HasKey(d => new { d.IdPlanVersion, d.IdDerecho }).HasName("PK_plan_version_derechos");
+            entity.Property(d => d.TipoDelDerecho).IsUnicode(false);
+            entity.HasOne<PlanVersion>().WithMany().HasForeignKey(d => d.IdPlanVersion)
+                  .HasConstraintName("FK_plan_version_derechos_plan_versiones").OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Derecho>().WithMany().HasForeignKey(d => new { d.IdDerecho, d.TipoDelDerecho })
+                  .HasPrincipalKey(x => new { x.IdDerecho, x.Tipo })
+                  .HasConstraintName("FK_plan_version_derechos_derechos").OnDelete(DeleteBehavior.Restrict);
+        }
+    }
+
+    public sealed class TenantPlanConfiguracion : IEntityTypeConfiguration<TenantPlan>
+    {
+        public void Configure(EntityTypeBuilder<TenantPlan> entity)
+        {
+            entity.HasKey(p => p.IdTenantPlan).HasName("PK_tenant_planes");
+            entity.HasOne<Tenant>().WithMany().HasForeignKey(p => p.IdTenant)
+                  .HasConstraintName("FK_tenant_planes_tenants").OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PlanVersion>().WithMany().HasForeignKey(p => p.IdPlanVersion)
+                  .HasConstraintName("FK_tenant_planes_plan_versiones").OnDelete(DeleteBehavior.Restrict);
+            // Un solo plan vigente por tenant.
+            entity.HasIndex(p => p.IdTenant).IsUnique().HasDatabaseName("UX_tenant_planes_vigente")
+                  .HasFilter("[vigente_hasta] IS NULL");
         }
     }
 

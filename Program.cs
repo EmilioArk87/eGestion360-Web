@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Auditoria;
+using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Eventos;
 using eGestion360Web.Services.Facturacion;
 using eGestion360Web.Services.Personas;
@@ -22,6 +23,7 @@ builder.Services.AddRazorPages()
         options.Filters.Add<EmpresaRequeridaPageFilter>();
         options.Filters.Add<AmbitoDePlataformaPageFilter>();   // F1.3: pantallas que ven todos los tenants (lista revisada)
         options.Filters.Add<TenantDeSoporteRequeridoPageFilter>();   // F1.4c: pantallas de datos de un tenant: el administrador general elige antes cuál
+        options.Filters.Add<DerechoDeModuloPageFilter>();   // F1.7: cada carpeta de módulo exige el derecho de uso del módulo (403 si no)
     });
 
 // Add Entity Framework with SQL Server.
@@ -84,6 +86,7 @@ builder.Services.AddHttpContextAccessor();
 // tenant, empresa, usuario e id de correlación. ITenantContext lo leen EF, RLS y los servicios.
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IResolvedorDeTenant, ResolvedorDeTenantEf>();
+builder.Services.AddScoped<IDerechosDeUso, DerechosDeUso>();   // F1.7: derechos de uso y estado del tenant (caché de 30 s)
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());   // los procesos de fondo fijan su tenant en TenantContext
 
@@ -236,6 +239,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 app.UseMiddleware<TenantMiddleware>();   // después de la sesión: de ella sale la empresa y, de la empresa, el tenant
+app.UseMiddleware<EstadoDelTenantMiddleware>();   // F1.7: estado del tenant (suspendido/cancelado) y derechos de uso de la petición
 
 app.UseAuthorization();
 

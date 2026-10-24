@@ -77,7 +77,10 @@ SELECT 'esquema ' + s.name FROM sys.schemas s WHERE s.name IN ('saas')";
             await using var comando = new SqlCommand(sql, conexion);
             await using var lector = await comando.ExecuteReaderAsync();
             while (await lector.ReadAsync()) filas.Add(lector.GetString(0));
-            return filas.OrderBy(f => f, StringComparer.Ordinal).ToList();
+
+            // modo_suspension (y su CHECK) los agrega el script 040 (F1.7), no el 025: el modelo ya los tiene y el 025 solo, no.
+            // El 040 exige la política RLS completa, así que no se aplica aquí: su forma contra el modelo se comparó con la copia real.
+            return filas.Where(f => !f.Contains("modo_suspension", StringComparison.Ordinal)).OrderBy(f => f, StringComparer.Ordinal).ToList();
         }
 
         [FactSqlServer]

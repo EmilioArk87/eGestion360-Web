@@ -7,6 +7,7 @@ using eGestion360Web.Models;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Pages.Empresas
@@ -15,11 +16,13 @@ namespace eGestion360Web.Pages.Empresas
     {
         private readonly ApplicationDbContext _context;
         private readonly TenantContext? _tenant;
+        private readonly IDerechosDeUso? _derechos;
 
-        public CreateModel(ApplicationDbContext context, TenantContext? tenant = null)
+        public CreateModel(ApplicationDbContext context, TenantContext? tenant = null, IDerechosDeUso? derechos = null)
         {
             _context = context;
             _tenant = tenant;
+            _derechos = derechos;
         }
 
         [BindProperty]
@@ -93,6 +96,18 @@ namespace eGestion360Web.Pages.Empresas
             // empresas, ADR-023): el tenant elegido y validado arriba pasa a ser el de esta petición, aunque la sesión del
             // administrador general no tenga ninguno (F1.4c, ADR-025). Las categorías de abajo se guardan con el mismo contexto.
             _tenant?.Fijar(Empresa.IdTenant, null);
+
+            // El plan del tenant puede limitar cuántas empresas tiene (limite.empresas, D54).
+            if (_derechos != null)
+            {
+                var limite = await _derechos.PuedeAgregarAsync(Empresa.IdTenant, CodigosDeDerecho.LimiteEmpresas);
+                if (!limite.Permitido)
+                {
+                    ModelState.AddModelError("Empresa.IdTenant", limite.Mensaje("empresas"));
+                    CargarPaises();
+                    return Page();
+                }
+            }
 
             _context.Empresas.Add(Empresa);
             await _context.SaveChangesAsync();   // genera Empresa.IdEmpresa

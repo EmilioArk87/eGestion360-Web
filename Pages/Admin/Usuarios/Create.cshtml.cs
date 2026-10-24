@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
+using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Personas;
 
 namespace eGestion360Web.Pages.Admin.Usuarios
@@ -18,12 +20,15 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         private readonly ApplicationDbContext _context;
         private readonly IPasswordService _passwordService;
         private readonly IUsuarioPersonaService _usuarioPersona;
+        private readonly IDerechosDeUso? _derechos;
 
-        public CreateModel(ApplicationDbContext context, IPasswordService passwordService, IUsuarioPersonaService usuarioPersona)
+        public CreateModel(ApplicationDbContext context, IPasswordService passwordService, IUsuarioPersonaService usuarioPersona,
+            IDerechosDeUso? derechos = null)
         {
             _context         = context;
             _passwordService = passwordService;
             _usuarioPersona  = usuarioPersona;
+            _derechos        = derechos;
         }
 
         // ── Persona del usuario (script 021): obligatoria al crear ───────────
@@ -159,6 +164,25 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 ModelState.AddModelError(nameof(IdPersonaElegida), "Elige la persona que usará este usuario, o créala.");
                 await CargarListasAsync();
                 return Page();
+            }
+
+            // El plan del tenant de la empresa puede limitar cuántos usuarios activos tiene (limite.usuarios, D54).
+            if (_derechos != null && IsActive && EmpresaId is > 0)
+            {
+                var idTenantDeLaEmpresa = await _context.Empresas.AsNoTracking()
+                    .Where(e => e.IdEmpresa == EmpresaId && !e.Eliminado)
+                    .Select(e => (int?)e.IdTenant)
+                    .FirstOrDefaultAsync();
+                if (idTenantDeLaEmpresa is { } idTenant)
+                {
+                    var limite = await _derechos.PuedeAgregarAsync(idTenant, CodigosDeDerecho.LimiteUsuarios);
+                    if (!limite.Permitido)
+                    {
+                        ModelState.AddModelError(string.Empty, limite.Mensaje("usuarios activos"));
+                        await CargarListasAsync();
+                        return Page();
+                    }
+                }
             }
 
             var user = new User

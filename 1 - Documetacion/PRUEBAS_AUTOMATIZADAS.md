@@ -9,8 +9,8 @@ y de la publicación del sitio (`eGestion360Web.csproj`).
 dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj
 ```
 
-Casi todas usan SQLite en memoria y no necesitan SQL Server, ni internet, ni secretos. Las de `SqlServer/` usan LocalDB
-si está instalado y, si no, se omiten (ver más abajo). **Ninguna toca la base real.**
+Casi todas usan SQLite en memoria y no necesitan SQL Server, ni internet, ni secretos. Las de `SqlServer/` usan el SQL Server
+de esta máquina (`localhost,1433`) y, si no responde, se omiten (ver más abajo). **Ninguna toca la base real.**
 
 ## Integración continua
 
@@ -33,20 +33,22 @@ dotnet build eGestion360Web.csproj --configuration Release --no-restore
 dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj --configuration Debug --no-restore
 ```
 
-## Pruebas contra SQL Server (LocalDB)
+## Pruebas contra SQL Server (servidor local)
 
 Lo que SQLite no puede probar (Row-Level Security, claves foráneas compuestas reales, planes de ejecución) se prueba en
-`SqlServer/` contra **SQL Server 2022 LocalDB**, el motor de SQL Server instalado solo en la máquina, sin servidor ni
-claves (autenticación de Windows). Cada corrida crea una base propia con nombre único (`egestion_prueba_…`), la llena
-con datos inventados y la borra al terminar. **Nunca se conectan a eBD_SPD.**
+`SqlServer/` contra el **SQL Server de esta máquina en `localhost,1433`** (hoy SQL Server 2025 Developer), con
+autenticación de Windows y sin claves. Cada corrida crea una base propia con nombre único (`egestion_prueba_…`) con nivel
+de compatibilidad 160 (el de eBD_SPD en Somee, SQL Server 2022), la llena con datos inventados y la borra al terminar.
+**Nunca se conectan a eBD_SPD.**
 
 - Se marcan con `[FactSqlServer]` y el rasgo `Categoria=SqlServer`.
-- Si la máquina no tiene LocalDB, aparecen como **omitidas** con el motivo, no como fallidas. Así la suite sigue pasando
-  en una máquina sin LocalDB (por ejemplo, si el runner de GitHub no lo trae).
-- Para usar otro servidor de pruebas, definir la variable de entorno `EGESTION_PRUEBAS_SQLSERVER` con su cadena de
-  conexión, sin base: cada prueba crea la suya. Nunca apuntarla a un servidor con datos reales.
-- Instalar LocalDB: paquete `SqlLocalDB.msi` de SQL Server 2022 desde download.microsoft.com (el mismo motor 16.x de
-  eBD_SPD). Se verifica con `sqllocaldb info MSSQLLocalDB`.
+- Orden de búsqueda del servidor: la variable de entorno `EGESTION_PRUEBAS_SQLSERVER` (cadena de conexión sin base, para
+  otro servidor; nunca apuntarla a uno con datos reales); si no existe, `localhost,1433`; si tampoco responde, LocalDB si
+  está instalado (es lo que trae el runner de GitHub Actions). Si no hay ninguno, las pruebas aparecen como **omitidas**
+  con el motivo, no como fallidas.
+- Para ensayar scripts de `2 - Script SQL/` contra una copia real de producción (con datos personales, solo en esta PC y
+  fuera del repositorio) se restauran bases `egestion_…` en ese mismo servidor; se borran al terminar y la copia se
+  elimina al cerrar F1. Producción es SQL Server 2022: las bases de ensayo se dejan en compatibilidad 160.
 
 ```bash
 dotnet test eGestion360Web.Tests/eGestion360Web.Tests.csproj --filter "Categoria=SqlServer"

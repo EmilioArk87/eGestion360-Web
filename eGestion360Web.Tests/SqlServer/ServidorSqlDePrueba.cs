@@ -1,13 +1,14 @@
 using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
-using Microsoft.Win32;
 
 namespace eGestion360Web.Tests.SqlServer
 {
     /// <summary>
     /// Servidor SQL Server para las pruebas que SQLite no puede hacer: Row-Level Security, claves foráneas compuestas
-    /// reales y planes de ejecución. Por defecto es LocalDB (<c>(localdb)\MSSQLLocalDB</c>) con autenticación de Windows,
-    /// sin usuarios ni claves. La variable de entorno <see cref="VariableEntorno"/> permite usar otro servidor de pruebas.
+    /// reales y planes de ejecución. Por defecto es el SQL Server de esta máquina en <c>localhost,1433</c> con autenticación
+    /// de Windows, sin usuarios ni claves. La variable de entorno <see cref="VariableEntorno"/> permite usar otro servidor de pruebas.
+    /// Cada base de prueba se crea con nivel de compatibilidad 160, el de eBD_SPD en Somee (SQL Server 2022), aunque el servidor local
+    /// sea más nuevo.
     ///
     /// Cada prueba trabaja en una base propia con nombre único (<c>egestion_prueba_…</c>) que se crea al empezar y se
     /// borra al terminar, con datos inventados. Nunca se conecta a eBD_SPD.
@@ -18,17 +19,20 @@ namespace eGestion360Web.Tests.SqlServer
         public const string VariableEntorno = "EGESTION_PRUEBAS_SQLSERVER";
 
         private const string PrefijoBases = "egestion_prueba_";
+        private const string ServidorLocal = @"Server=localhost,1433;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=60";
+
+        // Respaldo para máquinas sin servidor local (por ejemplo el runner de GitHub Actions, que trae LocalDB).
         private const string LocalDb = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=60";
 
-        private static readonly Lazy<string?> _motivoParaOmitir = new(CalcularMotivoParaOmitir);
+        private static readonly Lazy<(string Cadena, string? Motivo)> _servidor = new(ElegirServidor);
 
         /// <summary>null si hay un servidor de pruebas; si no, el motivo por el que se omiten las pruebas.</summary>
-        public static string? MotivoParaOmitir => _motivoParaOmitir.Value;
+        public static string? MotivoParaOmitir => _servidor.Value.Motivo;
 
         /// <summary>Cadena a una base concreta del servidor de pruebas, con ajustes opcionales (pool, nombre de app…).</summary>
         public static string Cadena(string baseDeDatos, Action<SqlConnectionStringBuilder>? ajustar = null)
         {
-            var constructor = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable(VariableEntorno) ?? LocalDb)
+            var constructor = new SqlConnectionStringBuilder(_servidor.Value.Cadena)
             {
                 InitialCatalog = baseDeDatos
             };
@@ -77,21 +81,41 @@ namespace eGestion360Web.Tests.SqlServer
             await comando.ExecuteNonQueryAsync();
         }
 
-        private static string? CalcularMotivoParaOmitir()
+        /// <summary>
+        /// Elige el servidor una sola vez: la variable de entorno si existe; si no, el SQL Server de esta máquina (localhost,1433);
+        /// si tampoco responde, LocalDB cuando está instalado (el caso de GitHub Actions); y si no hay ninguno, el motivo para omitir.
+        /// </summary>
+        private static (string Cadena, string? Motivo) ElegirServidor()
         {
-            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(VariableEntorno))) return null;
-            if (!OperatingSystem.IsWindows())
-                return $"Sin SQL Server de pruebas: LocalDB solo existe en Windows y {VariableEntorno} no está definida.";
+            var deEntorno = Environment.GetEnvironmentVariable(VariableEntorno);
+            if (!string.IsNullOrWhiteSpace(deEntorno)) return (deEntorno, null);
 
-            using var versiones = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions");
-            return versiones is { SubKeyCount: > 0 }
-                ? null
-                : "Sin SQL Server de pruebas: LocalDB no está instalado (ver 1 - Documetacion/PRUEBAS_AUTOMATIZADAS.md).";
+            if (Responde(ServidorLocal)) return (ServidorLocal, null);
+
+            if (OperatingSystem.IsWindows() && Responde(LocalDb)) return (LocalDb, null);
+
+            return (ServidorLocal, $"Sin SQL Server de pruebas: no responde localhost,1433 ni hay LocalDB y {VariableEntorno} no está definida " +
+                                   "(ver 1 - Documetacion/PRUEBAS_AUTOMATIZADAS.md).");
+        }
+
+        private static bool Responde(string cadenaBase)
+        {
+            try
+            {
+                var cadena = new SqlConnectionStringBuilder(cadenaBase) { InitialCatalog = "master", ConnectTimeout = 8 }.ConnectionString;
+                using var conexion = new SqlConnection(cadena);
+                conexion.Open();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 
     /// <summary>
-    /// Prueba que necesita SQL Server. Si la máquina no tiene LocalDB ni <see cref="ServidorSqlDePrueba.VariableEntorno"/>,
+    /// Prueba que necesita SQL Server. Si la máquina no tiene un servidor en localhost,1433 ni <see cref="ServidorSqlDePrueba.VariableEntorno"/>,
     /// la prueba aparece como omitida con el motivo, en lugar de fallar.
     /// </summary>
     public sealed class FactSqlServerAttribute : FactAttribute
