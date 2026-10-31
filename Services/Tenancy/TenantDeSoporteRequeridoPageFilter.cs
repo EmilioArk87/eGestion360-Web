@@ -20,7 +20,7 @@ namespace eGestion360Web.Services.Tenancy
         /// <summary>Pantallas que trabajan con los datos de un tenant; la lista la vigila <c>FiltroDeTenantTests</c>.</summary>
         public static readonly string[] RutasQueExigenTenantDeSoporte =
         {
-            "/Admin/EmpresaModulos", "/Admin/EmpresaRoles", "/Admin/RolesPermisos", "/Admin/Personas", "/Admin/Usuarios",
+            "/Admin/EmpresaModulos", "/Admin/EmpresaRoles", "/Admin/RolesPermisos", "/Admin/Personas", "/Admin/Usuarios", "/Admin/Invitaciones",
         };
 
         /// <summary>Página donde el administrador general elige el tenant de soporte.</summary>

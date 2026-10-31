@@ -200,6 +200,7 @@ builder.Services.AddScoped<IServicioMfa, ServicioMfa>();
 builder.Services.AddScoped<IDirectorioDeCuentas, DirectorioDeCuentas>();
 builder.Services.AddScoped<IAutenticador, Autenticador>();
 builder.Services.AddScoped<ISincronizadorDeCuentas, SincronizadorDeCuentas>();
+builder.Services.AddScoped<IServicioDeInvitaciones, ServicioDeInvitaciones>();   // F1.5: invitaciones por correo (ADR-028)
 
 var app = builder.Build();
 

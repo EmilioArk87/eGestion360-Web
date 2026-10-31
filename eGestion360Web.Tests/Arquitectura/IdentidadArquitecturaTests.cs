@@ -114,6 +114,61 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.DoesNotContain("_context.Users", login);
             Assert.DoesNotContain("Session.SetString", login);
         }
+
+        // ── Invitaciones por correo (ADR-028) ─────────────────────────────────
+
+        [Fact]
+        public void Solo_el_servicio_de_invitaciones_crea_invitaciones()
+        {
+            var culpables = Archivos("*.cs")
+                .Where(f => Regex.IsMatch(File.ReadAllText(f), @"\bInvitaciones\.(Add|AddRange|Update|Remove)\("))
+                .Select(Relativa).Where(f => f != "Services/Identidad/ServicioDeInvitaciones.cs").ToList();
+
+            Assert.True(culpables.Count == 0, "Estas pantallas escriben invitaciones sin pasar por IServicioDeInvitaciones: " + string.Join(", ", culpables));
+        }
+
+        [Fact]
+        public void El_token_de_una_invitacion_nunca_se_guarda_ni_se_escribe_en_el_registro()
+        {
+            var servicio = File.ReadAllText(Path.Combine(Raiz(), "Services", "Identidad", "ServicioDeInvitaciones.cs"));
+
+            // Lo único que se guarda del token es su huella.
+            Assert.Contains("TokenHash = Huella(token)", servicio);
+            Assert.DoesNotContain("TokenHash = token", servicio);
+
+            // Ninguna línea de registro menciona el token, el enlace ni la clave.
+            var lineasDeRegistro = servicio.Split('\n').Where(l => l.Contains("_log.Log")).ToList();
+            Assert.NotEmpty(lineasDeRegistro);
+            foreach (var linea in lineasDeRegistro)
+                Assert.DoesNotMatch(@"(?i)\b(token|enlace|clave|password)\b", linea);
+
+            // Los datos que el correo lleva a la persona (nombres de empresa y de quien invita) van escapados.
+            Assert.Contains("WebUtility.HtmlEncode(empresa)", servicio);
+            Assert.Contains("WebUtility.HtmlEncode(invitadoPor)", servicio);
+        }
+
+        [Fact]
+        public void Aceptar_una_invitacion_fija_el_tenant_antes_de_abrir_la_transaccion()
+        {
+            var servicio = File.ReadAllText(Path.Combine(Raiz(), "Services", "Identidad", "ServicioDeInvitaciones.cs"));
+            var metodo = servicio[servicio.IndexOf("public async Task<ResultadoDeAceptar> AceptarAsync", StringComparison.Ordinal)..];
+
+            var fijar = metodo.IndexOf("_contextoFijable?.Fijar(", StringComparison.Ordinal);
+            var abrir = metodo.IndexOf("BeginTransactionAsync", StringComparison.Ordinal);
+            Assert.True(fijar > 0 && abrir > 0, "AceptarAsync debe fijar el tenant y abrir la transacción.");
+            Assert.True(fijar < abrir, "El tenant se fija ANTES de abrir la transacción: con la conexión abierta la base no deja cambiarlo.");
+        }
+
+        [Fact]
+        public void La_pantalla_de_aceptar_no_usa_la_sesion_y_protege_el_token_de_la_url()
+        {
+            var pagina = File.ReadAllText(Path.Combine(Raiz(), "Pages", "AceptarInvitacion.cshtml.cs"));
+
+            Assert.DoesNotContain("Session", pagina);
+            Assert.Contains("Referrer-Policy", pagina);
+            Assert.Contains("no-referrer", pagina);
+            Assert.Contains("no-store", pagina);
+        }
     }
 
     /// <summary>Las llaves de Data Protection viven en <c>saas.llaves_proteccion_datos</c> (D48).</summary>

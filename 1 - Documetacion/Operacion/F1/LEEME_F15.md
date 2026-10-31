@@ -63,6 +63,21 @@ El código **no** funciona sin 038 y 039 (las llaves de Data Protection y el ini
 
 **Si algo sale mal:** el paquete anterior (F1.7) convive con las tablas nuevas (ignora `saas.cuentas`), y como `dbo.Users` siempre estuvo al día, volver atrás no pierde claves ni usuarios. Quien se quede sin MFA: `emergencia_mfa_desactivar.sql`, solo si Emilio lo pide en el chat.
 
+## Invitaciones por correo ([ADR-028](../../Arquitectura/ADR-028-invitaciones-por-correo.md))
+
+Un administrador (el general, dentro de un tenant de soporte, o el de una empresa) invita a una persona ya registrada en la empresa desde
+«Gestión de Usuarios» → «Invitaciones» → «Invitar por correo». La persona recibe un enlace de un solo uso (vence en 7 días,
+`Identidad:DiasDeInvitacion`) y elige su propia contraseña; entra con su correo.
+
+- **No tiene scripts**: usa `saas.invitaciones` como la dejó el 038. Se publica solo el código, sin `/alerta-bd`.
+- Requiere el correo saliente configurado (el mismo del restablecimiento de clave). Si el correo no sale, la invitación queda en la lista y se
+  usa «Reenviar».
+- La lista muestra pendientes, aceptadas y vencidas; «Anular» hace que el enlace deje de servir, y el usuario sin activar sigue en «Gestión de
+  Usuarios» (se puede reenviar o editar).
+- Solo para personas **sin cuenta**: un correo que ya tiene usuario, cuenta o alias se rechaza.
+- Para comprobarlo después de publicar, sin sesión: `/AceptarInvitacion` responde 200 con el aviso de enlace no válido (antes de publicar, 404);
+  con sesión de un administrador de empresa, invitar a una persona de prueba y abrir el enlace del correo.
+
 ## Reversa
 
 Cada script trae su sección ROLLBACK comentada al final, con una guarda que aborta si ya hay datos que se perderían. Se revierte en orden inverso:

@@ -74,9 +74,14 @@
                 <h5 class="mb-0 fw-semibold">
                     <i class="fas fa-users-cog me-2 text-warning"></i>Administración de Usuarios
                 </h5>
-                <a asp-page="/Admin/Usuarios/Create" class="btn btn-sm btn-success">
-                    <i class="fas fa-user-plus me-1"></i>Nuevo Usuario
-                </a>
+                <div class="d-flex gap-2">
+                    <a asp-page="/Admin/Invitaciones/Index" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-envelope-open-text me-1"></i>Invitaciones
+                    </a>
+                    <a asp-page="/Admin/Usuarios/Create" class="btn btn-sm btn-success">
+                        <i class="fas fa-user-plus me-1"></i>Nuevo Usuario
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 <!-- Búsqueda -->

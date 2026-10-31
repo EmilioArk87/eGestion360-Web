@@ -20,7 +20,7 @@ namespace eGestion360Web.Tests.Services.Tenancy
     {
         [Fact]
         public void La_lista_de_pantallas_sin_sesion_es_la_revisada()
-            => Assert.Equal(new[] { "/Login", "/ForgotPassword", "/ResetPassword", "/Register" }, AmbitoDePlataformaPageFilter.RutasSinSesion);
+            => Assert.Equal(new[] { "/Login", "/ForgotPassword", "/ResetPassword", "/Register", "/AceptarInvitacion" }, AmbitoDePlataformaPageFilter.RutasSinSesion);
 
         [Fact]
         public void La_lista_de_pantallas_del_administrador_general_es_la_revisada()

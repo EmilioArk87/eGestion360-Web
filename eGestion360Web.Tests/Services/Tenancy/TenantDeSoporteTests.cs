@@ -157,7 +157,7 @@ namespace eGestion360Web.Tests.Services.Tenancy
         [Fact]
         public void La_lista_de_pantallas_que_exigen_tenant_de_soporte_es_la_revisada()
             => Assert.Equal(
-                new[] { "/Admin/EmpresaModulos", "/Admin/EmpresaRoles", "/Admin/RolesPermisos", "/Admin/Personas", "/Admin/Usuarios" },
+                new[] { "/Admin/EmpresaModulos", "/Admin/EmpresaRoles", "/Admin/RolesPermisos", "/Admin/Personas", "/Admin/Usuarios", "/Admin/Invitaciones" },
                 TenantDeSoporteRequeridoPageFilter.RutasQueExigenTenantDeSoporte);
 
         [Fact]

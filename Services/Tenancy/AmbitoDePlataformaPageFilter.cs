@@ -7,8 +7,9 @@ namespace eGestion360Web.Services.Tenancy
     /// por tenant de EF no se aplica y el código ve las filas de todos los tenants (paso F1.3). La lista es corta, está aquí y
     /// la vigila <c>FiltroDeTenantTests</c>: una pantalla nueva no entra por accidente.
     ///
-    ///   * Antes de la sesión (login, olvidé mi clave, restablecer, registro): todavía no hay tenant que filtrar. Cada una
-    ///     busca a la persona que entra y arma su sesión; F1.5 lo resuelve con el tenant dentro de la cookie.
+    ///   * Antes de la sesión (login, olvidé mi clave, restablecer, registro, aceptar una invitación): todavía no hay tenant que
+    ///     filtrar. Cada una busca a la persona que entra y arma su sesión; F1.5 lo resuelve con el tenant dentro de la cookie.
+    ///     Aceptar una invitación solo conoce el tenant por el token: lo averigua y lo fija antes de escribir nada de tenant.
     ///   * Del administrador general (hoy el operador de la plataforma, D23): el directorio de empresas, los usuarios, las
     ///     tasas de cambio y las herramientas de la plataforma. Solo si la sesión es la suya: un administrador de empresa que
     ///     entre a las mismas rutas conserva el filtro de su tenant. Con la política RLS encendida la plataforma no ve datos de
@@ -23,7 +24,7 @@ namespace eGestion360Web.Services.Tenancy
         /// <summary>Pantallas sin sesión: ven todo mientras averiguan quién entra.</summary>
         public static readonly string[] RutasSinSesion =
         {
-            "/Login", "/ForgotPassword", "/ResetPassword", "/Register",
+            "/Login", "/ForgotPassword", "/ResetPassword", "/Register", "/AceptarInvitacion",
         };
 
         /// <summary>

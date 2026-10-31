@@ -1,0 +1,116 @@
+@page
+@using eGestion360Web.Services.Identidad
+@model eGestion360Web.Pages.Admin.Invitaciones.IndexModel
+@{
+    ViewData["Title"] = "Invitaciones";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/UserManagement">Gestión de Usuarios</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Invitaciones</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <div class="me-3 bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                 style="width: 3rem; height: 3rem; min-width: 3rem;">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <div>
+                <h2 class="mb-0">Invitaciones</h2>
+                <p class="text-muted mb-0">La persona recibe un enlace y elige ella misma su contraseña</p>
+            </div>
+        </div>
+        <a asp-page="Create" class="btn btn-success"><i class="fas fa-paper-plane me-2"></i>Invitar por correo</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" role="alert"><i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning" role="alert"><i class="fas fa-exclamation-triangle me-2"></i>@TempData["WarningMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (Model.Filas.Count == 0)
+            {
+                <p class="text-muted text-center my-5">Todavía no has enviado invitaciones.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Correo</th>
+                                <th>Persona</th>
+                                <th>Empresa</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Enviada</th>
+                                <th>Vence</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var f in Model.Filas)
+                            {
+                                <tr>
+                                    <td>@f.Correo</td>
+                                    <td>@(f.Persona ?? "—")</td>
+                                    <td>@f.Empresa</td>
+                                    <td>@f.Rol</td>
+                                    <td>
+                                        @switch (f.Estado)
+                                        {
+                                            case EstadoDeInvitacion.Pendiente:
+                                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                                break;
+                                            case EstadoDeInvitacion.Usada:
+                                                <span class="badge bg-success">Aceptada</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">Vencida</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="small">@f.FechaCreacion.AddHours(-6).ToString("dd/MM/yyyy HH:mm") <span class="text-muted">por @f.CreadaPor</span></td>
+                                    <td class="small">@(f.Estado == EstadoDeInvitacion.Usada ? f.UsadaEn!.Value.AddHours(-6).ToString("dd/MM/yyyy HH:mm") : f.VenceEn.AddHours(-6).ToString("dd/MM/yyyy HH:mm"))</td>
+                                    <td class="text-end">
+                                        @if (f.Estado != EstadoDeInvitacion.Usada)
+                                        {
+                                            <form method="post" asp-page-handler="Reenviar" asp-route-id="@f.IdInvitacion" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary" title="Genera un enlace nuevo y lo envía; el anterior deja de servir">
+                                                    <i class="fas fa-redo me-1"></i>Reenviar
+                                                </button>
+                                            </form>
+                                            @if (f.Estado == EstadoDeInvitacion.Pendiente)
+                                            {
+                                                <form method="post" asp-page-handler="Anular" asp-route-id="@f.IdInvitacion" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="El enlace deja de servir">
+                                                        <i class="fas fa-ban me-1"></i>Anular
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

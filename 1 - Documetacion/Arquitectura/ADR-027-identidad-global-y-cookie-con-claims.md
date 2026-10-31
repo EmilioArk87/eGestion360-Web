@@ -48,7 +48,7 @@ rol o una baja no se notaban hasta que la persona volviera a entrar.
 - **Emilio deja de necesitar tres usuarios:** una cuenta, tres sitios (Plataforma, SIP y Transgar). Sus usuarios `egaray` y `egaray.transgar` siguen entrando con la clave de `admin` como alias.
 - El script 039 exige que `dbo.Users` tenga **exactamente** las 8 filas medidas: hay que aplicarlo antes de crear un usuario nuevo. Después, cada usuario nuevo recibe cuenta, membresía y acceso al crearse.
 - Siguen en Users y llegan a las cuentas por copia: un cambio hecho directamente en la base a `dbo.Users` (sin pasar por las pantallas) no llega a la cuenta.
-- **No incluye (queda para después):** invitaciones por correo (la tabla existe, el servicio y la pantalla no), permisos por acción y retirar los `IsAdmin(` (F1.6), la auditoría de seguridad generalizada (F1.8) y retirar `Users` (F1.10).
+- **No incluye (queda para después):** invitaciones por correo (las resuelve [ADR-028](ADR-028-invitaciones-por-correo.md)), permisos por acción y retirar los `IsAdmin(` (F1.6), la auditoría de seguridad generalizada (F1.8) y retirar `Users` (F1.10).
 - Cuenta sin acceso a MFA (teléfono perdido y sin códigos): `2 - Script SQL/emergencia_mfa_desactivar.sql`, solo si Emilio lo pide en el chat.
 - Requisito de publicación: scripts 038 y 039 aplicados antes que el código (sin las tablas, el inicio de sesión y las llaves de Data Protection fallan).
 

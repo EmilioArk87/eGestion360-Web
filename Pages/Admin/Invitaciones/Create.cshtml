@@ -1,0 +1,119 @@
+@page
+@model eGestion360Web.Pages.Admin.Invitaciones.CreateModel
+@{
+    ViewData["Title"] = "Invitar por correo";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/UserManagement">Gestión de Usuarios</a></li>
+            <li class="breadcrumb-item"><a asp-page="Index">Invitaciones</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Invitar por correo</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex align-items-center mb-4">
+        <div class="me-3 bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+             style="width: 3rem; height: 3rem; min-width: 3rem;">
+            <i class="fas fa-paper-plane"></i>
+        </div>
+        <div>
+            <h2 class="mb-0">Invitar por correo</h2>
+            <p class="text-muted mb-0">La persona elige ella misma su contraseña desde un enlace de un solo uso</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
+
+                        @* La persona a la que se invita: debe estar registrada en la empresa (Personal, Clientes...). *@
+                        <fieldset class="border rounded p-3 mb-4" id="persona">
+                            <legend class="float-none w-auto px-2 fs-6 fw-bold mb-0">
+                                <i class="fas fa-id-card me-1 text-primary"></i>Persona
+                            </legend>
+                            <p class="text-muted small mb-2">A quién invitas. Debe estar registrada en la empresa.</p>
+
+                            <div data-modo="existente">
+                                <input type="hidden" asp-for="IdPersonaElegida" />
+                                <div class="input-group">
+                                    <input type="search" id="textoPersona" class="form-control" placeholder="Nombre, apellido o documento"
+                                           autocomplete="off" data-url="@Url.Page("Create", "BuscarPersonas")" />
+                                    <button type="button" class="btn btn-outline-primary" id="btnBuscarPersona">
+                                        <i class="fas fa-search me-1"></i>Buscar
+                                    </button>
+                                </div>
+                                @if (!Model.EsAdministradorGeneral)
+                                {
+                                    <div class="form-text">Solo aparecen personas de tu empresa.</div>
+                                }
+                                <div id="personaElegida" class="small mt-2 @(Model.NombrePersonaElegida == null ? "d-none" : "")">
+                                    <i class="fas fa-check-circle text-success me-1"></i>Elegida: <strong id="nombrePersonaElegida">@Model.NombrePersonaElegida</strong>
+                                </div>
+                                <span asp-validation-for="IdPersonaElegida" class="text-danger small"></span>
+                                <ul class="list-group mt-2" id="resultadosPersona" aria-live="polite"></ul>
+                            </div>
+                        </fieldset>
+
+                        <div class="mb-3">
+                            <label asp-for="Correo" class="form-label fw-semibold"></label>
+                            <input asp-for="Correo" class="form-control" type="email" autocomplete="off" placeholder="nombre@empresa.com" />
+                            <div class="form-text">Aquí llega el enlace. Con este correo entrará la persona al sistema.</div>
+                            <span asp-validation-for="Correo" class="text-danger small"></span>
+                        </div>
+
+                        @if (Model.EsAdministradorGeneral)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="IdEmpresa" class="form-label fw-semibold"></label>
+                                <select asp-for="IdEmpresa" asp-items="Model.Empresas" class="form-select" id="selectEmpresa"
+                                        data-url="@Url.Page("Create", "Roles")"></select>
+                                <span asp-validation-for="IdEmpresa" class="text-danger small"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" asp-for="IdEmpresa" id="selectEmpresa" data-url="@Url.Page("Create", "Roles")" />
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="RolLegado" class="form-label fw-semibold"></label>
+                            <select asp-for="RolLegado" class="form-select" id="selectTipo">
+                                <option value="empresa_user">Usuario de empresa</option>
+                                <option value="empresa_admin">Administrador de empresa</option>
+                            </select>
+                            <span asp-validation-for="RolLegado" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4" id="bloqueRol">
+                            <label asp-for="IdRol" class="form-label fw-semibold"></label>
+                            <select asp-for="IdRol" asp-items="Model.Roles" class="form-select" id="selectRol"></select>
+                            <div class="form-text">Define a qué módulos y acciones accede. Un administrador de empresa tiene todos.</div>
+                            <span asp-validation-for="IdRol" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar invitación
+                            </button>
+                            <a asp-page="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/usuarios-persona.js" asp-append-version="true"></script>
+    <script src="~/js/invitaciones.js" asp-append-version="true"></script>
+}
