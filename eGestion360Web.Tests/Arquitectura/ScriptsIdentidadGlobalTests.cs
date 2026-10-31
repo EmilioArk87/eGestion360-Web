@@ -566,7 +566,7 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             var indice = File.ReadAllText(Path.Combine(Raiz(), "1 - Documetacion", "INDICE_SCRIPTS_SQL.md"), Encoding.UTF8);
             Assert.Matches(@"\| 038 \| 038_identidad_global\.sql \|[^\r\n]*\| Aplicado 2026-10-30 \|", indice);
-            Assert.Matches(@"\| 039 \| 039_migrar_cuentas\.sql \|[^\r\n]*\| Pendiente \|", indice);
+            Assert.Matches(@"\| 039 \| 039_migrar_cuentas\.sql \|[^\r\n]*\| Aplicado 2026-10-30 \|", indice);
             Assert.Contains("emergencia_mfa_desactivar.sql", indice);
             Assert.Contains(Verif038, indice);
             Assert.Contains(VerifF15, indice);

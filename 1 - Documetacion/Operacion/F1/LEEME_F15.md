@@ -9,7 +9,7 @@ sigue valiendo como historial.
 | Archivo | Para qué sirve |
 |---|---|
 | `2 - Script SQL/038_identidad_global.sql` | Crea la estructura: 8 tablas del plano de control en `saas` (`cuentas`, `cuenta_alias`, `membresias`, `cuenta_intentos`, `cuenta_mfa`, `cuenta_mfa_recuperacion`, `invitaciones`, `llaves_proteccion_datos`) y `dbo.accesos_empresa`, una tabla de tenant que entra a la política `seg.pol_tenant` (199 a 204 predicados). Solo agrega: no migra datos ni toca nada existente. **Aplicado en producción el 2026-10-30** (41 de 41 OK con `verificar_despues_038.sql`). |
-| `2 - Script SQL/039_migrar_cuentas.sql` | Copia las 8 filas de `dbo.Users` a las tablas nuevas con reglas explícitas por nombre de usuario. No modifica ni borra `dbo.Users` y copia los hashes BCrypt sin imprimirlos. |
+| `2 - Script SQL/039_migrar_cuentas.sql` | Copia las 8 filas de `dbo.Users` a las tablas nuevas con reglas explícitas por nombre de usuario. No modifica ni borra `dbo.Users` y copia los hashes BCrypt sin imprimirlos. **Aplicado en producción el 2026-10-30** (59 de 59 OK con `verificar_despues_f15.sql`). |
 | `2 - Script SQL/emergencia_mfa_desactivar.sql` | Desactiva el MFA de UNA cuenta (se edita a mano la variable del correo al inicio; con el valor de ejemplo no hace nada). Solo se ejecuta si Emilio lo pide en el chat. |
 | `verificar_despues_038.sql` | Solo lectura. Estado exacto tras 038 con la política ENCENDIDA: **41 OK**. |
 | `verificar_despues_f15.sql` | Solo lectura. Estado exacto tras 038 y 039 con la política ENCENDIDA: **59 OK**. |
@@ -71,4 +71,4 @@ primero 039 y después 038. `dbo.Users` nunca se toca.
 ## Ensayo
 
 Los tres scripts (038, 039 y 040) se ensayaron en LocalDB sobre una copia de producción tras el script 036, con la política RLS encendida y apagada:
-aplicación, verificadores, repetición (idempotencia), ROLLBACK en orden inverso y pruebas negativas. Contra producción se ejecutó el 038 (2026-10-30, 41 de 41 OK); el 039 sigue sin aplicar.
+aplicación, verificadores, repetición (idempotencia), ROLLBACK en orden inverso y pruebas negativas. En producción se aplicaron el 038 (41 de 41 OK) y el 039 (59 de 59 OK) el 2026-10-30, y ese mismo día se publicó el código de F1.5 con `Identidad:MfaObligatoriaAdminTenantDesde` en `2026-11-13`.

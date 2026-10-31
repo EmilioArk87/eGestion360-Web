@@ -309,8 +309,8 @@ d AS (
                                                   OR (codigo = N'DEMO' AND tipo = N'demo' AND estado = N'activo')
                                                   OR (codigo = N'IISE' AND tipo = N'cliente' AND estado = N'suspendido')
                                                   OR (codigo = N'TRANSGAR' AND tipo = N'cliente' AND estado = N'activo')) AS tenants_ok,
-           (SELECT ISNULL(SUM(p.filas_reales), 0) FROM pt p
-            WHERE p.completo IN (N'saas.cuenta_intentos', N'saas.cuenta_mfa', N'saas.cuenta_mfa_recuperacion', N'saas.invitaciones', N'saas.llaves_proteccion_datos')) AS filas_otras,
+           (SELECT COUNT(*) FROM saas.cuenta_mfa m
+            WHERE m.confirmada = 1 AND (SELECT COUNT(*) FROM saas.cuenta_mfa_recuperacion r WHERE r.id_cuenta = m.id_cuenta) <> 10) AS mfa_sin_codigos,
            (SELECT p.filas_reales FROM pt p WHERE p.completo = N'dbo.accesos_empresa') AS accesos_reales
     FROM saas.cuentas cu JOIN dbo.Users u ON u.Id = cu.id_user_legado
     WHERE cu.id_user_legado IN (1, 2, 5, 6, 7, 8)
@@ -370,7 +370,7 @@ r (orden, comprobacion, esperado, obtenido) AS (
         ,(730, N'Membresias con el tenant, estado y persona de la regla (SIP 102, TRANSGAR 104, DEMO 103)', N'5', CAST(d.mem_regla AS NVARCHAR(400)))
         ,(740, N'Cuentas inactivas con una membresia activa', N'0', CAST(d.inactivas_con_membresia_activa AS NVARCHAR(400)))
         ,(750, N'Accesos por empresa (filas reales; sys.partitions no pasa por la RLS)', N'5', CAST(d.accesos_reales AS NVARCHAR(400)))
-        ,(760, N'Filas en las tablas que la migracion no llena (intentos, MFA, recuperacion, invitaciones y llaves; dejan de ser 0 al usarse)', N'0', CAST(d.filas_otras AS NVARCHAR(400)))
+        ,(760, N'Cuentas con MFA confirmado que no tienen sus 10 codigos de recuperacion (usados o no)', N'0', CAST(d.mfa_sin_codigos AS NVARCHAR(400)))
         ,(770, N'Tenants del script 025 intactos (SIP, DEMO, IISE suspendido y TRANSGAR)', N'4', CAST(d.tenants_ok AS NVARCHAR(400)))
     ) v (orden, comprobacion, esperado, obtenido)
     UNION ALL
