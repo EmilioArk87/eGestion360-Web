@@ -407,7 +407,7 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             var indice = Indice();
 
-            Assert.Matches(@"\| 040 \| 040_planes_derechos_estado_tenant\.sql \|[^\r\n]*\| Pendiente \|", indice);
+            Assert.Matches(@"\| 040 \| 040_planes_derechos_estado_tenant\.sql \|[^\r\n]*\| Aplicado 2026-10-24 \|", indice);
             Assert.Contains("emergencia_derechos_abrir.sql", indice);
             Assert.Contains("verificar_despues_f17.sql", indice);
             Assert.DoesNotMatch(@"[^\x00-\x7F]", indice);

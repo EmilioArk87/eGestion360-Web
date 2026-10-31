@@ -42,7 +42,7 @@ Cada plan tiene su versión 1, vigente desde 2026-10-15. Los tenants se buscan p
 
 | Archivo | Para qué sirve |
 |---|---|
-| `2 - Script SQL/040_planes_derechos_estado_tenant.sql` | El cambio: PRECHECK, CAMBIO y POSTCHECK en una transacción, idempotente, con ROLLBACK comentado. **Pendiente**, requiere `/alerta-bd`. |
+| `2 - Script SQL/040_planes_derechos_estado_tenant.sql` | El cambio: PRECHECK, CAMBIO y POSTCHECK en una transacción, idempotente, con ROLLBACK comentado. **Aplicado en producción el 2026-10-24** (46 de 46 OK con `verificar_despues_f17.sql`). |
 | `verificar_despues_f17.sql` | Comprobación de solo lectura del estado posterior a 040. 46 comprobaciones (`OK` o `FALLA` más la fila `RESUMEN`), mismo formato que los demás. |
 | `2 - Script SQL/emergencia_derechos_abrir.sql` | Emergencia: deja a todos los tenants activos y con el plan `interno` vigente. |
 | `LEEME_F17.md` | Este archivo. |
