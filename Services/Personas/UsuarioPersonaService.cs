@@ -28,11 +28,14 @@ namespace eGestion360Web.Services.Personas
         private readonly PlataformaOptions _plataforma;
         private readonly TimeProvider _tiempo;
         private readonly ILogger<UsuarioPersonaService> _log;
+        private readonly eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? _cuentas;
 
         public UsuarioPersonaService(
             ApplicationDbContext db, IPersonaValidacionService validacion, IOptions<PlataformaOptions> plataforma,
-            TimeProvider tiempo, ILogger<UsuarioPersonaService> log)
+            TimeProvider tiempo, ILogger<UsuarioPersonaService> log,
+            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? cuentas = null)
         {
+            _cuentas = cuentas;
             _db = db;
             _validacion = validacion;
             _plataforma = plataforma.Value;
@@ -254,6 +257,7 @@ namespace eGestion360Web.Services.Personas
                 if (anterior is { } idAnteriorNueva)
                     await CerrarRelacionSiQuedaSinUsuarioAsync(idAnteriorNueva, idEmpresa, usuario.Id, quien.Usuario, ahora, ct);
                 await _db.SaveChangesAsync(ct);
+                if (_cuentas != null) await _cuentas.SincronizarAsync(idUsuario, ct);
 
                 if (transaccion != null) await transaccion.CommitAsync(ct);
             }
@@ -408,6 +412,9 @@ namespace eGestion360Web.Services.Personas
                 _db.ChangeTracker.Clear();
                 return Rechazado(new[] { new ErrorValidacion(string.Empty, MensajeNoGuardado) });
             }
+
+            // La cuenta global sigue a Users (F1.5): su membresia recibe la persona y se activa o se suspende segun la tenga.
+            if (_cuentas != null) await _cuentas.SincronizarAsync(idUsuario, ct);
 
             return new ResultadoUsuarioPersona(estado, idPersona, Array.Empty<ErrorValidacion>(), Array.Empty<PersonaParecida>());
         }

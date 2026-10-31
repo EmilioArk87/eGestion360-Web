@@ -1,0 +1,25 @@
+@page
+@model MfaModel
+@{
+    ViewData["Title"] = "Verificación en dos pasos";
+    ViewData["Subtitulo"] = "Verificación en dos pasos";
+    Layout = "_LayoutEntrada";
+}
+
+<form method="post" class="login-form" autocomplete="off">
+    <p class="text-muted">Escribe el código de 6 dígitos de tu aplicación autenticadora. Si no tienes tu teléfono, usa uno de tus códigos de recuperación.</p>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="form-group">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+            <input asp-for="Codigo" class="form-control" placeholder="Código" inputmode="text" autocomplete="one-time-code" autofocus />
+        </div>
+        <span asp-validation-for="Codigo" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="/Logout" class="btn btn-danger btn-home" title="Cancelar"><i class="fas fa-times"></i></a>
+        <button type="submit" class="btn btn-primary btn-login flex-grow-1"><i class="fas fa-check"></i> Verificar</button>
+    </div>
+</form>

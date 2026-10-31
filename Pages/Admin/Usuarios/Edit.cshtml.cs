@@ -14,11 +14,14 @@ namespace eGestion360Web.Pages.Admin.Usuarios
     {
         private readonly ApplicationDbContext _context;
         private readonly IUsuarioPersonaService _usuarioPersona;
+        private readonly eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? _cuentas;
 
-        public EditModel(ApplicationDbContext context, IUsuarioPersonaService usuarioPersona)
+        public EditModel(ApplicationDbContext context, IUsuarioPersonaService usuarioPersona,
+            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? cuentas = null)
         {
             _context = context;
             _usuarioPersona = usuarioPersona;
+            _cuentas = cuentas;
         }
 
         [BindProperty] public int    Id                    { get; set; }
@@ -119,6 +122,9 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             user.EmpresaRolId          = string.IsNullOrEmpty(EmpresaRolId?.ToString()) ? null : EmpresaRolId;
 
             await _context.SaveChangesAsync();
+
+            // La cuenta global sigue a Users (F1.5): clave pendiente, estado, empresa y rol llegan a su acceso.
+            if (_cuentas != null) await _cuentas.SincronizarAsync(user.Id);
 
             // Si cambió de empresa, su persona tiene que quedar también dentro de la empresa nueva.
             if (user.PersonaId is { } idPersona && empresaAnterior != user.EmpresaId)

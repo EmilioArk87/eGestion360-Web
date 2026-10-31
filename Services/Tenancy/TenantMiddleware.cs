@@ -4,8 +4,9 @@ namespace eGestion360Web.Services.Tenancy
 {
     /// <summary>
     /// Fija el tenant de cada petición y abre el ámbito de log con tenant, empresa, usuario e id de correlación (paso F1.1).
-    /// Va después de <c>UseSession</c>: en F1.1 el tenant sale de la empresa de la sesión. Si la sesión trae una empresa que
-    /// no tiene tenant, lo deja registrado y la petición sigue sin tenant; F1.3 pasará a rechazarla.
+    /// Va después de <c>UseSession</c> y de <c>UseAuthentication</c>: desde F1.5 el tenant y la empresa salen de la identidad de la
+    /// cookie (nunca de la URL ni de un formulario, ADR-001); la sesión solo aporta el tenant de soporte del operador. Si la identidad
+    /// trae una empresa sin tenant, lo deja registrado y la petición sigue sin tenant.
     /// </summary>
     public sealed class TenantMiddleware
     {
@@ -30,26 +31,27 @@ namespace eGestion360Web.Services.Tenancy
             var correlacion = context.TraceIdentifier;
             context.Response.Headers[EncabezadoCorrelacion] = correlacion;
 
-            int? idEmpresa = null;
+            // La identidad sale de la cookie (ya validada por UseAuthentication).
+            var idEmpresa = AuthHelper.GetEmpresaId(context);
+            var idUsuario = AuthHelper.GetCuentaId(context)?.ToString();
             int? idSoporte = null;
-            string? idUsuario = null;
             try
             {
                 // Cargar la sesión una vez, de forma asíncrona, antes de que las páginas la lean de forma síncrona.
                 await context.Session.LoadAsync(context.RequestAborted);
-                idEmpresa = AuthHelper.GetEmpresaId(context);
-                idUsuario = context.Session.GetString("UserId");
                 idSoporte = AuthHelper.GetTenantDeSoporte(context);
             }
             catch (InvalidOperationException)
             {
-                // La petición no tiene sesión configurada (por ejemplo, un endpoint sin sesión): sigue sin tenant.
+                // La petición no tiene sesión configurada (por ejemplo, un endpoint sin sesión): sin tenant de soporte.
             }
 
             int? idTenant = null;
             if (idEmpresa is > 0)
             {
-                idTenant = await resolvedor.ResolverPorEmpresaAsync(idEmpresa.Value, context.RequestAborted);
+                // El tenant viaja en la cookie junto con la empresa; si falta (una cookie de una versión anterior), se deduce de la empresa.
+                idTenant = AuthHelper.GetTenantId(context)
+                           ?? await resolvedor.ResolverPorEmpresaAsync(idEmpresa.Value, context.RequestAborted);
                 context.Items[ClaveIdEmpresa] = idEmpresa.Value;
             }
             else if (idSoporte != null)

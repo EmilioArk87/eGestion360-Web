@@ -87,8 +87,7 @@ namespace eGestion360Web.Tests.Services
         [Fact]
         public void Quien_debe_cambiar_la_clave_va_al_login_aunque_tenga_empresa()
         {
-            var http = SesionFalsa.Contexto(empresaId: "2");
-            http.Session.SetString("MustChangePassword", "1");
+            var http = SesionFalsa.Contexto(empresaId: "2", debeCambiarClave: true);
 
             var contexto = Ejecutar("/Flota/Operacion/Peajes/Create", http);
 

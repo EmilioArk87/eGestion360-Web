@@ -1,0 +1,59 @@
+@page
+@model MfaAltaModel
+@{
+    ViewData["Title"] = "Activar la verificación en dos pasos";
+    ViewData["Subtitulo"] = "Verificación en dos pasos";
+    Layout = "_LayoutEntrada";
+}
+
+@if (Model.CodigosDeRecuperacion != null)
+{
+    <div class="login-form">
+        <div class="alert alert-success" role="alert"><i class="fas fa-check-circle me-1"></i> Verificación en dos pasos activada.</div>
+        <p>Guarda estos códigos de recuperación en un lugar seguro. Cada uno sirve <strong>una sola vez</strong> si pierdes tu teléfono. No se vuelven a mostrar.</p>
+        <ul class="list-unstyled font-monospace fs-5 text-center">
+            @foreach (var codigo in Model.CodigosDeRecuperacion)
+            {
+                <li>@codigo</li>
+            }
+        </ul>
+        <form method="post" asp-page-handler="Continuar">
+            <button type="submit" class="btn btn-primary btn-login w-100"><i class="fas fa-arrow-right"></i> Ya los guardé, continuar</button>
+        </form>
+    </div>
+}
+else
+{
+    <form method="post" class="login-form" autocomplete="off">
+        <p class="text-muted">
+            @(Model.EsVoluntaria
+                ? "Agrega una segunda comprobación a tu cuenta con una aplicación autenticadora."
+                : "Para tu cuenta es obligatorio verificar tu identidad en dos pasos. Actívalo ahora para entrar.")
+        </p>
+        <ol class="small">
+            <li>Abre una aplicación autenticadora (Google Authenticator, Microsoft Authenticator, Authy…).</li>
+            <li>Escanea este código QR, o escribe la clave a mano.</li>
+            <li>Escribe aquí el código de 6 dígitos que te muestra.</li>
+        </ol>
+
+        @if (Model.Enrolamiento != null)
+        {
+            <div class="text-center mb-2" style="max-width:240px;margin-inline:auto">@Html.Raw(Model.Enrolamiento.QrSvg)</div>
+            <p class="text-center small">Clave: <code class="user-select-all">@Model.Enrolamiento.Secreto</code></p>
+        }
+
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                <input asp-for="Codigo" class="form-control" placeholder="Código de 6 dígitos" inputmode="numeric" autocomplete="one-time-code" autofocus />
+            </div>
+            <span asp-validation-for="Codigo" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="@(Model.EsVoluntaria ? "/MainMenu" : "/Logout")" class="btn btn-danger btn-home" title="Cancelar"><i class="fas fa-times"></i></a>
+            <button type="submit" class="btn btn-primary btn-login flex-grow-1"><i class="fas fa-check"></i> Activar</button>
+        </div>
+    </form>
+}

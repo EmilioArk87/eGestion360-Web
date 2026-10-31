@@ -25,6 +25,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Otp.NET" Version="1.4.1" />
+    <PackageReference Include="QRCoder" Version="1.8.1" />
     <!-- ClosedXML 0.102.2 trae System.IO.Packaging 6.0.0 (vía DocumentFormat.OpenXml), vulnerable a CVE-2024-43483 y
          CVE-2024-43484. Se fija una versión corregida hasta actualizar ClosedXML. -->
     <PackageReference Include="System.IO.Packaging" Version="10.0.12" />

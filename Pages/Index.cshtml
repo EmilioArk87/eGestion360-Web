@@ -17,7 +17,7 @@
                     Desarrollado con tecnología de vanguardia por SIP Tecnología.
                 </p>
                 <div class="d-flex gap-3">
-                    @if (HttpContext.Session.GetString("UserId") != null)
+                    @if (eGestion360Web.Services.AuthHelper.HayCuenta(HttpContext))
                     {
                         <span class="btn btn-success btn-lg">
                             <i class="fas fa-check-circle me-2"></i>Bienvenido, @eGestion360Web.Services.AuthHelper.NombreVisible(HttpContext)

@@ -58,10 +58,8 @@ namespace eGestion360Web.Tests.SqlServer.Rls
 
         private static T Preparar<T>(T pagina) where T : PageModel
         {
-            var http = new DefaultHttpContext
-            {
-                Session = new SesionFalsa(new Dictionary<string, string> { ["UserId"] = "1", ["Role"] = "admin", ["Username"] = "admin_pruebas" })
-            };
+            var http = SesionFalsa.Contexto("admin");
+            http.Session.SetString("Username", "admin_pruebas");
             pagina.PageContext = new PageContext
             {
                 HttpContext = http,

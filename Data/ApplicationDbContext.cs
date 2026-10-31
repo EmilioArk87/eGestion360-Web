@@ -49,6 +49,16 @@ namespace eGestion360Web.Data
         public DbSet<Derecho> Derechos { get; set; }
         public DbSet<PlanVersionDerecho> PlanVersionDerechos { get; set; }
         public DbSet<TenantPlan> TenantPlanes { get; set; }
+        // Identidad global (F1.5; scripts 038 y 039)
+        public DbSet<Cuenta> Cuentas { get; set; }
+        public DbSet<CuentaAlias> CuentaAlias { get; set; }
+        public DbSet<Membresia> Membresias { get; set; }
+        public DbSet<AccesoEmpresa> AccesosEmpresa { get; set; }
+        public DbSet<CuentaIntentos> CuentaIntentos { get; set; }
+        public DbSet<CuentaMfa> CuentaMfa { get; set; }
+        public DbSet<CuentaMfaRecuperacion> CuentaMfaRecuperacion { get; set; }
+        public DbSet<Invitacion> Invitaciones { get; set; }
+        public DbSet<LlaveProteccionDatos> LlavesProteccionDatos { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
         public DbSet<Modulo> Modulos { get; set; }
         public DbSet<EmpresaModulo> EmpresaModulos { get; set; }

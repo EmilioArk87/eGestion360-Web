@@ -49,7 +49,7 @@ namespace eGestion360Web.Pages
         public IActionResult OnGet()
         {
             // Si el usuario ya ha iniciado sesión, redirigir al menú principal
-            if (HttpContext.Session.GetString("UserId") != null)
+            if (eGestion360Web.Services.AuthHelper.HayCuenta(HttpContext))
             {
                 return RedirectToPage("/MainMenu");
             }

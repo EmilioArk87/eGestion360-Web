@@ -47,6 +47,22 @@ o ausencia del otro (por ejemplo, 040 espera 199 o 204 predicados según exista 
 - **039** copia las claves de `dbo.Users` en un instante. Hay que aplicarlo con el sitio en mantenimiento y **justo antes de publicar el código de
   F1.5**, para que ninguna clave cambiada en el medio quede desactualizada en `saas.cuentas`.
 
+## El código de F1.5 y el orden de publicación
+
+El código está en `Services/Identidad/` (decisiones en [ADR-027](../../Arquitectura/ADR-027-identidad-global-y-cookie-con-claims.md)): cookie con claims y su validación contra la base cada 30 s, espejo de la sesión para el código anterior, bloqueo por intentos, MFA con TOTP, tres pasos de entrada (`Login`, `Mfa` / `MfaAlta`, `SeleccionarContexto`), llaves de Data Protection en `saas` y `SincronizadorDeCuentas`, que copia a las cuentas lo que cambia en `dbo.Users`.
+
+**Publicación (todos entran de nuevo una vez):**
+
+1. `/alerta-bd` y **038** (cuando se quiera; solo agrega): `verificar_despues_038.sql` → 41 OK.
+2. Ventana corta: sitio en mantenimiento (`app_offline.htm`), `/alerta-bd` y **039**, `verificar_despues_f15.sql` → 59 OK.
+3. Publicar el código con `Identidad:MfaObligatoriaAdminTenantDesde` en `appsettings.json` puesto a la fecha de publicación + 14 días (`aaaa-mm-dd`), quitar el mantenimiento.
+4. Emilio entra con `admin` (o `egaray` / `egaray.transgar`: es la misma cuenta, con la clave de `admin`), activa la verificación en dos pasos con su teléfono y **guarda los 10 códigos de recuperación**. Esa primera entrada la hace Emilio en persona: Claude no ve la clave ni el teléfono.
+5. Claude verifica con Emilio los tres sitios (Plataforma, SIP, Transgar), el cierre de sesión y la vigilancia diaria (`comprobacion_diaria.ps1` detecta 038 y 039 y suma las cifras).
+
+El código **no** funciona sin 038 y 039 (las llaves de Data Protection y el inicio de sesión leen sus tablas): no se publica antes. Después de 039, cada usuario que se cree desde las pantallas de administración recibe cuenta, membresía y acceso solo; un usuario creado a mano en la base antes de 039 haría fallar su PRECHECK.
+
+**Si algo sale mal:** el paquete anterior (F1.7) convive con las tablas nuevas (ignora `saas.cuentas`), y como `dbo.Users` siempre estuvo al día, volver atrás no pierde claves ni usuarios. Quien se quede sin MFA: `emergencia_mfa_desactivar.sql`, solo si Emilio lo pide en el chat.
+
 ## Reversa
 
 Cada script trae su sección ROLLBACK comentada al final, con una guarda que aborta si ya hay datos que se perderían. Se revierte en orden inverso:

@@ -14,14 +14,17 @@ namespace eGestion360Web.Pages
         private readonly IEmailService _emailService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ResetPasswordModel> _logger;
+        private readonly eGestion360Web.Services.Identidad.ISincronizadorDeCuentas _cuentas;
 
         public ResetPasswordModel(
             IPasswordResetService passwordResetService,
             IPasswordService passwordService,
             IEmailService emailService,
             ApplicationDbContext context,
-            ILogger<ResetPasswordModel> logger)
+            ILogger<ResetPasswordModel> logger,
+            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas cuentas)
         {
+            _cuentas = cuentas;
             _passwordResetService = passwordResetService;
             _passwordService = passwordService;
             _emailService = emailService;
@@ -62,7 +65,7 @@ namespace eGestion360Web.Pages
         public IActionResult OnGet(string? email)
         {
             // Si ya está logueado, redirigir al menu
-            if (HttpContext.Session.GetString("UserId") != null)
+            if (eGestion360Web.Services.AuthHelper.HayCuenta(HttpContext))
             {
                 return RedirectToPage("/MainMenu");
             }
@@ -108,6 +111,7 @@ namespace eGestion360Web.Pages
 
                     // Guardar cambios
                     await _context.SaveChangesAsync();
+                    await _cuentas.SincronizarClaveAsync(user.Id);
 
                     // Enviar email de confirmación
                     await _emailService.SendPasswordResetConfirmationAsync(Email, user.Username);

@@ -5,6 +5,13 @@
 }
 
 <div class="container">
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+            <i class="fas fa-shield-alt me-2"></i>
+            <div>@TempData["WarningMessage"] <a asp-page="/MfaAlta" class="alert-link">Activar ahora</a></div>
+        </div>
+    }
     <div class="row mb-4">
         <div class="col-12">
             <div class="alert alert-info d-flex align-items-center" role="alert">

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Identidad;
 using System.ComponentModel.DataAnnotations;
 
 namespace eGestion360Web.Pages
@@ -10,11 +11,18 @@ namespace eGestion360Web.Pages
     public class ChangePasswordModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly ISincronizadorDeCuentas _cuentas;
+        private readonly IAutenticador _autenticador;
 
-        public ChangePasswordModel(ApplicationDbContext context)
+        public ChangePasswordModel(ApplicationDbContext context, ISincronizadorDeCuentas cuentas, IAutenticador autenticador)
         {
             _context = context;
+            _cuentas = cuentas;
+            _autenticador = autenticador;
         }
+
+        /// <summary>El usuario de <c>dbo.Users</c> de quien tiene la cookie (aunque deba cambiar su clave antes de seguir).</summary>
+        private int? UsuarioActual() => AuthHelper.HayCuenta(HttpContext) ? AuthHelper.GetUserLegadoId(HttpContext) : null;
 
         [BindProperty]
         [Required(ErrorMessage = "La contraseña actual es requerida")]
@@ -40,8 +48,7 @@ namespace eGestion360Web.Pages
 
         public async Task<IActionResult> OnGetAsync()
         {
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            if (UsuarioActual() is not { } userId)
             {
                 return RedirectToPage("/Login");
             }
@@ -49,7 +56,7 @@ namespace eGestion360Web.Pages
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
             if (user == null)
             {
-                HttpContext.Session.Clear();
+                await _autenticador.SalirAsync(HttpContext);
                 return RedirectToPage("/Login");
             }
 
@@ -59,8 +66,7 @@ namespace eGestion360Web.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            if (UsuarioActual() is not { } userId)
             {
                 return RedirectToPage("/Login");
             }
@@ -68,7 +74,7 @@ namespace eGestion360Web.Pages
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
             if (user == null)
             {
-                HttpContext.Session.Clear();
+                await _autenticador.SalirAsync(HttpContext);
                 return RedirectToPage("/Login");
             }
 
@@ -104,10 +110,11 @@ namespace eGestion360Web.Pages
             var wasForced = user.RequirePasswordChange;
             user.RequirePasswordChange = false;
             await _context.SaveChangesAsync();
+            await _cuentas.SincronizarClaveAsync(user.Id);
 
             if (wasForced)
             {
-                HttpContext.Session.Clear();
+                await _autenticador.SalirAsync(HttpContext);
                 TempData["SuccessMessage"] = "Contraseña actualizada correctamente. Inicia sesión con tu nueva contraseña.";
                 return RedirectToPage("/Login");
             }

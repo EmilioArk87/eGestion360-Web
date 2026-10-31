@@ -89,6 +89,7 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-024](ADR-024-contexto-de-sesion-por-conexion.md) | Contexto de sesión por conexión (D38 a D40): un interceptor de EF fija tenant y ámbito al abrir cada conexión y vigila que no quede viejo; el inicio de sesión fija el tenant del usuario; todo proceso con ámbito propio declara su tenant | F1 | Aceptada 2026-10-14
 | [ADR-025](ADR-025-tenant-de-soporte.md) | Tenant de soporte del administrador general (D41 a D43): elige con qué tenant trabaja, las pantallas de datos de un tenant lo exigen, y crear, editar y eliminar empresas fijan el tenant de la empresa antes de guardar | F1 | Aceptada 2026-10-14
 | [ADR-026](ADR-026-derechos-de-uso-y-estado-del-tenant.md) | Derechos de uso y estado del tenant en cada petición (D53 a D55): suspendido = solo lectura (o bloqueo), límites de usuarios y empresas, memoria de 30 s, el módulo exige plan y activación de la empresa, el operador nunca se bloquea | F1.7 | Aceptada 2026-10-15 (detalles por confirmar al publicar)
+| [ADR-027](ADR-027-identidad-global-y-cookie-con-claims.md) | Identidad global y cookie con claims (D44 a D50): la identidad sale de la cookie y se compara con la base cada 30 s, la sesión queda de espejo, bloqueo por intentos, MFA con TOTP (operador desde el primer día), entrada en tres pasos y cuentas que siguen a Users | F1.5 | Aceptada 2026-10-15 (detalles por confirmar al publicar)
 
 ---
 

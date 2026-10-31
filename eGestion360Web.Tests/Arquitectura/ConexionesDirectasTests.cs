@@ -25,6 +25,7 @@ namespace eGestion360Web.Tests.Arquitectura
             ["Program.cs"] = "Al arrancar solo consulta si hay migraciones pendientes; no lee datos de tenant.",
             ["Services/KpiSyncBackgroundService.cs"] = "Solo llama a SenCombustibleService, que fija el ámbito de plataforma en el suyo.",
             ["Services/TasasCambio/TasasCambioConfiguracionService.cs"] = "Lee y guarda la configuración del job: una tabla de la plataforma, sin política.",
+            ["Services/Identidad/RepositorioDeLlaves.cs"] = "Lee y guarda las llaves de Data Protection (saas.llaves_proteccion_datos): plano de control, sin política.",
         };
 
         private static IEnumerable<string> ArchivosDeLaAplicacion()

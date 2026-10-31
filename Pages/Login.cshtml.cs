@@ -1,35 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using eGestion360Web.Data;
-using eGestion360Web.Models;
 using eGestion360Web.Services;
-using eGestion360Web.Services.Tenancy;
+using eGestion360Web.Services.Identidad;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 
 namespace eGestion360Web.Pages
 {
+    /// <summary>
+    /// Inicio de sesión con la cuenta global (F1.5, ADR-003). Aquí solo se prueba la clave; lo que sigue —segundo factor, elegir dónde
+    /// trabajar— es de <see cref="EntradaEnCurso"/>, y la cookie se emite al final (<see cref="SeleccionarContextoModel"/>).
+    /// </summary>
     public class LoginModel : PageModel
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IPasswordService _passwordService;
+        private readonly IAutenticador _autenticador;
+        private readonly IDirectorioDeCuentas _directorio;
         private readonly ILogger<LoginModel> _logger;
-        private readonly IResolvedorDeTenant _resolvedor;
-        private readonly TenantContext _tenant;
+        private readonly TimeProvider _tiempo;
 
-        public LoginModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<LoginModel> logger,
-            IResolvedorDeTenant resolvedor, TenantContext tenant)
+        public LoginModel(IAutenticador autenticador, IDirectorioDeCuentas directorio, ILogger<LoginModel> logger, TimeProvider? tiempo = null)
         {
-            _context = context;
-            _passwordService = passwordService;
+            _autenticador = autenticador;
+            _directorio = directorio;
             _logger = logger;
-            _resolvedor = resolvedor;
-            _tenant = tenant;
+            _tiempo = tiempo ?? TimeProvider.System;
         }
 
         public const string MensajeSinPersona =
             "Tu usuario todavía no está vinculado a una persona. Pide al administrador que lo vincule para poder entrar.";
+
+        public const string MensajeSinAcceso =
+            "Tu cuenta no tiene acceso a ninguna empresa. Pide al administrador que te dé acceso.";
+
+        public const string MensajeIncorrectas =
+            "Usuario o contraseña incorrectos. Si fallas varias veces seguidas, la cuenta se bloquea unos minutos.";
 
         [BindProperty]
         [Required(ErrorMessage = "El nombre de usuario es requerido")]
@@ -44,166 +47,40 @@ namespace eGestion360Web.Pages
 
         public IActionResult OnGet()
         {
-            // Si el usuario ya ha iniciado sesión, redirigir al menú principal
-            if (HttpContext.Session.GetString("UserId") != null)
-            {
-                if (AuthHelper.MustChangePassword(HttpContext))
-                {
-                    return RedirectToPage("/ChangePassword");
-                }
-
-                return RedirectToPage("/MainMenu");
-            }
+            // Si ya hay una cuenta con sesión iniciada, no tiene sentido pedirle la clave otra vez.
+            if (AuthHelper.HayCuenta(HttpContext))
+                return RedirectToPage(AuthHelper.MustChangePassword(HttpContext) ? "/ChangePassword" : "/MainMenu");
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return Page();
+
+            var credenciales = await _autenticador.VerificarCredencialesAsync(Username, Password, HttpContext.RequestAborted);
+            if (!credenciales.Correctas || credenciales.Cuenta is not { } cuenta)
             {
-                // Buscar usuario solo por username/email, sin verificar password aún
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(u => (u.Username == Username || u.Email == Username) && u.IsActive);
-
-                if (user != null)
-                {
-                    bool isPasswordValid = false;
-
-                    if (user.Password?.StartsWith("$2") == true)
-                    {
-                        try
-                        {
-                            isPasswordValid = _passwordService.VerifyPassword(Password, user.Password);
-                        }
-                        catch
-                        {
-                            // hash inválido, isPasswordValid queda false
-                        }
-                    }
-                    else
-                    {
-                        // Las contraseñas se guardan solo con BCrypt (paso F0.7 del plan de arquitectura). Una
-                        // guardada de otra forma ya no se acepta ni se convierte: un administrador le asigna una
-                        // nueva desde Admin > Usuarios. El mensaje al usuario es el mismo que con una clave errónea.
-                        _logger.LogWarning(
-                            "Inicio de sesión rechazado: el usuario {UserId} tiene la contraseña guardada sin BCrypt.", user.Id);
-                    }
-
-                    if (isPasswordValid)
-                    {
-                        // La sesión aún no tiene empresa: el tenant del usuario se fija aquí, antes de leer su persona, sus módulos y
-                        // sus permisos (con la RLS encendida, una conexión sin tenant no ve datos de tenant).
-                        await FijarTenantDelUsuarioAsync(user);
-
-                        // Cada usuario entra como una persona (script 021): sin una persona vinculada y vigente, no hay
-                        // sesión. El mensaje solo aparece después de una clave correcta.
-                        var persona = user.PersonaId is { } idPersona
-                            ? await _context.Personas.AsNoTracking()
-                                .Where(p => p.IdPersona == idPersona && !p.Eliminado && p.IdPersonaPrincipal == null)
-                                .Select(p => new { p.PrimerNombre, p.PrimerApellido, p.Nombres, p.Apellidos })
-                                .FirstOrDefaultAsync()
-                            : null;
-                        if (persona == null)
-                        {
-                            _logger.LogWarning("Inicio de sesión rechazado: el usuario {UserId} no está vinculado a una persona.", user.Id);
-                            ModelState.AddModelError("", MensajeSinPersona);
-                            return Page();
-                        }
-
-                        var role = AuthHelper.ResolveRole(user.Role);
-
-                        if (user.EmpresaId.HasValue && role == AuthHelper.EmpresaUserRole)
-                        {
-                            var empresa = await _context.Empresas
-                                .FirstOrDefaultAsync(e => e.IdEmpresa == user.EmpresaId.Value && !e.Eliminado);
-
-                            if (empresa == null || !empresa.Activa)
-                            {
-                                ModelState.AddModelError("", "No es posible iniciar sesión en este momento. Código: 39246");
-                                return Page();
-                            }
-                        }
-
-                        HttpContext.Session.SetString("UserId",   user.Id.ToString());
-                        HttpContext.Session.SetString("Username", user.Username);
-                        HttpContext.Session.SetString("Email",    user.Email);
-                        HttpContext.Session.SetString("Role",     role);
-                        HttpContext.Session.SetString(AuthHelper.ClaveNombrePersona,
-                            Services.Personas.NombresPersona.Corto(persona.PrimerNombre, persona.PrimerApellido, persona.Nombres, persona.Apellidos));
-
-                        // Cambio de contraseña obligatorio: no se cargan permisos ni se
-                        // permite navegar hasta que el usuario establezca su nueva clave
-                        if (user.RequirePasswordChange)
-                        {
-                            HttpContext.Session.SetString("MustChangePassword", "1");
-                            return RedirectToPage("/ChangePassword");
-                        }
-
-                        // Cargar datos de tenant si el usuario pertenece a una empresa
-                        if (user.EmpresaId.HasValue)
-                        {
-                            var modulos = await _context.EmpresaModulos
-                                .Where(em => em.IdEmpresa == user.EmpresaId && em.Activo)
-                                .Include(em => em.Modulo)
-                                .Where(em => em.Modulo.Activo)
-                                .Select(em => em.Modulo.Codigo)
-                                .ToListAsync();
-
-                            Dictionary<string, HashSet<string>> permisos = new();
-
-                            if (user.EmpresaRolId.HasValue)
-                            {
-                                var rolPermisos = await _context.EmpresaRolPermisos
-                                    .Where(p => p.IdRol == user.EmpresaRolId)
-                                    .Include(p => p.Modulo)
-                                    .ToListAsync();
-
-                                foreach (var p in rolPermisos)
-                                {
-                                    var set = new HashSet<string>();
-                                    if (p.PuedeVer)      set.Add("ver");
-                                    if (p.PuedeCrear)    set.Add("crear");
-                                    if (p.PuedeEditar)   set.Add("editar");
-                                    if (p.PuedeEliminar) set.Add("eliminar");
-                                    permisos[p.Modulo.Codigo] = set;
-                                }
-                            }
-                            else if (role == AuthHelper.EmpresaAdminRole)
-                            {
-                                // empresa_admin tiene todos los permisos sobre sus módulos
-                                foreach (var m in modulos)
-                                    permisos[m] = new HashSet<string> { "ver", "crear", "editar", "eliminar" };
-                            }
-
-                            AuthHelper.SetSesionTenant(HttpContext, user.EmpresaId.Value,
-                                user.EmpresaRolId, modulos, permisos);
-                        }
-
-                        return RedirectToPage("/MainMenu");
-                    }
-                }
-                // Si llega aquí, las credenciales son incorrectas
-                ModelState.AddModelError("", "Usuario o contraseña incorrectos.");
+                // Una cuenta bloqueada y una clave errónea se ven igual desde fuera: no se revela cuáles cuentas existen.
+                ModelState.AddModelError("", MensajeIncorrectas);
+                return Page();
             }
 
-            return Page();
-        }
+            var contextos = await _directorio.ContextosAsync(cuenta, HttpContext.RequestAborted);
+            if (contextos.Contextos.Count == 0)
+            {
+                // El mensaje solo aparece después de una clave correcta.
+                _logger.LogWarning("Inicio de sesión rechazado: la cuenta {IdCuenta} no tiene ningún sitio donde trabajar ({SinPersona} sin persona).",
+                    cuenta.IdCuenta, contextos.ExcluidosPorFaltaDePersona);
+                ModelState.AddModelError("", contextos.ExcluidosPorFaltaDePersona > 0 ? MensajeSinPersona : MensajeSinAcceso);
+                return Page();
+            }
 
-        /// <summary>
-        /// El tenant del usuario: el de su empresa o, si no tiene empresa (personal de la plataforma), el tenant interno (ADR-006).
-        /// </summary>
-        private async Task FijarTenantDelUsuarioAsync(User user)
-        {
-            var idTenant = user.EmpresaId is > 0
-                ? await _resolvedor.ResolverPorEmpresaAsync(user.EmpresaId.Value, HttpContext.RequestAborted)
-                : await _resolvedor.ResolverInternoAsync(HttpContext.RequestAborted);
+            var exigencia = await _autenticador.ExigenciaDeMfaAsync(cuenta, contextos, HttpContext.RequestAborted);
+            var entrada = new EntradaEnCurso(cuenta.IdCuenta, credenciales.NombreEscrito, exigencia, MfaVerificada: false);
+            entrada.Guardar(HttpContext.Session, _tiempo.GetUtcNow().UtcDateTime);
 
-            if (idTenant == null)
-                _logger.LogWarning("El usuario {UserId} no tiene tenant: su empresa {EmpresaId} no existe o no tiene tenant, o no hay tenant interno.",
-                    user.Id, user.EmpresaId);
-
-            _tenant.Fijar(idTenant, user.EmpresaId);
+            return RedirectToPage(entrada.SiguientePagina);
         }
     }
 }

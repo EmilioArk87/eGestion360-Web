@@ -9,39 +9,71 @@ namespace eGestion360Web.Services
         public const string EmpresaAdminRole = "empresa_admin";
         public const string EmpresaUserRole  = "empresa_user";
 
+        // Desde F1.5 (ADR-003, D50) la identidad sale de la cookie de autenticación (HttpContext.User) y no de la sesión: la sesión en
+        // memoria se pierde con cada reinicio del sitio y la cookie no. La sesión sigue existiendo para el estado de pantalla (tenant de
+        // soporte, mensajes) y como espejo para el código anterior (SesionDesdeIdentidadMiddleware); nada decide aquí por lo que
+        // diga la sesión.
+
         // ── Autenticación básica ──────────────────────────────────────────────
 
+        /// <summary>True si hay una cookie válida y la persona no tiene un cambio de clave pendiente.</summary>
         public static bool IsAuthenticated(HttpContext context)
-            => !string.IsNullOrEmpty(context.Session.GetString("UserId"))
-               && !MustChangePassword(context);
+            => HayCuenta(context) && !MustChangePassword(context);
+
+        /// <summary>True si hay una cookie válida, aunque la persona deba cambiar su clave antes de seguir.</summary>
+        public static bool HayCuenta(HttpContext context)
+            => context.User.Identity?.IsAuthenticated == true && Reclamo(context, Identidad.ReclamosDeIdentidad.Cuenta) != null;
 
         /// <summary>True si el usuario inició sesión con cambio de contraseña pendiente;
         /// bloquea el acceso al resto del sistema hasta completar el cambio.</summary>
         public static bool MustChangePassword(HttpContext context)
-            => context.Session.GetString("MustChangePassword") == "1";
+            => HayCuenta(context) && Reclamo(context, Identidad.ReclamosDeIdentidad.DebeCambiarClave) == "1";
 
         // ── Nivel de rol ──────────────────────────────────────────────────────
 
-        public static bool IsAdmin(HttpContext context)
-            => string.Equals(context.Session.GetString("Role"), AdminRole, StringComparison.OrdinalIgnoreCase);
+        private static bool TieneRol(HttpContext context, string rol)
+            => HayCuenta(context) && string.Equals(Reclamo(context, System.Security.Claims.ClaimTypes.Role), rol, StringComparison.OrdinalIgnoreCase);
 
-        public static bool IsEmpresaAdmin(HttpContext context)
-            => string.Equals(context.Session.GetString("Role"), EmpresaAdminRole, StringComparison.OrdinalIgnoreCase);
+        public static bool IsAdmin(HttpContext context) => TieneRol(context, AdminRole);
 
-        public static bool IsEmpresaUser(HttpContext context)
-            => string.Equals(context.Session.GetString("Role"), EmpresaUserRole, StringComparison.OrdinalIgnoreCase);
+        public static bool IsEmpresaAdmin(HttpContext context) => TieneRol(context, EmpresaAdminRole);
+
+        public static bool IsEmpresaUser(HttpContext context) => TieneRol(context, EmpresaUserRole);
 
         /// <summary>True si es admin del sistema o admin de empresa.</summary>
         public static bool IsAnyAdmin(HttpContext context)
             => IsAdmin(context) || IsEmpresaAdmin(context);
 
-        // ── Datos de tenant en sesión ─────────────────────────────────────────
+        // ── Datos de la identidad ─────────────────────────────────────────────
 
-        public static int? GetEmpresaId(HttpContext context)
-        {
-            var val = context.Session.GetString("EmpresaId");
-            return int.TryParse(val, out var id) ? id : null;
-        }
+        private static string? Reclamo(HttpContext context, string tipo) => context.User.FindFirst(tipo)?.Value;
+
+        private static int? ReclamoEntero(HttpContext context, string tipo)
+            => HayCuenta(context) && int.TryParse(Reclamo(context, tipo), System.Globalization.NumberStyles.Integer,
+                   System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : null;
+
+        /// <summary>Cuenta global (<c>saas.cuentas</c>) de quien tiene la cookie.</summary>
+        public static int? GetCuentaId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.Cuenta);
+
+        /// <summary>Id de <c>dbo.Users</c> que usan las pantallas anteriores a F1.5; nulo si la cuenta no viene de un usuario.</summary>
+        public static int? GetUserLegadoId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.UserLegado);
+
+        /// <summary>Con qué nombre aparece en la auditoría («creado por»).</summary>
+        public static string? GetNombreUsuario(HttpContext context) => HayCuenta(context) ? Reclamo(context, System.Security.Claims.ClaimTypes.Name) : null;
+
+        public static string? GetCorreo(HttpContext context) => HayCuenta(context) ? Reclamo(context, System.Security.Claims.ClaimTypes.Email) : null;
+
+        /// <summary>Personal de la plataforma (operador).</summary>
+        public static bool IsOperador(HttpContext context) => HayCuenta(context) && Reclamo(context, Identidad.ReclamosDeIdentidad.Operador) == "1";
+
+        public static int? GetMembresiaId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.Membresia);
+
+        /// <summary>Tenant de la identidad (el de su membresía); nulo para el operador en el contexto de plataforma.</summary>
+        public static int? GetTenantId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.Tenant);
+
+        // ── Datos de tenant ───────────────────────────────────────────────────
+
+        public static int? GetEmpresaId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.Empresa);
 
         /// <summary>
         /// Empresa de la sesión para las pantallas que operan sobre los datos de UNA empresa. No hay empresa por
@@ -57,11 +89,7 @@ namespace eGestion360Web.Services
                 "La sesión no tiene empresa: esta pantalla solo puede operar sobre los datos de una empresa.");
         }
 
-        public static int? GetEmpresaRolId(HttpContext context)
-        {
-            var val = context.Session.GetString("EmpresaRolId");
-            return int.TryParse(val, out var id) ? id : null;
-        }
+        public static int? GetEmpresaRolId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.RolEmpresa);
 
         // ── Tenant de soporte del administrador general (F1.4c, ADR-025) ──────
 
@@ -159,21 +187,9 @@ namespace eGestion360Web.Services
                    && set.Contains(permiso);
         }
 
-        // ── Escritura en sesión (usado en Login) ──────────────────────────────
+        // ── Persona de la cuenta (script 021) ─────────────────────────────────
 
-        public static void SetSesionTenant(HttpContext context, int empresaId, int? rolId,
-            IEnumerable<string> modulos,
-            Dictionary<string, HashSet<string>> permisos)
-        {
-            context.Session.SetString("EmpresaId",    empresaId.ToString());
-            context.Session.SetString("EmpresaRolId", rolId?.ToString() ?? "");
-            context.Session.SetString("Modulos",      JsonSerializer.Serialize(modulos));
-            context.Session.SetString("Permisos",     JsonSerializer.Serialize(permisos));
-        }
-
-        // ── Persona del usuario en sesión (script 021) ────────────────────────
-
-        /// <summary>Clave de sesión con el nombre corto de la persona que usa la cuenta.</summary>
+        /// <summary>Clave de sesión (espejo) con el nombre corto de la persona que usa la cuenta.</summary>
         public const string ClaveNombrePersona = "NombrePersona";
 
         /// <summary>
@@ -181,17 +197,16 @@ namespace eGestion360Web.Services
         /// El nombre de usuario sigue siendo el que se guarda en la auditoría.
         /// </summary>
         public static string NombreVisible(HttpContext context) =>
-            context.Session.GetString(ClaveNombrePersona) is { Length: > 0 } nombre
+            Reclamo(context, Identidad.ReclamosDeIdentidad.NombrePersona) is { Length: > 0 } nombre
                 ? nombre
-                : context.Session.GetString("Username") ?? "Usuario";
+                : GetNombreUsuario(context) ?? "Usuario";
 
-        public static void ClearSesionTenant(HttpContext context)
-        {
-            context.Session.Remove("EmpresaId");
-            context.Session.Remove("EmpresaRolId");
-            context.Session.Remove("Modulos");
-            context.Session.Remove("Permisos");
-        }
+        /// <summary>
+        /// Rol de texto con el que entra un acceso a una empresa. El operador de la plataforma entra como <c>admin</c>; el resto,
+        /// con el rol que tiene en su empresa (<c>empresa_admin</c> o <c>empresa_user</c>).
+        /// </summary>
+        public static string RolDeAcceso(bool esOperadorEnPlataforma, string? rolLegado)
+            => esOperadorEnPlataforma ? AdminRole : ResolveRole(rolLegado ?? string.Empty);
 
         // ── Resolución de rol desde DB ────────────────────────────────────────
 

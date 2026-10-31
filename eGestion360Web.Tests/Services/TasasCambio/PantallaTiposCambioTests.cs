@@ -232,8 +232,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Fact]
         public async Task Quien_debe_cambiar_la_clave_va_al_login()
         {
-            var http = AdminSistema();
-            http.Session.SetString("MustChangePassword", "1");
+            var http = SesionFalsa.Contexto("admin", debeCambiarClave: true);   // el cambio de clave pendiente viaja en la identidad
+            http.Session.SetString("Modulos", JsonSerializer.Serialize(new[] { "catalogos" }));
+            http.Session.SetString("Username", UsuarioDePrueba);
 
             Redirige(await Pagina(http).OnGetAsync(), "/Login");
             Redirige(Pagina(http).OnPostEjecutar(), "/Login");

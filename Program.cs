@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
@@ -5,6 +6,7 @@ using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Eventos;
 using eGestion360Web.Services.Facturacion;
+using eGestion360Web.Services.Identidad;
 using eGestion360Web.Services.Personas;
 using eGestion360Web.Services.TasasCambio;
 using eGestion360Web.Services.Tenancy;
@@ -155,13 +157,49 @@ builder.Services.AddScoped<ITasaCambioConsultaService, TasaCambioConsultaService
 builder.Services.AddScoped<TasasCambioPlanificador>();
 builder.Services.AddHostedService<TasasCambioBackgroundService>();
 
-// Add session support
+// Add session support. Desde F1.5 la sesión ya no dice quién eres (eso lo dice la cookie de autenticación): guarda el estado de
+// pantalla, el tenant de soporte del operador y un espejo de la identidad para el código anterior (SesionDesdeIdentidadMiddleware).
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+// ── Identidad global (F1.5, ADR-003): cuentas con membresías, cookie con claims, bloqueo por intentos y MFA ──────────────
+builder.Services.Configure<OpcionesDeIdentidad>(builder.Configuration.GetSection(OpcionesDeIdentidad.Seccion));
+var opcionesDeIdentidad = builder.Configuration.GetSection(OpcionesDeIdentidad.Seccion).Get<OpcionesDeIdentidad>() ?? new OpcionesDeIdentidad();
+
+// Llaves de Data Protection en saas.llaves_proteccion_datos (D48): la cookie, la sesión y los secretos de MFA sobreviven a un reinicio.
+// Requiere el script 038. En Azure las llaves pasan a Key Vault (ADR-016).
+builder.Services.AddDataProtection().SetApplicationName("eGestion360");
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IConfigureOptions<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>>(
+    sp => new Microsoft.Extensions.Options.ConfigureOptions<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>(
+        o => o.XmlRepository = new RepositorioDeLlaves(sp.GetRequiredService<IServiceScopeFactory>())));
+
+builder.Services.AddAuthentication(ReclamosDeIdentidad.Esquema)
+    .AddCookie(ReclamosDeIdentidad.Esquema, o =>
+    {
+        o.Cookie.Name = ".eg360.auth";
+        o.Cookie.HttpOnly = true;
+        o.Cookie.IsEssential = true;
+        o.Cookie.SameSite = SameSiteMode.Lax;
+        // Igual que la petición: el sitio sirve HTTPS en siptecnologia.xyz pero también HTTP en somee.com (sin TLS), donde Secure
+        // dejaría la cookie sin enviar.
+        o.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        o.ExpireTimeSpan = TimeSpan.FromMinutes(Math.Max(1, opcionesDeIdentidad.MinutosDeInactividad));
+        o.SlidingExpiration = true;
+        o.LoginPath = "/Login";
+        o.AccessDeniedPath = "/SinAcceso";
+        o.Events.OnValidatePrincipal = EventosDeCookieDeIdentidad.AlValidarAsync;
+    });
+builder.Services.AddSingleton<IValidadorDeIdentidad, ValidadorDeIdentidad>();
+builder.Services.AddScoped<ICargadorDePermisos, CargadorDePermisos>();
+builder.Services.AddScoped<IBloqueoDeCuentas, BloqueoDeCuentas>();
+builder.Services.AddScoped<IServicioMfa, ServicioMfa>();
+builder.Services.AddScoped<IDirectorioDeCuentas, DirectorioDeCuentas>();
+builder.Services.AddScoped<IAutenticador, Autenticador>();
+builder.Services.AddScoped<ISincronizadorDeCuentas, SincronizadorDeCuentas>();
 
 var app = builder.Build();
 
@@ -238,8 +276,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseSession();
-app.UseMiddleware<TenantMiddleware>();   // después de la sesión: de ella sale la empresa y, de la empresa, el tenant
+app.UseAuthentication();   // F1.5: la identidad sale de la cookie (se valida contra la base cada pocos segundos)
+app.UseMiddleware<TenantMiddleware>();   // después de la autenticación: de la cookie salen la empresa y el tenant
 app.UseMiddleware<EstadoDelTenantMiddleware>();   // F1.7: estado del tenant (suspendido/cancelado) y derechos de uso de la petición
+app.UseMiddleware<SesionDesdeIdentidadMiddleware>();   // F1.5: espejo de la identidad en la sesión para el código anterior
 
 app.UseAuthorization();
 

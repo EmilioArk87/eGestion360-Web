@@ -25,10 +25,8 @@ namespace eGestion360Web.Tests.Paginas
 
         private static PageContext Contexto(string rol = "admin")
         {
-            var http = new DefaultHttpContext
-            {
-                Session = new SesionFalsa(new Dictionary<string, string> { ["UserId"] = "1", ["Role"] = rol, ["Username"] = "admin_pruebas" })
-            };
+            var http = SesionFalsa.Contexto(rol);
+            http.Session.SetString("Username", "admin_pruebas");
             return new PageContext
             {
                 HttpContext = http,

@@ -13,12 +13,15 @@ namespace eGestion360Web.Pages
         private readonly ApplicationDbContext _context;
         private readonly IPasswordService _passwordService;
         private readonly ILogger<UserManagementModel> _logger;
+        private readonly eGestion360Web.Services.Identidad.ISincronizadorDeCuentas _cuentas;
 
-        public UserManagementModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<UserManagementModel> logger)
+        public UserManagementModel(ApplicationDbContext context, IPasswordService passwordService, ILogger<UserManagementModel> logger,
+            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas cuentas)
         {
             _context = context;
             _passwordService = passwordService;
             _logger = logger;
+            _cuentas = cuentas;
         }
 
         // Datos del usuario en sesión
@@ -99,6 +102,7 @@ namespace eGestion360Web.Pages
             user.RequirePasswordChange = RequireChange;
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+            await _cuentas.SincronizarClaveAsync(user.Id);
 
             _logger.LogInformation("Admin {Admin} reseteó la contraseña de {Username} (ID:{UserId}). RequireChange={RequireChange}",
                 Username, user.Username, user.Id, RequireChange);

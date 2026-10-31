@@ -1,19 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using eGestion360Web.Services.Identidad;
 
 namespace eGestion360Web.Pages
 {
     public class LogoutModel : PageModel
     {
-        public IActionResult OnGet()
+        private readonly IAutenticador _autenticador;
+
+        public LogoutModel(IAutenticador autenticador) => _autenticador = autenticador;
+
+        public async Task<IActionResult> OnGetAsync()
         {
-            HttpContext.Session.Clear();
+            await _autenticador.SalirAsync(HttpContext);
             return RedirectToPage("/Login");
         }
 
-        public IActionResult OnGetLogout()
+        public async Task<IActionResult> OnGetLogoutAsync()
         {
-            HttpContext.Session.Clear();
+            await _autenticador.SalirAsync(HttpContext);
             return RedirectToPage("/Login");
         }
     }

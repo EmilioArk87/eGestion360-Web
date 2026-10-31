@@ -136,17 +136,17 @@ namespace eGestion360Web.Tests.Arquitectura
             new("__EFMigrationsHistory", P, false, true, "Historial de migraciones de EF."),
 
             // ── Identidad global con membresías (F1.5, script 038): posteriores a la salida de F1 ────────────────────
-            new("accesos_empresa", T, false, false,
+            new("accesos_empresa", T, true, false,
                 "Membresía ↔ empresa ↔ rol (ADR-003, D19): tabla de TENANT con RLS; entra a seg.pol_tenant en el script 038 con las mismas funciones " +
-                "(1 filtro y 4 bloqueos). Aún no está en el modelo de EF.", "038"),
-            new("cuentas", P, false, false, "Cuenta de acceso global, una por ser humano (ADR-003, D19); sin id_tenant ni RLS: se lee antes de conocer el tenant.", "038"),
-            new("cuenta_alias", P, false, false, "Nombres de usuario de transición y correos secundarios de la cuenta (D44/D45).", "038"),
-            new("membresias", P, false, false, "Cuenta ↔ tenant con estado y persona del tenant; lleva id_tenant como referencia, pero es plano de control: sin RLS.", "038"),
-            new("cuenta_intentos", P, false, false, "Intentos fallidos y bloqueo temporal de la cuenta (ADR-008).", "038"),
-            new("cuenta_mfa", P, false, false, "Secreto TOTP protegido por la aplicación (D22).", "038"),
-            new("cuenta_mfa_recuperacion", P, false, false, "Hash de los códigos de recuperación de MFA.", "038"),
-            new("invitaciones", P, false, false, "Invitaciones a un tenant; solo el hash del token. Lleva id_tenant como referencia, sin RLS.", "038"),
-            new("llaves_proteccion_datos", P, false, false, "Almacén de llaves de ASP.NET Core Data Protection (ADR-008, D19).", "038"),
+                "(1 filtro y 4 bloqueos).", "038"),
+            new("cuentas", P, true, false, "Cuenta de acceso global, una por ser humano (ADR-003, D19); sin id_tenant ni RLS: se lee antes de conocer el tenant.", "038"),
+            new("cuenta_alias", P, true, false, "Nombres de usuario de transición y correos secundarios de la cuenta (D44/D45).", "038"),
+            new("membresias", P, true, false, "Cuenta ↔ tenant con estado y persona del tenant; lleva id_tenant como referencia, pero es plano de control: sin RLS.", "038"),
+            new("cuenta_intentos", P, true, false, "Intentos fallidos y bloqueo temporal de la cuenta (ADR-008).", "038"),
+            new("cuenta_mfa", P, true, false, "Secreto TOTP protegido por la aplicación (D22).", "038"),
+            new("cuenta_mfa_recuperacion", P, true, false, "Hash de los códigos de recuperación de MFA.", "038"),
+            new("invitaciones", P, true, false, "Invitaciones a un tenant; solo el hash del token. Lleva id_tenant como referencia, sin RLS.", "038"),
+            new("llaves_proteccion_datos", P, true, false, "Almacén de llaves de ASP.NET Core Data Protection (ADR-008, D19).", "038"),
 
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
             new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),

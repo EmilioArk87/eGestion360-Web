@@ -37,7 +37,7 @@ namespace eGestion360Web.Pages
         public IActionResult OnGet()
         {
             // Si ya está logueado, redirigir al menu
-            if (HttpContext.Session.GetString("UserId") != null)
+            if (eGestion360Web.Services.AuthHelper.HayCuenta(HttpContext))
             {
                 return RedirectToPage("/MainMenu");
             }
