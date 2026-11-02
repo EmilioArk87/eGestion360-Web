@@ -24,12 +24,14 @@
                         </a>
                     </li>
                 }
+                @* Oculto temporalmente: "Otros productos". Para reactivar, quitar este comentario.
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Products" ? "active" : "")" 
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Products" ? "active" : "")"
                        asp-page="/Products">
                         <i class="fas fa-box me-1"></i>Otros productos
                     </a>
                 </li>
+                *@
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Contact" ? "active" : "")" 
                        asp-page="/Contact">
