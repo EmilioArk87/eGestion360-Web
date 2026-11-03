@@ -24,12 +24,23 @@
                         </a>
                     </li>
                 }
+                @if (eGestion360Web.Services.AuthHelper.IsAdmin(Context))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/EmailConfig" ? "active" : "")"
+                           asp-page="/Admin/EmailConfig" title="Servidor SMTP y contraseña con que el sistema envía correos">
+                            <i class="fas fa-envelope-open-text me-1"></i>Correo corporativo
+                        </a>
+                    </li>
+                }
+                @* «Otros productos» oculto por ahora. Para mostrarlo de nuevo: descomentar este bloque y la directiva @page de Pages/Products.cshtml.
                 <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Products" ? "active" : "")" 
+                    <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Products" ? "active" : "")"
                        asp-page="/Products">
                         <i class="fas fa-box me-1"></i>Otros productos
                     </a>
                 </li>
+                *@
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Contact" ? "active" : "")" 
                        asp-page="/Contact">

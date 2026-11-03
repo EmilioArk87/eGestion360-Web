@@ -135,24 +135,28 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editConfig(@config.Id)">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" title="Editar este perfil" onclick="editConfig(this)"
+                                                    data-id="@config.Id" data-profile="@config.ProfileName" data-provider="@config.Provider"
+                                                    data-from-email="@config.FromEmail" data-from-name="@config.FromName"
+                                                    data-host="@config.SmtpHost" data-port="@config.SmtpPort" data-username="@config.Username"
+                                                    data-ssl="@(config.UseSsl ? "true" : "false")" data-default="@(config.IsDefault ? "true" : "false")">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-success" onclick="testConfig(@config.Id)">
+                                            <button type="button" class="btn btn-sm btn-outline-success" title="Enviar un correo de prueba con este perfil" onclick="testConfig(@config.Id)">
                                                 <i class="fas fa-paper-plane"></i>
                                             </button>
                                             @if(!config.IsDefault)
                                             {
-                                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="setDefault(@config.Id)">
+                                                <button type="button" class="btn btn-sm btn-outline-warning" title="Usar este perfil como predeterminado" onclick="setDefault(@config.Id)">
                                                     <i class="fas fa-star"></i>
                                                 </button>
                                             }
-                                            <button type="button" class="btn btn-sm @(config.IsActive ? "btn-outline-secondary" : "btn-outline-success")" onclick="toggleActive(@config.Id)">
+                                            <button type="button" class="btn btn-sm @(config.IsActive ? "btn-outline-secondary" : "btn-outline-success")" title="@(config.IsActive ? "Desactivar este perfil" : "Activar este perfil")" onclick="toggleActive(@config.Id)">
                                                 <i class="fas @(config.IsActive ? "fa-pause" : "fa-play")"></i>
                                             </button>
                                             @if(!config.IsDefault)
                                             {
-                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteConfig(@config.Id)">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar este perfil" onclick="deleteConfig(@config.Id)">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             }
@@ -188,16 +192,29 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="configId" name="ConfigId" value="0" />
-                    
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger" role="alert" id="erroresFormulario">
+                            <strong><i class="fas fa-exclamation-circle"></i> No se guardó la configuración:</strong>
+                            <ul class="mb-0">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <input asp-for="ConfigId" type="hidden" id="configId" />
+
                     <div class="row">
                         <div class="col-md-6">
                             <label class="form-label">Nombre del Perfil *</label>
-                            <input type="text" class="form-control" id="profileName" name="Configuration.ProfileName" required />
+                            <input asp-for="Configuration.ProfileName" type="text" class="form-control" id="profileName" required />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Proveedor *</label>
-                            <select class="form-select" id="provider" name="Configuration.Provider" required onchange="updateProviderDefaults()">
+                            <select asp-for="Configuration.Provider" class="form-select" id="provider" required onchange="updateProviderDefaults()">
                                 <option value="">Seleccionar proveedor</option>
                                 <option value="Gmail">Gmail</option>
                                 <option value="Outlook">Outlook / Hotmail</option>
@@ -209,41 +226,42 @@
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <label class="form-label">Email Remitente *</label>
-                            <input type="email" class="form-control" id="fromEmail" name="Configuration.FromEmail" required onchange="autoConfigureSipTecnologia()" />
+                            <input asp-for="Configuration.FromEmail" type="email" class="form-control" id="fromEmail" required onchange="autoConfigureSipTecnologia()" />
                             <small class="form-text text-muted">Ejemplo: egaray@siptecnologia.xyz</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nombre Remitente *</label>
-                            <input type="text" class="form-control" id="fromName" name="Configuration.FromName" required />
+                            <input asp-for="Configuration.FromName" type="text" class="form-control" id="fromName" required />
                         </div>
                     </div>
 
                     <div class="row mt-3">
                         <div class="col-md-8">
                             <label class="form-label">Servidor SMTP *</label>
-                            <input type="text" class="form-control" id="smtpHost" name="Configuration.SmtpHost" required />
+                            <input asp-for="Configuration.SmtpHost" type="text" class="form-control" id="smtpHost" required />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Puerto *</label>
-                            <input type="number" class="form-control" id="smtpPort" name="Configuration.SmtpPort" required />
+                            <input asp-for="Configuration.SmtpPort" type="number" class="form-control" id="smtpPort" required />
                         </div>
                     </div>
 
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <label class="form-label">Usuario / Email *</label>
-                            <input type="text" class="form-control" id="username" name="Configuration.Username" required />
+                            <input asp-for="Configuration.Username" type="text" class="form-control" id="username" required />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Contraseña *</label>
-                            <input type="password" class="form-control" id="plainPassword" name="PlainPassword" required />
+                            <label class="form-label">Contraseña <span id="marcaContrasena">*</span></label>
+                            <input asp-for="PlainPassword" type="password" class="form-control" id="plainPassword" autocomplete="new-password" required />
+                            <small class="form-text text-muted d-none" id="ayudaContrasena">Déjala vacía para conservar la contraseña guardada.</small>
                         </div>
                     </div>
 
                     <div class="row mt-3">
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="useSsl" name="Configuration.UseSsl" checked />
+                                <input asp-for="Configuration.UseSsl" class="form-check-input" id="useSsl" />
                                 <label class="form-check-label" for="useSsl">
                                     Usar SSL/TLS (Recomendado)
                                 </label>
@@ -254,7 +272,7 @@
                     <div class="row mt-3">
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="isDefault" name="Configuration.IsDefault" />
+                                <input asp-for="Configuration.IsDefault" class="form-check-input" id="isDefault" />
                                 <label class="form-check-label" for="isDefault">
                                     Establecer como configuración predeterminada
                                 </label>
@@ -273,10 +291,42 @@
 
 @section Scripts {
     <script>
+        // Crear o editar: al editar, la contraseña es opcional (vacía = conservar la guardada).
+        function aplicarModoFormulario() {
+            const editando = document.getElementById('configId').value !== '0';
+            document.querySelector('#configModal .modal-title').textContent =
+                editando ? 'Editar Configuración de Email' : 'Nueva Configuración de Email';
+            document.getElementById('plainPassword').required = !editando;
+            document.getElementById('marcaContrasena').classList.toggle('d-none', editando);
+            document.getElementById('ayudaContrasena').classList.toggle('d-none', !editando);
+        }
+
         function clearForm() {
-            document.getElementById('configForm').reset();
+            // Se vacía campo por campo: reset() devolvería lo que el servidor pintó, que tras un error son los valores rechazados.
+            const erroresPrevios = document.getElementById('erroresFormulario');
+            if (erroresPrevios) erroresPrevios.remove();
             document.getElementById('configId').value = '0';
-            document.querySelector('.modal-title').textContent = 'Nueva Configuración de Email';
+            ['profileName', 'fromEmail', 'fromName', 'smtpHost', 'username', 'plainPassword'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('provider').value = '';
+            document.getElementById('smtpPort').value = '587';
+            document.getElementById('useSsl').checked = true;
+            document.getElementById('isDefault').checked = false;
+            aplicarModoFormulario();
+        }
+
+        function abrirFormulario() {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('configModal')).show();
+        }
+
+        @if (Model.ReabrirFormulario)
+        {
+            <text>
+            // El guardado falló: el formulario vuelve con lo escrito y los motivos arriba.
+            window.addEventListener('load', function () {
+                aplicarModoFormulario();
+                abrirFormulario();
+            });
+            </text>
         }
 
         function updateProviderDefaults() {
@@ -329,9 +379,24 @@
             }
         }
 
-        function editConfig(configId) {
-            // Esta función se implementaría para cargar los datos de la configuración
-            console.log('Editando configuración', configId);
+        function editConfig(boton) {
+            // Los datos del perfil vienen en el propio botón; la contraseña nunca se muestra: vacía = conservar la guardada.
+            const d = boton.dataset;
+            const erroresPrevios = document.getElementById('erroresFormulario');
+            if (erroresPrevios) erroresPrevios.remove();
+            document.getElementById('configId').value = d.id;
+            document.getElementById('profileName').value = d.profile;
+            document.getElementById('provider').value = d.provider;
+            document.getElementById('fromEmail').value = d.fromEmail;
+            document.getElementById('fromName').value = d.fromName;
+            document.getElementById('smtpHost').value = d.host;
+            document.getElementById('smtpPort').value = d.port;
+            document.getElementById('username').value = d.username;
+            document.getElementById('plainPassword').value = '';
+            document.getElementById('useSsl').checked = d.ssl === 'true';
+            document.getElementById('isDefault').checked = d.default === 'true';
+            aplicarModoFormulario();
+            abrirFormulario();
         }
 
         async function testConfig(configId) {

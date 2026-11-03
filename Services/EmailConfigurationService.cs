@@ -89,40 +89,60 @@ namespace eGestion360Web.Services
         {
             try
             {
-                // Encriptar la contraseña (AES reversible, no BCrypt)
-                configuration.PasswordHash = _encryptionService.Encrypt(plainPassword);
-                configuration.UpdatedAt = DateTime.UtcNow;
+                // La entidad que se guarda: la nueva, o la ya existente (rastreada) con los campos del formulario.
+                EmailConfiguration destino;
 
                 if (configuration.Id == 0)
                 {
-                    // Nueva configuración
+                    // Nueva configuración: la contraseña se encripta (AES reversible, no BCrypt)
+                    configuration.PasswordHash = _encryptionService.Encrypt(plainPassword);
                     configuration.CreatedAt = DateTime.UtcNow;
-                    
+                    configuration.UpdatedAt = DateTime.UtcNow;
+
                     // Si es la primera configuración, hacerla por defecto
                     if (!await _context.EmailConfigurations.AnyAsync())
                     {
                         configuration.IsDefault = true;
                     }
-                    
+
                     _context.EmailConfigurations.Add(configuration);
+                    destino = configuration;
                 }
                 else
                 {
-                    // Actualizar configuración existente
-                    _context.EmailConfigurations.Update(configuration);
+                    // Edición: solo cambian los campos del formulario. El estado (activa), las pruebas y la fecha de alta se conservan;
+                    // sin contraseña nueva se queda la que ya estaba, y el predeterminado solo se cede eligiendo otro.
+                    var existente = await _context.EmailConfigurations.FindAsync(configuration.Id);
+                    if (existente == null) return false;
+
+                    existente.ProfileName = configuration.ProfileName;
+                    existente.Provider = configuration.Provider;
+                    existente.FromEmail = configuration.FromEmail;
+                    existente.FromName = configuration.FromName;
+                    existente.SmtpHost = configuration.SmtpHost;
+                    existente.SmtpPort = configuration.SmtpPort;
+                    existente.UseSsl = configuration.UseSsl;
+                    existente.Username = configuration.Username;
+                    existente.IsDefault = existente.IsDefault || configuration.IsDefault;
+                    if (!string.IsNullOrEmpty(plainPassword))
+                    {
+                        existente.PasswordHash = _encryptionService.Encrypt(plainPassword);
+                    }
+                    existente.UpdatedAt = DateTime.UtcNow;
+                    destino = existente;
                 }
 
                 // Si se marca como default, quitar el default anterior
-                if (configuration.IsDefault && configuration.IsActive)
+                if (destino.IsDefault && destino.IsActive)
                 {
                     await _context.EmailConfigurations
-                        .Where(c => c.Id != configuration.Id && c.IsDefault)
+                        .Where(c => c.Id != destino.Id && c.IsDefault)
                         .ForEachAsync(c => c.IsDefault = false);
                 }
 
                 await _context.SaveChangesAsync();
-                
-                _logger.LogInformation("Configuración de email guardada: {ProfileName}", configuration.ProfileName);
+
+                _logger.LogInformation("Configuración de email guardada: {ProfileName}", destino.ProfileName);
                 return true;
             }
             catch (Exception ex)

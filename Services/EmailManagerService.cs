@@ -53,8 +53,9 @@ namespace eGestion360Web.Services
                     return false;
                 }
 
-                // Generar correo de prueba
+                // Generar correo de prueba; sale con ESTE perfil (no con el predeterminado) y el envío ya anota el intento en sus estadísticas
                 var testResult = await _emailService.SendTestEmailAsync(
+                    config,
                     config.FromEmail,
                     "Prueba de Configuración de Email",
                     $"Esta es una prueba de la configuración '{config.ProfileName}'.\n\n" +
@@ -65,8 +66,6 @@ namespace eGestion360Web.Services
 
                 if (testResult)
                 {
-                    // Actualizar estadísticas de prueba
-                    await _configService.UpdateTestStatsAsync(configId);
                     _logger.LogInformation("Test email sent successfully for configuration {ConfigId}", configId);
                 }
 

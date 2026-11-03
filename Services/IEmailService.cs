@@ -7,6 +7,12 @@ namespace eGestion360Web.Services
         Task<bool> SendTestEmailAsync(string toEmail, string subject, string message);
 
         /// <summary>
+        /// Prueba UN perfil concreto de correo: el envío sale con ese perfil aunque no sea el predeterminado ni esté activo.
+        /// Es lo que usa el botón «Probar» de la configuración de correo.
+        /// </summary>
+        Task<bool> SendTestEmailAsync(Models.EmailConfiguration config, string toEmail, string subject, string message);
+
+        /// <summary>
         /// Envío genérico: <paramref name="htmlContent"/> va dentro de la plantilla de eGestion360, con la misma
         /// configuración SMTP que el resto de correos. Lo usan las alertas de procesos (tasas de cambio).
         /// </summary>

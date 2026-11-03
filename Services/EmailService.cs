@@ -368,6 +368,30 @@ SIP Tecnología</p>";
             }
         }
 
+        public async Task<bool> SendTestEmailAsync(Models.EmailConfiguration config, string toEmail, string subject, string message)
+        {
+            try
+            {
+                var result = await SendEmailWithDbConfigAsync(config, toEmail, "", subject, GenerateTestEmail(message));
+
+                if (result)
+                {
+                    _logger.LogInformation("Email de prueba enviado a {Email} con el perfil {ProfileName}", toEmail, config.ProfileName);
+                }
+                else
+                {
+                    _logger.LogError("Error enviando email de prueba a {Email} con el perfil {ProfileName}", toEmail, config.ProfileName);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error enviando email de prueba a {Email} con el perfil {ProfileName}", toEmail, config.ProfileName);
+                return false;
+            }
+        }
+
         public async Task<bool> SendHtmlEmailAsync(string toEmail, string subject, string htmlContent)
         {
             try

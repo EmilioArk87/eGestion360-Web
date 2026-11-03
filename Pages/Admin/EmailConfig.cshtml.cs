@@ -22,11 +22,15 @@ namespace eGestion360Web.Pages.Admin
         [BindProperty]
         public int ConfigId { get; set; }
 
+        /// <summary>Anulable a propósito: un string no anulable lo vuelve obligatorio ASP.NET, y al editar vacía significa «conservar la guardada».</summary>
         [BindProperty]
-        public string PlainPassword { get; set; } = "";
+        public string? PlainPassword { get; set; }
 
         public List<EmailConfiguration>? Configurations { get; set; }
         public Dictionary<string, object>? Stats { get; set; }
+
+        /// <summary>Verdadero cuando el guardado falló: la pantalla vuelve a abrir el formulario con lo escrito y los motivos.</summary>
+        public bool ReabrirFormulario { get; private set; }
 
         public async Task OnGetAsync()
         {
@@ -35,8 +39,31 @@ namespace eGestion360Web.Pages.Admin
 
         public async Task<IActionResult> OnPostAsync()
         {
+            // La contraseña viaja como PlainPassword y se cifra al guardar: el formulario nunca envía PasswordHash,
+            // así que su [Required] no puede decidir si el formulario es válido.
+            ModelState.Remove($"{nameof(Configuration)}.{nameof(EmailConfiguration.PasswordHash)}");
+
+            // Al crear, la contraseña es obligatoria; al editar, vacía significa «conservar la que ya tiene».
+            if (ConfigId == 0 && string.IsNullOrWhiteSpace(PlainPassword))
+            {
+                ModelState.AddModelError(nameof(PlainPassword), "Escribe la contraseña del buzón.");
+            }
+
+            if (ModelState.IsValid && !string.IsNullOrWhiteSpace(Configuration.ProfileName))
+            {
+                var perfiles = await _emailManager.GetAllConfigurationsAsync();
+                var nombre = Configuration.ProfileName.Trim();
+                if (perfiles.Any(c => c.Id != ConfigId && string.Equals(c.ProfileName, nombre, StringComparison.OrdinalIgnoreCase)))
+                {
+                    ModelState.AddModelError($"{nameof(Configuration)}.{nameof(EmailConfiguration.ProfileName)}",
+                        $"Ya existe un perfil llamado «{nombre}». Usa otro nombre.");
+                }
+                Configuration.ProfileName = nombre;
+            }
+
             if (!ModelState.IsValid)
             {
+                ReabrirFormulario = true;
                 await LoadDataAsync();
                 return Page();
             }
@@ -60,19 +87,20 @@ namespace eGestion360Web.Pages.Admin
                 }
                 else
                 {
-                    // Es una actualización
+                    // Es una actualización: el servicio conserva el estado, las pruebas y la fecha de alta de la existente
                     var existingConfig = await _emailManager.GetConfigurationByIdAsync(ConfigId);
-                    if (existingConfig != null)
+                    if (existingConfig == null)
                     {
-                        Configuration.Id = ConfigId;
-                        Configuration.CreatedAt = existingConfig.CreatedAt;
-                        Configuration.UpdatedAt = DateTime.Now;
-                        Configuration.TestEmailsSent = existingConfig.TestEmailsSent;
-                        Configuration.LastTestedAt = existingConfig.LastTestedAt;
+                        ModelState.AddModelError(string.Empty, "Esa configuración ya no existe. Cierra el formulario y revisa la lista.");
+                        ReabrirFormulario = true;
+                        await LoadDataAsync();
+                        return Page();
                     }
+
+                    Configuration.Id = ConfigId;
                 }
 
-                var result = await _emailManager.SaveConfigurationAsync(Configuration, PlainPassword);
+                var result = await _emailManager.SaveConfigurationAsync(Configuration, PlainPassword ?? string.Empty);
 
                 if (result)
                 {
@@ -81,15 +109,16 @@ namespace eGestion360Web.Pages.Admin
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Error al guardar la configuración.";
+                    ModelState.AddModelError(string.Empty, "No se pudo guardar la configuración. Revisa los datos e inténtalo de nuevo.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving email configuration");
-                TempData["ErrorMessage"] = "Error inesperado al guardar la configuración.";
+                ModelState.AddModelError(string.Empty, "Error inesperado al guardar la configuración.");
             }
 
+            ReabrirFormulario = true;
             await LoadDataAsync();
             return Page();
         }
@@ -126,7 +155,11 @@ namespace eGestion360Web.Pages.Admin
             try
             {
                 var result = await _emailManager.TestConfigurationAsync(configId);
-                return new JsonResult(new { success = result });
+                return new JsonResult(new
+                {
+                    success = result,
+                    error = result ? null : "No se pudo enviar el correo de prueba con este perfil. Revisa servidor, puerto, SSL, usuario y contraseña; si la contraseña se guardó con otras claves de cifrado, vuelve a escribirla desde Editar."
+                });
             }
             catch (Exception ex)
             {

@@ -32,6 +32,12 @@ namespace eGestion360Web.Tests.Infra
         public Task<bool> SendPasswordResetCodeAsync(string email, string username, string code) => Task.FromResult(true);
         public Task<bool> SendPasswordResetConfirmationAsync(string email, string username) => Task.FromResult(true);
         public Task<bool> SendTestEmailAsync(string toEmail, string subject, string message) => Task.FromResult(true);
+        public List<(int IdPerfil, string Para)> PruebasPorPerfil { get; } = new();
+        public Task<bool> SendTestEmailAsync(eGestion360Web.Models.EmailConfiguration config, string toEmail, string subject, string message)
+        {
+            PruebasPorPerfil.Add((config.Id, toEmail));
+            return Task.FromResult(Responde);
+        }
         public Task<bool> SendHtmlEmailAsync(string toEmail, string subject, string htmlContent)
         {
             Enviados.Add((toEmail, subject, htmlContent));
