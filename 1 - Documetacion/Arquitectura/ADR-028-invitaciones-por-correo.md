@@ -1,6 +1,6 @@
 # ADR-028 · Invitaciones por correo (F1.5)
 
-- **Estado:** Propuesta por Claude al hacer el código de F1.5; los detalles de abajo quedan por confirmar por Emilio
+- **Estado:** Aceptada por Emilio el 2026-11-02, tras probarla de punta a punta en producción (invitación a Iris Z., persona 117, empresa Demo: correo enviado, clave elegida por la propia persona, cuenta activada y entrada con su correo). Propuesta por Claude el 2026-10-31 al hacer el código de F1.5
 - **Fecha:** 2026-10-31
 - **Decidió:** Claude (implementación). Emilio pidió las invitaciones como parte de F1.5; la tabla `saas.invitaciones` y el estado
   «invitada» de las membresías vienen de [ADR-003](ADR-003-identidad-y-membresias.md) y del script 038.
