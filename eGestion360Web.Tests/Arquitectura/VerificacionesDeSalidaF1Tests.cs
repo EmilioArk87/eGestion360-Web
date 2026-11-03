@@ -18,7 +18,7 @@ namespace eGestion360Web.Tests.Arquitectura
             { "verificar_antes_ventana_1.sql", "verificar_despues_ventana_1.sql", "verificar_despues_ventana_2.sql", "verificar_despues_ventana_3.sql" };
 
         /// <summary>Las de F1.5 (scripts 038 y 039) y F1.7 (script 040), posteriores a la salida de F1.</summary>
-        private static readonly string[] DeF15 = { "verificar_despues_038.sql", "verificar_despues_f15.sql", "verificar_despues_f17.sql" };
+        private static readonly string[] DeF15 = { "verificar_despues_038.sql", "verificar_despues_f15.sql", "verificar_despues_f17.sql", "verificar_despues_041.sql" };
 
         private static readonly Regex TablaDeLaLista = new(@"^\s*\((\d+), N'([a-z_]+)', N'([TMI])'\)", RegexOptions.Multiline);
         private static readonly Regex ClaveUnicaDeLaLista = new(@"\(N'([a-z_]+)', N'(UX_[A-Za-z0-9_]+)'\)");

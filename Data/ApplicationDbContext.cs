@@ -49,6 +49,10 @@ namespace eGestion360Web.Data
         public DbSet<Derecho> Derechos { get; set; }
         public DbSet<PlanVersionDerecho> PlanVersionDerechos { get; set; }
         public DbSet<TenantPlan> TenantPlanes { get; set; }
+        // Catálogo de permisos y roles plantilla (F1.6a; script 041)
+        public DbSet<Permiso> Permisos { get; set; }
+        public DbSet<RolPlantilla> RolesPlantilla { get; set; }
+        public DbSet<RolPlantillaPermiso> RolesPlantillaPermisos { get; set; }
         // Identidad global (F1.5; scripts 038 y 039)
         public DbSet<Cuenta> Cuentas { get; set; }
         public DbSet<CuentaAlias> CuentaAlias { get; set; }
@@ -64,6 +68,7 @@ namespace eGestion360Web.Data
         public DbSet<EmpresaModulo> EmpresaModulos { get; set; }
         public DbSet<EmpresaRol> EmpresaRoles { get; set; }
         public DbSet<EmpresaRolPermiso> EmpresaRolPermisos { get; set; }
+        public DbSet<RolPermiso> RolPermisos { get; set; }   // F1.6a (script 041): reemplaza a EmpresaRolPermisos, que se conserva hasta F1.10
         public DbSet<Pais> Paises { get; set; }
         public DbSet<Moneda> Monedas { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }

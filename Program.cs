@@ -89,6 +89,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IResolvedorDeTenant, ResolvedorDeTenantEf>();
 builder.Services.AddScoped<IDerechosDeUso, DerechosDeUso>();   // F1.7: derechos de uso y estado del tenant (caché de 30 s)
+builder.Services.AddScoped<eGestion360Web.Services.Permisos.IEvaluadorDePermisos, eGestion360Web.Services.Permisos.EvaluadorDePermisos>();   // F1.6a: permisos efectivos (caché de 30 s); nada lo llama hasta F1.6b
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());   // los procesos de fondo fijan su tenant en TenantContext
 

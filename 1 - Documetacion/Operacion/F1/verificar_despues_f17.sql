@@ -323,6 +323,7 @@ c AS (
            -- que no se cambio nada mas
            (SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID(N'dbo')) AS tablas_dbo,
            (SELECT CASE WHEN OBJECT_ID(N'dbo.accesos_empresa', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con038,
+           (SELECT CASE WHEN OBJECT_ID(N'dbo.rol_permisos', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con041,
            (SELECT COUNT(*) FROM sys.columns c INNER JOIN sys.tables tb ON tb.object_id = c.object_id AND tb.schema_id = SCHEMA_ID(N'dbo')
             WHERE c.name = N'id_tenant') AS cols_dbo,
            (SELECT COUNT(*) FROM sys.foreign_keys) AS fks,
@@ -343,7 +344,7 @@ r (orden, comprobacion, esperado, obtenido) AS (
     CROSS APPLY (VALUES
         -- 1xx: las tablas nuevas y sus restricciones
         (110, N'Esquema saas existe',                                              N'1', CAST(c.esq_saas AS NVARCHAR(400))),
-        (120, N'Tablas del esquema saas (tenants y las 5 nuevas; +8 si ya esta el 038)', CAST(6 + 8 * c.con038 AS NVARCHAR(400)), CAST(c.tablas_saas AS NVARCHAR(400))),
+        (120, N'Tablas del esquema saas (tenants y las 5 nuevas; +8 si ya esta el 038; +3 si ya esta el 041)', CAST(6 + 8 * c.con038 + 3 * c.con041 AS NVARCHAR(400)), CAST(c.tablas_saas AS NVARCHAR(400))),
         (130, N'Tablas nuevas: planes, plan_versiones, derechos, plan_version_derechos, tenant_planes', N'5 de 5', CONCAT(c.tablas_nuevas, N' de 5')),
         (140, N'Columnas de las tablas nuevas (nombre, tipo, longitud y nulabilidad): diferencias', N'0',
               CASE WHEN c.col_dif_n = 0 THEN N'0' ELSE CONCAT(c.col_dif_n, N' (', c.col_dif_lista, N')') END),
@@ -393,15 +394,15 @@ r (orden, comprobacion, esperado, obtenido) AS (
         (630, N'Tenants con mas empresas que limite.empresas de su plan',           N'0', COALESCE(@sobre_empresas, CASE WHEN @hay_tablas = 1 THEN N'0' ELSE N'no existe' END)),
         -- 7xx: que no se cambio nada mas
         -- Las cifras de F1.5 (script 038) se suman solo si ya esta aplicado: 040 y 038/039 pueden aplicarse en cualquier orden.
-        (710, N'Tablas en el esquema dbo (sin cambios; +1 si ya esta el 038)',      CAST(56 + c.con038 AS NVARCHAR(400)), CAST(c.tablas_dbo AS NVARCHAR(400))),
-        (720, N'Columnas id_tenant en el esquema dbo (sin cambios; +1 si ya esta el 038)', CAST(41 + c.con038 AS NVARCHAR(400)), CAST(c.cols_dbo AS NVARCHAR(400))),
-        (730, N'Claves foraneas fuera de las 5 tablas nuevas (sin cambios; +13 si ya esta el 038)', CAST(152 + 13 * c.con038 AS NVARCHAR(400)), CAST(c.fks - c.fk_propias AS NVARCHAR(400))),
+        (710, N'Tablas en el esquema dbo (sin cambios; +1 si ya esta el 038; +1 si ya esta el 041)', CAST(56 + c.con038 + c.con041 AS NVARCHAR(400)), CAST(c.tablas_dbo AS NVARCHAR(400))),
+        (720, N'Columnas id_tenant en el esquema dbo (sin cambios; +1 si ya esta el 038; +1 si ya esta el 041)', CAST(41 + c.con038 + c.con041 AS NVARCHAR(400)), CAST(c.cols_dbo AS NVARCHAR(400))),
+        (730, N'Claves foraneas fuera de las 5 tablas nuevas (sin cambios; +13 si ya esta el 038; +5 si ya esta el 041)', CAST(152 + 13 * c.con038 + 5 * c.con041 AS NVARCHAR(400)), CAST(c.fks - c.fk_propias AS NVARCHAR(400))),
         (740, N'Claves foraneas de las 5 tablas nuevas',                            N'5', CAST(c.fk_propias AS NVARCHAR(400))),
-        (750, N'Claves foraneas en total (152 + 5; +13 si ya esta el 038)',         CAST(157 + 13 * c.con038 AS NVARCHAR(400)), CAST(c.fks AS NVARCHAR(400))),
-        (760, N'Claves foraneas hacia saas.tenants (41 de F1.2 + tenant_planes; +3 si ya esta el 038)', CAST(42 + 3 * c.con038 AS NVARCHAR(400)), CAST(c.fks_tenants AS NVARCHAR(400))),
+        (750, N'Claves foraneas en total (152 + 5; +13 si ya esta el 038; +5 si ya esta el 041)', CAST(157 + 13 * c.con038 + 5 * c.con041 AS NVARCHAR(400)), CAST(c.fks AS NVARCHAR(400))),
+        (760, N'Claves foraneas hacia saas.tenants (41 de F1.2 + tenant_planes; +3 si ya esta el 038; +1 si ya esta el 041)', CAST(42 + 3 * c.con038 + c.con041 AS NVARCHAR(400)), CAST(c.fks_tenants AS NVARCHAR(400))),
         (770, N'Claves foraneas de tablas de saas hacia tablas fuera de saas (ADR-006; 1 si ya esta el 038: membresias -> personas)', CAST(c.con038 AS NVARCHAR(400)), CAST(c.fks_saas_a_fuera AS NVARCHAR(400))),
-        (780, CONCAT(N'Politica seg.pol_tenant intacta con 199 predicados, 204 si ya esta el 038 (', CASE WHEN c.pol_encendida = 1 THEN N'encendida' WHEN c.pol_encendida = 0 THEN N'apagada' ELSE N'no existe' END, N')'),
-              CAST(199 + 5 * c.con038 AS NVARCHAR(400)), CAST(c.predicados AS NVARCHAR(400))),
+        (780, CONCAT(N'Politica seg.pol_tenant intacta con 199 predicados, 204 si ya esta el 038, 209 si tambien el 041 (', CASE WHEN c.pol_encendida = 1 THEN N'encendida' WHEN c.pol_encendida = 0 THEN N'apagada' ELSE N'no existe' END, N')'),
+              CAST(199 + 5 * c.con038 + 5 * c.con041 AS NVARCHAR(400)), CAST(c.predicados AS NVARCHAR(400))),
         (790, N'Predicados de RLS sobre tablas de saas (el plano de control no lleva RLS, ADR-013)', N'0', CAST(c.predicados_en_saas AS NVARCHAR(400))),
         (795, N'Objetos propios del esquema seg (3 funciones y la politica)',       N'4', CAST(c.obj_seg AS NVARCHAR(400)))
     ) v (orden, comprobacion, esperado, obtenido)

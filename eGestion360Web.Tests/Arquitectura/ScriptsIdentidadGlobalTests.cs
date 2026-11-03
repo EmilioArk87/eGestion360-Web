@@ -235,7 +235,7 @@ namespace eGestion360Web.Tests.Arquitectura
 
             var enLaPolitica = de036.Concat(predicados.Select(p => p.Tabla)).Distinct().Order(StringComparer.Ordinal).ToList();
             var clasificadas = ClasificacionDeTablas.Todas
-                .Where(t => ClasificacionDeTablas.LlevaIdTenant(t.Categoria) && (t.EnBaseReal || t.CreadaPorScript != null) && t.Tabla != "domain_events")
+                .Where(t => ClasificacionDeTablas.LlevaIdTenant(t.Categoria) && (t.EnBaseReal || t.CreadaPorScript == "038") && t.Tabla != "domain_events")   // el 041 agrega rol_permisos aparte (ScriptsPermisosTests)
                 .Select(t => t.Tabla).Order(StringComparer.Ordinal).ToList();
             Assert.Equal(clasificadas, enLaPolitica);
             Assert.Equal(41, enLaPolitica.Count);
@@ -363,9 +363,9 @@ namespace eGestion360Web.Tests.Arquitectura
             var objetos = ListaDeObjetosDel038(s038);
             Assert.Contains($"N'{objetos.Count} de {objetos.Count}'", verificador);
             Assert.Contains($"N'{objetos.Count(o => o.Tipo == "F")} de {objetos.Count(o => o.Tipo == "F")}'", verificador);
-            Assert.Contains("N'204'", verificador);    // 199 + 5 predicados
+            Assert.True(verificador.Contains("N'204'") || verificador.Contains("CAST(204 + 5 * c.con041"), "El verificador debe esperar 204 predicados (209 si ya esta el 041).");   // 199 + 5 predicados
             Assert.Contains("CAST(165 + 5 * c.con040", verificador);    // 152 + 13 claves foraneas (+5 si ya esta el 040)
-            Assert.Contains("N'57'", verificador);     // 56 + accesos_empresa tablas de dbo
+            Assert.True(verificador.Contains("N'57'") || verificador.Contains("CAST(57 + c.con041"), "El verificador debe esperar 57 tablas de dbo (58 si ya esta el 041).");   // 56 + accesos_empresa tablas de dbo
         }
 
         private static int Esperado(string verificador, int orden)

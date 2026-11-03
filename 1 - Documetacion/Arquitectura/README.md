@@ -91,6 +91,7 @@ tabla sin clasificar o si una tabla de tenant nueva nace sin `id_tenant`. La lis
 | [ADR-026](ADR-026-derechos-de-uso-y-estado-del-tenant.md) | Derechos de uso y estado del tenant en cada petición (D53 a D55): suspendido = solo lectura (o bloqueo), límites de usuarios y empresas, memoria de 30 s, el módulo exige plan y activación de la empresa, el operador nunca se bloquea | F1.7 | Aceptada 2026-10-15 (detalles por confirmar al publicar)
 | [ADR-027](ADR-027-identidad-global-y-cookie-con-claims.md) | Identidad global y cookie con claims (D44 a D50): la identidad sale de la cookie y se compara con la base cada 30 s, la sesión queda de espejo, bloqueo por intentos, MFA con TOTP (operador desde el primer día), entrada en tres pasos y cuentas que siguen a Users | F1.5 | Aceptada 2026-10-15 (detalles por confirmar al publicar)
 | [ADR-028](ADR-028-invitaciones-por-correo.md) | Invitaciones por correo: el administrador invita a una persona ya registrada, que elige su propia clave con un enlace de un solo uso; el usuario nace sin activar y se activa al aceptar; sin scripts nuevos | F1.5 | Aceptada 2026-11-02 (probada en producción)
+| [ADR-029](ADR-029-permisos-por-accion.md) | Permisos por acción (D57 a D65): catálogo `modulo.recurso.accion` de 72 permisos, roles plantilla, permisos por rol con RLS, evaluador por petición con memoria de 30 s y migración de las 4 casillas sin que nadie gane ni pierda permisos | F1.6 | Aceptada 2026-11-03 (F1.6a: script 041 por aplicar) |
 
 ---
 

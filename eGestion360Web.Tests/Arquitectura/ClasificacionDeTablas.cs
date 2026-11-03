@@ -39,8 +39,8 @@ namespace eGestion360Web.Tests.Arquitectura
     /// <summary>
     /// Inventario de todas las tablas, con la regla de aislamiento de cada una (paso F0.6). Cubre las 60 tablas de eBD_SPD
     /// del 2026-10-10, las 6 del módulo contable que solo existen en el modelo de EF (el script 010 está en espera,
-    /// ADR-014) y las 9 de la identidad global que crea el script 038 (F1.5). <see cref="ArnesAislamientoTests"/> falla si
-    /// aparece una tabla sin clasificar.
+    /// ADR-014), las 9 de la identidad global que crea el script 038 (F1.5), las 5 de planes y derechos del 040 (F1.7) y las 4 de
+    /// permisos del 041 (F1.6a). <see cref="ArnesAislamientoTests"/> falla si aparece una tabla sin clasificar.
     /// </summary>
     public static class ClasificacionDeTablas
     {
@@ -147,6 +147,14 @@ namespace eGestion360Web.Tests.Arquitectura
             new("cuenta_mfa_recuperacion", P, true, false, "Hash de los códigos de recuperación de MFA.", "038"),
             new("invitaciones", P, true, false, "Invitaciones a un tenant; solo el hash del token. Lleva id_tenant como referencia, sin RLS.", "038"),
             new("llaves_proteccion_datos", P, true, false, "Almacén de llaves de ASP.NET Core Data Protection (ADR-008, D19).", "038"),
+
+            // ── Permisos por acción (F1.6a, script 041): posteriores a la salida de F1 ───────────────────────────────
+            new("rol_permisos", T, true, false,
+                "Permisos del catálogo que tiene cada rol de empresa (ADR-029): tabla de TENANT con RLS; entra a seg.pol_tenant en el script 041 con las mismas " +
+                "funciones (1 filtro y 4 bloqueos). Reemplaza a empresa_rol_permisos, que se conserva hasta F1.10.", "041"),
+            new("permisos", P, true, false, "Catálogo de permisos modulo.recurso.accion (esquema saas, script 041, F1.6a): plano de control, sin RLS (ADR-013).", "041"),
+            new("roles_plantilla", P, true, false, "Roles de partida para tenants nuevos, tres por módulo (esquema saas, script 041, D64): plano de control, sin RLS.", "041"),
+            new("roles_plantilla_permisos", P, true, false, "Permisos de cada rol plantilla, del mismo módulo que la plantilla (esquema saas, script 041): plano de control, sin RLS.", "041"),
 
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
             new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),
