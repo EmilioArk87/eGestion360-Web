@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Services.TasasCambio;
+using eGestion360Web.Services.Permisos;
 using Cat = eGestion360Web.Models.Catalogos.TasasCambioCatalogo;
 
 namespace eGestion360Web.Pages.Catalogos.TiposCambio
@@ -10,6 +11,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
     /// paginación. Se abre desde el botón "Histórico" de Tipos de cambio. Misma regla de acceso que esa pantalla
     /// (sesión y módulo "catalogos"); la empresa sale SIEMPRE de la sesión, nunca de la URL.
     /// </summary>
+    [RequierePermiso("catalogos.tasas_cambio.ver")]
     public class HistoricoModel : TasasCambioPaginaBase
     {
         public const int TamanoPagina = 25;

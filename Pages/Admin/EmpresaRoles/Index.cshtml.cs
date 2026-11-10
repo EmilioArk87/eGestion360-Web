@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.EmpresaRoles
 {
+    [RequierePermiso("administracion.roles.ver")]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -30,6 +32,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
             return await CargarAsync();
         }
 
+        [RequierePermiso("administracion.roles.crear")]
         public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion, bool esAdmin)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
@@ -50,6 +53,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
             return RedirectToPage(new { empresaId });
         }
 
+        [RequierePermiso("administracion.roles.editar")]
         public async Task<IActionResult> OnPostToggleAsync(int rolId, bool activo, int empresaId)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");

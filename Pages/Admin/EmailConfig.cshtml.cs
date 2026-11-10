@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin
 {
+    [RequierePermiso("plataforma.correo.ver")]
     public class EmailConfigModel : PageModel
     {
         private readonly EmailManagerService _emailManager;
@@ -37,6 +39,7 @@ namespace eGestion360Web.Pages.Admin
             await LoadDataAsync();
         }
 
+        [RequierePermiso("plataforma.correo.editar")]
         public async Task<IActionResult> OnPostAsync()
         {
             // La contraseña viaja como PlainPassword y se cifra al guardar: el formulario nunca envía PasswordHash,
@@ -150,6 +153,7 @@ namespace eGestion360Web.Pages.Admin
             _logger.LogInformation("Configuración predeterminada aplicada para SIP Tecnología: {Email}", Configuration.FromEmail);
         }
 
+        [RequierePermiso("plataforma.correo.editar")]
         public async Task<IActionResult> OnPostTestAsync(int configId)
         {
             try
@@ -168,6 +172,7 @@ namespace eGestion360Web.Pages.Admin
             }
         }
 
+        [RequierePermiso("plataforma.correo.editar")]
         public async Task<IActionResult> OnPostSetDefaultAsync(int configId)
         {
             try
@@ -182,6 +187,7 @@ namespace eGestion360Web.Pages.Admin
             }
         }
 
+        [RequierePermiso("plataforma.correo.editar")]
         public async Task<IActionResult> OnPostToggleActiveAsync(int configId)
         {
             try
@@ -196,6 +202,7 @@ namespace eGestion360Web.Pages.Admin
             }
         }
 
+        [RequierePermiso("plataforma.correo.editar")]
         public async Task<IActionResult> OnPostDeleteAsync(int configId)
         {
             try

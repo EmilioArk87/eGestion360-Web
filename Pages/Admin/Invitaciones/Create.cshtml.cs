@@ -8,6 +8,7 @@ using eGestion360Web.Pages.Admin.Usuarios;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
 using eGestion360Web.Services.Personas;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.Invitaciones
 {
@@ -15,6 +16,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
     /// Invitar a una persona por correo (ADR-028): se elige quién es (una persona ya registrada en la empresa), su correo, la empresa y
     /// el rol. La persona recibe un enlace y elige su contraseña; ningún administrador la conoce.
     /// </summary>
+    [RequierePermiso("administracion.invitaciones.crear")]
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _context;

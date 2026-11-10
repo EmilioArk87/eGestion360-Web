@@ -5,9 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Eventos;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.Outbox
 {
+    [RequierePermiso("plataforma.outbox.ver")]
     public class DetailsModel : PageModel
     {
         private readonly ApplicationDbContext _db;
@@ -38,6 +40,7 @@ namespace eGestion360Web.Pages.Admin.Outbox
             return Page();
         }
 
+        [RequierePermiso("plataforma.outbox.gestionar")]
         public async Task<IActionResult> OnPostRetryAsync(long id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAdmin(HttpContext))
@@ -59,6 +62,7 @@ namespace eGestion360Web.Pages.Admin.Outbox
             return RedirectToPage("Details", new { id });
         }
 
+        [RequierePermiso("plataforma.outbox.gestionar")]
         public async Task<IActionResult> OnPostMarkProcessedAsync(long id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAdmin(HttpContext))

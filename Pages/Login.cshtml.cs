@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
@@ -10,6 +11,7 @@ namespace eGestion360Web.Pages
     /// Inicio de sesión con la cuenta global (F1.5, ADR-003). Aquí solo se prueba la clave; lo que sigue —segundo factor, elegir dónde
     /// trabajar— es de <see cref="EntradaEnCurso"/>, y la cookie se emite al final (<see cref="SeleccionarContextoModel"/>).
     /// </summary>
+    [PaginaSinPermiso("Inicio de sesión")]
     public class LoginModel : PageModel
     {
         private readonly IAutenticador _autenticador;

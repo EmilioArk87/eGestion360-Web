@@ -9,9 +9,11 @@ using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Tenancy;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Empresas
 {
+    [RequierePermiso("plataforma.empresas.crear")]
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _context;

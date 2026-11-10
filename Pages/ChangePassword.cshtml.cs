@@ -5,9 +5,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [PaginaSinPermiso("Cada persona cambia su propia clave")]
     public class ChangePasswordModel : PageModel
     {
         private readonly ApplicationDbContext _context;

@@ -4,9 +4,11 @@ using eGestion360Web.Services;
 using eGestion360Web.Models;
 using eGestion360Web.Data;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [PaginaSinPermiso("Restablecer la clave con un código, antes de tener sesión")]
     public class ResetPasswordModel : PageModel
     {
         private readonly IPasswordResetService _passwordResetService;

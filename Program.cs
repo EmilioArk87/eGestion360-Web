@@ -26,7 +26,9 @@ builder.Services.AddRazorPages()
         options.Filters.Add<AmbitoDePlataformaPageFilter>();   // F1.3: pantallas que ven todos los tenants (lista revisada)
         options.Filters.Add<TenantDeSoporteRequeridoPageFilter>();   // F1.4c: pantallas de datos de un tenant: el administrador general elige antes cuál
         options.Filters.Add<DerechoDeModuloPageFilter>();   // F1.7: cada carpeta de módulo exige el derecho de uso del módulo (403 si no)
+        options.Filters.Add<eGestion360Web.Services.Permisos.PermisosPageFilter>();   // F1.6b: permiso de cada pantalla; por omisión solo anota lo que negaría (Permisos:Modo)
     });
+builder.Services.Configure<eGestion360Web.Services.Permisos.OpcionesDePermisos>(builder.Configuration.GetSection(eGestion360Web.Services.Permisos.OpcionesDePermisos.Seccion));
 
 // Add Entity Framework with SQL Server.
 // La cadena ya no vive en appsettings.json: viene de la variable de entorno

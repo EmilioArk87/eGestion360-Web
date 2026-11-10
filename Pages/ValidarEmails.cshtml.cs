@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services;
 using eGestion360Web.Models;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [RequierePermiso("plataforma.diagnostico.ver")]
     public class ValidarEmailsModel : PageModel
     {
         private readonly IEmailService _emailService;

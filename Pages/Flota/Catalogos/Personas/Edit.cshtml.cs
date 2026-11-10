@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Services.Personas;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Flota.Catalogos.Personas
 {
+    [RequierePermiso("flota.personas.editar")]
     public class EditModel : PersonaPaginaBase
     {
         private readonly IPersonaService _personas;

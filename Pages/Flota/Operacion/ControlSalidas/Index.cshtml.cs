@@ -6,9 +6,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Personas;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
 {
+    [RequierePermiso("flota.salidas.ver")]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _db;
@@ -77,6 +79,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
             return Page();
         }
 
+        [RequierePermiso("flota.salidas.crear")]
         public async Task<IActionResult> OnPostSalidaAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
@@ -131,6 +134,7 @@ namespace eGestion360Web.Pages.Flota.Operacion.ControlSalidas
             return RedirectToPage();
         }
 
+        [RequierePermiso("flota.salidas.editar")]
         public async Task<IActionResult> OnPostEntradaAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");

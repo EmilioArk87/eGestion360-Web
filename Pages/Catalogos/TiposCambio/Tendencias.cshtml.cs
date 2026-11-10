@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Services.TasasCambio;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Catalogos.TiposCambio
 {
@@ -11,6 +12,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
     /// acceso que esa pantalla (sesión y módulo "catalogos"); la empresa sale SIEMPRE de la sesión, nunca de la URL.
     /// Todo se elige con enlaces (moneda, serie, período y fecha): no necesita JavaScript.
     /// </summary>
+    [RequierePermiso("catalogos.tasas_cambio.ver")]
     public class TendenciasModel : TasasCambioPaginaBase
     {
         public const string RangoSieteDias = "7";

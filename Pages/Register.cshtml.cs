@@ -5,9 +5,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [PaginaSinPermiso("Registro, antes de tener sesión")]
     public class RegisterModel : PageModel
     {
         private readonly ApplicationDbContext _context;

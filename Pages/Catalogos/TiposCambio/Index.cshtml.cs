@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Services;
 using eGestion360Web.Services.TasasCambio;
+using eGestion360Web.Services.Permisos;
 using Cat = eGestion360Web.Models.Catalogos.TasasCambioCatalogo;
 
 namespace eGestion360Web.Pages.Catalogos.TiposCambio
@@ -23,6 +24,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
     ///     empresa de la sesión. AprobarAsync/RechazarAsync no reciben empresa, así que antes se comprueba que el id
     ///     esté entre las pendientes que la empresa de la sesión puede ver: un id de otra empresa se rechaza.
     /// </summary>
+    [RequierePermiso("catalogos.tasas_cambio.ver")]
     public class IndexModel : TasasCambioPaginaBase
     {
         public const string Modulo = "catalogos";
@@ -101,6 +103,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         //  REGISTRAR TASA PROPIA
         // ──────────────────────────────────────────────────────────────────
 
+        [RequierePermiso("catalogos.tasas_cambio.crear")]
         public async Task<IActionResult> OnPostRegistrarAsync(RegistroTasaInput? registro)
         {
             if (Acceso() is { } desvio) return desvio;
@@ -148,6 +151,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         //  APROBAR / RECHAZAR
         // ──────────────────────────────────────────────────────────────────
 
+        [RequierePermiso("catalogos.tasas_cambio.aprobar")]
         public async Task<IActionResult> OnPostAprobarAsync(int idTasaCambio)
         {
             if (Acceso() is { } desvio) return desvio;
@@ -166,6 +170,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
             }
         }
 
+        [RequierePermiso("catalogos.tasas_cambio.aprobar")]
         public async Task<IActionResult> OnPostRechazarAsync(int idTasaCambio, string? motivo)
         {
             if (Acceso() is { } desvio) return desvio;
@@ -230,6 +235,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         //  EJECUTAR AHORA
         // ──────────────────────────────────────────────────────────────────
 
+        [RequierePermiso("catalogos.tasas_cambio.configurar")]
         public IActionResult OnPostEjecutar()
         {
             if (Acceso() is { } desvio) return desvio;

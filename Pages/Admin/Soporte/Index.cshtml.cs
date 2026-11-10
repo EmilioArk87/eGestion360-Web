@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.Soporte
 {
@@ -15,6 +16,7 @@ namespace eGestion360Web.Pages.Admin.Soporte
     /// log con quién, a cuál tenant y cuándo. La auditoría persistente, el motivo y el aviso al tenant llegan con la consola del
     /// operador (F1.9).
     /// </summary>
+    [RequierePermiso("plataforma.soporte.ver")]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -51,6 +53,7 @@ namespace eGestion360Web.Pages.Admin.Soporte
             return Page();
         }
 
+        [RequierePermiso("plataforma.soporte.entrar")]
         public async Task<IActionResult> OnPostEntrarAsync(int idTenant, CancellationToken ct)
         {
             var bloqueo = Bloqueo();
@@ -71,6 +74,7 @@ namespace eGestion360Web.Pages.Admin.Soporte
         }
 
         /// <summary>Desde la lista de empresas: entra al tenant de esa empresa y abre la pantalla pedida para ella.</summary>
+        [RequierePermiso("plataforma.soporte.entrar")]
         public async Task<IActionResult> OnPostEntrarEnEmpresaAsync(int idEmpresa, string destino, CancellationToken ct)
         {
             var bloqueo = Bloqueo();

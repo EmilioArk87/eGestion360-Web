@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Services.TasasCambio;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Catalogos.TiposCambio
 {
@@ -9,6 +10,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
     /// desde el botón "Bitácora del job" de Tipos de cambio. Quien no es administrador del sistema recibe las
     /// ejecuciones SIN endpoint ni detalle del error: no basta con no pintarlos en la vista.
     /// </summary>
+    [RequierePermiso("catalogos.tasas_cambio.ver")]
     public class BitacoraModel : TasasCambioPaginaBase
     {
         public const int MaxEjecuciones = 20;

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.EmpresaModulos
 {
@@ -13,6 +14,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaModulos
         public bool Activo { get; set; }
     }
 
+    [RequierePermiso("plataforma.modulos.ver")]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -32,6 +34,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaModulos
             return await CargarAsync();
         }
 
+        [RequierePermiso("plataforma.modulos.editar")]
         public async Task<IActionResult> OnPostAsync(int empresaId, List<int> modulosSeleccionados)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");

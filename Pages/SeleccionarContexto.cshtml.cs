@@ -5,6 +5,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
@@ -13,6 +14,7 @@ namespace eGestion360Web.Pages
     /// inicio de sesión (si hay un solo sitio, entra directo) y también con la sesión iniciada, para cambiar de sitio. Siempre se vuelven a
     /// leer los sitios permitidos de la base y se elige de entre ellos: el tenant nunca sale de lo que mande el navegador (ADR-001).
     /// </summary>
+    [PaginaSinPermiso("Elegir con qué empresa se trabaja")]
     public class SeleccionarContextoModel : PageModel
     {
         private readonly ApplicationDbContext _db;

@@ -1,6 +1,6 @@
 # ADR-029 · Permisos por acción (F1.6)
 
-- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador) escrita y ensayada; script 041 aplicado y verificado en producción el 2026-11-09
+- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): escrita y probada el 2026-11-09, pendiente de publicar
 - **Fecha:** 2026-11-03
 - **Decidió:** Emilio (D57 a D65). Diseño y ejecución de Claude
 - **Fase:** F1.6 (entrega F1.6a)
@@ -39,6 +39,30 @@ son 4 casillas por módulo y se copian a la sesión al entrar. ADR-003 y ADR-008
 3. **Los permisos de módulo solo valen si el módulo está habilitado** (el plan lo concede y la empresa lo tiene activado), igual que `HasModulo`. Los de administración de la empresa no dependen de módulos.
 4. **Sin rol o sin tenant, ningún permiso**, salvo el operador.
 5. **Tres barreras de tenant** al leer los permisos de un rol: el filtro de EF, la política RLS y la condición explícita `id_tenant` de la consulta; la clave de la memoria lleva el tenant.
+
+## F1.6b: el filtro de permisos en modo Registrar (2026-11-09)
+
+La segunda entrega pone la pregunta en cada pantalla sin cambiar lo que nadie puede hacer. El detalle de cada pantalla está en el [anexo](ADR-029-anexo-permisos-por-pagina.md).
+
+| Pieza | Cómo queda |
+|---|---|
+| `[RequierePermiso("modulo.recurso.accion")]` | En la clase de cada página y, cuando un handler pide otro permiso, en el método (`OnPostAnularAsync`, `OnPostCrearAsync`…); el del método vale más que el de la clase. No se hereda: cada página declara el suyo. 86 pantallas lo llevan y 30 handlers piden uno propio. |
+| `[PaginaSinPermiso("motivo")]` | Las 24 pantallas que no piden permiso: públicas o anteriores a la sesión, de la propia cuenta y centros de navegación (sus opciones piden cada una el suyo). Una prueba fija la lista completa. |
+| `PermisosPageFilter` | Filtro global, el último de los registrados: si uno anterior (sin empresa, módulo sin derecho) ya desvió la petición, este no corre. Sin sesión no actúa; cada pantalla manda sola al inicio de sesión. Evalúa los permisos una vez por petición. |
+| `Permisos:Modo` | `Registrar` (por omisión, y para cualquier valor desconocido) o `Aplicar`. Se lee en cada petición, así que cambiarlo en la configuración rige sin reiniciar. En `Registrar` anota lo que negaría y deja pasar a todos; en `Aplicar` responde 403 (una pantalla sin declarar o con un código que no está en el catálogo también se niega). |
+| Prueba de arquitectura | Toda clase de página declara su permiso o su motivo, el código existe en el catálogo, las excepciones son exactamente las revisadas, una pantalla de módulo pide permisos de su módulo y el nombre de la pantalla coincide con la acción. |
+
+Lo que se decidió al implementarlo, y por qué:
+
+1. **El código completo en cada pantalla, no deducido del nombre.** D59 hablaba de «valores por convención del nombre de página». El nombre dice la acción (`Create` pide crear), pero no el recurso: `/Flota/Catalogos/Rutas/Edit` pide `flota.catalogos.editar`, `/Facturacion/Pagos/Create` pide `facturacion.pago.crear` y `/Admin/Usuarios/Edit` pide `administracion.usuarios.editar`; ninguno se saca de la carpeta. La convención queda vigilada por la prueba (el nombre y la acción tienen que coincidir) y no como un atajo que adivina.
+2. **Quien es operador se decide como hoy**: `AuthHelper.IsAdmin`, es decir, el rol `admin` de la cookie. Un operador que entra a una empresa con su acceso de empresa lleva `empresa_user` y se evalúa con el rol de ese acceso, igual que hoy lo tratan las guardas. Queda por decidir si en ese caso debe conservar todo (ver abajo).
+3. **Un handler que borra tiene permiso propio solo si el catálogo lo tiene.** Eliminar un peaje (`OnPostDeleteAsync` de `Peajes/Edit`) cuelga de `flota.peajes.editar` porque el catálogo no trae `flota.peajes.eliminar`.
+
+Cómo se revisa lo que el filtro anota:
+
+- Cada negación en modo Registrar queda en el log con el nivel Warning: `Permisos [registro]: se negaría GET /Flota/Catalogos/Vehiculos/Delete (OnGetAsync) por falta de flota.vehiculos.eliminar; cuenta 6, rol empresa_user/6, tenant 4.` Una pantalla sin declarar sale una sola vez con nivel Error.
+- **En Somee ese log no se guarda**: el ejemplo del `web.config` de [CONFIGURACION_SECRETOS.md](../CONFIGURACION_SECRETOS.md) trae `stdoutLogEnabled="false"` (falta confirmarlo en el servidor). Por eso, antes de publicar, el efecto real se calcula en solo lectura con los datos de producción: para cada acceso activo, los permisos que el evaluador le da y las pantallas y handlers que quedarían anotados. Resultado del 2026-11-09 en [LEEME_F16.md](../Operacion/F1/LEEME_F16.md).
+- Si se quiere ver el registro en vivo en producción hace falta dejarlo en la base (una tabla nueva, script 042 con `/alerta-bd`) o activar el log de consola del servidor. No es necesario para pasar a F1.6c, y queda como decisión abierta.
 
 ## Alternativas consideradas
 

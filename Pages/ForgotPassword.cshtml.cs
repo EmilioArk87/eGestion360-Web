@@ -4,9 +4,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Services;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [PaginaSinPermiso("Recuperar la clave, antes de tener sesión")]
     public class ForgotPasswordModel : PageModel
     {
         private readonly IPasswordResetService _passwordResetService;

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Services;
 using eGestion360Web.Services.TasasCambio;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Catalogos.TiposCambio
 {
@@ -12,6 +13,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
     /// Solo el administrador del sistema (se revisa en el GET y en el POST). Las claves secretas (API del BCH, token
     /// del disparador) NO se editan aquí: siguen en variables de entorno o user-secrets.
     /// </summary>
+    [RequierePermiso("catalogos.tasas_cambio.configurar")]
     public class ConfiguracionModel : PageModel
     {
         public const string AvisoNoInstalado =

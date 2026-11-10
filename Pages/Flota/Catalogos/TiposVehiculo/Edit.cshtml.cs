@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Flota.Catalogos.TiposVehiculo
 {
+    [RequierePermiso("flota.catalogos.editar")]
     public class EditModel : PageModel
     {
         private readonly ApplicationDbContext _db;

@@ -5,9 +5,11 @@ using System.ComponentModel.DataAnnotations;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [RequierePermiso("plataforma.usuarios.ver")]
     public class UserManagementModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -61,6 +63,7 @@ namespace eGestion360Web.Pages
             return Page();
         }
 
+        [RequierePermiso("plataforma.usuarios.restablecer_clave")]
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext))

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services.Identidad;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
@@ -9,6 +10,7 @@ namespace eGestion360Web.Pages
     /// Segundo paso del inicio de sesión: el código de la aplicación autenticadora o uno de recuperación (D22, D47). Un código
     /// equivocado cuenta como un fallo de clave: tras varios seguidos la cuenta se bloquea, así que no se puede probar uno por uno.
     /// </summary>
+    [PaginaSinPermiso("Segundo factor del inicio de sesión")]
     public class MfaModel : PageModel
     {
         private readonly IServicioMfa _mfa;

@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Flota.KPI
 {
+    [RequierePermiso("flota.kpi.ver")]
     public class GraficosModel : PageModel
     {
         private readonly KpiService _kpi;

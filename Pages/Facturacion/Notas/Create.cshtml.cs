@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Facturacion;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Facturacion.Notas
 {
+    [RequierePermiso("facturacion.nota.crear")]
     public class CreateModel : PageModel
     {
         private readonly ApplicationDbContext _db;

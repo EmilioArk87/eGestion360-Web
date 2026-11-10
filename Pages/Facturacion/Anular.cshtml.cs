@@ -5,9 +5,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Facturacion;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Facturacion
 {
+    [RequierePermiso("facturacion.factura.anular")]
     public class AnularModel : PageModel
     {
         private readonly ApplicationDbContext _db;

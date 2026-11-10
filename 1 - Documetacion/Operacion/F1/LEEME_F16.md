@@ -43,3 +43,38 @@ El bloque ROLLBACK al final del script quita los 5 predicados y las 4 tablas. Ha
 1. **Transgar:** los usuarios del rol «Administrador» (`es_admin = 1`) tienen `rol_legado = empresa_user`. Hoy no administran usuarios, roles ni invitaciones; el evaluador decide por el texto del rol (como `AuthHelper`) para no darles esos poderes por sorpresa. Hay que decidir si pasan a `empresa_admin` o si el rol deja de ser `es_admin`.
 2. El rol «Flota» de SIP (id 2) no tiene casillas; tras migrar sigue sin permisos.
 3. Las 7 filas de casillas (no 6) son: Demo 2, la empresa 3 dos y Transgar tres.
+
+## F1.6b · El filtro de permisos en modo Registrar
+
+**No cambia lo que ve ni lo que puede hacer nadie, y no toca la base** (ni script ni `/alerta-bd`). Cada pantalla declara el permiso que pide ([anexo del ADR-029](../../Arquitectura/ADR-029-anexo-permisos-por-pagina.md)) y el filtro `PermisosPageFilter` anota, sin bloquear, a quién se le negaría.
+
+| Qué | Cómo |
+|---|---|
+| Interruptor | `Permisos:Modo` en `appsettings.json` (`"Registrar"`). Por variable de entorno: `Permisos__Modo`. Solo la palabra `Aplicar` bloquea; cualquier otro valor, o ninguno, deja `Registrar`. **No se pasa a `Aplicar` antes de F1.6c.** |
+| Qué se anota | Una línea Warning por cada petición que se negaría: `Permisos [registro]: se negaría GET /Flota/Catalogos/Vehiculos/Delete (OnGetAsync) por falta de flota.vehiculos.eliminar; cuenta 6, rol empresa_user/6, tenant 4.` Una pantalla que no declaró su permiso sale una sola vez con nivel Error. |
+| Dónde se lee | En el log de consola de la aplicación. **En Somee no se guarda** (el ejemplo del `web.config` del servidor trae `stdoutLogEnabled="false"`; falta confirmarlo). Por eso el efecto real se calcula antes de publicar, con la simulación de abajo. |
+| Reversa | Publicar el paquete anterior. No hay cambios de base de datos. Sin publicar nada, el modo `Registrar` ya no bloquea a nadie. |
+
+### Simulación sobre producción (solo lectura, 2026-11-09)
+
+Para cada acceso activo se calcularon los permisos que da el evaluador (con los módulos que el plan concede y la empresa tiene activos) y cuántas de las 86 pantallas con permiso quedarían anotadas. **Es lo que se vería en el log si esa persona abriera todas las pantallas; hoy nadie queda bloqueado.**
+
+| Acceso | Rol | Permisos efectivos | Pantallas anotadas (de 86) |
+|---|---|---|---|
+| `admin` (operador) en el contexto de plataforma | `admin` | todos (72) | 0 |
+| `admin` dentro de la empresa 1 (SIP), como `empresa_user` | «Flota» (sin permisos) | 0 | 86 |
+| `admin` dentro de la empresa 4 (Transgar), como `empresa_user` | «Administrador» (`es_admin`) | 28 | 46 |
+| `cliente_demo` (Demo) | «Flota» | 31 | 40 |
+
+Las cuentas `transgar.admin` y `transgar.flota` están inactivas (membresía suspendida), así que no aparecen. Lo que se anota en Transgar y Demo son sobre todo las pantallas de administración de la empresa (usuarios, roles, invitaciones), de plataforma, de facturación y de catálogos: justo las que hoy esas cuentas no usan.
+
+### Lo que esta simulación deja a la vista para la revisión de roles (antes de F1.6d)
+
+1. **El operador dentro de una empresa se evalúa con el rol de ese acceso**, no como operador, porque hoy `IsAdmin` solo lo reconoce en el contexto de plataforma. Con Flota en modo `Aplicar` perdería, dentro de SIP, todo lo de Flota (el rol «Flota» de SIP no tiene permisos). Decidir si el operador conserva todos los permisos en cualquier contexto.
+2. **«Administrador» de Transgar** (`es_admin`, entra como `empresa_user`): conserva los 28 permisos de Flota pero ninguno de administración, como hoy.
+3. **«Flota» de SIP** sigue sin permisos.
+
+### Cómo se probó
+
+- 48 pruebas nuevas (suite 1302 de 1302): atributos, el filtro en los dos modos, el contexto de la petición y una matriz de cinco perfiles por las 110 páginas con el evaluador de verdad.
+- En una copia de producción en el SQL Server local, con 037 a 041 y la RLS encendida: la aplicación arranca con el filtro; en modo `Registrar` el «Operador de Flota» abre todas sus pantallas y quedan anotadas solo las que su rol no concede; en modo `Aplicar` esas mismas responden 403 con el texto «Tu rol no incluye el permiso para: …» y las demás abren. La copia se borró al terminar.

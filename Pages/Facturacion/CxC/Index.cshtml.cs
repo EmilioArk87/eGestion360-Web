@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Facturacion.CxC
 {
@@ -10,6 +11,7 @@ namespace eGestion360Web.Pages.Facturacion.CxC
     /// Estado de cuenta y antigüedad de saldos por cliente.
     /// Muestra facturas con saldo pendiente agrupadas por rango de días vencidos.
     /// </summary>
+    [RequierePermiso("facturacion.cxc.ver")]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _db;

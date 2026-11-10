@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    [PaginaSinPermiso("Centro de navegación: cada opción pide su propio permiso")]
     public class MainMenuModel : PageModel
     {
         public string Username      { get; set; } = string.Empty;

@@ -5,9 +5,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Facturacion;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Facturacion.Pagos
 {
+    [RequierePermiso("facturacion.pago.ver")]
     public class DetailsModel : PageModel
     {
         private readonly ApplicationDbContext _db;
@@ -47,6 +49,7 @@ namespace eGestion360Web.Pages.Facturacion.Pagos
             return Page();
         }
 
+        [RequierePermiso("facturacion.pago.anular")]
         public async Task<IActionResult> OnPostAnularAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");

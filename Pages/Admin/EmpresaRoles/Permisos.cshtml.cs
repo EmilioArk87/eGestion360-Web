@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.EmpresaRoles
 {
@@ -16,6 +17,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         public bool PuedeEliminar { get; set; }
     }
 
+    [RequierePermiso("administracion.roles.ver")]
     public class PermisosModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -35,6 +37,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
             return await CargarAsync();
         }
 
+        [RequierePermiso("administracion.roles.editar")]
         public async Task<IActionResult> OnPostAsync(int rolId, List<int> modulos, IFormCollection form)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");

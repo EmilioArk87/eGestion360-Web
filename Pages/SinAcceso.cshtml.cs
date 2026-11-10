@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services.Derechos;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
@@ -10,6 +11,7 @@ namespace eGestion360Web.Pages
     /// A ella manda <see cref="EstadoDelTenantMiddleware"/> y responde 403 mientras el motivo siga vigente. Lee el estado de lo que el
     /// middleware dejó en la petición: nada del estado viene de la URL ni de un formulario.
     /// </summary>
+    [PaginaSinPermiso("Explica por qué no se puede entrar")]
     public class SinAccesoModel : PageModel
     {
         public bool SoloLectura { get; private set; }

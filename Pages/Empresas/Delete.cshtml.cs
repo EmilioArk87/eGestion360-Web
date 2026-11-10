@@ -5,9 +5,11 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Tenancy;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Empresas
 {
+    [RequierePermiso("plataforma.empresas.eliminar")]
     public class DeleteModel : PageModel
     {
         private readonly ApplicationDbContext _context;

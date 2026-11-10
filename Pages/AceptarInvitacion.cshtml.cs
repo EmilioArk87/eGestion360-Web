@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
@@ -11,6 +12,7 @@ namespace eGestion360Web.Pages
     /// <c>AmbitoDePlataformaPageFilter.RutasSinSesion</c>): quien llega solo tiene el token, y de él salen el usuario que la
     /// invitación dejó sin activar y su tenant. El enlace sirve una sola vez y vence.
     /// </summary>
+    [PaginaSinPermiso("Se entra con el enlace de la invitación, antes de tener sesión")]
     public class AceptarInvitacionModel : PageModel
     {
         private readonly IServicioDeInvitaciones _invitaciones;

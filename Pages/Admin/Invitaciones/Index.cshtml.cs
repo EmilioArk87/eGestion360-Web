@@ -4,10 +4,12 @@ using eGestion360Web.Pages.Admin.Usuarios;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
 using eGestion360Web.Services.Personas;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.Invitaciones
 {
     /// <summary>Las invitaciones enviadas: cuáles esperan, cuáles se aceptaron y cuáles vencieron; reenviar y anular (ADR-028).</summary>
+    [RequierePermiso("administracion.invitaciones.ver")]
     public class IndexModel : PageModel
     {
         private readonly IServicioDeInvitaciones _invitaciones;
@@ -25,6 +27,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
             return Page();
         }
 
+        [RequierePermiso("administracion.invitaciones.crear")]
         public async Task<IActionResult> OnPostReenviarAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
@@ -37,6 +40,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
             return RedirectToPage();
         }
 
+        [RequierePermiso("administracion.invitaciones.anular")]
         public async Task<IActionResult> OnPostAnularAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");

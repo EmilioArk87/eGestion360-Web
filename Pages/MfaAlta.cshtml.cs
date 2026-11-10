@@ -5,6 +5,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Services;
 using eGestion360Web.Services.Identidad;
 using System.ComponentModel.DataAnnotations;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
@@ -13,6 +14,7 @@ namespace eGestion360Web.Pages
     /// de recuperación (se muestran una sola vez). La usa quien está entrando y se la exigen (operador, o administrador de empresa pasada
     /// su ventana de gracia) y también cualquier persona con sesión que quiera activarla antes (D47).
     /// </summary>
+    [PaginaSinPermiso("Alta del segundo factor de la propia cuenta")]
     public class MfaAltaModel : PageModel
     {
         private readonly ApplicationDbContext _db;

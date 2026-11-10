@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Flota
 {
@@ -8,6 +9,7 @@ namespace eGestion360Web.Pages.Flota
     /// Aviso al que <see cref="EmpresaRequeridaPageFilter"/> desvía las sesiones sin empresa que intentan entrar a Flota.
     /// Si la sesión sí tiene empresa no hay nada que explicar y vuelve al menú de Flota.
     /// </summary>
+    [PaginaSinPermiso("Explica por qué Flota no abre sin empresa")]
     public class SinEmpresaModel : PageModel
     {
         public bool IsAdmin { get; set; }
