@@ -1,6 +1,6 @@
 # ADR-029 · Permisos por acción (F1.6)
 
-- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador) escrita y ensayada; el script 041 espera su aplicación en producción
+- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador) escrita y ensayada; script 041 aplicado y verificado en producción el 2026-11-09
 - **Fecha:** 2026-11-03
 - **Decidió:** Emilio (D57 a D65). Diseño y ejecución de Claude
 - **Fase:** F1.6 (entrega F1.6a)

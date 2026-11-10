@@ -2,6 +2,8 @@
 
 Complemento de [`LEEME.md`](LEEME.md), [`LEEME_F15.md`](LEEME_F15.md) y [`LEEME_F17.md`](LEEME_F17.md). Este archivo cubre el **script 041** (`2 - Script SQL/041_permisos_catalogo_y_roles.sql`) y su verificación de solo lectura (`verificar_despues_041.sql`). Decisiones: [ADR-029](../../Arquitectura/ADR-029-permisos-por-accion.md).
 
+> **Aplicado en producción el 2026-11-09 a las 20:26** (aviso `/alerta-bd` aprobado; hash SHA-256 `60DD0176E41D35B30EC73F81ECA56AB657F9252F8B1F1499B16D0577426C04AD`): PRECHECK correcto, 4 tablas y 5 predicados RLS, 72 permisos, 9 plantillas con 102 permisos, 143 permisos migrados y 4 textos corregidos. `verificar_despues_041.sql` 24/24, `verificar_despues_f15.sql` 59/59, `verificar_despues_f17.sql` 46/46 y la comprobación diaria «TODO BIEN».
+>
 > **El 041 no cambia lo que ve ni lo que puede hacer nadie.** La aplicación publicada ignora las tablas nuevas; el evaluador de permisos del código nuevo está registrado pero nada lo llama hasta F1.6b. Orden obligatorio: **aplicar el 041 (con `/alerta-bd`) → verificar → recién entonces publicar el código que lee esas tablas.**
 
 ## Qué crea el script 041
