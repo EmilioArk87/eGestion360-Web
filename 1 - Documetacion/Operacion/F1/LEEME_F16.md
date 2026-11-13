@@ -70,7 +70,7 @@ Las cuentas `transgar.admin` y `transgar.flota` están inactivas (membresía sus
 
 ### Lo que esta simulación deja a la vista para la revisión de roles (antes de F1.6d)
 
-1. **El operador dentro de una empresa se evalúa con el rol de ese acceso**, no como operador, porque hoy `IsAdmin` solo lo reconoce en el contexto de plataforma. Con Flota en modo `Aplicar` perdería, dentro de SIP, todo lo de Flota (el rol «Flota» de SIP no tiene permisos). Decidir si el operador conserva todos los permisos en cualquier contexto.
+1. **El operador dentro de una empresa se evaluaba con el rol de ese acceso**, no como operador, porque `IsAdmin` solo lo reconoce en el contexto de plataforma. Con Flota en modo `Aplicar` habría perdido, dentro de SIP, todo lo de Flota. **Resuelto el 2026-11-12 (D66):** el operador conserva todos los permisos en cualquier contexto. Las otras tres decisiones de la revisión (D67 a D69) están en el ADR-029.
 2. **«Administrador» de Transgar** (`es_admin`, entra como `empresa_user`): conserva los 28 permisos de Flota pero ninguno de administración, como hoy.
 3. **«Flota» de SIP** sigue sin permisos.
 

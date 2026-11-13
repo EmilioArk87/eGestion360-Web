@@ -134,11 +134,11 @@ namespace eGestion360Web.Tests.Services.Permisos
             return new Resultado(siguio, contexto.Result, log, evaluador);
         }
 
-        private static HttpContext Usuario(string rol = "empresa_user", int? idRol = null, int idTenant = 2, string[]? modulos = null)
+        private static HttpContext Usuario(string rol = "empresa_user", int? idRol = null, int idTenant = 2, string[]? modulos = null, bool operadorEnEmpresa = false)
         {
             var http = SesionFalsa.ConIdentidad(new DatosDeIdentidad(
                 IdCuenta: 7, IdUserLegado: 7, NombreUsuario: "ana.prueba", Correo: "ana@example.test", NombrePersona: "Ana", Rol: rol,
-                EsOperador: rol == "admin", DebeCambiarClave: false, IdMembresia: 3, IdTenant: idTenant, CodigoTenant: "T", IdEmpresa: 1,
+                EsOperador: rol == "admin" || operadorEnEmpresa, DebeCambiarClave: false, IdMembresia: 3, IdTenant: idTenant, CodigoTenant: "T", IdEmpresa: 1,
                 IdRolEmpresa: idRol, MfaVerificada: false, Sello: "s"));
             http.Items[TenantMiddleware.ClaveIdTenant] = idTenant;
             http.Items[TenantMiddleware.ClaveIdEmpresa] = 1;
@@ -379,6 +379,51 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         // ── Quién pregunta: el contexto sale de la petición ───────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public void El_operador_dentro_de_una_empresa_se_arma_como_operador_aunque_entre_con_el_rol_de_ese_acceso()
+        {
+            // D66: dentro de SIP el operador entra como empresa_user con el rol «Flota», que no tiene permisos; sigue siendo personal de la plataforma.
+            var http = Usuario("empresa_user", idRol: 9, idTenant: 2, operadorEnEmpresa: true);
+
+            var contexto = ContextoDePermisosHttp.Crear(http);
+
+            Assert.False(AuthHelper.IsAdmin(http));
+            Assert.True(contexto.EsOperador);
+            Assert.Equal(AuthHelper.EmpresaUserRole, contexto.RolLegado);
+            Assert.Equal(9, contexto.IdRol);
+        }
+
+        [Fact]
+        public void Un_usuario_de_empresa_que_no_es_operador_no_se_arma_como_operador()
+        {
+            var contexto = ContextoDePermisosHttp.Crear(Usuario("empresa_user", idRol: 9, idTenant: 2));
+
+            Assert.False(contexto.EsOperador);
+        }
+
+        [Fact]
+        public void El_operador_dentro_de_una_empresa_con_un_rol_sin_permisos_pasa_por_todas_las_pantallas_en_aplicar()
+        {
+            var (_, vacio) = SembrarRoles();
+
+            var diferencias = Diferencias(
+                () => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }, operadorEnEmpresa: true),
+                (_, _) => true).GetAwaiter().GetResult();
+
+            Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
+        }
+
+        [Fact]
+        public async Task Con_la_configuracion_real_el_operador_dentro_de_una_empresa_pasa_por_la_administracion_y_la_plataforma()
+        {
+            var (_, vacio) = SembrarRoles();
+            HttpContext Operador() => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil, operadorEnEmpresa: true);
+
+            Pasa(await CorrerConConfiguracionReal("/Empresas/Create", "OnPostAsync", Operador(), "POST"), "Empresas/Create");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Soporte/Index", "OnPostEntrarAsync", Operador(), "POST"), "Soporte entrar");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", Operador()), "Usuarios/Create");
+        }
 
         [Fact]
         public void El_operador_se_arma_como_operador_con_o_sin_tenant()

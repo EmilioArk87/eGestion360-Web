@@ -55,7 +55,7 @@ La segunda entrega pone la pregunta en cada pantalla sin cambiar lo que nadie pu
 Lo que se decidió al implementarlo, y por qué:
 
 1. **El código completo en cada pantalla, no deducido del nombre.** D59 hablaba de «valores por convención del nombre de página». El nombre dice la acción (`Create` pide crear), pero no el recurso: `/Flota/Catalogos/Rutas/Edit` pide `flota.catalogos.editar`, `/Facturacion/Pagos/Create` pide `facturacion.pago.crear` y `/Admin/Usuarios/Edit` pide `administracion.usuarios.editar`; ninguno se saca de la carpeta. La convención queda vigilada por la prueba (el nombre y la acción tienen que coincidir) y no como un atajo que adivina.
-2. **Quien es operador se decide como hoy**: `AuthHelper.IsAdmin`, es decir, el rol `admin` de la cookie. Un operador que entra a una empresa con su acceso de empresa lleva `empresa_user` y se evalúa con el rol de ese acceso, igual que hoy lo tratan las guardas. Queda por decidir si en ese caso debe conservar todo (ver abajo).
+2. **Quien es operador** se decidió en F1.6b como hoy: `AuthHelper.IsAdmin`, el rol `admin` de la cookie. Un operador que entraba a una empresa con su acceso de empresa llevaba `empresa_user` y se evaluaba con el rol de ese acceso. Lo corrige la **D66** (ver «Revisión de los 7 roles»).
 3. **Un handler que borra tiene permiso propio solo si el catálogo lo tiene.** Eliminar un peaje (`OnPostDeleteAsync` de `Peajes/Edit`) cuelga de `flota.peajes.editar` porque el catálogo no trae `flota.peajes.eliminar`.
 
 Cómo se revisa lo que el filtro anota:
@@ -78,6 +78,17 @@ Desde esta entrega el filtro **bloquea** en las pantallas de plataforma y de adm
 Lo que cambia para quien no tiene permiso: en lugar de volver en silencio al menú, recibe la página «Sin permiso» (403) con el nombre del permiso que le falta. Con los permisos de hoy nadie gana ni pierde acceso: todas las cuentas activas de producción entran como `empresa_user` o como operador, y las pantallas ya les cerraban el paso.
 
 **Reversa:** no se apaga vaciando `AplicarEn`, porque las pantallas ya no comprueban el rol y quedarían abiertas. Se publica el paquete anterior (F1.6b).
+
+## Revisión de los 7 roles: D66 a D69 (2026-11-12)
+
+Antes de que Flota empiece a bloquear (F1.6d) se revisaron con Emilio los 7 roles de producción (sus permisos, quién los usa y qué perdería cada cuenta). Resultado: tres cuentas activas con rol (el operador en SIP y en Transgar y `cliente_demo` en Demo), ningún administrador de empresa activo, y un solo cambio real para una cuenta que no es operador: `cliente_demo` deja de poder eliminar vehículos y anular una salida. Decisiones aceptadas por Emilio el 2026-11-12, tal como se recomendaron:
+
+| # | Decisión | Cómo queda |
+|---|----------|------------|
+| D66 | **El operador conserva todos los permisos en cualquier contexto** | `ContextoDePermisosHttp` lo reconoce por la marca de la cuenta (`AuthHelper.IsOperador`) además del rol `admin` del contexto de plataforma. Dentro de SIP o de Transgar, aunque entre como `empresa_user` con un rol sin permisos, recibe todo el catálogo. Los módulos siguen dependiendo del plan y de la empresa. |
+| D67 | **El rol «Administrador» de Transgar (`es_admin`) no se toca** | La marca `es_admin` del rol no concede nada en el modelo nuevo. Cuando Transgar tenga un administrador real, entra como `empresa_admin`, que recibe la administración y todos los módulos activos. La marca se retira en F1.6e. |
+| D68 | **El rol «Flota» de SIP sigue sin permisos** | Solo lo usa el operador y con D66 no le importa. Cuando alguien más entre a SIP por ese rol se le copian los permisos de «Operador de Flota» desde la pantalla de roles. |
+| D69 | **Eliminar un peaje sigue colgando de `flota.peajes.editar`** | No se abre un script 042 por un botón. Si se crea `flota.peajes.eliminar`, lo recibirán los roles que tengan la casilla eliminar de Flota. |
 
 ## Alternativas consideradas
 
