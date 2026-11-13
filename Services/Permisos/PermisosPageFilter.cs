@@ -123,10 +123,6 @@ namespace eGestion360Web.Services.Permisos
             return permisos;
         }
 
-        // La página declara UTF-8: solo hay que escapar lo que el HTML interpreta, no los acentos.
-        private static string EscaparHtml(string texto)
-            => texto.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
-
         private static IActionResult Negar(HttpContext http, string? codigo)
         {
             // Una llamada de datos (fetch) no sigue una página: recibe el 403 directo.
@@ -134,18 +130,21 @@ namespace eGestion360Web.Services.Permisos
                             || string.Equals(http.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
             if (pideDatos) return new StatusCodeResult(StatusCodes.Status403Forbidden);
 
-            var queFalta = codigo != null && CatalogoDePermisos.Buscar(codigo) is { } p
-                ? EscaparHtml(p.Descripcion)
-                : "acceder a esta pantalla";
-            return new ContentResult
-            {
-                StatusCode = StatusCodes.Status403Forbidden,
-                ContentType = "text/html; charset=utf-8",
-                Content = "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><title>Sin permiso</title></head><body style=\"font-family:sans-serif;margin:2rem\">"
-                          + $"<h1>Sin permiso</h1><p>Tu rol no incluye el permiso para: {queFalta}.</p>"
-                          + "<p>Pide a quien administra tu empresa que lo agregue a tu rol.</p>"
-                          + "<p><a href=\"/MainMenu\">Volver al menú principal</a></p></body></html>"
-            };
+            var definicion = codigo != null ? CatalogoDePermisos.Buscar(codigo) : null;
+            var lineas = definicion != null
+                ? new[]
+                {
+                    new LineaDePagina("Tu rol no incluye: ", definicion.Descripcion, "."),
+                    new LineaDePagina("Pide a quien administra tu empresa que lo agregue a tu rol y vuelve a intentarlo."),
+                }
+                : new[]
+                {
+                    new LineaDePagina("Tu rol no puede abrir esta pantalla."),
+                    new LineaDePagina("Pide a quien administra tu empresa que revise tu rol y vuelve a intentarlo."),
+                };
+
+            return PaginaDeAcceso.Respuesta(StatusCodes.Status403Forbidden,
+                new DatosDePaginaDeAcceso("No tienes permiso para esto", lineas, definicion?.Codigo, http.TraceIdentifier));
         }
     }
 }

@@ -49,14 +49,14 @@ namespace eGestion360Web.Services.Derechos
             if (!AuthHelper.IsAuthenticated(http) || AuthHelper.IsAdmin(http)) return;
             if (AuthHelper.HasModulo(http, modulo)) return;
 
-            context.Result = new ContentResult
-            {
-                StatusCode = StatusCodes.Status403Forbidden,
-                ContentType = "text/html; charset=utf-8",
-                Content = "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><title>Sin acceso</title></head><body style=\"font-family:sans-serif;margin:2rem\">"
-                          + $"<h1>Sin acceso al módulo</h1><p>Tu cuenta no tiene el módulo «{System.Net.WebUtility.HtmlEncode(modulo)}» en su plan o no está activado para tu empresa.</p>"
-                          + "<p><a href=\"/MainMenu\">Volver al menú principal</a></p></body></html>"
-            };
+            context.Result = PaginaDeAcceso.Respuesta(StatusCodes.Status403Forbidden, new DatosDePaginaDeAcceso(
+                "No tienes acceso a este módulo",
+                new[]
+                {
+                    new LineaDePagina("Tu cuenta no tiene el módulo «", modulo, "» en su plan o no está activado para tu empresa."),
+                    new LineaDePagina("Pide a quien administra tu cuenta que lo active."),
+                },
+                Referencia: http.TraceIdentifier));
         }
 
         public void OnPageHandlerExecuted(PageHandlerExecutedContext context) { }
