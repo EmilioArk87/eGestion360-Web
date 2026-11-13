@@ -1,6 +1,6 @@
 # ADR-029 · Permisos por acción (F1.6)
 
-- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): escrita y probada el 2026-11-09, pendiente de publicar
+- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): escrita y probada el 2026-11-12, pendiente de publicar
 - **Fecha:** 2026-11-03
 - **Decidió:** Emilio (D57 a D65). Diseño y ejecución de Claude
 - **Fase:** F1.6 (entrega F1.6a)
@@ -63,6 +63,21 @@ Cómo se revisa lo que el filtro anota:
 - Cada negación en modo Registrar queda en el log con el nivel Warning: `Permisos [registro]: se negaría GET /Flota/Catalogos/Vehiculos/Delete (OnGetAsync) por falta de flota.vehiculos.eliminar; cuenta 6, rol empresa_user/6, tenant 4.` Una pantalla sin declarar sale una sola vez con nivel Error.
 - **En Somee ese log no se guarda**: el ejemplo del `web.config` de [CONFIGURACION_SECRETOS.md](../CONFIGURACION_SECRETOS.md) trae `stdoutLogEnabled="false"` (falta confirmarlo en el servidor). Por eso, antes de publicar, el efecto real se calcula en solo lectura con los datos de producción: para cada acceso activo, los permisos que el evaluador le da y las pantallas y handlers que quedarían anotados. Resultado del 2026-11-09 en [LEEME_F16.md](../Operacion/F1/LEEME_F16.md).
 - Si se quiere ver el registro en vivo en producción hace falta dejarlo en la base (una tabla nueva, script 042 con `/alerta-bd`) o activar el log de consola del servidor. No es necesario para pasar a F1.6c, y queda como decisión abierta.
+
+## F1.6c: plataforma y administración aplican (2026-11-12)
+
+Desde esta entrega el filtro **bloquea** en las pantallas de plataforma y de administración de la empresa; el resto de las carpetas sigue en modo Registrar.
+
+| Pieza | Cómo queda |
+|---|---|
+| `Permisos:AplicarEn` | Prefijos de ruta que aplican aunque el modo global sea `Registrar`: `/Admin`, `/Empresas`, `/UserManagement`, `/DebugUsers`, `/ResetCodesHistory` y `/ValidarEmails`. Cubre la ruta exacta y lo que cuelga de ella. **Si la clave falta, valen esas mismas carpetas** (`OpcionesDePermisos.CarpetasDeAdministracion`): solo una lista vacía expresa las apaga. |
+| Guardas por rol retiradas | 46 comprobaciones `IsAdmin(` o `IsAnyAdmin(` con redirección al menú o 403, en 20 archivos de `Pages/Admin`, `Pages/Empresas` y `UserManagement`. Cada pantalla conserva su comprobación de sesión. Quién entra lo decide el permiso que declara: `plataforma.*` (solo el operador) o `administracion.*` (operador y administrador de empresa). |
+| Lo que NO se retiró | Los 6 usos de `IsAdmin`/`IsEmpresaAdmin` que deciden **qué se muestra** y no quién entra (por ejemplo, el operador ve todas las empresas y el administrador solo la suya) y la comprobación «sin empresa en la sesión» de `/Admin/Soporte`. Se retiran en F1.6e con el `Puede()` de vistas. |
+| `AdminOnlyPageFilter` | Se queda como red de seguridad hasta F1.6e (D63). |
+
+Lo que cambia para quien no tiene permiso: en lugar de volver en silencio al menú, recibe la página «Sin permiso» (403) con el nombre del permiso que le falta. Con los permisos de hoy nadie gana ni pierde acceso: todas las cuentas activas de producción entran como `empresa_user` o como operador, y las pantallas ya les cerraban el paso.
+
+**Reversa:** no se apaga vaciando `AplicarEn`, porque las pantallas ya no comprueban el rol y quedarían abiertas. Se publica el paquete anterior (F1.6b).
 
 ## Alternativas consideradas
 

@@ -63,7 +63,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnGetAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             if (!await CargarUsuarioAsync(id)) return NotFound();
             if (AuthHelper.IsEmpresaAdmin(HttpContext) && EmpresaId != AuthHelper.GetEmpresaId(HttpContext))
@@ -78,7 +77,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             if (AuthHelper.IsEmpresaAdmin(HttpContext))
                 EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
@@ -140,7 +138,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnPostVincularAsync(int id, int idPersona)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             var r = await _usuarioPersona.VincularAsync(PersonaDeUsuarioPagina.Quien(HttpContext), id, idPersona);
             if (r.Ok) await RefrescarNombreSiEsElPropioAsync(id);
@@ -151,7 +148,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnPostQuitarPersonaAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             var r = await _usuarioPersona.QuitarAsync(PersonaDeUsuarioPagina.Quien(HttpContext), id);
             return VolverConMensaje(id, r, "Se quitó la persona del usuario.");
@@ -161,7 +157,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnPostCrearPersonaAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             var r = await _usuarioPersona.CrearPersonaYVincularAsync(
                 PersonaDeUsuarioPagina.Quien(HttpContext), id, PersonaNueva.ADatos(), PersonaNueva.ConfirmarQueEsOtraPersona);

@@ -21,7 +21,6 @@ namespace eGestion360Web.Pages.Admin.Outbox
         public async Task<IActionResult> OnGetAsync(long id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))         return RedirectToPage("/MainMenu");
 
             Evento = await _db.DomainEvents.AsNoTracking().FirstOrDefaultAsync(e => e.IdEvento == id);
             if (Evento == null) return RedirectToPage("Index");
@@ -43,7 +42,7 @@ namespace eGestion360Web.Pages.Admin.Outbox
         [RequierePermiso("plataforma.outbox.gestionar")]
         public async Task<IActionResult> OnPostRetryAsync(long id)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAdmin(HttpContext))
+            if (!AuthHelper.IsAuthenticated(HttpContext))
                 return Forbid();
 
             var e = await _db.DomainEvents.FirstOrDefaultAsync(x => x.IdEvento == id);
@@ -65,7 +64,7 @@ namespace eGestion360Web.Pages.Admin.Outbox
         [RequierePermiso("plataforma.outbox.gestionar")]
         public async Task<IActionResult> OnPostMarkProcessedAsync(long id)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAdmin(HttpContext))
+            if (!AuthHelper.IsAuthenticated(HttpContext))
                 return Forbid();
 
             var e = await _db.DomainEvents.FirstOrDefaultAsync(x => x.IdEvento == id);

@@ -23,7 +23,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             // empresa_admin solo puede ver roles de su propia empresa
             if (AuthHelper.IsEmpresaAdmin(HttpContext) && AuthHelper.GetEmpresaId(HttpContext) != EmpresaId)
@@ -36,7 +35,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion, bool esAdmin)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             EmpresaId = empresaId;
 
@@ -57,7 +55,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         public async Task<IActionResult> OnPostToggleAsync(int rolId, bool activo, int empresaId)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             EmpresaId = empresaId;
             var rol = await _context.EmpresaRoles.FindAsync(rolId);

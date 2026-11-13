@@ -33,11 +33,6 @@ namespace eGestion360Web.Pages.Empresas
                 return RedirectToPage("/Login");
             }
 
-            if (!AuthHelper.IsAdmin(HttpContext))
-            {
-                return RedirectToPage("/MainMenu");
-            }
-
             IQueryable<Empresa> query = _context.Empresas.AsNoTracking().Where(e => !e.Eliminado);
 
             if (!string.IsNullOrWhiteSpace(Search))

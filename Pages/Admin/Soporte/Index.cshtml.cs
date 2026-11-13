@@ -137,7 +137,7 @@ namespace eGestion360Web.Pages.Admin.Soporte
         private IActionResult? Bloqueo()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext) || AuthHelper.GetEmpresaId(HttpContext) is > 0) return RedirectToPage("/MainMenu");
+            if (AuthHelper.GetEmpresaId(HttpContext) is > 0) return RedirectToPage("/MainMenu");
             return null;
         }
 

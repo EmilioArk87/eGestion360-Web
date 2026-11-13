@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
@@ -87,6 +88,7 @@ namespace eGestion360Web.Tests.Services.Permisos
         private sealed class OpcionesFalsas : IOptionsMonitor<OpcionesDePermisos>
         {
             public OpcionesFalsas(string? modo) => CurrentValue = new OpcionesDePermisos { Modo = modo };
+            public OpcionesFalsas(OpcionesDePermisos opciones) => CurrentValue = opciones;
             public OpcionesDePermisos CurrentValue { get; }
             public OpcionesDePermisos Get(string? name) => CurrentValue;
             public IDisposable? OnChange(Action<OpcionesDePermisos, string?> listener) => null;
@@ -544,6 +546,233 @@ namespace eGestion360Web.Tests.Services.Permisos
                 (_, d) => d is { Ambito: AmbitoDePermiso.Modulo, CasillaLegada: CasillaLegada.Ver, Modulo: "catalogos" });
 
             Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
+        }
+
+        // ── Con la configuración real (F1.6c): administración y plataforma ya aplican ──────────────────────────────────────────
+
+        private static OpcionesDePermisos OpcionesReales()
+        {
+            var carpeta = new DirectoryInfo(AppContext.BaseDirectory);
+            while (carpeta != null && !File.Exists(Path.Combine(carpeta.FullName, "eGestion360Web.csproj"))) carpeta = carpeta.Parent;
+            Assert.NotNull(carpeta);
+
+            var configuracion = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                .AddJsonFile(Path.Combine(carpeta!.FullName, "appsettings.json")).Build();
+            return configuracion.GetSection(OpcionesDePermisos.Seccion).Get<OpcionesDePermisos>() ?? new OpcionesDePermisos();
+        }
+
+        private static readonly string[] CarpetasQueAplican = { "/Admin", "/Empresas", "/UserManagement", "/DebugUsers", "/ResetCodesHistory", "/ValidarEmails" };
+
+        private static Type PaginaDe(string ruta) => PaginasReales().Single(p => p.Ruta == ruta).Tipo;
+
+        private async Task<(bool Siguio, IActionResult? Respuesta)> CorrerConConfiguracionReal(string ruta, string? handler, HttpContext http, string metodo = "GET")
+        {
+            await using var db = _base.CrearComo(IdTenantDelPerfil);
+            var filtro = new PermisosPageFilter(new EvaluadorDePermisos(db, new MemoryCache(new MemoryCacheOptions())), new OpcionesFalsas(OpcionesReales()),
+                new RegistroEnMemoria<PermisosPageFilter>());
+            var (pageContext, contexto) = Armar(PaginaDe(ruta), handler, http, metodo, ruta);
+
+            var siguio = false;
+            await filtro.OnPageHandlerExecutionAsync(contexto, () =>
+            {
+                siguio = true;
+                return Task.FromResult(new PageHandlerExecutedContext(pageContext, Array.Empty<IFilterMetadata>(), contexto.HandlerMethod!, contexto.HandlerInstance));
+            });
+            return (siguio, contexto.Result);
+        }
+
+        private static void Pasa((bool Siguio, IActionResult? Respuesta) r, string que)
+        {
+            Assert.True(r.Siguio, $"{que}: debía pasar y se negó");
+            Assert.Null(r.Respuesta);
+        }
+
+        private static void SeNiega((bool Siguio, IActionResult? Respuesta) r, string que)
+        {
+            Assert.False(r.Siguio, $"{que}: debía negarse y pasó");
+            Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<ContentResult>(r.Respuesta).StatusCode);
+        }
+
+        [Fact]
+        public void La_configuracion_real_aplica_en_administracion_y_plataforma_y_registra_en_el_resto()
+        {
+            var opciones = OpcionesReales();
+
+            Assert.Equal(ModoDePermisos.Registrar, opciones.ModoActual);
+            Assert.Equal(CarpetasQueAplican, opciones.AplicarEn);
+            Assert.Equal(CarpetasQueAplican, OpcionesDePermisos.CarpetasDeAdministracion);
+            foreach (var (ruta, _) in PaginasReales())
+            {
+                var esperado = CarpetasQueAplican.Any(p => ruta == p || ruta.StartsWith(p + "/", StringComparison.Ordinal))
+                    ? ModoDePermisos.Aplicar
+                    : ModoDePermisos.Registrar;
+                Assert.True(opciones.ModoPara(ruta) == esperado, $"{ruta}: se esperaba {esperado}");
+            }
+        }
+
+        [Fact]
+        public void Toda_pantalla_de_plataforma_o_de_administracion_aplica_en_la_configuracion_real()
+        {
+            var opciones = OpcionesReales();
+            var registran = new List<string>();
+            foreach (var (ruta, tipo) in PaginasReales())
+            {
+                var permisos = new List<string>();
+                if (tipo.GetCustomAttribute<RequierePermisoAttribute>(inherit: false) is { } deLaClase) permisos.Add(deLaClase.Codigo);
+                permisos.AddRange(tipo.GetMethods().Select(m => m.GetCustomAttribute<RequierePermisoAttribute>(inherit: false)?.Codigo).OfType<string>());
+
+                var esDeAdministracion = permisos.Any(c => c.StartsWith("plataforma.", StringComparison.Ordinal) || c.StartsWith("administracion.", StringComparison.Ordinal));
+                if (esDeAdministracion && opciones.ModoPara(ruta) != ModoDePermisos.Aplicar) registran.Add(ruta);
+            }
+
+            Assert.True(registran.Count == 0, "Pantallas de plataforma o administración que todavía solo registran: " + string.Join(", ", registran));
+        }
+
+        [Theory]
+        [InlineData("/Admin", "/Admin/Usuarios/Create", true)]
+        [InlineData("/Admin", "/Admin", true)]
+        [InlineData("/Admin/", "/Admin/Usuarios/Create", true)]
+        [InlineData("/admin", "/Admin/Usuarios/Create", true)]
+        [InlineData("/Admin", "/AdminOtraCosa", false)]
+        [InlineData("/Empresas", "/Empresas/Index", true)]
+        [InlineData("/Empresas", "/EmpresasNuevas/Index", false)]
+        [InlineData("/Admin", "/Flota/Index", false)]
+        [InlineData("", "/Flota/Index", false)]
+        [InlineData("   ", "/Flota/Index", false)]
+        public void Las_carpetas_de_AplicarEn_cubren_la_ruta_exacta_y_lo_que_cuelga_de_ella(string prefijo, string ruta, bool aplica)
+        {
+            var opciones = new OpcionesDePermisos { Modo = "Registrar", AplicarEn = new[] { prefijo } };
+
+            Assert.Equal(aplica ? ModoDePermisos.Aplicar : ModoDePermisos.Registrar, opciones.ModoPara(ruta));
+        }
+
+        [Theory]
+        [InlineData("Aplicar", "/Flota/Index")]
+        [InlineData("Aplicar", "/Cualquiera")]
+        public void El_modo_global_Aplicar_vale_para_todas_las_rutas_aunque_no_haya_carpetas(string modo, string ruta)
+            => Assert.Equal(ModoDePermisos.Aplicar, new OpcionesDePermisos { Modo = modo }.ModoPara(ruta));
+
+        [Fact]
+        public void Sin_configurar_aplican_las_carpetas_de_administracion_y_solo_una_lista_vacia_las_apaga()
+        {
+            // Quitar la clave de la configuración no deja abiertas las pantallas de administración, que ya no comprueban el rol en su código.
+            Assert.Equal(ModoDePermisos.Aplicar, new OpcionesDePermisos().ModoPara("/Admin/Usuarios/Create"));
+            Assert.Equal(ModoDePermisos.Aplicar, new OpcionesDePermisos().ModoPara("/Empresas/Index"));
+            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos().ModoPara("/Flota/Index"));
+            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos { AplicarEn = Array.Empty<string>() }.ModoPara("/Admin/Usuarios/Create"));
+            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos { AplicarEn = new[] { "/Admin" } }.ModoPara(null));
+        }
+
+        private async Task<IReadOnlyList<string>> DiferenciasReales(Func<HttpContext> perfil, Func<DefinicionDePermiso, bool> deberiaPasar)
+        {
+            var opciones = OpcionesReales();
+            var diferencias = new List<string>();
+            foreach (var (ruta, tipo) in PaginasReales())
+            {
+                var requisito = RequisitoDePagina.De(tipo, null);
+                if (requisito.Tipo != TipoDeRequisito.Permiso) continue;
+                var definicion = CatalogoDePermisos.Buscar(requisito.Codigo!)!;
+
+                var r = await CorrerConConfiguracionReal(ruta, null, perfil());
+                // Donde la configuración solo registra, pasa todo el mundo; donde aplica, pasa quien tiene el permiso.
+                var esperado = opciones.ModoPara(ruta) == ModoDePermisos.Registrar || deberiaPasar(definicion);
+                if (r.Siguio != esperado) diferencias.Add($"{ruta} ({requisito.Codigo}): pasó={r.Siguio}, se esperaba {esperado}");
+            }
+            return diferencias;
+        }
+
+        [Fact]
+        public async Task Con_la_configuracion_real_el_operador_pasa_por_todo()
+        {
+            SembrarRoles();
+
+            var diferencias = await DiferenciasReales(() => Usuario("admin", idTenant: IdTenantDelPerfil), _ => true);
+
+            Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
+        }
+
+        [Fact]
+        public async Task Con_la_configuracion_real_el_administrador_de_empresa_pasa_por_la_administracion_pero_no_por_la_plataforma()
+        {
+            SembrarRoles();
+
+            var diferencias = await DiferenciasReales(
+                () => Usuario("empresa_admin", idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }),
+                d => d.Ambito != AmbitoDePermiso.Plataforma);
+
+            Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
+        }
+
+        [Fact]
+        public async Task Con_la_configuracion_real_un_usuario_con_rol_no_pasa_por_ninguna_pantalla_de_administracion_ni_de_plataforma()
+        {
+            var (consulta, vacio) = SembrarRoles();
+
+            foreach (var rol in new[] { consulta, vacio })
+            {
+                var diferencias = await DiferenciasReales(
+                    () => Usuario("empresa_user", idRol: rol, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }),
+                    d => d.Ambito == AmbitoDePermiso.Modulo && d.CasillaLegada == CasillaLegada.Ver);
+
+                Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
+            }
+        }
+
+        [Fact]
+        public async Task Un_usuario_con_rol_ya_no_llega_al_codigo_de_las_pantallas_de_administracion_y_plataforma()
+        {
+            var (_, vacio) = SembrarRoles();
+            HttpContext Rol() => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil);
+
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", Rol()), "Admin/Usuarios/Create GET");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnPostAsync", Rol(), "POST"), "Admin/Usuarios/Create POST");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/RolesPermisos/Index", "OnPostEditarAsync", Rol(), "POST"), "Admin/RolesPermisos editar");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Invitaciones/Create", "OnGetBuscarPersonasAsync", Rol()), "Invitaciones buscar personas");
+            SeNiega(await CorrerConConfiguracionReal("/Empresas/Index", "OnGetAsync", Rol()), "Empresas/Index");
+            SeNiega(await CorrerConConfiguracionReal("/UserManagement", "OnPostAsync", Rol(), "POST"), "UserManagement restablecer clave");
+            SeNiega(await CorrerConConfiguracionReal("/DebugUsers", "OnGetAsync", Rol()), "DebugUsers");
+
+            // Fuera de esas carpetas el filtro todavía solo registra: la pantalla de flota sigue abriendo para este rol sin permisos.
+            Pasa(await CorrerConConfiguracionReal("/Flota/Catalogos/Vehiculos/Create", "OnGetAsync", Rol()), "Flota/Vehiculos/Create (solo se registra)");
+        }
+
+        [Fact]
+        public async Task El_administrador_de_empresa_administra_su_empresa_pero_no_toca_la_plataforma()
+        {
+            SembrarRoles();
+            HttpContext Admin() => Usuario("empresa_admin", idTenant: IdTenantDelPerfil, modulos: new[] { "flota" });
+
+            Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", Admin()), "Usuarios/Create GET");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Edit", "OnPostVincularAsync", Admin(), "POST"), "Usuarios/Edit vincular");
+            Pasa(await CorrerConConfiguracionReal("/Admin/RolesPermisos/Index", "OnPostEditarAsync", Admin(), "POST"), "Roles editar");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Invitaciones/Index", "OnPostAnularAsync", Admin(), "POST"), "Invitaciones anular");
+
+            SeNiega(await CorrerConConfiguracionReal("/Empresas/Create", "OnPostAsync", Admin(), "POST"), "Empresas/Create");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Modulos/Index", "OnPostAsync", Admin(), "POST"), "Admin/Modulos");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Soporte/Index", "OnPostEntrarAsync", Admin(), "POST"), "Soporte entrar");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/ResetPassword", "OnPostAsync", Admin(), "POST"), "Admin/ResetPassword");
+            SeNiega(await CorrerConConfiguracionReal("/ValidarEmails", "OnPostPruebaCompleteAsync", Admin(), "POST"), "ValidarEmails");
+        }
+
+        [Fact]
+        public async Task El_operador_entra_a_la_plataforma_y_a_la_administracion()
+        {
+            SembrarRoles();
+            HttpContext Operador() => Usuario("admin", idTenant: IdTenantDelPerfil);
+
+            Pasa(await CorrerConConfiguracionReal("/Empresas/Create", "OnPostAsync", Operador(), "POST"), "Empresas/Create");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Soporte/Index", "OnPostEntrarAsync", Operador(), "POST"), "Soporte entrar");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Outbox/Index", "OnPostResetDeadAsync", Operador(), "POST"), "Outbox gestionar");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", Operador()), "Usuarios/Create");
+        }
+
+        [Fact]
+        public async Task Sin_sesion_el_filtro_sigue_sin_actuar_tambien_en_las_carpetas_que_aplican()
+        {
+            SembrarRoles();
+
+            Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", SinSesion()), "Usuarios/Create sin sesión");
+            Pasa(await CorrerConConfiguracionReal("/Empresas/Index", "OnGetAsync", SinSesion()), "Empresas/Index sin sesión");
         }
     }
 }

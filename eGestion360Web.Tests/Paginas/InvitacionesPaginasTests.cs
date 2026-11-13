@@ -216,15 +216,13 @@ namespace eGestion360Web.Tests.Paginas
         // ── Invitar ───────────────────────────────────────────────────────────
 
         [Fact]
-        public async Task Invitar_exige_sesion_y_ser_administrador()
+        public async Task Invitar_exige_sesion()
         {
             var sinSesion = PaginaCrear(SesionFalsa.Contexto(autenticado: false));
             Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(await sinSesion.OnGetAsync()).PageName);
             Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(await sinSesion.OnPostAsync()).PageName);
 
-            var usuario = PaginaCrear(SesionFalsa.Contexto("empresa_user", "1"));
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await usuario.OnGetAsync()).PageName);
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await usuario.OnPostAsync()).PageName);
+            // Quién puede invitar lo decide desde F1.6c el filtro de permisos (administracion.invitaciones.crear); ver PermisosPageFilterTests.
             Assert.Empty(_correo.Enviados);
         }
 
@@ -311,11 +309,8 @@ namespace eGestion360Web.Tests.Paginas
         }
 
         [Fact]
-        public async Task La_busqueda_de_personas_y_la_de_roles_exigen_ser_administrador()
+        public async Task La_busqueda_de_personas_exige_sesion()
         {
-            var usuario = PaginaCrear(SesionFalsa.Contexto("empresa_user", "1"));
-            Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<StatusCodeResult>(await usuario.OnGetBuscarPersonasAsync("maria")).StatusCode);
-            Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<StatusCodeResult>(await usuario.OnGetRolesAsync(1)).StatusCode);
             var sinSesion = PaginaCrear(SesionFalsa.Contexto(autenticado: false));
             Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<StatusCodeResult>(await sinSesion.OnGetBuscarPersonasAsync("maria")).StatusCode);
         }
@@ -338,12 +333,9 @@ namespace eGestion360Web.Tests.Paginas
         // ── Lista ─────────────────────────────────────────────────────────────
 
         [Fact]
-        public async Task La_lista_exige_sesion_y_ser_administrador()
+        public async Task La_lista_exige_sesion()
         {
             Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(await PaginaLista(SesionFalsa.Contexto(autenticado: false)).OnGetAsync()).PageName);
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await PaginaLista(SesionFalsa.Contexto("empresa_user", "1")).OnGetAsync()).PageName);
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await PaginaLista(SesionFalsa.Contexto("empresa_user", "1")).OnPostReenviarAsync(1)).PageName);
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await PaginaLista(SesionFalsa.Contexto("empresa_user", "1")).OnPostAnularAsync(1)).PageName);
         }
 
         [Fact]

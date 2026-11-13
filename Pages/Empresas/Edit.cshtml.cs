@@ -36,11 +36,6 @@ namespace eGestion360Web.Pages.Empresas
                 return RedirectToPage("/Login");
             }
 
-            if (!AuthHelper.IsAdmin(HttpContext))
-            {
-                return RedirectToPage("/MainMenu");
-            }
-
             var empresa = await _context.Empresas.AsNoTracking()
                 .FirstOrDefaultAsync(e => e.IdEmpresa == id && !e.Eliminado);
             if (empresa == null)
@@ -59,11 +54,6 @@ namespace eGestion360Web.Pages.Empresas
             if (!AuthHelper.IsAuthenticated(HttpContext))
             {
                 return RedirectToPage("/Login");
-            }
-
-            if (!AuthHelper.IsAdmin(HttpContext))
-            {
-                return RedirectToPage("/MainMenu");
             }
 
             if (!ModelState.IsValid)

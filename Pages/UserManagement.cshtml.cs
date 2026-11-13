@@ -69,9 +69,6 @@ namespace eGestion360Web.Pages
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.IsAdmin(HttpContext))
-                return RedirectToPage("/MainMenu");
-
             CargarSesion();
 
             // Limpiar errores de validación de campos no relevantes al POST de reset

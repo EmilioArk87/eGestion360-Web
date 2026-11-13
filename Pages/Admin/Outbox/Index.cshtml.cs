@@ -30,8 +30,6 @@ namespace eGestion360Web.Pages.Admin.Outbox
         {
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))
-                return RedirectToPage("/MainMenu");
 
             // Conteos por status (resumen superior)
             ConteoPorStatus = await _db.DomainEvents
@@ -62,7 +60,7 @@ namespace eGestion360Web.Pages.Admin.Outbox
         [RequierePermiso("plataforma.outbox.gestionar")]
         public async Task<IActionResult> OnPostResetDeadAsync()
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAdmin(HttpContext))
+            if (!AuthHelper.IsAuthenticated(HttpContext))
                 return Forbid();
 
             var dead = await _db.DomainEvents

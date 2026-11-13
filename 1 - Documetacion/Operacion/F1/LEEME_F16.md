@@ -78,3 +78,19 @@ Las cuentas `transgar.admin` y `transgar.flota` están inactivas (membresía sus
 
 - 48 pruebas nuevas (suite 1302 de 1302): atributos, el filtro en los dos modos, el contexto de la petición y una matriz de cinco perfiles por las 110 páginas con el evaluador de verdad.
 - En una copia de producción en el SQL Server local, con 037 a 041 y la RLS encendida: la aplicación arranca con el filtro; en modo `Registrar` el «Operador de Flota» abre todas sus pantallas y quedan anotadas solo las que su rol no concede; en modo `Aplicar` esas mismas responden 403 con el texto «Tu rol no incluye el permiso para: …» y las demás abren. La copia se borró al terminar.
+
+## F1.6c · Plataforma y administración en modo Aplicar
+
+**No toca la base** (ni script ni `/alerta-bd`) y no cambia quién puede entrar con los permisos de hoy. Las carpetas `/Admin`, `/Empresas`, `/UserManagement`, `/DebugUsers`, `/ResetCodesHistory` y `/ValidarEmails` ya **bloquean**: quien no tiene el permiso de la pantalla recibe la página «Sin permiso» (403) en lugar de volver al menú. Las guardas por rol de esas pantallas se retiraron (ADR-029, sección F1.6c).
+
+| Qué | Cómo |
+|---|---|
+| Interruptor | `Permisos:AplicarEn` en `appsettings.json`: lista de prefijos que aplican. Si falta, valen las seis carpetas de arriba. `Permisos:Modo = Aplicar` aplica en todo el sistema (se usará al final de F1.6d). |
+| Quién entra | Plataforma (`plataforma.*`): solo el operador. Administración (`administracion.*`): el operador y el administrador de empresa (rol `empresa_admin`). Un usuario con rol (`empresa_user`) no entra a ninguna de las dos hasta que se le conceda un permiso `administracion.*`. |
+| Reversa | **No se apaga vaciando `AplicarEn`**: las pantallas ya no comprueban el rol y quedarían abiertas. Se publica el paquete anterior (`eGestion360-publish-20261110-f16b`, commit `1305126`). |
+
+### Cómo se probó
+
+- Suite 1323 de 1323 (20 pruebas nuevas): las carpetas de `AplicarEn` y su valor por omisión, una matriz de operador, administrador de empresa y dos roles por todas las pantallas con la **configuración real**, y los casos con nombre (por ejemplo, el administrador de empresa anula una invitación pero no entra a `/Empresas/Create`). Una prueba de arquitectura vigila que no vuelva a quedar una guarda por rol en esas carpetas, y otra que toda pantalla de plataforma o administración esté en una carpeta que aplica.
+- En una copia de producción en el SQL Server local (037 a 041, RLS encendida), en modo `Registrar` global: el **operador** entra a Soporte, Empresas, Módulos, Usuarios del sistema, Outbox, Debug y Configuración de correo; el **administrador de empresa** de Transgar abre Nuevo usuario, Roles y permisos e Invitaciones y recibe 403 en Empresas, Módulos y Usuarios del sistema; el **Operador de Flota** (`empresa_user`) recibe 403 en todas las de administración y plataforma, y sus pantallas de flota siguen abriendo. La copia se borró al terminar.
+- En producción hoy no hay ningún administrador de empresa activo (simulación de solo lectura del 2026-11-09): los accesos activos son la cuenta del operador (en plataforma y, dentro de SIP y Transgar, como `empresa_user`) y `cliente_demo` (`empresa_user`). Los `empresa_user` ya no entraban a estas pantallas; el operador entra por el permiso.

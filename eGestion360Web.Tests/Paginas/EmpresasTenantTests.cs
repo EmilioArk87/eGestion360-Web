@@ -130,18 +130,8 @@ namespace eGestion360Web.Tests.Paginas
             Assert.True(verificar.CategoriasRepuesto.Any(c => c.IdEmpresa == guardada.IdEmpresa), "se siembran las categorías de repuesto");
         }
 
-        [Fact]
-        public async Task Crear_una_empresa_exige_ser_administrador_general_antes_de_mirar_el_tenant()
-        {
-            using var db = _bd.Crear();
-            var pagina = new CreateModel(db) { PageContext = Contexto("empresa_admin"), Empresa = EmpresaNueva(DatosBase.TenantA) };
-            var antes = ContarEmpresas();
-
-            var resultado = await pagina.OnPostAsync();
-
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(resultado).PageName);
-            Assert.Equal(antes, ContarEmpresas());
-        }
+        // «Quién puede crear una empresa» lo decide desde F1.6c el filtro de permisos (plataforma.empresas.crear, solo el operador): lo cubre
+        // PermisosPageFilterTests con la configuración real. La pantalla solo comprueba la sesión.
 
         [Fact]
         public void El_formulario_de_crear_ofrece_los_tenants_que_no_estan_cancelados()

@@ -21,7 +21,6 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext)) return RedirectToPage("/MainMenu");
 
             Filas = await _invitaciones.ListarAsync(Quien(), HttpContext.RequestAborted);
             return Page();
@@ -31,7 +30,6 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         public async Task<IActionResult> OnPostReenviarAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext)) return RedirectToPage("/MainMenu");
 
             var r = await _invitaciones.ReenviarAsync(Quien(), id, EnlaceDe, HttpContext.RequestAborted);
             if (!r.Ok) TempData["ErrorMessage"] = string.Join(" ", r.Errores);
@@ -44,7 +42,6 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         public async Task<IActionResult> OnPostAnularAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext)) return RedirectToPage("/MainMenu");
 
             var anulada = await _invitaciones.AnularAsync(Quien(), id, HttpContext.RequestAborted);
             if (anulada) TempData["SuccessMessage"] = "Invitación anulada: el enlace ya no sirve.";

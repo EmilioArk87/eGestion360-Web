@@ -43,11 +43,6 @@ namespace eGestion360Web.Pages.Empresas
                 return RedirectToPage("/Login");
             }
 
-            if (!AuthHelper.IsAdmin(HttpContext))
-            {
-                return RedirectToPage("/MainMenu");
-            }
-
             CargarPaises();
             return Page();
         }
@@ -57,11 +52,6 @@ namespace eGestion360Web.Pages.Empresas
             if (!AuthHelper.IsAuthenticated(HttpContext))
             {
                 return RedirectToPage("/Login");
-            }
-
-            if (!AuthHelper.IsAdmin(HttpContext))
-            {
-                return RedirectToPage("/MainMenu");
             }
 
             // Toda empresa pertenece a un tenant (ADR-002) y no se cambia después desde la pantalla de edición.

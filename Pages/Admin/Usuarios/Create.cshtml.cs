@@ -105,7 +105,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             // empresa_admin solo puede crear usuarios para su empresa
             if (AuthHelper.IsEmpresaAdmin(HttpContext))
@@ -118,7 +117,7 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         /// <summary>Búsqueda de personas para elegir la del usuario (la usa usuarios-persona.js).</summary>
         public async Task<IActionResult> OnGetBuscarPersonasAsync(string? texto)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAnyAdmin(HttpContext))
+            if (!AuthHelper.IsAuthenticated(HttpContext))
                 return StatusCode(StatusCodes.Status403Forbidden);
 
             var personas = await _usuarioPersona.BuscarPersonasAsync(PersonaDeUsuarioPagina.Quien(HttpContext), texto);
@@ -135,7 +134,6 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             // empresa_admin solo puede crear en su empresa
             if (AuthHelper.IsEmpresaAdmin(HttpContext))

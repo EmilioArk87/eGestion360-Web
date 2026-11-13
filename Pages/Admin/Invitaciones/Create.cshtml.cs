@@ -63,7 +63,6 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext)) return RedirectToPage("/MainMenu");
 
             // Un administrador de empresa solo invita a su empresa.
             if (AuthHelper.IsEmpresaAdmin(HttpContext)) IdEmpresa = AuthHelper.GetEmpresaId(HttpContext);
@@ -75,7 +74,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         /// <summary>Búsqueda de personas para elegir a quién se invita (la usa usuarios-persona.js).</summary>
         public async Task<IActionResult> OnGetBuscarPersonasAsync(string? texto)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAnyAdmin(HttpContext))
+            if (!AuthHelper.IsAuthenticated(HttpContext))
                 return StatusCode(StatusCodes.Status403Forbidden);
 
             var personas = await _personas.BuscarPersonasAsync(PersonaDeUsuarioPagina.Quien(HttpContext), texto);
@@ -88,7 +87,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         /// <summary>Los roles de una empresa, para llenar la lista cuando el administrador general cambia de empresa.</summary>
         public async Task<IActionResult> OnGetRolesAsync(int idEmpresa)
         {
-            if (!AuthHelper.IsAuthenticated(HttpContext) || !AuthHelper.IsAnyAdmin(HttpContext))
+            if (!AuthHelper.IsAuthenticated(HttpContext))
                 return StatusCode(StatusCodes.Status403Forbidden);
 
             if (AuthHelper.IsEmpresaAdmin(HttpContext) && idEmpresa != AuthHelper.GetEmpresaId(HttpContext))
@@ -105,7 +104,6 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext)) return RedirectToPage("/MainMenu");
 
             if (AuthHelper.IsEmpresaAdmin(HttpContext)) IdEmpresa = AuthHelper.GetEmpresaId(HttpContext);
 

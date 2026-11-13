@@ -19,7 +19,6 @@ namespace eGestion360Web.Pages.Admin.Modulos
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))        return RedirectToPage("/MainMenu");
 
             Modulos = await _context.Modulos.OrderBy(m => m.Orden).ToListAsync();
             return Page();
@@ -29,7 +28,6 @@ namespace eGestion360Web.Pages.Admin.Modulos
         public async Task<IActionResult> OnPostAsync(int id, bool activo)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))        return RedirectToPage("/MainMenu");
 
             var modulo = await _context.Modulos.FindAsync(id);
             if (modulo != null)

@@ -31,9 +31,6 @@ namespace eGestion360Web.Pages.Admin.Personas
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.IsAdmin(HttpContext))
-                return RedirectToPage("/MainMenu");
-
             return null;
         }
 

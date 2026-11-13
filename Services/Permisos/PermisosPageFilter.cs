@@ -12,7 +12,7 @@ namespace eGestion360Web.Services.Permisos
     /// cubra de una vez todas las pantallas, también las que se agreguen después; una prueba de arquitectura vigila que ninguna quede
     /// sin declarar.
     ///
-    /// Según <see cref="OpcionesDePermisos.ModoActual"/>:
+    /// Según <see cref="OpcionesDePermisos.ModoPara"/> (el modo global y las carpetas de <c>AplicarEn</c>):
     /// <list type="bullet">
     /// <item><description><b>Registrar</b> (el de partida): no niega nada. Si la persona no tendría el permiso, lo anota en el log con la
     /// cuenta, el rol, el tenant, la pantalla y el permiso, y la petición sigue. Sirve para ver el efecto real antes de bloquear.</description></item>
@@ -66,8 +66,8 @@ namespace eGestion360Web.Services.Permisos
             if (requisito.Tipo == TipoDeRequisito.SinPermiso) return null;
             if (!AuthHelper.IsAuthenticated(http)) return null;
 
-            var modo = _opciones.CurrentValue.ModoActual;
             var ruta = context.ActionDescriptor.ViewEnginePath;
+            var modo = _opciones.CurrentValue.ModoPara(ruta);
             var handler = context.HandlerMethod?.MethodInfo?.Name ?? "(sin handler)";
 
             if (requisito.Tipo == TipoDeRequisito.SinDeclarar || !CatalogoDePermisos.Existe(requisito.Codigo!))

@@ -48,9 +48,6 @@ namespace eGestion360Web.Pages.Admin
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.IsAdmin(HttpContext))
-                return RedirectToPage("/MainMenu");
-
             await CargarUsuarios();
             return Page();
         }
@@ -59,9 +56,6 @@ namespace eGestion360Web.Pages.Admin
         {
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
-
-            if (!AuthHelper.IsAdmin(HttpContext))
-                return RedirectToPage("/MainMenu");
 
             if (!ModelState.IsValid)
             {

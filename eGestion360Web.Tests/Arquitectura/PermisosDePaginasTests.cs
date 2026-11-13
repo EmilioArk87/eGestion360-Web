@@ -247,6 +247,22 @@ namespace eGestion360Web.Tests.Arquitectura
         }
 
         [Fact]
+        public void Las_pantallas_que_aplican_ya_no_deciden_el_acceso_por_el_rol_dentro_de_su_codigo()
+        {
+            // Desde F1.6c quién entra a administración y plataforma lo decide el filtro (modo Aplicar). Las pantallas conservan la sesión y los usos de
+            // IsAdmin/IsEmpresaAdmin que deciden QUÉ se muestra; esos se retiran en F1.6e.
+            var raiz = RaizDelRepositorio();
+            var carpetas = new[] { Path.Combine(raiz, "Pages", "Admin"), Path.Combine(raiz, "Pages", "Empresas") };
+            var archivos = carpetas.SelectMany(c => Directory.EnumerateFiles(c, "*.cs", SearchOption.AllDirectories))
+                .Append(Path.Combine(raiz, "Pages", "UserManagement.cshtml.cs"));
+
+            var guarda = new Regex(@"if \(!AuthHelper\.(IsAdmin|IsAnyAdmin)\(|\|\|\s*!AuthHelper\.(IsAdmin|IsAnyAdmin)\(");
+            var culpables = archivos.Where(f => guarda.IsMatch(File.ReadAllText(f))).Select(f => Path.GetRelativePath(raiz, f)).ToList();
+
+            Assert.True(culpables.Count == 0, "Estas pantallas aún comprueban el rol para dejar entrar: " + string.Join(", ", culpables));
+        }
+
+        [Fact]
         public void Program_registra_el_filtro_de_permisos_al_final_de_los_globales_y_las_opciones()
         {
             var program = File.ReadAllText(Path.Combine(RaizDelRepositorio(), "Program.cs"));

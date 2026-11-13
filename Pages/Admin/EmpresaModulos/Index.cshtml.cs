@@ -29,7 +29,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaModulos
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))        return RedirectToPage("/MainMenu");
 
             return await CargarAsync();
         }
@@ -38,7 +37,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaModulos
         public async Task<IActionResult> OnPostAsync(int empresaId, List<int> modulosSeleccionados)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAdmin(HttpContext))        return RedirectToPage("/MainMenu");
 
             EmpresaId = empresaId;
 

@@ -33,7 +33,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
             return await CargarAsync();
         }
 
@@ -41,7 +40,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         public async Task<IActionResult> OnPostAsync(int rolId, List<int> modulos, IFormCollection form)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.IsAnyAdmin(HttpContext))     return RedirectToPage("/MainMenu");
 
             RolId = rolId;
 

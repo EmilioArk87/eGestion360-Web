@@ -180,11 +180,11 @@ namespace eGestion360Web.Tests.Paginas
             Assert.Null(AuthHelper.GetTenantDeSoporte(Http(pagina)));
         }
 
+        // Quién entra al soporte lo decide desde F1.6c el filtro de permisos (plataforma.soporte.*, solo el operador; ver PermisosPageFilterTests).
+        // La pantalla conserva su propia regla: el soporte se usa sin empresa en la sesión.
         [Theory]
-        [InlineData("empresa_admin", null)]
-        [InlineData("empresa_user", null)]
         [InlineData("admin", "1")]
-        public async Task Solo_el_administrador_general_sin_empresa_usa_el_soporte(string rol, string? empresa)
+        public async Task Con_una_empresa_en_la_sesion_el_soporte_lleva_al_menu(string rol, string? empresa)
         {
             using var db = _bd.Crear();
             var pagina = Pagina(db, rol, empresa);
