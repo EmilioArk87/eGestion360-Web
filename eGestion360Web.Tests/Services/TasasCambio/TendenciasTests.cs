@@ -278,12 +278,11 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         }
 
         [Fact]
-        public async Task Sin_sesion_va_al_login_y_sin_el_modulo_al_menu()
+        public async Task Sin_sesion_va_al_login()
         {
+            // El módulo «catalogos» ya no se comprueba aquí: lo exige DerechoDeModuloPageFilter (F1.6d).
             Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(
                 await Pagina(Sesion(null, null, conModulo: false, autenticado: false)).OnGetAsync()).PageName);
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(
-                await Pagina(Sesion("empresa_user", A, conModulo: false)).OnGetAsync()).PageName);
         }
 
         [Fact]

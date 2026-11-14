@@ -24,9 +24,6 @@ namespace eGestion360Web.Pages.Catalogos.Clientes
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.HasModulo(HttpContext, "catalogos"))
-                return RedirectToPage("/MainMenu");
-
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
 
             var query = _db.Clientes

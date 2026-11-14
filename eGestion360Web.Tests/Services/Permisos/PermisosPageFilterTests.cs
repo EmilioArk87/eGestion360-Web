@@ -195,10 +195,11 @@ namespace eGestion360Web.Tests.Services.Permisos
         [InlineData("  APLICAR ", ModoDePermisos.Aplicar)]
         [InlineData("Registrar", ModoDePermisos.Registrar)]
         [InlineData("registrar", ModoDePermisos.Registrar)]
-        [InlineData("Apagado", ModoDePermisos.Registrar)]
-        [InlineData("", ModoDePermisos.Registrar)]
-        [InlineData(null, ModoDePermisos.Registrar)]
-        public void Solo_la_palabra_Aplicar_activa_el_bloqueo_todo_lo_demas_registra(string? texto, ModoDePermisos esperado)
+        [InlineData("  REGISTRAR ", ModoDePermisos.Registrar)]
+        [InlineData("Apagado", ModoDePermisos.Aplicar)]
+        [InlineData("", ModoDePermisos.Aplicar)]
+        [InlineData(null, ModoDePermisos.Aplicar)]
+        public void Solo_la_palabra_Registrar_deja_de_bloquear_todo_lo_demas_aplica(string? texto, ModoDePermisos esperado)
             => Assert.Equal(esperado, new OpcionesDePermisos { Modo = texto }.ModoActual);
 
         // ── Modo Registrar: anota y deja pasar ────────────────────────────────────────────────────────────────────────────────
@@ -232,15 +233,15 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
-        public async Task El_modo_por_omision_o_desconocido_registra_y_no_bloquea()
+        public async Task El_modo_por_omision_o_desconocido_bloquea_y_no_deja_pasar()
         {
+            // Desde F1.6d ninguna pantalla comprueba el rol en su código: sin una palabra expresa, el filtro cierra.
             foreach (var modo in new string?[] { null, "", "Cualquiera" })
             {
                 var r = await Correr(typeof(PaginaDeVehiculos), "OnPostCrear", Usuario(idRol: 5), new EvaluadorFalso(), modo, "POST");
 
-                Assert.True(r.Siguio);
-                Assert.Null(r.Respuesta);
-                Assert.Single(r.Log.Mensajes);
+                Assert.False(r.Siguio);
+                Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<ContentResult>(r.Respuesta).StatusCode);
             }
         }
 
@@ -639,20 +640,15 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
-        public void La_configuracion_real_aplica_en_administracion_y_plataforma_y_registra_en_el_resto()
+        public void La_configuracion_real_aplica_en_todas_las_pantallas()
         {
             var opciones = OpcionesReales();
 
-            Assert.Equal(ModoDePermisos.Registrar, opciones.ModoActual);
+            Assert.Equal(ModoDePermisos.Aplicar, opciones.ModoActual);
             Assert.Equal(CarpetasQueAplican, opciones.AplicarEn);
             Assert.Equal(CarpetasQueAplican, OpcionesDePermisos.CarpetasDeAdministracion);
             foreach (var (ruta, _) in PaginasReales())
-            {
-                var esperado = CarpetasQueAplican.Any(p => ruta == p || ruta.StartsWith(p + "/", StringComparison.Ordinal))
-                    ? ModoDePermisos.Aplicar
-                    : ModoDePermisos.Registrar;
-                Assert.True(opciones.ModoPara(ruta) == esperado, $"{ruta}: se esperaba {esperado}");
-            }
+                Assert.True(opciones.ModoPara(ruta) == ModoDePermisos.Aplicar, $"{ruta}: debía aplicar");
         }
 
         [Fact]
@@ -701,11 +697,14 @@ namespace eGestion360Web.Tests.Services.Permisos
         public void Sin_configurar_aplican_las_carpetas_de_administracion_y_solo_una_lista_vacia_las_apaga()
         {
             // Quitar la clave de la configuración no deja abiertas las pantallas de administración, que ya no comprueban el rol en su código.
-            Assert.Equal(ModoDePermisos.Aplicar, new OpcionesDePermisos().ModoPara("/Admin/Usuarios/Create"));
-            Assert.Equal(ModoDePermisos.Aplicar, new OpcionesDePermisos().ModoPara("/Empresas/Index"));
-            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos().ModoPara("/Flota/Index"));
-            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos { AplicarEn = Array.Empty<string>() }.ModoPara("/Admin/Usuarios/Create"));
-            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos { AplicarEn = new[] { "/Admin" } }.ModoPara(null));
+            // Con el modo en «Registrar» (expreso) y sin la clave AplicarEn, las carpetas de administración siguen aplicando y el resto registra.
+            var registrando = new OpcionesDePermisos { Modo = "Registrar" };
+            Assert.Equal(ModoDePermisos.Aplicar, registrando.ModoPara("/Admin/Usuarios/Create"));
+            Assert.Equal(ModoDePermisos.Aplicar, registrando.ModoPara("/Empresas/Index"));
+            Assert.Equal(ModoDePermisos.Registrar, registrando.ModoPara("/Flota/Index"));
+            Assert.Equal(ModoDePermisos.Aplicar, new OpcionesDePermisos().ModoPara("/Flota/Index"));
+            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos { Modo = "Registrar", AplicarEn = Array.Empty<string>() }.ModoPara("/Admin/Usuarios/Create"));
+            Assert.Equal(ModoDePermisos.Registrar, new OpcionesDePermisos { Modo = "Registrar", AplicarEn = new[] { "/Admin" } }.ModoPara(null));
         }
 
         private async Task<IReadOnlyList<string>> DiferenciasReales(Func<HttpContext> perfil, Func<DefinicionDePermiso, bool> deberiaPasar)
@@ -749,18 +748,18 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
-        public async Task Con_la_configuracion_real_un_usuario_con_rol_no_pasa_por_ninguna_pantalla_de_administracion_ni_de_plataforma()
+        public async Task Con_la_configuracion_real_un_usuario_con_rol_solo_pasa_por_lo_que_su_rol_concede()
         {
             var (consulta, vacio) = SembrarRoles();
+            Func<int, HttpContext> perfil = rol => Usuario("empresa_user", idRol: rol, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" });
 
-            foreach (var rol in new[] { consulta, vacio })
-            {
-                var diferencias = await DiferenciasReales(
-                    () => Usuario("empresa_user", idRol: rol, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }),
-                    d => d.Ambito == AmbitoDePermiso.Modulo && d.CasillaLegada == CasillaLegada.Ver);
+            // «Consulta» tiene las casillas de ver de los módulos: solo esas pantallas, y ninguna de administración ni de plataforma.
+            var deConsulta = await DiferenciasReales(() => perfil(consulta), d => d.Ambito == AmbitoDePermiso.Modulo && d.CasillaLegada == CasillaLegada.Ver);
+            Assert.True(deConsulta.Count == 0, string.Join("; ", deConsulta));
 
-                Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
-            }
+            // Un rol sin permisos no pasa por ninguna pantalla que pida uno.
+            var deVacio = await DiferenciasReales(() => perfil(vacio), _ => false);
+            Assert.True(deVacio.Count == 0, string.Join("; ", deVacio));
         }
 
         [Fact]
@@ -777,8 +776,8 @@ namespace eGestion360Web.Tests.Services.Permisos
             SeNiega(await CorrerConConfiguracionReal("/UserManagement", "OnPostAsync", Rol(), "POST"), "UserManagement restablecer clave");
             SeNiega(await CorrerConConfiguracionReal("/DebugUsers", "OnGetAsync", Rol()), "DebugUsers");
 
-            // Fuera de esas carpetas el filtro todavía solo registra: la pantalla de flota sigue abriendo para este rol sin permisos.
-            Pasa(await CorrerConConfiguracionReal("/Flota/Catalogos/Vehiculos/Create", "OnGetAsync", Rol()), "Flota/Vehiculos/Create (solo se registra)");
+            // Desde F1.6d también Flota: un rol sin permisos ya no abre «Nuevo vehículo».
+            SeNiega(await CorrerConConfiguracionReal("/Flota/Catalogos/Vehiculos/Create", "OnGetAsync", Rol()), "Flota/Vehiculos/Create");
         }
 
         [Fact]

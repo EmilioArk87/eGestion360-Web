@@ -42,8 +42,10 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         protected string Usuario => HttpContext.Session.GetString("Username") ?? "system";
 
         /// <summary>
-        /// Comprueba la sesión, la empresa y el permiso. Devuelve nulo si se puede continuar; si no, el resultado que
-        /// la página debe devolver (la redirección al inicio de sesión o la misma página con su mensaje de bloqueo).
+        /// Comprueba la sesión y la empresa. Devuelve nulo si se puede continuar; si no, el resultado que la página debe devolver (la
+        /// redirección al inicio de sesión o la misma página con su mensaje de bloqueo). El permiso (ver, crear o editar personal) ya no se
+        /// comprueba aquí: desde F1.6d lo decide el filtro de permisos con el atributo de cada pantalla. El parámetro dice qué acción pide la
+        /// pantalla; se conserva por ahora y se retira en F1.6e.
         /// </summary>
         protected IActionResult? Entrar(PermisoPersona permiso)
         {
@@ -55,24 +57,6 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
             {
                 MensajeBloqueo = "Esta pantalla trabaja con la empresa de tu sesión y tu usuario no tiene una. " +
                                  "Entra con un usuario de la empresa para ver o registrar personal.";
-                return Page();
-            }
-
-            var permitido = permiso switch
-            {
-                PermisoPersona.Ver => AuthHelper.PuedeVer(HttpContext, CodigoModulo),
-                PermisoPersona.Crear => AuthHelper.PuedeCrear(HttpContext, CodigoModulo),
-                PermisoPersona.Editar => AuthHelper.PuedeEditar(HttpContext, CodigoModulo),
-                _ => false
-            };
-            if (!permitido)
-            {
-                MensajeBloqueo = permiso switch
-                {
-                    PermisoPersona.Ver => "No tienes permiso para ver el personal.",
-                    PermisoPersona.Crear => "No tienes permiso para registrar personal.",
-                    _ => "No tienes permiso para modificar el personal."
-                };
                 return Page();
             }
 

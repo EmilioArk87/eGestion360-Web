@@ -94,7 +94,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         private IActionResult? Acceso()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, IndexModel.Modulo)) return RedirectToPage("/MainMenu");
             if (!EsAdminSistema)
             {
                 _log.LogWarning("Tasas de cambio: {Usuario} (rol {Rol}) intentó abrir la configuración sin ser administrador del sistema.",

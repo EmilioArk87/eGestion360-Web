@@ -3,17 +3,18 @@ namespace eGestion360Web.Services.Permisos
     /// <summary>Qué hace el filtro de permisos cuando una persona no tiene el permiso que pide la pantalla.</summary>
     public enum ModoDePermisos
     {
-        /// <summary>Anota en el log lo que negaría y deja pasar a todos. Es el modo de partida (F1.6b): permite ver el efecto real antes de bloquear a nadie.</summary>
+        /// <summary>Anota en el log lo que negaría y deja pasar a todos. Fue el modo de partida (F1.6b) para ver el efecto real antes de bloquear; hoy solo se usa si se pide de forma expresa.</summary>
         Registrar,
 
-        /// <summary>Niega de verdad: responde 403. Se activa por etapas, desde F1.6c.</summary>
+        /// <summary>Niega de verdad: responde 403. Se activó por etapas (F1.6c, F1.6d) y es el modo por omisión.</summary>
         Aplicar,
     }
 
     /// <summary>
-    /// Sección <c>Permisos</c> de la configuración (paso F1.6b). <c>Permisos:Modo</c> vale <c>Registrar</c> (por omisión) o <c>Aplicar</c>;
-    /// cualquier otro valor, o su ausencia, deja el modo seguro: <c>Registrar</c>. Se lee en cada petición (<c>IOptionsMonitor</c>), así que
-    /// cambiarlo en la configuración rige sin reiniciar el sitio.
+    /// Sección <c>Permisos</c> de la configuración (paso F1.6b). <c>Permisos:Modo</c> vale <c>Aplicar</c> (por omisión) o <c>Registrar</c>; solo la
+    /// palabra <c>Registrar</c> deja de bloquear, y cualquier otro valor, o su ausencia, deja el modo seguro: <c>Aplicar</c> (desde F1.6d ninguna
+    /// pantalla comprueba el rol en su código, así que un modo que no bloquea las dejaría abiertas). Se lee en cada petición (<c>IOptionsMonitor</c>),
+    /// así que cambiarlo en la configuración rige sin reiniciar el sitio.
     /// </summary>
     public sealed class OpcionesDePermisos
     {
@@ -38,11 +39,11 @@ namespace eGestion360Web.Services.Permisos
         /// </summary>
         public string[]? AplicarEn { get; set; }
 
-        /// <summary>El modo global: solo <c>Aplicar</c> (sin importar mayúsculas) niega; todo lo demás registra.</summary>
+        /// <summary>El modo global: solo la palabra <c>Registrar</c> (sin importar mayúsculas) deja de bloquear; todo lo demás aplica.</summary>
         public ModoDePermisos ModoActual
-            => string.Equals(Modo?.Trim(), nameof(ModoDePermisos.Aplicar), StringComparison.OrdinalIgnoreCase)
-                ? ModoDePermisos.Aplicar
-                : ModoDePermisos.Registrar;
+            => string.Equals(Modo?.Trim(), nameof(ModoDePermisos.Registrar), StringComparison.OrdinalIgnoreCase)
+                ? ModoDePermisos.Registrar
+                : ModoDePermisos.Aplicar;
 
         /// <summary>El modo que rige para una pantalla: <c>Aplicar</c> si el modo global lo es o si su ruta cuelga de un prefijo de <see cref="AplicarEn"/>.</summary>
         public ModoDePermisos ModoPara(string? ruta)

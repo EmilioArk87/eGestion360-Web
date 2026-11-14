@@ -280,11 +280,38 @@ namespace eGestion360Web.Tests.Arquitectura
         }
 
         [Fact]
-        public void El_modo_de_partida_en_la_configuracion_es_Registrar()
+        public void El_modo_en_la_configuracion_es_Aplicar()
         {
             var json = File.ReadAllText(Path.Combine(RaizDelRepositorio(), "appsettings.json"));
 
-            Assert.Matches(@"""Permisos""\s*:\s*\{\s*""Modo""\s*:\s*""Registrar""", json);
+            Assert.Matches(@"""Permisos""\s*:\s*\{\s*""Modo""\s*:\s*""Aplicar""", json);
+        }
+
+        [Fact]
+        public void Las_pantallas_de_modulos_ya_no_comprueban_el_modulo_ni_la_accion_dentro_de_su_codigo()
+        {
+            // Desde F1.6d el módulo lo exige DerechoDeModuloPageFilter y la acción el filtro de permisos con el atributo de cada pantalla. Las pantallas
+            // conservan la sesión y los usos de PuedeX que deciden QUÉ se muestra (botones); esos se retiran en F1.6e.
+            var raiz = RaizDelRepositorio();
+            var carpetas = new[] { "Catalogos", "Facturacion" }.Select(c => Path.Combine(raiz, "Pages", c));
+            var guarda = new Regex(@"if \(!AuthHelper\.(HasModulo|Puede(Ver|Crear|Editar|Eliminar))\(");
+
+            var culpables = carpetas.SelectMany(c => Directory.EnumerateFiles(c, "*.cs", SearchOption.AllDirectories))
+                .Where(f => guarda.IsMatch(File.ReadAllText(f)))
+                .Select(f => Path.GetRelativePath(raiz, f))
+                .ToList();
+
+            Assert.True(culpables.Count == 0, "Estas pantallas aún comprueban el módulo o la acción para dejar entrar: " + string.Join(", ", culpables));
+        }
+
+        [Fact]
+        public void La_base_de_las_pantallas_de_personal_ya_no_comprueba_el_permiso()
+        {
+            var texto = File.ReadAllText(Path.Combine(RaizDelRepositorio(), "Pages", "Flota", "Catalogos", "Personas", "PersonaPaginaBase.cs"));
+
+            Assert.DoesNotContain("AuthHelper.PuedeVer(", texto);
+            Assert.DoesNotContain("AuthHelper.PuedeCrear(", texto.Substring(0, texto.IndexOf("ConstruirVista", StringComparison.Ordinal)));
+            Assert.DoesNotContain("No tienes permiso para", texto);
         }
     }
 }

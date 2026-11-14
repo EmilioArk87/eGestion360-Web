@@ -13,9 +13,6 @@ namespace eGestion360Web.Pages.Catalogos
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.HasModulo(HttpContext, "catalogos"))
-                return RedirectToPage("/MainMenu");
-
             return Page();
         }
     }

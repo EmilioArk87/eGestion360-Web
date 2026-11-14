@@ -25,7 +25,6 @@ namespace eGestion360Web.Pages.Facturacion.Pagos
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion")) return RedirectToPage("/MainMenu");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             var baseQ = _db.Pagos.Where(p => p.IdEmpresa == idEmpresa && !p.Eliminado);

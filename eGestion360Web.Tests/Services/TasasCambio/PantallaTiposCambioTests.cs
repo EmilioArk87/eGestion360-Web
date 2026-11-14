@@ -215,19 +215,9 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             Assert.Equal(0, _cola.Pendientes);
         }
 
-        [Theory]
-        [MemberData(nameof(Handlers))]
-        public async Task Sin_el_modulo_de_catalogos_va_al_menu_y_no_cambia_nada(string handler)
-        {
-            var pendiente = PendientePropia(A);
-            var pagina = Pagina(Sesion("empresa_admin", A, new[] { "ver", "crear" }, conModulo: false));
-
-            Redirige(await Llamar(pagina, handler, pendiente), "/MainMenu");
-
-            Assert.Equal(Cat.EstadoTasa.EnRevision, Leer(pendiente).Estado);
-            Assert.Empty(Manuales());
-            Assert.Equal(0, _cola.Pendientes);
-        }
+        // Desde F1.6d la pantalla ya no decide por el módulo «catalogos» en la sesión: lo exige DerechoDeModuloPageFilter (derecho del plan y
+        // activación por empresa) y la acción la exige el filtro de permisos con el atributo de la pantalla. Esas dos barreras tienen sus pruebas
+        // (DerechoDeModuloPageFilterTests y PermisosPageFilterTests); aquí solo queda lo que la pantalla sí decide: la sesión y las reglas del negocio.
 
         [Fact]
         public async Task Quien_debe_cambiar_la_clave_va_al_login()
@@ -647,14 +637,13 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         [Theory]
         [InlineData("historico")]
         [InlineData("bitacora")]
-        public async Task Las_pantallas_nuevas_piden_sesion_y_modulo_igual_que_Tipos_de_cambio(string cual)
+        public async Task Las_pantallas_nuevas_piden_sesion_igual_que_Tipos_de_cambio(string cual)
         {
             async Task<IActionResult> Abrir(HttpContext http) => cual == "historico"
                 ? await PaginaHistorico(http).OnGetAsync()
                 : await PaginaBitacora(http).OnGetAsync();
 
             Redirige(await Abrir(Sesion(rol: null, empresa: null, conModulo: false, autenticado: false)), "/Login");
-            Redirige(await Abrir(Sesion("empresa_admin", A, new[] { "ver" }, conModulo: false)), "/MainMenu");
             Assert.IsType<PageResult>(await Abrir(UsuarioSoloLectura(A)));
         }
 

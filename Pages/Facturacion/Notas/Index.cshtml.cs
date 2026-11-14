@@ -20,7 +20,6 @@ namespace eGestion360Web.Pages.Facturacion.Notas
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion")) return RedirectToPage("/MainMenu");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             IQueryable<Nota> q = _db.Notas.AsNoTracking()

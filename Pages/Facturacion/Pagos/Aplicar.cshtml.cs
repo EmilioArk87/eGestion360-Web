@@ -50,8 +50,6 @@ namespace eGestion360Web.Pages.Facturacion.Pagos
         public async Task<IActionResult> OnPostAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion") || !AuthHelper.PuedeEditar(HttpContext, "facturacion"))
-                return RedirectToPage("Index");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             var usuario = HttpContext.Session.GetString("Username") ?? "system";
@@ -86,7 +84,6 @@ namespace eGestion360Web.Pages.Facturacion.Pagos
         private async Task<bool> CargarAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return false;
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion")) return false;
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
 
             Pago = await _db.Pagos.AsNoTracking()

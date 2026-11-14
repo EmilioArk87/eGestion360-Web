@@ -36,9 +36,6 @@ namespace eGestion360Web.Pages.Catalogos.Clientes
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.HasModulo(HttpContext, "catalogos") || !AuthHelper.PuedeEditar(HttpContext, "catalogos"))
-                return RedirectToPage("/Catalogos/Index");
-
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
 
             var cliente = await _db.Clientes
@@ -57,9 +54,6 @@ namespace eGestion360Web.Pages.Catalogos.Clientes
                 return RedirectToPage("/Login");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
-
-            if (!AuthHelper.HasModulo(HttpContext, "catalogos") || !AuthHelper.PuedeEditar(HttpContext, "catalogos"))
-                return RedirectToPage("/Catalogos/Index");
 
             var dbCliente = await _db.Clientes
                 .FirstOrDefaultAsync(c => c.IdCliente == id && c.IdEmpresa == idEmpresa && !c.Eliminado);

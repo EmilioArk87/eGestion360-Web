@@ -28,7 +28,6 @@ namespace eGestion360Web.Pages.Facturacion.Pagos
         public async Task<IActionResult> OnGetAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion")) return RedirectToPage("/MainMenu");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             Pago = await _db.Pagos.AsNoTracking()
@@ -53,8 +52,6 @@ namespace eGestion360Web.Pages.Facturacion.Pagos
         public async Task<IActionResult> OnPostAnularAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion") || !AuthHelper.PuedeEliminar(HttpContext, "facturacion"))
-                return RedirectToPage("Index");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             if (string.IsNullOrWhiteSpace(MotivoAnulacion) || MotivoAnulacion.Trim().Length < 5)

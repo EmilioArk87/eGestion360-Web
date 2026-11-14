@@ -51,9 +51,6 @@ namespace eGestion360Web.Pages.Catalogos.Clientes
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return RedirectToPage("/Login");
 
-            if (!AuthHelper.HasModulo(HttpContext, "catalogos") || !AuthHelper.PuedeCrear(HttpContext, "catalogos"))
-                return RedirectToPage("/Catalogos/Index");
-
             await CargarListasAsync(AuthHelper.GetEmpresaId(HttpContext) ?? 0);
             return Page();
         }
@@ -64,9 +61,6 @@ namespace eGestion360Web.Pages.Catalogos.Clientes
                 return RedirectToPage("/Login");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
-
-            if (!AuthHelper.HasModulo(HttpContext, "catalogos") || !AuthHelper.PuedeCrear(HttpContext, "catalogos"))
-                return RedirectToPage("/Catalogos/Index");
 
             // Un cliente natural con documento se registra con su ficha de persona.
             if (Cliente.Tipo == "natural" && !string.IsNullOrWhiteSpace(Persona.Documento))

@@ -90,6 +90,20 @@ Antes de que Flota empiece a bloquear (F1.6d) se revisaron con Emilio los 7 role
 | D68 | **El rol «Flota» de SIP sigue sin permisos** | Solo lo usa el operador y con D66 no le importa. Cuando alguien más entre a SIP por ese rol se le copian los permisos de «Operador de Flota» desde la pantalla de roles. |
 | D69 | **Eliminar un peaje sigue colgando de `flota.peajes.editar`** | No se abre un script 042 por un botón. Si se crea `flota.peajes.eliminar`, lo recibirán los roles que tengan la casilla eliminar de Flota. |
 
+## F1.6d: Catálogos, Facturación y Flota aplican (2026-11-12)
+
+Con D66 a D69 aceptadas, el filtro **bloquea en todas las pantallas**: `Permisos:Modo` pasa a `Aplicar` y ninguna pantalla comprueba ya el rol en su código.
+
+| Pieza | Cómo queda |
+|---|---|
+| `Permisos:Modo` | `Aplicar` en `appsettings.json`. **Cambia el valor por omisión**: solo la palabra `Registrar` deja de bloquear; cualquier otro valor, o la clave ausente, deja el modo seguro (`Aplicar`). Antes era al revés (solo `Aplicar` bloqueaba), pero ahora un modo que no bloquea dejaría las pantallas abiertas. |
+| `Permisos:AplicarEn` | Sigue existiendo, pero solo importa si alguien pone `Modo = Registrar` de forma expresa: entonces las seis carpetas de administración siguen aplicando y el resto registra. Es la palanca para volver a observar antes de bloquear. |
+| Guardas retiradas | `HasModulo`, `PuedeVer`, `PuedeCrear`, `PuedeEditar` y `PuedeEliminar` como condición de entrada en 18 archivos de `Pages/Catalogos` y `Pages/Facturacion`, y en `PersonaPaginaBase` (personal de flota). Cada pantalla conserva su comprobación de sesión (y la de empresa donde ya la hacía). **El módulo** lo exige `DerechoDeModuloPageFilter` (derecho del plan y activación por empresa); **la acción**, el filtro de permisos con el atributo de cada pantalla. |
+| Lo que NO se retiró | Las reglas de negocio de las tasas de cambio (por ejemplo, solo el administrador del sistema abre la configuración o ejecuta, aprueba y rechaza) y los `PuedeX` que deciden **qué botones se muestran**. Hasta F1.6e un botón puede verse y, al pulsarlo, recibir la página de acceso. El parámetro de permiso de `PersonaPaginaBase.Entrar` queda sin uso y se retira en F1.6e. |
+| Reversa | Publicar el paquete anterior. Poner `Modo = Registrar` en la configuración deja pasar a todos en las pantallas de módulos, pero no sirve para las de administración, que vuelven a las seis carpetas. |
+
+Lo que cambia para una cuenta real, según la revisión de los 7 roles: `cliente_demo` (rol «Flota» de Demo) deja de poder eliminar vehículos y anular salidas; el operador, el administrador de empresa y el «Operador de Flota» de Transgar entran a lo mismo que antes. Quien no tiene el permiso recibe la página «No tienes permiso para esto» y quien no tiene el módulo, «No tienes acceso a este módulo».
+
 ## Alternativas consideradas
 
 | # | Alternativa | Por qué no |

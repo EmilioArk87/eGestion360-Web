@@ -46,7 +46,6 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         protected IActionResult? Acceso()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, IndexModel.Modulo)) return RedirectToPage("/MainMenu");
             return null;
         }
 

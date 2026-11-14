@@ -28,8 +28,6 @@ namespace eGestion360Web.Pages.Facturacion
         public async Task<IActionResult> OnGetAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion") || !AuthHelper.PuedeEliminar(HttpContext, "facturacion"))
-                return RedirectToPage("Index");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             Factura = await _db.Facturas.AsNoTracking()
@@ -43,8 +41,6 @@ namespace eGestion360Web.Pages.Facturacion
         public async Task<IActionResult> OnPostAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion") || !AuthHelper.PuedeEliminar(HttpContext, "facturacion"))
-                return RedirectToPage("Index");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             var usuario = HttpContext.Session.GetString("Username") ?? "system";

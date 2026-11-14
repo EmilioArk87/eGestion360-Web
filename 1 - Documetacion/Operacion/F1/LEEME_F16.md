@@ -98,3 +98,21 @@ Las cuentas `transgar.admin` y `transgar.flota` están inactivas (membresía sus
 ### La página de acceso (12 de noviembre)
 
 Quien no puede entrar ve ahora una sola página, con el estilo de `app_offline.htm` (fondo oscuro, logo de eGestión360, un candado ámbar, el mensaje y dos botones), en lugar de texto plano. La arma `Services/PaginaDeAcceso.cs` y la usan los tres lugares que responden 403: **sin permiso** (`PermisosPageFilter`), **sin el módulo** (`DerechoDeModuloPageFilter`) y **cuenta suspendida, bloqueada o cancelada** (`/SinAcceso`). Lleva el CSS y el logo adentro, sin imágenes, fuentes ni scripts de afuera, así que se ve igual aunque falle todo lo demás, y codifica todo lo que recibe (por ejemplo el motivo de una suspensión, que escribe un operador). Muestra el permiso que falta y una **referencia** (el identificador de la petición) para que soporte la encuentre en el log. Una llamada de datos (`fetch`) sigue recibiendo el 403 sin página. Los prototipos que se compararon están en el artefacto «Páginas Sin permiso» (se eligió la variante A).
+
+## F1.6d · Catálogos, Facturación y Flota en modo Aplicar
+
+**No toca la base** (ni script ni `/alerta-bd`). `Permisos:Modo` queda en `Aplicar`: el filtro bloquea en **todas** las pantallas y ninguna comprueba el rol en su código (ADR-029, sección F1.6d). Se publica junto con D66 (el operador conserva todos los permisos en cualquier contexto).
+
+| Qué | Cómo |
+|---|---|
+| Interruptor | `Permisos:Modo`. **Solo la palabra `Registrar` deja de bloquear**; cualquier otro valor, o la clave ausente, aplica. Con `Registrar` expreso, `AplicarEn` decide qué carpetas siguen aplicando (por omisión, las seis de administración). |
+| Guardas retiradas | `HasModulo` y `PuedeVer/Crear/Editar/Eliminar` como condición de entrada en 18 archivos de `Pages/Catalogos` y `Pages/Facturacion`, más `PersonaPaginaBase`. El módulo lo exige `DerechoDeModuloPageFilter`; la acción, `[RequierePermiso]`. |
+| Se queda | Las reglas de las tasas de cambio (solo el administrador del sistema configura, ejecuta, aprueba y rechaza) y los `PuedeX` que deciden qué botón se muestra (F1.6e). |
+| Lo que cambia | `cliente_demo` ya no elimina vehículos ni anula salidas. El resto de las cuentas activas entra a lo mismo que antes. |
+| Reversa | Publicar el paquete anterior (F1.6c + página de acceso, commit `6a2e917`; D66 también queda fuera). |
+
+### Cómo se probó
+
+- Suite 1336 de 1336. Pruebas de arquitectura nuevas: el modo en la configuración es `Aplicar`; ninguna pantalla de Catálogos o Facturación vuelve a comprobar módulo o acción para dejar entrar; la base de personal de flota ya no comprueba el permiso. Las pruebas del filtro cubren el modo por omisión (bloquea), `Registrar` expreso con y sin `AplicarEn`, y la configuración real contra todas las pantallas. Se quitaron tres pruebas que afirmaban la redirección al menú por falta de módulo en las tasas de cambio: esa barrera es ahora `DerechoDeModuloPageFilter`, que tiene las suyas.
+- En una copia de producción en el SQL Server local (037 a 041, RLS encendida), con roles reales y un navegador automatizado (sin confirmar ningún borrado): el **Operador de Flota** de Transgar y el rol «Flota» de Demo abren Vehículos (lista, nuevo, editar), Control de salidas y KPI, y reciben la página «No tienes permiso para esto» (403) al abrir *Eliminar vehículo*, Nuevo usuario y Empresas; `cliente_demo` abre Clientes y recibe 403 en la configuración de tasas. El **administrador de empresa** de Transgar abre Eliminar vehículo y Nuevo usuario y recibe 403 en Empresas. El **operador** abre Empresas y Soporte en plataforma, ve «Flota pide empresa» sin ella, y dentro de SIP (rol «Flota» sin permisos) y de Transgar abre Vehículos, Nuevo vehículo y Eliminar vehículo (D66). Los módulos sin activar responden «No tienes acceso a este módulo». La copia se borra al terminar.
+- Sin cobertura de navegador: el rol «Consulta» de Transgar no tiene cuenta activa; se cubre con la matriz de pruebas contra el evaluador real.

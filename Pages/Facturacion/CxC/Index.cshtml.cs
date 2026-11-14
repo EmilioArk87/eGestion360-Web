@@ -47,7 +47,6 @@ namespace eGestion360Web.Pages.Facturacion.CxC
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion")) return RedirectToPage("/MainMenu");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             var hoy = DateTime.Today;

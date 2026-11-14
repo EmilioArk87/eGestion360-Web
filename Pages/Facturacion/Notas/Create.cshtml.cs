@@ -46,8 +46,6 @@ namespace eGestion360Web.Pages.Facturacion.Notas
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion") || !AuthHelper.PuedeCrear(HttpContext, "facturacion"))
-                return RedirectToPage("/MainMenu");
 
             Tipo = (Tipo ?? "credito").ToLowerInvariant();
             if (Tipo != "credito" && Tipo != "debito") Tipo = "credito";
@@ -60,8 +58,6 @@ namespace eGestion360Web.Pages.Facturacion.Notas
         public async Task<IActionResult> OnPostAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-            if (!AuthHelper.HasModulo(HttpContext, "facturacion") || !AuthHelper.PuedeCrear(HttpContext, "facturacion"))
-                return RedirectToPage("/MainMenu");
 
             int idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             var usuario = HttpContext.Session.GetString("Username") ?? "system";
