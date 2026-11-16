@@ -12,19 +12,18 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
 {
     /// <summary>
     /// Expediente del paciente: sus datos, sus atenciones con las pruebas psicológicas aplicadas y las constancias que se le han extendido.
-    /// Cada acción pide su propio permiso; la sección de constancias solo la ve quien tiene <c>psicologia.constancias.ver</c>.
+    /// La evaluación se completa en su propia página (Atenciones/Detalle). Cada acción pide su propio permiso; la conclusión de cada
+    /// atención solo la ve quien tiene <c>psicologia.atenciones.ver</c> y las constancias, quien tiene <c>psicologia.constancias.ver</c>.
     /// </summary>
     [RequierePermiso("psicologia.pacientes.ver")]
     public class DetalleModel : PageModel
     {
         private readonly ApplicationDbContext _db;
-        private readonly IAtencionService _atenciones;
         private readonly IConstanciaService _constancias;
 
-        public DetalleModel(ApplicationDbContext db, IAtencionService atenciones, IConstanciaService constancias)
+        public DetalleModel(ApplicationDbContext db, IConstanciaService constancias)
         {
             _db = db;
-            _atenciones = atenciones;
             _constancias = constancias;
         }
 
@@ -36,9 +35,6 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
 
         public sealed record PruebaCatalogo(int Id, string Codigo, string Nombre);
 
-        /// <summary>Pruebas activas del catálogo, para marcar en una atención.</summary>
-        public List<PruebaCatalogo> Catalogo { get; private set; } = new();
-
         /// <summary>Pruebas aplicadas por atención (incluye las que se desactivaron después en el catálogo).</summary>
         public Dictionary<int, List<PruebaCatalogo>> PruebasPorAtencion { get; private set; } = new();
 
@@ -48,7 +44,8 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
 
         public List<FilaConstancia> Constancias { get; private set; } = new();
 
-        public bool PuedeRegistrarPruebas => this.Puede("psicologia.atenciones.registrar");
+        public bool PuedeVerAtenciones => this.Puede("psicologia.atenciones.ver");
+        public bool PuedeRegistrarAtenciones => this.Puede("psicologia.atenciones.registrar");
         public bool PuedeVerConstancias => this.Puede("psicologia.constancias.ver");
         public bool PuedeEmitir => this.Puede("psicologia.constancias.emitir");
         public bool PuedeAnular => this.Puede("psicologia.constancias.anular");
@@ -61,22 +58,6 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
                 return RedirectToPage("/Login");
 
             return await CargarAsync(id) ? Page() : NotFound();
-        }
-
-        [RequierePermiso("psicologia.atenciones.registrar")]
-        public async Task<IActionResult> OnPostPruebasAsync(int id, int idAtencion, int[]? pruebas)
-        {
-            if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
-
-            var idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
-            // La atención tiene que ser de este paciente: el servicio ya exige la empresa.
-            if (!await _db.AtencionesPsicologia.AnyAsync(a => a.IdAtencion == idAtencion && a.IdPaciente == id && a.IdEmpresa == idEmpresa))
-                return NotFound();
-
-            var r = await _atenciones.GuardarPruebasAsync(idEmpresa, idAtencion, pruebas ?? Array.Empty<int>(), Usuario());
-            if (r.Ok) TempData["PacienteMensaje"] = r.Valor == 0 ? "La atención quedó sin pruebas aplicadas." : $"Pruebas aplicadas guardadas ({r.Valor}).";
-            else TempData["PacienteError"] = r.Errores[0].Mensaje;
-            return RedirectToPage(new { id });
         }
 
         [RequierePermiso("psicologia.constancias.anular")]
@@ -107,7 +88,9 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
             Paciente = paciente;
             var persona = paciente.Vinculo.Persona;
             Nombre = $"{persona.Nombres} {persona.Apellidos}".Trim();
-            var documento = persona.Documentos.FirstOrDefault(d => !d.Eliminado);
+            // Solo un documento de tipo DNI (el principal primero), nunca un pasaporte u otro.
+            var documento = persona.Documentos.Where(d => !d.Eliminado && d.TipoDocumento == DocumentosIdentidad.Dni)
+                .OrderByDescending(d => d.EsPrincipal).ThenBy(d => d.IdPersonaDocumento).FirstOrDefault();
             Dni = documento == null ? null : DocumentosIdentidad.FormatearDni(DocumentosIdentidad.NormalizarNumero(documento.Numero));
             Sexo = persona.Sexo switch { "M" => "Masculino", "F" => "Femenino", _ => null };
 
@@ -124,12 +107,6 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
                     .ToListAsync())
                 .GroupBy(x => x.IdAtencion)
                 .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Codigo).Select(x => new PruebaCatalogo(x.IdPrueba, x.Codigo, x.Nombre)).ToList());
-
-            Catalogo = await _db.PruebasPsicologicas.AsNoTracking()
-                .Where(p => p.IdEmpresa == idEmpresa && p.Activo)
-                .OrderBy(p => p.Codigo)
-                .Select(p => new PruebaCatalogo(p.IdPrueba, p.Codigo, p.Nombre))
-                .ToListAsync();
 
             if (PuedeVerConstancias)
             {

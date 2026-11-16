@@ -72,7 +72,8 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
 
         public sealed record Opcion(int Id, string Texto);
         /// <param name="IdProfesional">El psicólogo de Profesionales que atendió, si lo hay: se propone como firmante.</param>
-        public sealed record OpcionAtencion(int Id, string Texto, string? Profesional, IReadOnlyList<int> Pruebas, int? IdProfesional);
+        /// <param name="Conclusion">Apto o no apto de la evaluación (D17): se propone como resultado de la constancia.</param>
+        public sealed record OpcionAtencion(int Id, string Texto, string? Profesional, IReadOnlyList<int> Pruebas, int? IdProfesional, string? Conclusion);
 
         /// <param name="Talonario">Usa los folios preimpresos del talonario del Colegio.</param>
         /// <param name="PideResultado">Su formato imprime apto o no apto.</param>
@@ -90,8 +91,9 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
         public List<OpcionAtencion> Atenciones { get; private set; } = new();
         public List<Opcion> Catalogo { get; private set; } = new();
 
-        /// <summary>Pruebas y profesional de cada atención, para que el formulario los proponga al elegirla.</summary>
-        public string AtencionesJson => JsonSerializer.Serialize(Atenciones.ToDictionary(a => a.Id.ToString(), a => new { a.Profesional, a.Pruebas, a.IdProfesional }));
+        /// <summary>Pruebas, profesional y conclusión de cada atención, para que el formulario los proponga al elegirla.</summary>
+        public string AtencionesJson => JsonSerializer.Serialize(Atenciones.ToDictionary(a => a.Id.ToString(),
+            a => new { a.Profesional, a.Pruebas, a.IdProfesional, a.Conclusion }));
 
         private DateOnly Hoy() => DateOnly.FromDateTime(_tiempo.GetUtcNow().UtcDateTime.AddHours(-6));
 
@@ -108,6 +110,7 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
                 Pruebas = atencion?.Pruebas.Where(p => Catalogo.Any(c => c.Id == p)).ToList() ?? new(),
                 IdProfesional = atencion?.IdProfesional ?? (Firmantes.Count == 1 ? Firmantes[0].Id : null),
                 NombreProfesional = Firmantes.Count == 0 ? atencion?.Profesional : null,
+                Resultado = atencion?.Conclusion,
                 IdTipoConstancia = Tipos.Count == 1 ? Tipos[0].Id : null
             };
             return Page();
@@ -187,11 +190,12 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
                 .Select(a => new
                 {
                     a.IdAtencion, a.FechaAtencion, Jornada = a.Jornada != null ? a.Jornada.Nombre : null, a.NombreProfesional, a.IdPersonaProfesional,
-                    Pruebas = a.Pruebas.Select(p => p.IdPrueba).ToList()
+                    Pruebas = a.Pruebas.Select(p => p.IdPrueba).ToList(), a.Conclusion
                 })
                 .ToListAsync();
             Atenciones = atenciones.Select(a => new OpcionAtencion(a.IdAtencion, $"{a.FechaAtencion:dd/MM/yyyy} · {a.Jornada ?? "Consulta"}",
-                a.NombreProfesional, a.Pruebas, psicologos.FirstOrDefault(p => p.IdPersona == a.IdPersonaProfesional)?.IdProfesional)).ToList();
+                a.NombreProfesional, a.Pruebas, psicologos.FirstOrDefault(p => p.IdPersona == a.IdPersonaProfesional)?.IdProfesional,
+                a.Conclusion)).ToList();
             return true;
         }
     }

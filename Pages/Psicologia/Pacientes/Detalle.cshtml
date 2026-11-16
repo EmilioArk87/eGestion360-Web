@@ -72,7 +72,6 @@
                             @foreach (var a in Model.Atenciones)
                             {
                                 var aplicadas = Model.PruebasPorAtencion.TryGetValue(a.IdAtencion, out var lista) ? lista : new();
-                                var editable = a.Estado == EstadosAtencion.Borrador && Model.PuedeRegistrarPruebas;
                                 <li class="list-group-item px-0">
                                     <div class="d-flex justify-content-between align-items-center gap-2">
                                         <div>
@@ -83,10 +82,24 @@
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            @if (Model.PuedeVerAtenciones && a.Conclusion != null)
+                                            {
+                                                <span class="badge @(a.Conclusion == ResultadosConstancia.Apto ? "bg-success" : "bg-danger")">@(a.Conclusion == ResultadosConstancia.Apto ? "Apto" : "No apto")</span>
+                                            }
                                             <span class="badge @(a.Estado == EstadosAtencion.Borrador ? "bg-warning text-dark" : a.Estado == EstadosAtencion.Cerrada ? "bg-success" : "bg-light text-muted border")">@a.Estado</span>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Llega con el contenido del documento (F6)">
-                                                <i class="fas fa-print me-1"></i>Imprimir
-                                            </button>
+                                            @if (Model.PuedeVerAtenciones)
+                                            {
+                                                <a asp-page="/Psicologia/Atenciones/Detalle" asp-route-id="@a.IdAtencion" class="btn btn-sm btn-outline-primary" title="Pruebas, resultados, conclusión y observaciones">
+                                                    @if (a.Estado == EstadosAtencion.Borrador && Model.PuedeRegistrarAtenciones)
+                                                    {
+                                                        <i class="fas fa-pen me-1"></i><text>Completar</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fas fa-eye me-1"></i><text>Ver</text>
+                                                    }
+                                                </a>
+                                            }
                                         </div>
                                     </div>
 
@@ -100,47 +113,7 @@
                                         {
                                             <span class="badge bg-light text-primary border font-monospace me-1" title="@p.Nombre">@p.Codigo</span>
                                         }
-                                        @if (editable)
-                                        {
-                                            <a class="ms-1" data-bs-toggle="collapse" href="#pruebas-@a.IdAtencion" role="button" aria-expanded="false" aria-controls="pruebas-@a.IdAtencion">
-                                                <i class="fas fa-pen me-1"></i>@(aplicadas.Count == 0 ? "Registrar" : "Cambiar")
-                                            </a>
-                                        }
                                     </div>
-
-                                    @if (editable)
-                                    {
-                                        <div class="collapse" id="pruebas-@a.IdAtencion">
-                                            @if (Model.Catalogo.Count == 0 && aplicadas.Count == 0)
-                                            {
-                                                <div class="alert alert-light border small mt-2 mb-0">
-                                                    El catálogo de pruebas está vacío.
-                                                    @if (Model.PuedeVerCatalogos) { <a asp-page="/Psicologia/Catalogos/Index">Agrega las pruebas que aplica el centro.</a> }
-                                                </div>
-                                            }
-                                            else
-                                            {
-                                                <form method="post" asp-page-handler="Pruebas" asp-route-id="@Model.Paciente.IdPaciente" class="border rounded p-2 mt-2 bg-light">
-                                                    <input type="hidden" name="idAtencion" value="@a.IdAtencion" />
-                                                    <div class="row row-cols-1 row-cols-md-2 g-1">
-                                                        @foreach (var p in Model.Catalogo.Concat(aplicadas.Where(x => Model.Catalogo.All(c => c.Id != x.Id))))
-                                                        {
-                                                            var marcada = aplicadas.Any(x => x.Id == p.Id);
-                                                            <div class="col">
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input" type="checkbox" name="pruebas" value="@p.Id" id="ap-@a.IdAtencion-@p.Id" @(marcada ? "checked" : "") />
-                                                                    <label class="form-check-label small" for="ap-@a.IdAtencion-@p.Id"><span class="font-monospace">@p.Codigo</span> · @p.Nombre</label>
-                                                                </div>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                    <div class="text-end mt-2">
-                                                        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-1"></i>Guardar pruebas</button>
-                                                    </div>
-                                                </form>
-                                            }
-                                        </div>
-                                    }
                                 </li>
                             }
                         </ul>

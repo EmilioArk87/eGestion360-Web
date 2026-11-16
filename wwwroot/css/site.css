@@ -149,3 +149,8 @@ footer a:hover {
 .menu-card > .card-body > a {
   margin-top: auto;
 }
+
+/* Resumen de validación sin errores: no se muestra (si no, un recuadro .alert queda vacío a la vista). */
+.validation-summary-valid {
+  display: none;
+}

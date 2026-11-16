@@ -1,6 +1,6 @@
 -- ============================================================
 -- Script   : 042_psicologia_esquema.sql
--- Proposito: Modulo de Psicologia, paso 1 de 3 (estructura). Plan "Plan modulo Psicologia" (2026-11-15), decisiones D1 a D16.
+-- Proposito: Modulo de Psicologia, paso 1 de 3 (estructura). Plan "Plan modulo Psicologia" (2026-11-15), decisiones D1 a D17.
 --              * Crea el esquema psi para los datos clinicos (separados de dbo para darles permisos y respaldos aparte).
 --              * Crea 12 TABLAS DE TENANT en psi, todas con id_tenant obligatorio, claves foraneas COMPUESTAS por tenant
 --                (ADR-021) y 5 predicados cada una en seg.pol_tenant (1 filtro y 4 bloqueos con seg.fn_tenant_actual):
@@ -21,8 +21,9 @@
 --              * Agrega 'paciente' a CK_persona_empresa_tipo (dbo.persona_empresa): el paciente es un vinculo mas de la persona
 --                maestra (ADR-004). No cambia ninguna fila existente.
 --            No cambia lo que ve ni lo que puede hacer ningun usuario: la aplicacion publicada ignora el esquema psi.
---            Los campos clinicos de psi.atenciones y los datos propios de cada formato de constancia se agregan en un script
---            posterior, cuando se defina su contenido.
+--            Los campos clinicos de la atencion son los minimos del examen para licencia de conducir (decision D17): el
+--            resultado de cada prueba aplicada (atencion_pruebas.resultado), la conclusion apto o no apto
+--            (atenciones.conclusion) y las observaciones.
 -- Autor    : eGestion360-Web
 -- Fecha    : 2026-11-15
 -- BD       : eBD_SPD
@@ -39,7 +40,7 @@
 --           con columnas distintas de las esperadas o el esquema psi tiene una tabla no prevista;
 --        d) CK_persona_empresa_tipo no admite los 6 tipos de vinculo de hoy (alguien lo cambio a mano).
 --   2. CAMBIO (una sola transaccion): esquema, CHECK de vinculos, tablas, restricciones, indices y predicados RLS.
---   3. POSTCHECK dentro de la misma transaccion: 177 columnas, 31 CHECK y 37 claves foraneas confiables, 20 indices unicos,
+--   3. POSTCHECK dentro de la misma transaccion: 179 columnas, 32 CHECK y 37 claves foraneas confiables, 20 indices unicos,
 --      60 predicados (5 por tabla, todos de seg.fn_tenant_actual) y la politica en el mismo estado (encendida o apagada).
 --      Si algo no cuadra, se revierte todo.
 --
@@ -65,7 +66,7 @@ GO
 IF OBJECT_ID(N'tempdb..#precheck_042') IS NOT NULL DROP TABLE #precheck_042;
 IF OBJECT_ID(N'tempdb..#columnas_042') IS NOT NULL DROP TABLE #columnas_042;
 
--- Columnas esperadas de cada tabla nueva (177).
+-- Columnas esperadas de cada tabla nueva (179).
 CREATE TABLE #columnas_042 (
     tabla    SYSNAME COLLATE DATABASE_DEFAULT NOT NULL,
     columna  SYSNAME COLLATE DATABASE_DEFAULT NOT NULL,
@@ -88,7 +89,8 @@ INSERT INTO #columnas_042 (tabla, columna) VALUES
     (N'psi.atenciones', N'id_atencion'), (N'psi.atenciones', N'id_tenant'), (N'psi.atenciones', N'id_empresa'),
     (N'psi.atenciones', N'id_paciente'), (N'psi.atenciones', N'id_jornada'), (N'psi.atenciones', N'fecha_atencion'),
     (N'psi.atenciones', N'edad_declarada'), (N'psi.atenciones', N'id_persona_profesional'), (N'psi.atenciones', N'nombre_profesional'),
-    (N'psi.atenciones', N'estado'), (N'psi.atenciones', N'observaciones'), (N'psi.atenciones', N'fecha_cierre'),
+    (N'psi.atenciones', N'estado'), (N'psi.atenciones', N'conclusion'), (N'psi.atenciones', N'observaciones'),
+    (N'psi.atenciones', N'fecha_cierre'),
     (N'psi.atenciones', N'cerrado_por'), (N'psi.atenciones', N'motivo_anulacion'), (N'psi.atenciones', N'creado_por'),
     (N'psi.atenciones', N'fecha_creacion'), (N'psi.atenciones', N'modificado_por'), (N'psi.atenciones', N'fecha_modificacion'),
     (N'psi.atenciones', N'token_concurrencia'),
@@ -99,7 +101,8 @@ INSERT INTO #columnas_042 (tabla, columna) VALUES
     (N'psi.pruebas', N'token_concurrencia'),
 
     (N'psi.atencion_pruebas', N'id_atencion_prueba'), (N'psi.atencion_pruebas', N'id_tenant'), (N'psi.atencion_pruebas', N'id_empresa'),
-    (N'psi.atencion_pruebas', N'id_atencion'), (N'psi.atencion_pruebas', N'id_prueba'), (N'psi.atencion_pruebas', N'creado_por'),
+    (N'psi.atencion_pruebas', N'id_atencion'), (N'psi.atencion_pruebas', N'id_prueba'), (N'psi.atencion_pruebas', N'resultado'),
+    (N'psi.atencion_pruebas', N'creado_por'),
     (N'psi.atencion_pruebas', N'fecha_creacion'),
 
     (N'psi.tipos_constancia', N'id_tipo_constancia'), (N'psi.tipos_constancia', N'id_tenant'), (N'psi.tipos_constancia', N'id_empresa'),
@@ -363,6 +366,8 @@ BEGIN TRY
             -- Nombre del profesional tal como sale impreso (se conserva aunque la persona cambie despues).
             nombre_profesional      NVARCHAR(200)  NULL,
             estado                  VARCHAR(10)    NOT NULL CONSTRAINT DF_atenciones_estado DEFAULT ('borrador'),
+            -- Conclusion del examen (decision D17): apto o no apto; nula mientras no se define.
+            conclusion              VARCHAR(10)    NULL,
             observaciones           NVARCHAR(4000) NULL,
             fecha_cierre            DATETIME2(3)   NULL,
             cerrado_por             NVARCHAR(100)  NULL,
@@ -382,6 +387,7 @@ BEGIN TRY
                 REFERENCES dbo.personas (id_tenant, id_persona),
             CONSTRAINT UX_atenciones_tenant_empresa_id UNIQUE (id_tenant, id_empresa, id_atencion),
             CONSTRAINT CK_atenciones_estado CHECK (estado IN ('borrador', 'cerrada', 'anulada')),
+            CONSTRAINT CK_atenciones_conclusion CHECK (conclusion IN ('apto', 'no_apto')),
             CONSTRAINT CK_atenciones_edad CHECK (edad_declarada IS NULL OR edad_declarada <= 120),
             -- Una atencion cerrada ya no se edita (la aplicacion lo hace cumplir); aqui se exige saber quien y cuando la cerro.
             CONSTRAINT CK_atenciones_cierre CHECK (estado <> 'cerrada' OR (fecha_cierre IS NOT NULL AND cerrado_por IS NOT NULL)),
@@ -430,6 +436,8 @@ BEGIN TRY
             id_empresa          INT            NOT NULL,
             id_atencion         INT            NOT NULL,
             id_prueba           INT            NOT NULL,
+            -- Resultado de la prueba tal como lo anota el psicologo (puntaje, rango, "dentro de lo normal"...), decision D17.
+            resultado           NVARCHAR(200)  NULL,
             creado_por          NVARCHAR(100)  NOT NULL,
             fecha_creacion      DATETIME2(3)   NOT NULL CONSTRAINT DF_atencion_pruebas_fc DEFAULT (SYSUTCDATETIME()),
             CONSTRAINT PK_atencion_pruebas PRIMARY KEY CLUSTERED (id_atencion_prueba),
@@ -798,6 +806,7 @@ BEGIN TRY
                  (N'CK_jornadas_estado'), (N'CK_jornadas_fechas'), (N'CK_jornadas_nombre'),
                  (N'CK_pacientes_tipo'), (N'CK_pacientes_expediente'), (N'CK_pacientes_eliminado'),
                  (N'CK_atenciones_estado'), (N'CK_atenciones_edad'), (N'CK_atenciones_cierre'), (N'CK_atenciones_anulacion'),
+                 (N'CK_atenciones_conclusion'),
                  (N'CK_pruebas_codigo'), (N'CK_pruebas_nombre'),
                  (N'CK_tipos_constancia_codigo'), (N'CK_tipos_constancia_nombre'), (N'CK_tipos_constancia_talonario'),
                  (N'CK_constancias_estado'), (N'CK_constancias_numero'), (N'CK_constancias_anulacion'), (N'CK_constancias_resultado'),

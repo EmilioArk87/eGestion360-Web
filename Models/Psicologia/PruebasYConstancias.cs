@@ -14,7 +14,10 @@ namespace eGestion360Web.Models.Psicologia
         public static readonly IReadOnlyList<string> Todos = new[] { Emitida, Anulada };
     }
 
-    /// <summary>Conclusión del examen que imprimen algunos formatos (CK_constancias_resultado del script 042).</summary>
+    /// <summary>
+    /// Conclusión del examen: la que imprimen algunos formatos de constancia (CK_constancias_resultado del script 042) y la de la
+    /// atención (CK_atenciones_conclusion, decisión D17).
+    /// </summary>
     public static class ResultadosConstancia
     {
         public const string Apto = "apto";
@@ -95,6 +98,12 @@ namespace eGestion360Web.Models.Psicologia
 
         [Column("id_prueba")]
         public int IdPrueba { get; set; }
+
+        /// <summary>Resultado de la prueba tal como lo anota el psicólogo (puntaje, rango, "dentro de lo normal"...), decisión D17.</summary>
+        [StringLength(200)]
+        [Display(Name = "Resultado")]
+        [Column("resultado")]
+        public string? Resultado { get; set; }
 
         [StringLength(100)]
         [Column("creado_por")]

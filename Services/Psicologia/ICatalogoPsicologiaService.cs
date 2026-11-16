@@ -14,7 +14,7 @@ namespace eGestion360Web.Services.Psicologia
 
         /// <summary>
         /// Crea o edita un tipo de constancia. Su código (hasta 10 caracteres) es el prefijo de la numeración de sus constancias (D13), así que
-        /// no cambia una vez que tiene constancias. Su formato de impresión no se elige aquí: llega con cada formato (D14).
+        /// no cambia una vez que tiene constancias. Aquí se elige también su formato de impresión (D14) y su talonario del Colegio.
         /// </summary>
         Task<ResultadoPsicologia<int>> GuardarTipoConstanciaAsync(ElementoCatalogoInput input, CancellationToken ct = default);
 

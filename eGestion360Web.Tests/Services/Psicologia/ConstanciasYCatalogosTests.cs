@@ -26,6 +26,9 @@ namespace eGestion360Web.Tests.Services.Psicologia
         private ConstanciaService Constancias(ApplicationDbContext db) => new(db, _reloj, NullLogger<ConstanciaService>.Instance);
         private AtencionService Atenciones(ApplicationDbContext db) => new(db, _reloj);
 
+        /// <summary>Solo las pruebas aplicadas, sin resultados, conclusión ni observaciones.</summary>
+        private static EvaluacionInput SoloPruebas(params int[] ids) => new() { Pruebas = ids.Select(id => new PruebaAplicadaInput(id, null)).ToList() };
+
         private async Task<int> NuevaPrueba(string codigo, int empresa = DatosBase.EmpresaA)
         {
             using var db = Contexto();
@@ -127,9 +130,9 @@ namespace eGestion360Web.Tests.Services.Psicologia
             var mmpi = await NuevaPrueba("MMPI-2");
 
             using (var db = Contexto())
-                Assert.True((await Atenciones(db).GuardarPruebasAsync(DatosBase.EmpresaA, atencion, new[] { raven, mmpi }, "psi.ana")).Ok);
+                Assert.True((await Atenciones(db).GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(raven, mmpi), "psi.ana")).Ok);
             using (var db = Contexto())
-                Assert.True((await Atenciones(db).GuardarPruebasAsync(DatosBase.EmpresaA, atencion, new[] { mmpi }, "psi.ana")).Ok);
+                Assert.True((await Atenciones(db).GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(mmpi), "psi.ana")).Ok);
 
             using var leer = _bd.Crear();
             Assert.Equal(new[] { mmpi }, await leer.AtencionPruebas.Where(a => a.IdAtencion == atencion).Select(a => a.IdPrueba).ToListAsync());
@@ -142,16 +145,16 @@ namespace eGestion360Web.Tests.Services.Psicologia
             var deOtra = await NuevaPrueba("RAVEN", DatosBase.EmpresaB);
             var vieja = await NuevaPrueba("BENDER");
             using (var db = Contexto())
-                Assert.True((await Atenciones(db).GuardarPruebasAsync(DatosBase.EmpresaA, atencion, new[] { vieja }, "psi.ana")).Ok);
+                Assert.True((await Atenciones(db).GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(vieja), "psi.ana")).Ok);
             using (var db = Contexto())
                 Assert.True((await Catalogo(db).CambiarEstadoPruebaAsync(DatosBase.EmpresaA, vieja, false, "psi.ana")).Ok);
 
             using (var db = Contexto())
             {
                 var servicio = Atenciones(db);
-                Assert.Contains((await servicio.GuardarPruebasAsync(DatosBase.EmpresaA, atencion, new[] { vieja, deOtra }, "psi.ana")).Errores, e => e.Campo == "Pruebas");
+                Assert.Contains((await servicio.GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(vieja, deOtra), "psi.ana")).Errores, e => e.Campo == "Pruebas");
                 // la que se desactivó después puede quedarse en la atención
-                Assert.True((await servicio.GuardarPruebasAsync(DatosBase.EmpresaA, atencion, new[] { vieja }, "psi.ana")).Ok);
+                Assert.True((await servicio.GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(vieja), "psi.ana")).Ok);
             }
 
             using (var db = _bd.Crear())
@@ -164,7 +167,7 @@ namespace eGestion360Web.Tests.Services.Psicologia
             }
             using (var db = Contexto())
             {
-                var cerrada = await Atenciones(db).GuardarPruebasAsync(DatosBase.EmpresaA, atencion, Array.Empty<int>(), "psi.ana");
+                var cerrada = await Atenciones(db).GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(), "psi.ana");
                 Assert.Equal(AtencionService.MensajeNoEditable, Assert.Single(cerrada.Errores).Mensaje);
             }
             using var leer = _bd.Crear();
@@ -311,7 +314,7 @@ namespace eGestion360Web.Tests.Services.Psicologia
             var (paciente, atencion) = await NuevoPaciente("0501-1998-00412");
             var prueba = await NuevaPrueba("RAVEN");
             using (var db = Contexto())
-                Assert.True((await Atenciones(db).GuardarPruebasAsync(DatosBase.EmpresaA, atencion, new[] { prueba }, "psi.ana")).Ok);
+                Assert.True((await Atenciones(db).GuardarEvaluacionAsync(DatosBase.EmpresaA, atencion, SoloPruebas(prueba), "psi.ana")).Ok);
             Assert.True((await Emitir(paciente, await NuevoTipo("ARMAS"), new[] { prueba })).Ok);
 
             using var otraCuenta = _bd.CrearComo(DatosBase.TenantB);

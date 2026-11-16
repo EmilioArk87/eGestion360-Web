@@ -1,16 +1,44 @@
+using eGestion360Web.Models.Psicologia;
+
 namespace eGestion360Web.Services.Psicologia
 {
     /// <summary>
-    /// Operaciones sobre las atenciones (evaluaciones) de un paciente. Hoy: registrar qué pruebas psicológicas se aplicaron (decisión D12).
-    /// El formulario clínico llega con el contenido que defina Emilio (F6). Una atención cerrada o anulada ya no se edita.
+    /// La evaluación (atención) de un paciente con su contenido clínico mínimo para el examen de licencia de conducir (decisión D17):
+    /// las pruebas aplicadas con el resultado de cada una, la conclusión apto o no apto y las observaciones. Se completa en borrador,
+    /// se cierra cuando está completa (ya no se cambia) y se anula con motivo. Nada se borra.
     /// </summary>
     public interface IAtencionService
     {
         /// <summary>
-        /// Deja en la atención exactamente las pruebas indicadas (agrega las nuevas y quita las que ya no están). Las pruebas nuevas deben
-        /// ser del catálogo activo de la empresa; una que se desactivó después puede seguir en la atención.
+        /// Guarda la evaluación en borrador: deja exactamente las pruebas indicadas con su resultado (agrega, quita y actualiza), la
+        /// conclusión y las observaciones. Las pruebas nuevas deben ser del catálogo activo de la empresa; una que se desactivó después
+        /// puede seguir en la atención.
         /// </summary>
-        Task<ResultadoPsicologia<int>> GuardarPruebasAsync(int idEmpresa, int idAtencion, IReadOnlyCollection<int> idsPruebas, string usuario,
+        Task<ResultadoPsicologia<Atencion>> GuardarEvaluacionAsync(int idEmpresa, int idAtencion, EvaluacionInput input, string usuario,
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Cierra la evaluación: exige al menos una prueba aplicada, el resultado de cada una y la conclusión. Cerrada ya no se cambia.
+        /// </summary>
+        Task<ResultadoPsicologia<Atencion>> CerrarAsync(int idEmpresa, int idAtencion, string usuario, CancellationToken ct = default);
+
+        /// <summary>
+        /// Anula la evaluación (en borrador o cerrada) con su motivo. No se puede si una constancia vigente salió de ella: primero se
+        /// anula la constancia.
+        /// </summary>
+        Task<ResultadoPsicologia<Atencion>> AnularAsync(int idEmpresa, int idAtencion, string? motivo, string usuario, CancellationToken ct = default);
+    }
+
+    /// <summary>Una prueba aplicada en la evaluación y su resultado (texto del psicólogo, hasta 200 caracteres).</summary>
+    public sealed record PruebaAplicadaInput(int IdPrueba, string? Resultado);
+
+    public sealed class EvaluacionInput
+    {
+        public IReadOnlyCollection<PruebaAplicadaInput> Pruebas { get; init; } = Array.Empty<PruebaAplicadaInput>();
+
+        /// <summary><see cref="ResultadosConstancia"/> (apto o no apto), o vacío mientras no se define.</summary>
+        public string? Conclusion { get; init; }
+
+        public string? Observaciones { get; init; }
     }
 }

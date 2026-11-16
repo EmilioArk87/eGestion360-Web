@@ -180,6 +180,10 @@
                 document.querySelectorAll('.js-prueba').forEach(c => { c.checked = !!a && a.Pruebas.includes(Number(c.value)); });
                 if (profesional && a && a.Profesional && !profesional.value) profesional.value = a.Profesional;
                 if (firmante && a && a.IdProfesional) firmante.value = String(a.IdProfesional);
+                if (a && a.Conclusion) {
+                    const radio = document.querySelector('input[name="Input.Resultado"][value="' + a.Conclusion + '"]');
+                    if (radio) radio.checked = true;
+                }
             });
         })();
     </script>

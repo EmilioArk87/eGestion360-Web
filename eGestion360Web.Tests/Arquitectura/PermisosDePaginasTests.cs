@@ -242,7 +242,6 @@ namespace eGestion360Web.Tests.Arquitectura
                 "administracion.usuarios.ver",
                 // Módulo de Psicología (script 043): cada permiso se quita de aquí cuando su página existe (F4 a F6 del plan).
                 "psicologia.pacientes.editar",
-                "psicologia.atenciones.ver", "psicologia.atenciones.cerrar", "psicologia.atenciones.anular",
             };
 
             var huerfanos = CatalogoDePermisos.Todos.Select(p => p.Codigo).Where(c => !pedidos.Contains(c) && !sinPantalla.Contains(c)).ToList();

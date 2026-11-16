@@ -7,8 +7,9 @@ namespace eGestion360Web.Models.Psicologia
 {
     /// <summary>
     /// Una evaluación o consulta de un paciente (psi.atenciones, script 042): el historial clínico. Puede ser parte de una jornada.
-    /// Una atención cerrada ya no se edita (la aplicación lo hace cumplir; la BD exige quién y cuándo la cerró). Los campos
-    /// clínicos del documento se agregan cuando se defina su contenido.
+    /// Una atención cerrada ya no se edita (la aplicación lo hace cumplir; la BD exige quién y cuándo la cerró). Su contenido clínico
+    /// es el mínimo del examen para licencia de conducir (decisión D17): el resultado de cada prueba aplicada, la conclusión apto o
+    /// no apto y las observaciones.
     /// </summary>
     [Table("atenciones", Schema = "psi")]
     public class Atencion : ITenantEntity
@@ -52,6 +53,12 @@ namespace eGestion360Web.Models.Psicologia
         [StringLength(10)]
         [Column("estado", TypeName = "varchar(10)")]
         public string Estado { get; set; } = EstadosAtencion.Borrador;
+
+        /// <summary>Conclusión del examen (decisión D17): <see cref="ResultadosConstancia.Apto"/> o <see cref="ResultadosConstancia.NoApto"/>; nula mientras no se define.</summary>
+        [StringLength(10)]
+        [Display(Name = "Conclusión")]
+        [Column("conclusion", TypeName = "varchar(10)")]
+        public string? Conclusion { get; set; }
 
         [StringLength(4000)]
         [Display(Name = "Observaciones")]

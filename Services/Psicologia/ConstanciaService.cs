@@ -161,6 +161,10 @@ namespace eGestion360Web.Services.Psicologia
                 errores.Add(new ErrorValidacion("Resultado", "Elige si resultó apto o no apto."));
             else if (resultado == null && PlantillasConstancia.Buscar(tipo?.Plantilla)?.PideResultado == true)
                 errores.Add(new ErrorValidacion("Resultado", "Elige si resultó apto o no apto: el formato de esta constancia lo imprime."));
+            // La constancia no puede decir lo contrario de la conclusión de la evaluación de la que sale (D17).
+            else if (resultado != null && atencion?.Conclusion != null && atencion.Conclusion != resultado)
+                errores.Add(new ErrorValidacion("Resultado",
+                    $"La evaluación concluyó {(atencion.Conclusion == ResultadosConstancia.Apto ? "apto" : "no apto")}: la constancia no puede decir lo contrario."));
 
             // Folio de la hoja del talonario del Colegio: el que se escribió (dentro del talonario y sin usar) o el siguiente libre.
             if (tipo is { UsaTalonario: true } && input.Folio is { } folio)
