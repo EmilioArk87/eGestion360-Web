@@ -39,7 +39,7 @@
 --           con columnas distintas de las esperadas o el esquema psi tiene una tabla no prevista;
 --        d) CK_persona_empresa_tipo no admite los 6 tipos de vinculo de hoy (alguien lo cambio a mano).
 --   2. CAMBIO (una sola transaccion): esquema, CHECK de vinculos, tablas, restricciones, indices y predicados RLS.
---   3. POSTCHECK dentro de la misma transaccion: 174 columnas, 29 CHECK y 37 claves foraneas confiables, 20 indices unicos,
+--   3. POSTCHECK dentro de la misma transaccion: 177 columnas, 31 CHECK y 37 claves foraneas confiables, 20 indices unicos,
 --      60 predicados (5 por tabla, todos de seg.fn_tenant_actual) y la politica en el mismo estado (encendida o apagada).
 --      Si algo no cuadra, se revierte todo.
 --
@@ -65,7 +65,7 @@ GO
 IF OBJECT_ID(N'tempdb..#precheck_042') IS NOT NULL DROP TABLE #precheck_042;
 IF OBJECT_ID(N'tempdb..#columnas_042') IS NOT NULL DROP TABLE #columnas_042;
 
--- Columnas esperadas de cada tabla nueva (174).
+-- Columnas esperadas de cada tabla nueva (177).
 CREATE TABLE #columnas_042 (
     tabla    SYSNAME COLLATE DATABASE_DEFAULT NOT NULL,
     columna  SYSNAME COLLATE DATABASE_DEFAULT NOT NULL,
@@ -104,13 +104,15 @@ INSERT INTO #columnas_042 (tabla, columna) VALUES
 
     (N'psi.tipos_constancia', N'id_tipo_constancia'), (N'psi.tipos_constancia', N'id_tenant'), (N'psi.tipos_constancia', N'id_empresa'),
     (N'psi.tipos_constancia', N'codigo'), (N'psi.tipos_constancia', N'nombre'), (N'psi.tipos_constancia', N'plantilla'),
+    (N'psi.tipos_constancia', N'folio_desde'), (N'psi.tipos_constancia', N'folio_hasta'),
     (N'psi.tipos_constancia', N'activo'), (N'psi.tipos_constancia', N'creado_por'), (N'psi.tipos_constancia', N'fecha_creacion'),
     (N'psi.tipos_constancia', N'modificado_por'), (N'psi.tipos_constancia', N'fecha_modificacion'), (N'psi.tipos_constancia', N'token_concurrencia'),
 
     (N'psi.constancias', N'id_constancia'), (N'psi.constancias', N'id_tenant'), (N'psi.constancias', N'id_empresa'),
     (N'psi.constancias', N'id_paciente'), (N'psi.constancias', N'id_atencion'), (N'psi.constancias', N'id_tipo_constancia'),
     (N'psi.constancias', N'numero_constancia'), (N'psi.constancias', N'fecha_emision'), (N'psi.constancias', N'id_persona_profesional'),
-    (N'psi.constancias', N'nombre_profesional'), (N'psi.constancias', N'estado'), (N'psi.constancias', N'motivo_anulacion'),
+    (N'psi.constancias', N'nombre_profesional'), (N'psi.constancias', N'estado'), (N'psi.constancias', N'resultado'),
+    (N'psi.constancias', N'motivo_anulacion'),
     (N'psi.constancias', N'fecha_anulacion'), (N'psi.constancias', N'anulada_por'), (N'psi.constancias', N'creado_por'),
     (N'psi.constancias', N'fecha_creacion'), (N'psi.constancias', N'modificado_por'), (N'psi.constancias', N'fecha_modificacion'),
     (N'psi.constancias', N'token_concurrencia'),
@@ -452,6 +454,9 @@ BEGIN TRY
             nombre              NVARCHAR(150)  NOT NULL,
             -- Formato con que se imprime (se define cuando llega cada formato; se imprime sobre papel ya membretado, D15).
             plantilla           VARCHAR(40)    NULL,
+            -- Talonario del Colegio de Psicologos en uso (folios preimpresos en la hoja); nulo si el tipo no usa talonario.
+            folio_desde         INT            NULL,
+            folio_hasta         INT            NULL,
             activo              BIT            NOT NULL CONSTRAINT DF_tipos_constancia_activo DEFAULT (1),
             creado_por          NVARCHAR(100)  NOT NULL,
             fecha_creacion      DATETIME2(3)   NOT NULL CONSTRAINT DF_tipos_constancia_fc DEFAULT (SYSUTCDATETIME()),
@@ -464,7 +469,9 @@ BEGIN TRY
             CONSTRAINT UX_tipos_constancia_tenant_empresa_id UNIQUE (id_tenant, id_empresa, id_tipo_constancia),
             CONSTRAINT UX_tipos_constancia_codigo UNIQUE (id_empresa, codigo),
             CONSTRAINT CK_tipos_constancia_codigo CHECK (LEN(codigo) > 0),
-            CONSTRAINT CK_tipos_constancia_nombre CHECK (LEN(nombre) > 0)
+            CONSTRAINT CK_tipos_constancia_nombre CHECK (LEN(nombre) > 0),
+            CONSTRAINT CK_tipos_constancia_talonario CHECK ((folio_desde IS NULL AND folio_hasta IS NULL)
+                                                            OR (folio_desde > 0 AND folio_hasta >= folio_desde))
         );
         SET @tablasNuevas += 1;
     END
@@ -486,6 +493,8 @@ BEGIN TRY
             id_persona_profesional  INT            NULL,
             nombre_profesional      NVARCHAR(200)  NULL,
             estado                  VARCHAR(10)    NOT NULL CONSTRAINT DF_constancias_estado DEFAULT ('emitida'),
+            -- Conclusion del examen cuando el formato la imprime (apto o no apto); nulo si el tipo no la usa.
+            resultado               VARCHAR(10)    NULL,
             motivo_anulacion        NVARCHAR(300)  NULL,
             fecha_anulacion         DATETIME2(3)   NULL,
             anulada_por             NVARCHAR(100)  NULL,
@@ -508,6 +517,7 @@ BEGIN TRY
             -- El numero no se repite en la empresa, tampoco el de una constancia anulada (el prefijo distingue cada tipo).
             CONSTRAINT UX_constancias_numero UNIQUE (id_empresa, numero_constancia),
             CONSTRAINT CK_constancias_estado CHECK (estado IN ('emitida', 'anulada')),
+            CONSTRAINT CK_constancias_resultado CHECK (resultado IN ('apto', 'no_apto')),
             CONSTRAINT CK_constancias_numero CHECK (LEN(numero_constancia) > 0),
             CONSTRAINT CK_constancias_anulacion CHECK (estado <> 'anulada'
                                                        OR (motivo_anulacion IS NOT NULL AND fecha_anulacion IS NOT NULL AND anulada_por IS NOT NULL))
@@ -789,8 +799,8 @@ BEGIN TRY
                  (N'CK_pacientes_tipo'), (N'CK_pacientes_expediente'), (N'CK_pacientes_eliminado'),
                  (N'CK_atenciones_estado'), (N'CK_atenciones_edad'), (N'CK_atenciones_cierre'), (N'CK_atenciones_anulacion'),
                  (N'CK_pruebas_codigo'), (N'CK_pruebas_nombre'),
-                 (N'CK_tipos_constancia_codigo'), (N'CK_tipos_constancia_nombre'),
-                 (N'CK_constancias_estado'), (N'CK_constancias_numero'), (N'CK_constancias_anulacion'),
+                 (N'CK_tipos_constancia_codigo'), (N'CK_tipos_constancia_nombre'), (N'CK_tipos_constancia_talonario'),
+                 (N'CK_constancias_estado'), (N'CK_constancias_numero'), (N'CK_constancias_anulacion'), (N'CK_constancias_resultado'),
                  (N'CK_profesionales_tipo'), (N'CK_profesionales_nombre_firma'),
                  (N'CK_impresiones_documento'), (N'CK_impresiones_papel'), (N'CK_impresiones_plantilla'),
                  (N'CK_importaciones_estado'), (N'CK_importaciones_hash'), (N'CK_importaciones_conteos'), (N'CK_importaciones_confirmacion'),

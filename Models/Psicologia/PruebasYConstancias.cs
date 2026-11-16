@@ -14,6 +14,15 @@ namespace eGestion360Web.Models.Psicologia
         public static readonly IReadOnlyList<string> Todos = new[] { Emitida, Anulada };
     }
 
+    /// <summary>Conclusión del examen que imprimen algunos formatos (CK_constancias_resultado del script 042).</summary>
+    public static class ResultadosConstancia
+    {
+        public const string Apto = "apto";
+        public const string NoApto = "no_apto";
+
+        public static readonly IReadOnlyList<string> Todos = new[] { Apto, NoApto };
+    }
+
     /// <summary>Una prueba psicológica del catálogo de la empresa (psi.pruebas, decisión D12): MMPI-2, 16PF, Raven, Bender...</summary>
     [Table("pruebas", Schema = "psi")]
     public class Prueba : ITenantEntity
@@ -133,6 +142,16 @@ namespace eGestion360Web.Models.Psicologia
         [Column("plantilla", TypeName = "varchar(40)")]
         public string? Plantilla { get; set; }
 
+        /// <summary>Primer folio del talonario del Colegio en uso (hojas con número preimpreso); nulo si el tipo no usa talonario.</summary>
+        [Display(Name = "Folio inicial del talonario")]
+        [Column("folio_desde")]
+        public int? FolioDesde { get; set; }
+
+        /// <summary>Último folio del talonario en uso.</summary>
+        [Display(Name = "Folio final del talonario")]
+        [Column("folio_hasta")]
+        public int? FolioHasta { get; set; }
+
         [Column("activo")]
         public bool Activo { get; set; } = true;
 
@@ -153,6 +172,10 @@ namespace eGestion360Web.Models.Psicologia
         [Timestamp]
         [Column("token_concurrencia")]
         public byte[] TokenConcurrencia { get; set; } = Array.Empty<byte>();
+
+        /// <summary>Usa los folios preimpresos de un talonario del Colegio en vez del correlativo interno.</summary>
+        [NotMapped]
+        public bool UsaTalonario => FolioDesde != null && FolioHasta != null;
     }
 
     /// <summary>
@@ -204,6 +227,12 @@ namespace eGestion360Web.Models.Psicologia
         [StringLength(10)]
         [Column("estado", TypeName = "varchar(10)")]
         public string Estado { get; set; } = EstadosConstancia.Emitida;
+
+        /// <summary>Conclusión del examen (<see cref="ResultadosConstancia"/>) cuando el formato la imprime.</summary>
+        [StringLength(10)]
+        [Display(Name = "Resultado")]
+        [Column("resultado", TypeName = "varchar(10)")]
+        public string? Resultado { get; set; }
 
         [StringLength(300)]
         [Display(Name = "Motivo de anulación")]

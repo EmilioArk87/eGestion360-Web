@@ -61,6 +61,20 @@ namespace eGestion360Web.Services.Psicologia
             if (codigo.Length > NumeradorDeConstancias.LargoMaximoCodigo && !errores.Any(e => e.Campo == "Codigo"))
                 errores.Add(new ErrorValidacion("Codigo",
                     $"El código del tipo es el prefijo de la numeración de sus constancias: hasta {NumeradorDeConstancias.LargoMaximoCodigo} caracteres."));
+
+            var plantilla = string.IsNullOrWhiteSpace(input.Plantilla) ? null : input.Plantilla.Trim();
+            if (plantilla != null && PlantillasConstancia.Buscar(plantilla) == null)
+                errores.Add(new ErrorValidacion("Plantilla", "Ese formato de impresión no existe."));
+
+            // Talonario del Colegio: los dos folios o ninguno; un talonario normal trae 25 hojas.
+            if ((input.FolioDesde == null) != (input.FolioHasta == null))
+                errores.Add(new ErrorValidacion("FolioHasta", "Escribe el primer y el último folio del talonario, o deja los dos vacíos."));
+            else if (input.FolioDesde is { } desde && input.FolioHasta is { } hasta)
+            {
+                if (desde <= 0) errores.Add(new ErrorValidacion("FolioDesde", "El folio debe ser un número positivo."));
+                else if (hasta < desde) errores.Add(new ErrorValidacion("FolioHasta", "El último folio no puede ser menor que el primero."));
+                else if (hasta - desde >= 1000) errores.Add(new ErrorValidacion("FolioHasta", "Un talonario no puede pasar de 1000 hojas: revisa los folios."));
+            }
             if (errores.Count > 0) return ResultadoPsicologia<int>.ConErrores(errores);
 
             var id = input.Id ?? 0;
@@ -86,6 +100,9 @@ namespace eGestion360Web.Services.Psicologia
             }
             tipo.Codigo = codigo;
             tipo.Nombre = nombre;
+            tipo.Plantilla = plantilla;
+            tipo.FolioDesde = input.FolioDesde;
+            tipo.FolioHasta = input.FolioHasta;
 
             return await GuardarAsync(() => tipo.IdTipoConstancia, "el tipo de constancia", input.IdEmpresa, ct);
         }

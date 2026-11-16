@@ -132,6 +132,28 @@
                                     <input asp-for="Tipo.Nombre" class="form-control form-control-sm" placeholder="Constancia para portación de armas" autocomplete="off" />
                                     <span asp-validation-for="Tipo.Nombre" class="text-danger small"></span>
                                 </div>
+                                <div class="col-12">
+                                    <label asp-for="Tipo.Plantilla" class="form-label small mb-1">Formato de impresión</label>
+                                    <select asp-for="Tipo.Plantilla" class="form-select form-select-sm">
+                                        <option value="">Por recibir (no se imprime todavía)</option>
+                                        @foreach (var p in eGestion360Web.Services.Psicologia.PlantillasConstancia.Todas)
+                                        {
+                                            <option value="@p.Codigo">@p.Nombre</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Tipo.Plantilla" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Tipo.FolioDesde" class="form-label small mb-1">Talonario: primer folio</label>
+                                    <input asp-for="Tipo.FolioDesde" type="number" min="1" class="form-control form-control-sm font-monospace" placeholder="1374060" />
+                                    <span asp-validation-for="Tipo.FolioDesde" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Tipo.FolioHasta" class="form-label small mb-1">Último folio</label>
+                                    <input asp-for="Tipo.FolioHasta" type="number" min="1" class="form-control form-control-sm font-monospace" placeholder="1374084" />
+                                    <span asp-validation-for="Tipo.FolioHasta" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12 form-text mt-0">Si las hojas del Colegio traen número impreso, escribe el talonario en uso: cada constancia toma el siguiente folio libre. Vacío: correlativo propio (CODIGO-AAAA-NNNNN).</div>
                             </div>
                             <div class="d-flex justify-content-end gap-2 mt-2">
                                 @if (Model.Tipo.Id > 0)
@@ -162,7 +184,21 @@
                                         <span class="fw-semibold">@t.Nombre</span>
                                         @if (!t.Activo) { <span class="badge bg-secondary ms-1">inactivo</span> }
                                         <div class="small text-muted">
-                                            Formato: @(t.Plantilla ?? "por recibir") · @(t.Usos == 0 ? "sin constancias" : $"{t.Usos} constancia(s)")
+                                            Formato: @t.Formato · @(t.Usos == 0 ? "sin constancias" : $"{t.Usos} constancia(s)")
+                                        </div>
+                                        <div class="small text-muted">
+                                            @if (t.FolioDesde != null)
+                                            {
+                                                <span>Talonario <span class="font-monospace">@t.FolioDesde–@t.FolioHasta</span></span>
+                                            }
+                                            else
+                                            {
+                                                <span>Correlativo propio</span>
+                                            }
+                                            @if (t.Activo && Model.Siguientes.TryGetValue(t.Id, out var siguiente))
+                                            {
+                                                <span> · siguiente: <span class="font-monospace">@siguiente</span></span>
+                                            }
                                         </div>
                                     </div>
                                     @if (Model.PuedeEditar)

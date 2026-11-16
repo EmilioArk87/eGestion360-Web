@@ -3,9 +3,10 @@ using eGestion360Web.Models.Psicologia;
 namespace eGestion360Web.Services.Psicologia
 {
     /// <summary>
-    /// Constancias de examen psicológico del expediente del paciente: se emiten con su tipo, la prueba o pruebas aplicadas, la fecha y un
-    /// correlativo propio de su tipo, <c>CODIGO-AAAA-NNNNN</c> (decisión D13: uno por tipo, por empresa y año), y se anulan con motivo. Una
-    /// constancia no se borra ni se edita: si tiene un error, se anula y se emite otra con el número siguiente de su tipo.
+    /// Constancias de examen psicológico del expediente del paciente: se emiten con su tipo, la prueba o pruebas aplicadas, la fecha y su
+    /// número (decisión D13): el folio preimpreso de la hoja del talonario del Colegio si el tipo usa talonario, o un correlativo propio
+    /// del tipo, <c>CODIGO-AAAA-NNNNN</c>. Se anulan con motivo. Una constancia no se borra ni se edita: si tiene un error, se anula
+    /// (su hoja queda inutilizada) y se emite otra con el número siguiente.
     /// </summary>
     public interface IConstanciaService
     {
@@ -14,10 +15,13 @@ namespace eGestion360Web.Services.Psicologia
         Task<ResultadoPsicologia<Constancia>> AnularAsync(int idEmpresa, int idConstancia, string? motivo, string usuario, CancellationToken ct = default);
 
         /// <summary>
-        /// El número que llevaría la próxima constancia de cada tipo activo en el año, por id de tipo (solo para mostrarlo; el definitivo se
-        /// asigna al guardar).
+        /// El número que llevaría la próxima constancia de cada tipo activo, por id de tipo (solo para mostrarlo; el definitivo se asigna
+        /// al guardar): el siguiente folio libre del talonario, o el correlativo del año si el tipo no usa talonario.
         /// </summary>
         Task<IReadOnlyDictionary<int, string>> SiguientesNumerosAsync(int idEmpresa, int anio, CancellationToken ct = default);
+
+        /// <summary>Deja constancia de una impresión (psi.impresiones): solo de una constancia emitida cuyo tipo tiene formato.</summary>
+        Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, CancellationToken ct = default);
     }
 
     public sealed class EmitirConstanciaInput
@@ -37,6 +41,12 @@ namespace eGestion360Web.Services.Psicologia
 
         /// <summary>El psicólogo que la firma (de Profesionales). Tiene prioridad sobre <see cref="NombreProfesional"/>.</summary>
         public int? IdProfesional { get; set; }
+
+        /// <summary>Folio de la hoja del talonario (si el tipo usa talonario). Si no viene, el siguiente libre.</summary>
+        public int? Folio { get; set; }
+
+        /// <summary><see cref="ResultadosConstancia"/>: obligatorio si el formato del tipo imprime la conclusión.</summary>
+        public string? Resultado { get; set; }
 
         /// <summary>Quién la firma, como sale impreso, si no se eligió un profesional. Si tampoco viene, el profesional de la atención.</summary>
         public string? NombreProfesional { get; set; }

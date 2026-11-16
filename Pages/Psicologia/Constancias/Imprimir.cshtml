@@ -1,0 +1,136 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Psicologia.Constancias.ImprimirModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Constancia @Model.Numero</title>
+    <style>
+        /*
+         * Hoja "Constancia de examen psicologico para solicitud de licencia de conducir" del Colegio de Psicologos de Honduras.
+         * POSICIONES PROVISIONALES sobre tamano carta (215.9 x 279.4 mm), estimadas de la foto del formulario. Se ajustan aqui,
+         * en milimetros desde la esquina superior izquierda de la hoja, cuando lleguen las medidas reales (D15).
+         */
+        :root {
+            --hoja-ancho: 215.9mm;
+            --hoja-alto: 279.4mm;
+            --letra: "Arial", "Helvetica", sans-serif;
+
+            --fecha-arriba: 36mm;       /* renglon "__ de ________ del 20__" */
+            --dia-izquierda: 15mm;
+            --mes-izquierda: 30mm;
+            --anio-izquierda: 80mm;     /* despues del "20" impreso */
+
+            --cuerpo-arriba: 74mm;      /* primer renglon del parrafo */
+            --cuerpo-izquierda: 26mm;
+            --cuerpo-ancho: 160mm;
+            --cuerpo-renglon: 14mm;     /* distancia entre renglones de la hoja */
+
+            --pruebas-arriba: 213mm;    /* renglon de "PRUEBAS PSICOLOGICAS APLICADAS:" */
+            --pruebas-izquierda: 13mm;
+            --pruebas-ancho: 190mm;
+            --pruebas-sangria: 98mm;    /* el texto empieza despues de la etiqueta impresa */
+            --pruebas-renglon: 9mm;
+        }
+
+        @@page { size: letter; margin: 0; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #e9ecef; font-family: var(--letra); color: #000; }
+
+        .barra { position: sticky; top: 0; z-index: 2; background: #fff; border-bottom: 1px solid #ccc; padding: 10px 16px;
+                 display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 14px; }
+        .barra .dato { color: #444; }
+        .barra .aviso { color: #8a5300; font-size: 12px; flex-basis: 100%; }
+        .barra .error { color: #b00020; flex-basis: 100%; }
+        .barra button, .barra a { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid #888; background: #f8f9fa; color: #000; text-decoration: none; cursor: pointer; }
+        .barra .principal { background: #198754; border-color: #198754; color: #fff; }
+
+        .hoja { position: relative; width: var(--hoja-ancho); height: var(--hoja-alto); margin: 16px auto; background: #fff;
+                box-shadow: 0 0 0 1px #bbb; overflow: hidden; }
+        .campo { position: absolute; font-size: 13pt; line-height: 1.2; white-space: nowrap; }
+        .cuerpo { position: absolute; top: var(--cuerpo-arriba); left: var(--cuerpo-izquierda); width: var(--cuerpo-ancho);
+                  font-size: 13pt; line-height: var(--cuerpo-renglon); }
+        .pruebas { position: absolute; top: var(--pruebas-arriba); left: var(--pruebas-izquierda); width: var(--pruebas-ancho);
+                   font-size: 12pt; line-height: var(--pruebas-renglon); text-indent: var(--pruebas-sangria); }
+
+        /* Guia: lo que ya viene impreso en la hoja del Colegio, para comparar posiciones (solo en la hoja de prueba). */
+        .guia { position: absolute; color: #9aa0a6; font-size: 10pt; font-weight: bold; white-space: nowrap; }
+        .renglon { position: absolute; left: 12mm; right: 12mm; border-bottom: 0.3mm dotted #c0c4c8; }
+
+        @@media print {
+            html, body { background: #fff; }
+            .barra { display: none; }
+            .hoja { margin: 0; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="barra">
+        <strong>Constancia @Model.Numero</strong>
+        <span class="dato">@Model.Paciente</span>
+        @if (Model.Impedimento == null)
+        {
+            <form method="post" asp-page-handler="Registrar" asp-route-id="@Model.IdConstancia" style="display:inline">
+                <button type="submit" class="principal">Imprimir en la hoja del Colegio</button>
+            </form>
+            @if (Model.Guia)
+            {
+                <a asp-page="Imprimir" asp-route-id="@Model.IdConstancia">Quitar la guía</a>
+                <button type="button" onclick="window.print()">Imprimir hoja de prueba</button>
+            }
+            else
+            {
+                <a asp-page="Imprimir" asp-route-id="@Model.IdConstancia" asp-route-guia="true">Hoja de prueba (con guía)</a>
+            }
+        }
+        <a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@Model.IdPaciente">Volver al expediente</a>
+        <span class="dato">Impresa @Model.Impresiones vez(ces)</span>
+        @if (TempData["ImprimirError"] is string error) { <span class="error">@error</span> }
+        @if (Model.Impedimento != null) { <span class="error">@Model.Impedimento</span> }
+        else
+        {
+            <span class="aviso">En el cuadro de impresión: papel Carta, márgenes «Ninguno», escala 100 % y sin encabezados ni pies. Posiciones provisionales: se ajustan con las medidas reales de la hoja.
+                @if (Model.Guia) { <text> La hoja de prueba no queda registrada: imprímela en papel blanco y compárala a contraluz con la hoja del Colegio.</text> }</span>
+        }
+    </div>
+
+    @if (Model.Impedimento == null && Model.Texto != null)
+    {
+        var t = Model.Texto;
+        <div class="hoja">
+            @if (Model.Guia)
+            {
+                <div class="guia" style="top:12mm; left:40mm; font-size:14pt;">COLEGIO DE PSICÓLOGOS DE HONDURAS</div>
+                <div class="guia" style="top:var(--fecha-arriba); left:calc(var(--dia-izquierda) + 9mm);">de</div>
+                <div class="guia" style="top:var(--fecha-arriba); left:calc(var(--anio-izquierda) - 13mm);">del 20</div>
+                <div class="guia" style="top:46mm; left:12mm;">CONSTANCIA DE EXAMEN PSICOLÓGICO PARA SOLICITUD DE LICENCIA DE CONDUCIR</div>
+                @for (var i = 0; i < 4; i++)
+                {
+                    <div class="renglon" style="top:calc(var(--cuerpo-arriba) + @(i + 1) * var(--cuerpo-renglon) - 3mm);"></div>
+                }
+                <div class="guia" style="top:203mm; left:85mm;">VALOR L. 200.00</div>
+                <div class="guia" style="top:var(--pruebas-arriba); left:var(--pruebas-izquierda);">PRUEBAS PSICOLÓGICAS APLICADAS:</div>
+                <div class="renglon" style="top:calc(var(--pruebas-arriba) + var(--pruebas-renglon) - 2mm);"></div>
+                <div class="renglon" style="top:calc(var(--pruebas-arriba) + 2 * var(--pruebas-renglon) - 2mm);"></div>
+            }
+
+            <div class="campo" style="top:var(--fecha-arriba); left:var(--dia-izquierda);">@t.Dia</div>
+            <div class="campo" style="top:var(--fecha-arriba); left:var(--mes-izquierda);">@t.Mes</div>
+            <div class="campo" style="top:var(--fecha-arriba); left:var(--anio-izquierda);">@t.Anio</div>
+
+            <div class="cuerpo">@t.Cuerpo</div>
+
+            <div class="pruebas">@t.Pruebas</div>
+        </div>
+    }
+
+    @if (Model.Imprimir && Model.Impedimento == null)
+    {
+        <script>window.addEventListener('load', () => window.print());</script>
+    }
+</body>
+</html>

@@ -17,11 +17,15 @@ namespace eGestion360Web.Pages.Psicologia.Catalogos
     {
         private readonly ApplicationDbContext _db;
         private readonly ICatalogoPsicologiaService _catalogo;
+        private readonly IConstanciaService _constancias;
+        private readonly TimeProvider _tiempo;
 
-        public IndexModel(ApplicationDbContext db, ICatalogoPsicologiaService catalogo)
+        public IndexModel(ApplicationDbContext db, ICatalogoPsicologiaService catalogo, IConstanciaService constancias, TimeProvider tiempo)
         {
             _db = db;
             _catalogo = catalogo;
+            _constancias = constancias;
+            _tiempo = tiempo;
         }
 
         public sealed class FormularioElemento
@@ -38,13 +42,28 @@ namespace eGestion360Web.Pages.Psicologia.Catalogos
 
             [StringLength(500, ErrorMessage = "La descripción no puede pasar de 500 caracteres.")]
             public string? Descripcion { get; set; }
+
+            // Solo tipos de constancia
+            public string? Plantilla { get; set; }
+
+            [Range(1, int.MaxValue, ErrorMessage = "El folio debe ser un número positivo.")]
+            public int? FolioDesde { get; set; }
+
+            [Range(1, int.MaxValue, ErrorMessage = "El folio debe ser un número positivo.")]
+            public int? FolioHasta { get; set; }
         }
 
         [BindProperty] public FormularioElemento Prueba { get; set; } = new();
         [BindProperty] public FormularioElemento Tipo { get; set; } = new();
 
         public sealed record FilaPrueba(int Id, string Codigo, string Nombre, string? Descripcion, bool Activo, int Usos);
-        public sealed record FilaTipo(int Id, string Codigo, string Nombre, string? Plantilla, bool Activo, int Usos);
+        public sealed record FilaTipo(int Id, string Codigo, string Nombre, string? Plantilla, bool Activo, int Usos, int? FolioDesde, int? FolioHasta)
+        {
+            public string Formato => PlantillasConstancia.Buscar(Plantilla)?.Nombre ?? "por recibir";
+        }
+
+        /// <summary>El siguiente número de cada tipo activo (folio del talonario o correlativo).</summary>
+        public IReadOnlyDictionary<int, string> Siguientes { get; private set; } = new Dictionary<int, string>();
 
         public List<FilaPrueba> Pruebas { get; private set; } = new();
         public List<FilaTipo> Tipos { get; private set; } = new();
@@ -58,7 +77,10 @@ namespace eGestion360Web.Pages.Psicologia.Catalogos
             if (editarPrueba is { } idP && Pruebas.FirstOrDefault(p => p.Id == idP) is { } p)
                 Prueba = new FormularioElemento { Id = p.Id, Codigo = p.Codigo, Nombre = p.Nombre, Descripcion = p.Descripcion };
             if (editarTipo is { } idT && Tipos.FirstOrDefault(t => t.Id == idT) is { } t)
-                Tipo = new FormularioElemento { Id = t.Id, Codigo = t.Codigo, Nombre = t.Nombre };
+                Tipo = new FormularioElemento
+                {
+                    Id = t.Id, Codigo = t.Codigo, Nombre = t.Nombre, Plantilla = t.Plantilla, FolioDesde = t.FolioDesde, FolioHasta = t.FolioHasta
+                };
             return Page();
         }
 
@@ -89,7 +111,8 @@ namespace eGestion360Web.Pages.Psicologia.Catalogos
 
             var r = await _catalogo.GuardarTipoConstanciaAsync(new ElementoCatalogoInput
             {
-                IdEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0, Id = Tipo.Id, Codigo = Tipo.Codigo, Nombre = Tipo.Nombre, Usuario = Usuario()
+                IdEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0, Id = Tipo.Id, Codigo = Tipo.Codigo, Nombre = Tipo.Nombre,
+                Plantilla = Tipo.Plantilla, FolioDesde = Tipo.FolioDesde, FolioHasta = Tipo.FolioHasta, Usuario = Usuario()
             });
             if (!r.Ok) { Errores(nameof(Tipo), r.Errores); await CargarAsync(); return Page(); }
 
@@ -146,8 +169,9 @@ namespace eGestion360Web.Pages.Psicologia.Catalogos
                 .Where(t => t.IdEmpresa == idEmpresa)
                 .OrderByDescending(t => t.Activo).ThenBy(t => t.Codigo)
                 .Select(t => new FilaTipo(t.IdTipoConstancia, t.Codigo, t.Nombre, t.Plantilla, t.Activo,
-                    _db.Constancias.Count(c => c.IdTipoConstancia == t.IdTipoConstancia)))
+                    _db.Constancias.Count(c => c.IdTipoConstancia == t.IdTipoConstancia), t.FolioDesde, t.FolioHasta))
                 .ToListAsync();
+            Siguientes = await _constancias.SiguientesNumerosAsync(idEmpresa, DateOnly.FromDateTime(_tiempo.GetUtcNow().UtcDateTime.AddHours(-6)).Year);
         }
     }
 }

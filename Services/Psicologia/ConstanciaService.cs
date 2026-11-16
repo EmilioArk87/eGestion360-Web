@@ -30,12 +30,60 @@ namespace eGestion360Web.Services.Psicologia
         {
             var tipos = await _db.TiposConstancia.AsNoTracking()
                 .Where(t => t.IdEmpresa == idEmpresa && t.Activo)
-                .Select(t => new { t.IdTipoConstancia, t.Codigo })
                 .ToListAsync(ct);
             var siguientes = new Dictionary<int, string>();
             foreach (var t in tipos)
-                siguientes[t.IdTipoConstancia] = NumeradorDeConstancias.Formato(t.Codigo, anio, await UltimoAsync(idEmpresa, t.IdTipoConstancia, t.Codigo, anio, ct) + 1);
+            {
+                if (t.UsaTalonario)
+                    siguientes[t.IdTipoConstancia] = (await SiguienteFolioAsync(idEmpresa, t, ct))?.ToString() ?? MensajeTalonarioAgotado(t);
+                else
+                    siguientes[t.IdTipoConstancia] = NumeradorDeConstancias.Formato(t.Codigo, anio, await UltimoAsync(idEmpresa, t.IdTipoConstancia, t.Codigo, anio, ct) + 1);
+            }
             return siguientes;
+        }
+
+        public static string MensajeTalonarioAgotado(TipoConstancia tipo) =>
+            $"Talonario {tipo.FolioDesde}-{tipo.FolioHasta} agotado: registra el siguiente en Catálogos.";
+
+        /// <summary>El siguiente folio libre del talonario del tipo (el mayor usado + 1, o el primero); nulo si el talonario se agotó.</summary>
+        private async Task<int?> SiguienteFolioAsync(int idEmpresa, TipoConstancia tipo, CancellationToken ct)
+        {
+            var usados = await FoliosUsadosAsync(idEmpresa, tipo, ct);
+            var siguiente = usados.Count == 0 ? tipo.FolioDesde!.Value : usados.Max() + 1;
+            return siguiente <= tipo.FolioHasta ? siguiente : null;
+        }
+
+        /// <summary>Los folios del talonario en uso que ya tienen constancia (emitida o anulada: una hoja anulada no se vuelve a usar).</summary>
+        private async Task<List<int>> FoliosUsadosAsync(int idEmpresa, TipoConstancia tipo, CancellationToken ct)
+        {
+            var numeros = await _db.Constancias.AsNoTracking()
+                .Where(c => c.IdEmpresa == idEmpresa && c.IdTipoConstancia == tipo.IdTipoConstancia)
+                .Select(c => c.NumeroConstancia)
+                .ToListAsync(ct);
+            return numeros.Select(n => int.TryParse(n, out var f) ? f : 0)
+                .Where(f => f >= tipo.FolioDesde && f <= tipo.FolioHasta)
+                .ToList();
+        }
+
+        public async Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, CancellationToken ct = default)
+        {
+            var constancia = await _db.Constancias.AsNoTracking().Include(c => c.Tipo)
+                .FirstOrDefaultAsync(c => c.IdConstancia == idConstancia && c.IdEmpresa == idEmpresa, ct);
+            if (constancia == null) return ResultadoPsicologia<Impresion>.Error(string.Empty, "La constancia no existe en esta empresa.");
+            if (constancia.Estado != EstadosConstancia.Emitida)
+                return ResultadoPsicologia<Impresion>.Error(string.Empty, $"La constancia {constancia.NumeroConstancia} está anulada: no se imprime.");
+            var plantilla = PlantillasConstancia.Buscar(constancia.Tipo.Plantilla);
+            if (plantilla == null)
+                return ResultadoPsicologia<Impresion>.Error(string.Empty, "Este tipo de constancia todavía no tiene formato de impresión.");
+
+            var impresion = new Impresion
+            {
+                IdEmpresa = idEmpresa, IdConstancia = idConstancia, Plantilla = plantilla.Codigo, VersionPlantilla = plantilla.Version,
+                TamanoPapel = plantilla.TamanoPapel, CreadoPor = usuario, FechaCreacion = Ahora()
+            };
+            _db.ImpresionesPsicologia.Add(impresion);
+            await _db.SaveChangesAsync(ct);
+            return ResultadoPsicologia<Impresion>.Exito(impresion);
         }
 
         /// <summary>El último correlativo usado por el tipo en el año (0 si ninguno), contando las anuladas.</summary>
@@ -107,19 +155,47 @@ namespace eGestion360Web.Services.Psicologia
                 if (firmante == null) errores.Add(new ErrorValidacion("IdProfesional", "Elige un psicólogo activo de la empresa."));
             }
 
+            // Resultado: lo pide el formato de impresión del tipo (licencia de conducir: apto o no apto).
+            var resultado = string.IsNullOrWhiteSpace(input.Resultado) ? null : input.Resultado.Trim().ToLowerInvariant();
+            if (resultado != null && !ResultadosConstancia.Todos.Contains(resultado))
+                errores.Add(new ErrorValidacion("Resultado", "Elige si resultó apto o no apto."));
+            else if (resultado == null && PlantillasConstancia.Buscar(tipo?.Plantilla)?.PideResultado == true)
+                errores.Add(new ErrorValidacion("Resultado", "Elige si resultó apto o no apto: el formato de esta constancia lo imprime."));
+
+            // Folio de la hoja del talonario del Colegio: el que se escribió (dentro del talonario y sin usar) o el siguiente libre.
+            if (tipo is { UsaTalonario: true } && input.Folio is { } folio)
+            {
+                if (folio < tipo.FolioDesde || folio > tipo.FolioHasta)
+                    errores.Add(new ErrorValidacion("Folio", $"El folio {folio} no es del talonario en uso ({tipo.FolioDesde} a {tipo.FolioHasta})."));
+                else if (await _db.Constancias.AnyAsync(c => c.IdEmpresa == idEmpresa && c.NumeroConstancia == folio.ToString(), ct))
+                    errores.Add(new ErrorValidacion("Folio", $"El folio {folio} ya se usó en otra constancia."));
+            }
+
             if (errores.Count > 0) return ResultadoPsicologia<Constancia>.ConErrores(errores);
 
             for (var intento = 1; ; intento++)
             {
+                string numero;
+                if (tipo!.UsaTalonario)
+                {
+                    var folioElegido = input.Folio ?? await SiguienteFolioAsync(idEmpresa, tipo, ct);
+                    if (folioElegido == null) return ResultadoPsicologia<Constancia>.Error("Folio", MensajeTalonarioAgotado(tipo));
+                    numero = folioElegido.Value.ToString();
+                }
+                else
+                {
+                    numero = NumeradorDeConstancias.Formato(tipo.Codigo, fecha.Year, await UltimoAsync(idEmpresa, tipo.IdTipoConstancia, tipo.Codigo, fecha.Year, ct) + 1);
+                }
+
                 var ahora = Ahora();
                 var constancia = new Constancia
                 {
                     IdEmpresa = idEmpresa,
                     IdPaciente = paciente.IdPaciente,
                     IdAtencion = atencion?.IdAtencion,
-                    IdTipoConstancia = tipo!.IdTipoConstancia,
-                    NumeroConstancia = NumeradorDeConstancias.Formato(tipo.Codigo, fecha.Year,
-                        await UltimoAsync(idEmpresa, tipo.IdTipoConstancia, tipo.Codigo, fecha.Year, ct) + 1),
+                    IdTipoConstancia = tipo.IdTipoConstancia,
+                    NumeroConstancia = numero,
+                    Resultado = resultado,
                     FechaEmision = fecha,
                     IdPersonaProfesional = firmante?.IdPersona ?? (profesional.Length == 0 ? atencion?.IdPersonaProfesional : null),
                     NombreProfesional = firmante?.NombreImpreso ?? (profesional.Length > 0 ? profesional : atencion?.NombreProfesional),
@@ -135,6 +211,13 @@ namespace eGestion360Web.Services.Psicologia
                 {
                     await _db.SaveChangesAsync(ct);
                     return ResultadoPsicologia<Constancia>.Exito(constancia);
+                }
+                catch (DbUpdateException ex) when (input.Folio != null)
+                {
+                    // El folio escrito lo tomó otro usuario al mismo tiempo: no se reintenta con otro número.
+                    _log.LogWarning(ex, "Constancia: el folio {Folio} se usó al mismo tiempo en la empresa {IdEmpresa}", input.Folio, idEmpresa);
+                    _db.ChangeTracker.Clear();
+                    return ResultadoPsicologia<Constancia>.Error("Folio", $"El folio {input.Folio} ya se usó en otra constancia.");
                 }
                 catch (DbUpdateException ex) when (intento < Intentos)
                 {

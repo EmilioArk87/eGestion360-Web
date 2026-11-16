@@ -42,8 +42,9 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
         /// <summary>Pruebas aplicadas por atención (incluye las que se desactivaron después en el catálogo).</summary>
         public Dictionary<int, List<PruebaCatalogo>> PruebasPorAtencion { get; private set; } = new();
 
+        /// <param name="Imprimible">Su tipo tiene formato de impresión.</param>
         public sealed record FilaConstancia(int Id, string Numero, DateOnly Fecha, string Tipo, string? Profesional, string Estado,
-            string? Motivo, IReadOnlyList<string> Pruebas, DateOnly? FechaAtencion);
+            string? Motivo, IReadOnlyList<string> Pruebas, DateOnly? FechaAtencion, string? Resultado, bool Imprimible);
 
         public List<FilaConstancia> Constancias { get; private set; } = new();
 
@@ -52,6 +53,7 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
         public bool PuedeEmitir => this.Puede("psicologia.constancias.emitir");
         public bool PuedeAnular => this.Puede("psicologia.constancias.anular");
         public bool PuedeVerCatalogos => this.Puede("psicologia.catalogos.ver");
+        public bool PuedeImprimir => this.Puede("psicologia.documentos.imprimir");
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
@@ -138,11 +140,12 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
                     {
                         c.IdConstancia, c.NumeroConstancia, c.FechaEmision, Tipo = c.Tipo.Nombre, c.NombreProfesional, c.Estado, c.MotivoAnulacion,
                         FechaAtencion = c.Atencion != null ? c.Atencion.FechaAtencion : (DateOnly?)null,
-                        Pruebas = c.Pruebas.OrderBy(p => p.Prueba.Codigo).Select(p => p.Prueba.Codigo).ToList()
+                        Pruebas = c.Pruebas.OrderBy(p => p.Prueba.Codigo).Select(p => p.Prueba.Codigo).ToList(),
+                        c.Resultado, c.Tipo.Plantilla
                     })
                     .ToListAsync();
                 Constancias = filas.Select(c => new FilaConstancia(c.IdConstancia, c.NumeroConstancia, c.FechaEmision, c.Tipo, c.NombreProfesional,
-                    c.Estado, c.MotivoAnulacion, c.Pruebas, c.FechaAtencion)).ToList();
+                    c.Estado, c.MotivoAnulacion, c.Pruebas, c.FechaAtencion, c.Resultado, PlantillasConstancia.Buscar(c.Plantilla) != null)).ToList();
             }
             return true;
         }

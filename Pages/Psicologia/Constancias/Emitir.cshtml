@@ -53,11 +53,38 @@
                         <span asp-validation-for="Input.FechaEmision" class="text-danger small"></span>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Número</label>
-                        <input type="text" id="numero-propuesto" class="form-control font-monospace" value="@Model.NumeroDelTipoElegido" placeholder="Elige el tipo" readonly aria-describedby="numero-ayuda" />
-                        <div id="numero-ayuda" class="form-text">Cada tipo lleva su correlativo. Se confirma al guardar.</div>
+                        @{ var conTalonario = Model.TipoElegido?.Talonario == true; }
+                        <div id="numero-correlativo" @(conTalonario ? "hidden" : "")>
+                            <label class="form-label" for="numero-propuesto">Número</label>
+                            <input type="text" id="numero-propuesto" class="form-control font-monospace" value="@(conTalonario ? "" : Model.NumeroDelTipoElegido)" placeholder="Elige el tipo" readonly />
+                            <div class="form-text">Correlativo del tipo. Se confirma al guardar.</div>
+                        </div>
+                        <div id="numero-folio" @(conTalonario ? "" : "hidden")>
+                            <label asp-for="Input.Folio" class="form-label">Folio de la hoja</label>
+                            <input asp-for="Input.Folio" type="number" min="1" class="form-control font-monospace" placeholder="@(conTalonario ? Model.NumeroDelTipoElegido : "")" disabled="@(!conTalonario)" />
+                            <span asp-validation-for="Input.Folio" class="text-danger small"></span>
+                            <div class="form-text">El número impreso en la hoja del talonario. Vacío: el siguiente libre.</div>
+                        </div>
                     </div>
                 </div>
+
+                @{ var conResultado = Model.TipoElegido?.PideResultado == true; }
+                <fieldset class="mb-3" id="bloque-resultado" @(conResultado ? "" : "hidden")>
+                    <legend class="form-label fs-6 mb-1">Resultado <span class="text-danger">*</span></legend>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="Input.Resultado" id="resultado-apto" value="@eGestion360Web.Models.Psicologia.ResultadosConstancia.Apto"
+                                   @(Model.Input.Resultado == eGestion360Web.Models.Psicologia.ResultadosConstancia.Apto ? "checked" : "") />
+                            <label class="form-check-label" for="resultado-apto">Apto</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="Input.Resultado" id="resultado-no-apto" value="@eGestion360Web.Models.Psicologia.ResultadosConstancia.NoApto"
+                                   @(Model.Input.Resultado == eGestion360Web.Models.Psicologia.ResultadosConstancia.NoApto ? "checked" : "") />
+                            <label class="form-check-label" for="resultado-no-apto">No apto</label>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Input.Resultado" class="text-danger small"></span>
+                </fieldset>
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
@@ -125,10 +152,24 @@
     <script>
         (() => {
             const atenciones = @Html.Raw(Model.AtencionesJson);
-            const numeros = @Html.Raw(Model.SiguientesNumerosJson);
+            const tipos = @Html.Raw(Model.TiposJson);
             const tipo = document.getElementById('Input_IdTipoConstancia');
             const numero = document.getElementById('numero-propuesto');
-            if (tipo && numero) tipo.addEventListener('change', () => { numero.value = numeros[tipo.value] || ''; });
+            const folio = document.getElementById('Input_Folio');
+            const cajaCorrelativo = document.getElementById('numero-correlativo');
+            const cajaFolio = document.getElementById('numero-folio');
+            const cajaResultado = document.getElementById('bloque-resultado');
+            if (tipo && numero && folio) tipo.addEventListener('change', () => {
+                const t = tipos[tipo.value];
+                const talonario = !!t && t.Talonario;
+                cajaCorrelativo.hidden = talonario;
+                cajaFolio.hidden = !talonario;
+                folio.disabled = !talonario;
+                folio.value = '';
+                folio.placeholder = talonario ? (t.Siguiente || '') : '';
+                numero.value = !talonario && t ? (t.Siguiente || '') : '';
+                cajaResultado.hidden = !(t && t.PideResultado);
+            });
 
             const select = document.getElementById('Input_IdAtencion');
             const profesional = document.getElementById('Input_NombreProfesional');

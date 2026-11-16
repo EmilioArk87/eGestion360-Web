@@ -93,7 +93,7 @@ namespace eGestion360Web.Tests.Arquitectura
 
             Assert.Equal(TablasPsi.Order(StringComparer.Ordinal), delScript.Keys.Order(StringComparer.Ordinal));
             Assert.Equal(TablasPsi.Order(StringComparer.Ordinal), delModelo.Keys.Order(StringComparer.Ordinal));
-            Assert.Equal(174, delScript.Values.Sum(c => c.Count));
+            Assert.Equal(177, delScript.Values.Sum(c => c.Count));
             foreach (var tabla in TablasPsi)
                 Assert.Equal(delScript[tabla], delModelo[tabla]);
 
@@ -192,6 +192,7 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.Equal(TamanosPapel.Todos, ValoresDelCheck(s, "CK_impresiones_papel", "tamano_papel"));
             Assert.Equal(EstadosConstancia.Todos, ValoresDelCheck(s, "CK_constancias_estado", "estado"));
             Assert.Equal(TiposProfesional.Todos, ValoresDelCheck(s, "CK_profesionales_tipo", "tipo"));
+            Assert.Equal(ResultadosConstancia.Todos, ValoresDelCheck(s, "CK_constancias_resultado", "resultado"));
 
             // La reversa devuelve el CHECK a los 6 tipos de antes (sin paciente).
             var rollback = Script("042")[Script("042").LastIndexOf("/*", StringComparison.Ordinal)..];

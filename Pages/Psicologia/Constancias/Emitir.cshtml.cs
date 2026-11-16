@@ -44,6 +44,13 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
             /// <summary>El psicólogo que firma, de Profesionales.</summary>
             public int? IdProfesional { get; set; }
 
+            /// <summary>Folio de la hoja del talonario (solo tipos con talonario); vacío = el siguiente libre.</summary>
+            [Range(1, int.MaxValue, ErrorMessage = "El folio debe ser un número positivo.")]
+            public int? Folio { get; set; }
+
+            /// <summary>Apto o no apto, si el formato del tipo lo imprime.</summary>
+            public string? Resultado { get; set; }
+
             [StringLength(200, ErrorMessage = "El nombre del profesional no puede pasar de 200 caracteres.")]
             public string? NombreProfesional { get; set; }
         }
@@ -67,7 +74,19 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
         /// <param name="IdProfesional">El psicólogo de Profesionales que atendió, si lo hay: se propone como firmante.</param>
         public sealed record OpcionAtencion(int Id, string Texto, string? Profesional, IReadOnlyList<int> Pruebas, int? IdProfesional);
 
-        public List<Opcion> Tipos { get; private set; } = new();
+        /// <param name="Talonario">Usa los folios preimpresos del talonario del Colegio.</param>
+        /// <param name="PideResultado">Su formato imprime apto o no apto.</param>
+        public sealed record OpcionTipo(int Id, string Texto, bool Talonario, bool PideResultado);
+
+        public List<OpcionTipo> Tipos { get; private set; } = new();
+
+        /// <summary>Por tipo: si usa talonario, si pide resultado y su próximo número, para que el formulario se adapte al elegirlo.</summary>
+        public string TiposJson => JsonSerializer.Serialize(Tipos.ToDictionary(t => t.Id.ToString(), t => new
+        {
+            t.Talonario, t.PideResultado, Siguiente = SiguientesNumeros.TryGetValue(t.Id, out var n) ? n : null
+        }));
+
+        public OpcionTipo? TipoElegido => Tipos.FirstOrDefault(t => t.Id == Input.IdTipoConstancia);
         public List<OpcionAtencion> Atenciones { get; private set; } = new();
         public List<Opcion> Catalogo { get; private set; } = new();
 
@@ -109,6 +128,8 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
                 FechaEmision = Input.FechaEmision,
                 IdsPruebas = Input.Pruebas,
                 IdProfesional = Input.IdProfesional,
+                Folio = TipoElegido?.Talonario == true ? Input.Folio : null,
+                Resultado = Input.Resultado,
                 NombreProfesional = Input.NombreProfesional,
                 Usuario = AuthHelper.GetNombreUsuario(HttpContext) ?? "system"
             });
@@ -137,11 +158,14 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
             Nombre = $"{paciente.Nombres} {paciente.Apellidos}".Trim();
             SiguientesNumeros = await _constancias.SiguientesNumerosAsync(idEmpresa, (Input.FechaEmision ?? Hoy()).Year);
 
-            Tipos = await _db.TiposConstancia.AsNoTracking()
-                .Where(t => t.IdEmpresa == idEmpresa && t.Activo)
-                .OrderBy(t => t.Nombre)
-                .Select(t => new Opcion(t.IdTipoConstancia, t.Nombre))
-                .ToListAsync();
+            Tipos = (await _db.TiposConstancia.AsNoTracking()
+                    .Where(t => t.IdEmpresa == idEmpresa && t.Activo)
+                    .OrderBy(t => t.Nombre)
+                    .Select(t => new { t.IdTipoConstancia, t.Nombre, t.FolioDesde, t.FolioHasta, t.Plantilla })
+                    .ToListAsync())
+                .Select(t => new OpcionTipo(t.IdTipoConstancia, t.Nombre, t.FolioDesde != null && t.FolioHasta != null,
+                    PlantillasConstancia.Buscar(t.Plantilla)?.PideResultado == true))
+                .ToList();
             Catalogo = await _db.PruebasPsicologicas.AsNoTracking()
                 .Where(p => p.IdEmpresa == idEmpresa && p.Activo)
                 .OrderBy(p => p.Codigo)

@@ -185,6 +185,10 @@
                                                     @if (c.Profesional != null) { <span> · @c.Profesional</span> }
                                                 </div>
                                                 <div class="small mt-1">
+                                                    @if (c.Resultado != null)
+                                                    {
+                                                        <span class="badge @(c.Resultado == ResultadosConstancia.Apto ? "bg-success" : "bg-danger") me-1">@(c.Resultado == ResultadosConstancia.Apto ? "Apto" : "No apto")</span>
+                                                    }
                                                     @foreach (var p in c.Pruebas)
                                                     {
                                                         <span class="badge bg-light text-primary border font-monospace me-1">@p</span>
@@ -199,9 +203,18 @@
                                                 <span class="badge @(anulada ? "bg-secondary" : "bg-success")">@c.Estado</span>
                                                 @if (!anulada)
                                                 {
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="El formato de este tipo de constancia llega después (papel membretado)">
-                                                        <i class="fas fa-print"></i>
-                                                    </button>
+                                                    @if (c.Imprimible && Model.PuedeImprimir)
+                                                    {
+                                                        <a asp-page="/Psicologia/Constancias/Imprimir" asp-route-id="@c.Id" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" title="Imprimir sobre la hoja del Colegio">
+                                                            <i class="fas fa-print"></i>
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="@(c.Imprimible ? "Tu rol no puede imprimir documentos" : "Este tipo de constancia todavía no tiene formato de impresión")">
+                                                            <i class="fas fa-print"></i>
+                                                        </button>
+                                                    }
                                                     @if (Model.PuedeAnular)
                                                     {
                                                         <a class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" href="#anular-@c.Id" role="button" aria-expanded="false" aria-controls="anular-@c.Id" title="Anular">

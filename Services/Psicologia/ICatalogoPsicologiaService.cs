@@ -38,6 +38,13 @@ namespace eGestion360Web.Services.Psicologia
         /// <summary>Solo para pruebas.</summary>
         public string? Descripcion { get; set; }
 
+        /// <summary>Solo para tipos de constancia: código del formato de impresión (<see cref="PlantillasConstancia"/>) o vacío.</summary>
+        public string? Plantilla { get; set; }
+
+        /// <summary>Solo para tipos de constancia: talonario del Colegio en uso (los dos o ninguno).</summary>
+        public int? FolioDesde { get; set; }
+        public int? FolioHasta { get; set; }
+
         public string Usuario { get; set; } = "system";
     }
 
