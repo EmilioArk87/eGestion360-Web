@@ -8,6 +8,7 @@ using eGestion360Web.Models.Facturacion;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Models.Psicologia;
 using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Data
@@ -88,6 +89,20 @@ namespace eGestion360Web.Data
         public DbSet<PersonaEmpresa> PersonaEmpresas { get; set; }
         public DbSet<Empleado> Empleados { get; set; }
         public DbSet<BitacoraCambio> BitacoraCambios { get; set; }
+
+        // Módulo de Psicología (script 042, esquema psi): pacientes, jornadas, historial de atenciones, impresiones e importaciones
+        public DbSet<Jornada> JornadasPsicologia { get; set; }
+        public DbSet<Paciente> Pacientes { get; set; }
+        public DbSet<Atencion> AtencionesPsicologia { get; set; }
+        public DbSet<Impresion> ImpresionesPsicologia { get; set; }
+        public DbSet<Importacion> ImportacionesPsicologia { get; set; }
+        public DbSet<ImportacionFila> ImportacionFilasPsicologia { get; set; }
+        public DbSet<Prueba> PruebasPsicologicas { get; set; }
+        public DbSet<AtencionPrueba> AtencionPruebas { get; set; }
+        public DbSet<TipoConstancia> TiposConstancia { get; set; }
+        public DbSet<Constancia> Constancias { get; set; }
+        public DbSet<ConstanciaPrueba> ConstanciaPruebas { get; set; }
+        public DbSet<Profesional> ProfesionalesPsicologia { get; set; }
 
         // Catálogos globales de Honduras (scripts 014 y 015), sin id_empresa
         public DbSet<CatalogoDepartamento> CatalogoDepartamentos { get; set; }

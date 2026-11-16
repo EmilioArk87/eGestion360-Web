@@ -24,6 +24,7 @@ namespace eGestion360Web.Tests.Arquitectura
             "/ChangePassword", "/Logout", "/Mfa", "/MfaAlta", "/SeleccionarContexto",
             // Centros de navegación: cada opción que ofrecen pide su propio permiso.
             "/MainMenu", "/Catalogos/Index", "/Flota/Index", "/Flota/Catalogos/Index", "/Flota/Gastos/Index", "/Flota/Operacion/Index", "/Flota/MantenimientoDatos/Index",
+            "/Psicologia/Index",
             // Explica por qué Flota no abre sin empresa.
             "/Flota/SinEmpresa",
         };
@@ -239,6 +240,10 @@ namespace eGestion360Web.Tests.Arquitectura
             var sinPantalla = new[]
             {
                 "administracion.usuarios.ver",
+                // Módulo de Psicología (script 043): cada permiso se quita de aquí cuando su página existe (F4 a F6 del plan).
+                "psicologia.pacientes.editar",
+                "psicologia.atenciones.ver", "psicologia.atenciones.cerrar", "psicologia.atenciones.anular",
+                "psicologia.documentos.imprimir",
             };
 
             var huerfanos = CatalogoDePermisos.Todos.Select(p => p.Codigo).Where(c => !pedidos.Contains(c) && !sinPantalla.Contains(c)).ToList();

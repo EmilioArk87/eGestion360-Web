@@ -24,6 +24,8 @@ SET NOCOUNT ON;
 DECLARE @hay_tablas BIT = CASE WHEN OBJECT_ID(N'saas.permisos', N'U') IS NOT NULL AND OBJECT_ID(N'saas.roles_plantilla', N'U') IS NOT NULL
                                 AND OBJECT_ID(N'saas.roles_plantilla_permisos', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.rol_permisos', N'U') IS NOT NULL
                                THEN 1 ELSE 0 END;
+-- El script 043 (modulo de Psicologia) agrega 19 permisos de ambito modulo con casilla legada, 3 plantillas y 42 permisos de plantilla.
+DECLARE @con043 INT = CASE WHEN EXISTS (SELECT 1 FROM dbo.modulos WHERE codigo = 'psicologia') THEN 1 ELSE 0 END;
 
 DECLARE @permisos INT, @unicos INT, @plataforma INT, @administracion INT, @flota INT, @catalogos INT, @facturacion INT,
         @ambito_plat INT, @ambito_emp INT, @ambito_mod INT, @con_casilla INT, @ambito_mal INT, @sin_modulo NVARCHAR(400),
@@ -145,19 +147,19 @@ r (orden, comprobacion, esperado, obtenido) AS (
               CONCAT((SELECT SUM(ok) FROM fkn), N' de ', (SELECT COUNT(*) FROM fkn))),
         (150, N'Claves unicas de apoyo y de codigo (5)', N'5 de 5', CONCAT((SELECT SUM(ok) FROM uqn), N' de ', (SELECT COUNT(*) FROM uqn))),
         -- 2xx: el catalogo (valores sembrados)
-        (210, N'Permisos en el catalogo (valores sembrados)', N'72', COALESCE(CAST(@permisos AS NVARCHAR(400)), N'no existe')),
+        (210, N'Permisos en el catalogo (valores sembrados; +19 si ya esta el 043)', CAST(72 + 19 * @con043 AS NVARCHAR(400)), COALESCE(CAST(@permisos AS NVARCHAR(400)), N'no existe')),
         (220, N'Codigos de permiso repetidos', N'0', COALESCE(CAST(@permisos - @unicos AS NVARCHAR(400)), N'no existe')),
         (230, N'Permisos por modulo: plataforma / administracion / flota / catalogos / facturacion (valores sembrados)', N'17 / 9 / 28 / 8 / 10',
               CASE WHEN @permisos IS NULL THEN N'no existe' ELSE CONCAT(@plataforma, N' / ', @administracion, N' / ', @flota, N' / ', @catalogos, N' / ', @facturacion) END),
-        (240, N'Permisos por ambito: plataforma / empresa / modulo (valores sembrados)', N'17 / 9 / 46',
+        (240, N'Permisos por ambito: plataforma / empresa / modulo (valores sembrados; +19 de modulo si ya esta el 043)', CONCAT(N'17 / 9 / ', 46 + 19 * @con043),
               CASE WHEN @permisos IS NULL THEN N'no existe' ELSE CONCAT(@ambito_plat, N' / ', @ambito_emp, N' / ', @ambito_mod) END),
-        (250, N'Permisos con casilla legada, para migrar los roles (valores sembrados)', N'44', COALESCE(CAST(@con_casilla AS NVARCHAR(400)), N'no existe')),
+        (250, N'Permisos con casilla legada, para migrar los roles (valores sembrados; +19 si ya esta el 043)', CAST(44 + 19 * @con043 AS NVARCHAR(400)), COALESCE(CAST(@con_casilla AS NVARCHAR(400)), N'no existe')),
         (260, N'Permisos cuyo ambito no corresponde a su modulo', N'0', COALESCE(CAST(@ambito_mal AS NVARCHAR(400)), N'no existe')),
         (270, N'Modulos con permisos de ambito modulo que no estan en dbo.modulos', N'ninguno', CASE WHEN @permisos IS NULL THEN N'no existe' WHEN LEN(@sin_modulo) = 0 THEN N'ninguno' ELSE @sin_modulo END),
         -- 3xx: las plantillas de rol (valores sembrados)
-        (310, N'Plantillas de rol: tres por modulo con permisos (flota, catalogos y facturacion)', N'9', COALESCE(CAST(@plantillas AS NVARCHAR(400)), N'no existe')),
-        (320, N'Plantillas administrador, operador y consulta de cada modulo, todas presentes', N'9', COALESCE(CAST(@plantillas_ok AS NVARCHAR(400)), N'no existe')),
-        (330, N'Permisos de plantilla en total (administrador = todos; operador = ver, crear y editar; consulta = ver)', N'102',
+        (310, N'Plantillas de rol: tres por modulo con permisos (flota, catalogos y facturacion; +3 de psicologia si ya esta el 043)', CAST(9 + 3 * @con043 AS NVARCHAR(400)), COALESCE(CAST(@plantillas AS NVARCHAR(400)), N'no existe')),
+        (320, N'Plantillas administrador, operador y consulta de cada modulo, todas presentes', CAST(9 + 3 * @con043 AS NVARCHAR(400)), COALESCE(CAST(@plantillas_ok AS NVARCHAR(400)), N'no existe')),
+        (330, N'Permisos de plantilla en total (administrador = todos; operador = ver, crear y editar; consulta = ver; +42 si ya esta el 043)', CAST(102 + 42 * @con043 AS NVARCHAR(400)),
               COALESCE(CAST(@plantilla_permisos AS NVARCHAR(400)), N'no existe')),
         (340, N'Permisos de plantilla de otro modulo o de ambito que no es modulo', N'0', COALESCE(CAST(@plantilla_modulo_mal AS NVARCHAR(400)), N'no existe')),
         -- 4xx: permisos de los roles y RLS

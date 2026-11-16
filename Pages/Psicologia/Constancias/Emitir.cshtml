@@ -1,0 +1,145 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Constancias.EmitirModel
+@{
+    ViewData["Title"] = "Emitir constancia";
+    var sinCatalogos = Model.Tipos.Count == 0 || Model.Catalogo.Count == 0;
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Pacientes/Index">Pacientes</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@Model.IdPaciente">@Model.Expediente</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Emitir constancia</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-file-signature me-2"></i>Emitir constancia</h2>
+            <p class="text-muted mb-0">Constancia de examen psicológico para <strong>@Model.Nombre</strong> · expediente <span class="font-monospace">@Model.Expediente</span></p>
+        </div>
+        <a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@Model.IdPaciente" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    @if (sinCatalogos)
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Para emitir hace falta al menos un tipo de constancia y una prueba psicológica activos en el catálogo.
+            <a asp-page="/Psicologia/Catalogos/Index" class="alert-link">Ir a Catálogos</a>
+        </div>
+    }
+    else
+    {
+        <form method="post" asp-route-idPaciente="@Model.IdPaciente" class="card border-0 shadow-sm" novalidate>
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3" role="alert"></div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.IdTipoConstancia" class="form-label">Tipo de constancia <span class="text-danger">*</span></label>
+                        <select asp-for="Input.IdTipoConstancia" class="form-select">
+                            <option value="">Elige…</option>
+                            @foreach (var t in Model.Tipos) { <option value="@t.Id">@t.Texto</option> }
+                        </select>
+                        <span asp-validation-for="Input.IdTipoConstancia" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Input.FechaEmision" class="form-label">Fecha de emisión <span class="text-danger">*</span></label>
+                        <input asp-for="Input.FechaEmision" type="date" class="form-control" />
+                        <span asp-validation-for="Input.FechaEmision" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Número</label>
+                        <input type="text" id="numero-propuesto" class="form-control font-monospace" value="@Model.NumeroDelTipoElegido" placeholder="Elige el tipo" readonly aria-describedby="numero-ayuda" />
+                        <div id="numero-ayuda" class="form-text">Cada tipo lleva su correlativo. Se confirma al guardar.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.IdAtencion" class="form-label">Evaluación de la que sale</label>
+                        <select asp-for="Input.IdAtencion" class="form-select">
+                            <option value="">Ninguna</option>
+                            @foreach (var a in Model.Atenciones) { <option value="@a.Id">@a.Texto</option> }
+                        </select>
+                        <span asp-validation-for="Input.IdAtencion" class="text-danger small"></span>
+                        <div class="form-text">Al elegirla se proponen sus pruebas aplicadas y su profesional.</div>
+                    </div>
+                    <div class="col-md-6">
+                        @if (Model.Firmantes.Count > 0)
+                        {
+                            <label asp-for="Input.IdProfesional" class="form-label">Psicólogo que firma</label>
+                            <select asp-for="Input.IdProfesional" class="form-select">
+                                <option value="">Elige…</option>
+                                @foreach (var f in Model.Firmantes) { <option value="@f.Id">@f.Texto</option> }
+                            </select>
+                            <span asp-validation-for="Input.IdProfesional" class="text-danger small"></span>
+                            <div class="form-text">De <a asp-page="/Psicologia/Profesionales/Index">Profesionales</a>; sale con su título y colegiación.</div>
+                        }
+                        else
+                        {
+                            <label asp-for="Input.NombreProfesional" class="form-label">Profesional que firma</label>
+                            <input asp-for="Input.NombreProfesional" class="form-control" placeholder="Nombre como saldrá impreso" autocomplete="off" />
+                            <span asp-validation-for="Input.NombreProfesional" class="text-danger small"></span>
+                            <div class="form-text">Registra a los psicólogos en <a asp-page="/Psicologia/Profesionales/Index">Profesionales</a> para elegirlos de una lista.</div>
+                        }
+                    </div>
+                </div>
+
+                <fieldset class="mb-2">
+                    <legend class="form-label fs-6 mb-1">Prueba o pruebas psicológicas aplicadas <span class="text-danger">*</span></legend>
+                    <div class="row row-cols-1 row-cols-md-2 g-1 border rounded p-2 bg-light">
+                        @foreach (var p in Model.Catalogo)
+                        {
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input js-prueba" type="checkbox" name="Input.Pruebas" value="@p.Id" id="prueba-@p.Id" @(Model.Input.Pruebas.Contains(p.Id) ? "checked" : "") />
+                                    <label class="form-check-label small" for="prueba-@p.Id">@p.Texto</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <span asp-validation-for="Input.Pruebas" class="text-danger small"></span>
+                </fieldset>
+
+                <div class="alert alert-light border small mt-3 mb-3">
+                    <i class="fas fa-info-circle me-1"></i>Una constancia emitida no se edita ni se borra: si tiene un error, se anula desde el expediente y se emite otra con el número siguiente.
+                    La impresión sobre el papel membretado se habilita cuando llegue el formato de cada tipo.
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@Model.IdPaciente" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-check me-2"></i>Emitir constancia</button>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const atenciones = @Html.Raw(Model.AtencionesJson);
+            const numeros = @Html.Raw(Model.SiguientesNumerosJson);
+            const tipo = document.getElementById('Input_IdTipoConstancia');
+            const numero = document.getElementById('numero-propuesto');
+            if (tipo && numero) tipo.addEventListener('change', () => { numero.value = numeros[tipo.value] || ''; });
+
+            const select = document.getElementById('Input_IdAtencion');
+            const profesional = document.getElementById('Input_NombreProfesional');
+            const firmante = document.getElementById('Input_IdProfesional');
+            if (!select) return;
+            select.addEventListener('change', () => {
+                const a = atenciones[select.value];
+                document.querySelectorAll('.js-prueba').forEach(c => { c.checked = !!a && a.Pruebas.includes(Number(c.value)); });
+                if (profesional && a && a.Profesional && !profesional.value) profesional.value = a.Profesional;
+                if (firmante && a && a.IdProfesional) firmante.value = String(a.IdProfesional);
+            });
+        })();
+    </script>
+}

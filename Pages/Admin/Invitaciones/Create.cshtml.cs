@@ -50,7 +50,8 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         [Display(Name = "Rol en la empresa")]
         public int? IdRol { get; set; }
 
-        [BindProperty]
+        /// <summary>También llega por la dirección (?IdPersonaElegida=) desde Psicología › Profesionales; solo se muestra si quien opera puede verla.</summary>
+        [BindProperty(SupportsGet = true)]
         public int? IdPersonaElegida { get; set; }
 
         public string? NombrePersonaElegida { get; private set; }

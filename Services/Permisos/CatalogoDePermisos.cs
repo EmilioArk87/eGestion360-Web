@@ -123,6 +123,27 @@ namespace eGestion360Web.Services.Permisos
             new("facturacion", "pago", "aplicar", AmbitoDePermiso.Modulo, "editar", "Aplicar un pago a facturas"),
             new("facturacion", "pago", "anular", AmbitoDePermiso.Modulo, "eliminar", "Anular pagos"),
             new("facturacion", "cxc", "ver", AmbitoDePermiso.Modulo, "ver", "Ver las cuentas por cobrar"),
+
+            // Módulo de Psicología (script 043; orden 73 a 84)
+            new("psicologia", "pacientes", "ver", AmbitoDePermiso.Modulo, "ver", "Ver los pacientes y su expediente"),
+            new("psicologia", "pacientes", "crear", AmbitoDePermiso.Modulo, "crear", "Registrar pacientes"),
+            new("psicologia", "pacientes", "editar", AmbitoDePermiso.Modulo, "editar", "Editar los datos de un paciente"),
+            new("psicologia", "pacientes", "importar", AmbitoDePermiso.Modulo, "crear", "Importar pacientes desde un archivo de Excel"),
+            new("psicologia", "jornadas", "ver", AmbitoDePermiso.Modulo, "ver", "Ver las jornadas y brigadas de atención"),
+            new("psicologia", "jornadas", "crear", AmbitoDePermiso.Modulo, "crear", "Crear jornadas y brigadas"),
+            new("psicologia", "jornadas", "editar", AmbitoDePermiso.Modulo, "editar", "Editar, cerrar o anular jornadas"),
+            new("psicologia", "atenciones", "ver", AmbitoDePermiso.Modulo, "ver", "Ver el historial de atenciones"),
+            new("psicologia", "atenciones", "registrar", AmbitoDePermiso.Modulo, "crear", "Registrar y completar atenciones"),
+            new("psicologia", "atenciones", "cerrar", AmbitoDePermiso.Modulo, "editar", "Cerrar una atención para que ya no se edite"),
+            new("psicologia", "atenciones", "anular", AmbitoDePermiso.Modulo, "eliminar", "Anular una atención"),
+            new("psicologia", "documentos", "imprimir", AmbitoDePermiso.Modulo, "crear", "Imprimir los documentos clínicos"),
+            new("psicologia", "catalogos", "ver", AmbitoDePermiso.Modulo, "ver", "Ver las pruebas psicológicas y los tipos de constancia"),
+            new("psicologia", "catalogos", "editar", AmbitoDePermiso.Modulo, "editar", "Crear y editar pruebas psicológicas y tipos de constancia"),
+            new("psicologia", "constancias", "ver", AmbitoDePermiso.Modulo, "ver", "Ver las constancias extendidas"),
+            new("psicologia", "constancias", "emitir", AmbitoDePermiso.Modulo, "crear", "Emitir constancias de examen psicológico"),
+            new("psicologia", "constancias", "anular", AmbitoDePermiso.Modulo, "eliminar", "Anular una constancia"),
+            new("psicologia", "profesionales", "ver", AmbitoDePermiso.Modulo, "ver", "Ver los profesionales del centro"),
+            new("psicologia", "profesionales", "editar", AmbitoDePermiso.Modulo, "editar", "Registrar y editar los profesionales del centro"),
         };
 
         private static readonly IReadOnlyDictionary<string, DefinicionDePermiso> PorCodigo

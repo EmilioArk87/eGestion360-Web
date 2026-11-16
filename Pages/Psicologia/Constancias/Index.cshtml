@@ -1,0 +1,114 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Constancias.IndexModel
+@using eGestion360Web.Models.Psicologia
+@{
+    ViewData["Title"] = "Libro de constancias";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Constancias</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-book me-2"></i>Libro de constancias</h2>
+            <p class="text-muted mb-0">Constancias de examen psicológico; cada tipo lleva su propia numeración. Se emiten desde el expediente del paciente.</p>
+        </div>
+        <a asp-page="/Psicologia/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body row g-2 align-items-end">
+            <div class="col-6 col-md-2">
+                <label asp-for="Anio" class="form-label small mb-1">Año</label>
+                <select asp-for="Anio" class="form-select form-select-sm">
+                    @foreach (var a in Model.Anios) { <option value="@a">@a</option> }
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="IdTipo" class="form-label small mb-1">Tipo</label>
+                <select asp-for="IdTipo" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    @foreach (var t in Model.Tipos) { <option value="@t.Id">@t.Texto</option> }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label asp-for="Estado" class="form-label small mb-1">Estado</label>
+                <select asp-for="Estado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="@EstadosConstancia.Emitida">Emitidas</option>
+                    <option value="@EstadosConstancia.Anulada">Anuladas</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label asp-for="Buscar" class="form-label small mb-1">Buscar</label>
+                <input asp-for="Buscar" class="form-control form-control-sm" placeholder="Número, expediente o nombre" />
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-outline-primary flex-fill">Filtrar</button>
+                <a asp-page="Index" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="d-flex flex-wrap gap-3 small text-muted mb-2">
+        <span><strong class="text-dark">@Model.Constancias.Count</strong> en la lista</span>
+        <span><strong class="text-success">@Model.Emitidas</strong> emitidas</span>
+        <span><strong class="text-secondary">@Model.Anuladas</strong> anuladas</span>
+        @if (Model.Faltantes.Count == 0)
+        {
+            <span><i class="fas fa-check-circle text-success me-1"></i>Correlativos de @Model.Anio completos en cada tipo, sin saltos</span>
+        }
+        else
+        {
+            <span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Faltan en @Model.Anio: @string.Join(", ", Model.Faltantes.Take(10))@(Model.Faltantes.Count > 10 ? "…" : "")</span>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (Model.Constancias.Count == 0)
+            {
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-book fa-2x mb-2"></i>
+                    <p class="mb-0">No hay constancias con esos filtros.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="25">
+                        <thead class="table-light">
+                            <tr><th>Número</th><th>Fecha</th><th>Paciente</th><th>Tipo</th><th>Pruebas</th><th>Estado</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Constancias)
+                            {
+                                var anulada = c.Estado == EstadosConstancia.Anulada;
+                                <tr class="@(anulada ? "text-muted" : "")">
+                                    <td class="text-nowrap font-monospace @(anulada ? "text-decoration-line-through" : "")">@c.Numero</td>
+                                    <td class="text-nowrap">@c.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@c.IdPaciente" class="fw-semibold">@c.Paciente</a>
+                                        <div class="small text-muted font-monospace">@c.Expediente</div>
+                                    </td>
+                                    <td class="small">@c.Tipo</td>
+                                    <td>@foreach (var p in c.Pruebas) { <span class="badge bg-light text-primary border font-monospace me-1">@p</span> }</td>
+                                    <td>
+                                        <span class="badge @(anulada ? "bg-secondary" : "bg-success")">@c.Estado</span>
+                                        @if (anulada && c.Motivo != null) { <div class="small">@c.Motivo</div> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,157 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Jornadas.IndexModel
+@using eGestion360Web.Models.Psicologia
+@{
+    ViewData["Title"] = "Jornadas y brigadas";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Jornadas y brigadas</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-users me-2"></i>Jornadas y brigadas</h2>
+            <p class="text-muted mb-0">Eventos de atención grupal. Cada paciente importado queda con una atención en la jornada.</p>
+        </div>
+        <a asp-page="/Psicologia/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    @if (TempData["JornadasMensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["JornadasMensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <form method="post" asp-page-handler="Crear" class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="fas fa-plus me-2"></i>Nueva jornada</h5>
+                    <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+                    <div class="mb-2">
+                        <label asp-for="Nueva.Nombre" class="form-label">Nombre</label>
+                        <input asp-for="Nueva.Nombre" class="form-control" placeholder="Brigada San Pedro Sula" />
+                        <span asp-validation-for="Nueva.Nombre" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Nueva.Lugar" class="form-label">Lugar</label>
+                        <input asp-for="Nueva.Lugar" class="form-control" placeholder="San Pedro Sula, Cortés" />
+                    </div>
+                    <div class="mb-2">
+                        <label asp-for="Nueva.Institucion" class="form-label">Institución</label>
+                        <input asp-for="Nueva.Institucion" class="form-control" />
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col">
+                            <label asp-for="Nueva.FechaInicio" class="form-label">Fecha</label>
+                            <input asp-for="Nueva.FechaInicio" type="date" class="form-control" />
+                            <span asp-validation-for="Nueva.FechaInicio" class="text-danger small"></span>
+                        </div>
+                        <div class="col">
+                            <label asp-for="Nueva.FechaFin" class="form-label">Hasta (opcional)</label>
+                            <input asp-for="Nueva.FechaFin" type="date" class="form-control" />
+                            <span asp-validation-for="Nueva.FechaFin" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Nueva.IdProfesionalResponsable" class="form-label">Responsable</label>
+                        @if (Model.Responsables.Count > 0)
+                        {
+                            <select asp-for="Nueva.IdProfesionalResponsable" class="form-select">
+                                <option value="">Sin responsable por ahora</option>
+                                @foreach (var r in Model.Responsables)
+                                {
+                                    <option value="@r.IdProfesional">@r.Nombre (@(r.Tipo == TiposProfesional.Psicologo ? "psicólogo" : "administrador"))</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Nueva.IdProfesionalResponsable" class="text-danger small"></span>
+                            <div class="form-text">Psicólogos y administradores de <a asp-page="/Psicologia/Profesionales/Index">Profesionales</a>.</div>
+                        }
+                        else
+                        {
+                            <input asp-for="Nueva.NombreResponsable" class="form-control" placeholder="Nombre como saldrá impreso" />
+                            <div class="form-text">Registra a los psicólogos y administradores en <a asp-page="/Psicologia/Profesionales/Index">Profesionales</a> para elegirlos de una lista.</div>
+                        }
+                    </div>
+                    <button type="submit" class="btn btn-success w-100"><i class="fas fa-save me-2"></i>Crear jornada</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    @if (Model.Jornadas.Count == 0)
+                    {
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <p class="mb-0">Crea la primera jornada para importar su listado de pacientes.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr><th>Fecha</th><th>Jornada</th><th>Responsable</th><th class="text-end">Atenciones</th><th>Estado</th><th></th></tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var j in Model.Jornadas)
+                                    {
+                                        <tr>
+                                            <td class="text-nowrap">@j.FechaInicio.ToString("dd/MM/yyyy")@(j.FechaFin != null ? " al " + j.FechaFin.Value.ToString("dd/MM/yyyy") : "")</td>
+                                            <td><div class="fw-semibold">@j.Nombre</div><div class="small text-muted">@j.Lugar@(j.Institucion != null ? " · " + j.Institucion : "")</div></td>
+                                            <td class="small">
+                                                @(j.Responsable ?? "—")
+                                                @if (Model.PuedeEditar && Model.Responsables.Count > 0 && j.Estado != EstadosJornada.Anulada)
+                                                {
+                                                    <a class="ms-1" data-bs-toggle="collapse" href="#responsable-@j.IdJornada" role="button" aria-expanded="false" aria-controls="responsable-@j.IdJornada" title="Cambiar responsable"><i class="fas fa-pen"></i></a>
+                                                    <div class="collapse mt-1" id="responsable-@j.IdJornada">
+                                                        <form method="post" asp-page-handler="Responsable" class="d-flex flex-wrap gap-1">
+                                                            <input type="hidden" name="idJornada" value="@j.IdJornada" />
+                                                            <select name="idProfesional" class="form-select form-select-sm" style="min-width: 13rem;" aria-label="Responsable de @j.Nombre">
+                                                                <option value="">Sin responsable</option>
+                                                                @foreach (var r in Model.Responsables)
+                                                                {
+                                                                    <option value="@r.IdProfesional" selected="@(r.Nombre == j.Responsable)">@r.Nombre</option>
+                                                                }
+                                                            </select>
+                                                            <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                                                        </form>
+                                                        <div class="form-text">Las atenciones en borrador que seguían al responsable anterior pasan al nuevo.</div>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td class="text-end">@j.Atenciones @if (j.EnBorrador > 0) { <span class="badge bg-warning text-dark ms-1" title="Por completar">@j.EnBorrador</span> }</td>
+                                            <td><span class="badge @(j.Estado == EstadosJornada.Abierta ? "bg-success" : j.Estado == EstadosJornada.Cerrada ? "bg-secondary" : "bg-light text-muted border")">@j.Estado</span></td>
+                                            <td class="text-end text-nowrap">
+                                                @if (j.Estado == EstadosJornada.Abierta)
+                                                {
+                                                    <a asp-page="/Psicologia/Pacientes/Create" asp-route-idJornada="@j.IdJornada" class="btn btn-sm btn-outline-success" title="Registrar un paciente"><i class="fas fa-user-plus"></i></a>
+                                                }
+                                                <a asp-page="/Psicologia/Importar/Subir" asp-route-idJornada="@j.IdJornada" class="btn btn-sm btn-outline-warning" title="Importar listado"><i class="fas fa-file-import"></i></a>
+                                                <a asp-page="/Psicologia/Pacientes/Index" asp-route-idJornada="@j.IdJornada" class="btn btn-sm btn-outline-primary" title="Ver pacientes"><i class="fas fa-users"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

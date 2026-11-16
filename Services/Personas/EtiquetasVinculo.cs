@@ -13,6 +13,7 @@ namespace eGestion360Web.Services.Personas
             TiposVinculo.Usuario => "Usuario",
             TiposVinculo.Contacto => "Contacto",
             TiposVinculo.Otro => "Otro",
+            TiposVinculo.Paciente => "Paciente",
             _ => tipoVinculo
         };
 
@@ -27,6 +28,7 @@ namespace eGestion360Web.Services.Personas
                 TiposVinculo.Cliente => "bg-info text-dark",
                 TiposVinculo.Proveedor => "bg-warning text-dark",
                 TiposVinculo.Usuario => "bg-dark",
+                TiposVinculo.Paciente => "bg-success",
                 _ => "bg-secondary"
             };
         }

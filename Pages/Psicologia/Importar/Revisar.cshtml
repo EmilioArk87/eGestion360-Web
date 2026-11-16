@@ -1,0 +1,151 @@
+@page "{id:int}"
+@model eGestion360Web.Pages.Psicologia.Importar.RevisarModel
+@using eGestion360Web.Models.Psicologia
+@using eGestion360Web.Services.Personas
+@{
+    ViewData["Title"] = "Revisar importación";
+    var borrador = Model.Importacion.Estado == EstadosImportacion.Borrador;
+    string Insignia(string r) => r switch
+    {
+        ResultadosFilaImportacion.Nueva => "bg-success",
+        ResultadosFilaImportacion.Reutilizada => "bg-info text-dark",
+        ResultadosFilaImportacion.Revisar or ResultadosFilaImportacion.Pendiente => "bg-warning text-dark",
+        ResultadosFilaImportacion.Error => "bg-danger",
+        _ => "bg-light text-muted border"
+    };
+    string Texto(string r) => r switch
+    {
+        ResultadosFilaImportacion.Nueva => "Nueva",
+        ResultadosFilaImportacion.Reutilizada => "Ya existe, se reutiliza",
+        ResultadosFilaImportacion.Revisar or ResultadosFilaImportacion.Pendiente => "Revisar nombre",
+        ResultadosFilaImportacion.Error => "Error",
+        _ => "Omitida"
+    };
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item"><a asp-page="Subir">Importar pacientes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Importacion.NombreArchivo</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-file-import me-2"></i>@Model.Importacion.NombreArchivo</h2>
+            <p class="text-muted mb-0">@Model.NombreJornada · hoja «@Model.Importacion.Hoja» · <span class="badge @(borrador ? "bg-warning text-dark" : Model.Importacion.Estado == EstadosImportacion.Confirmada ? "bg-success" : "bg-secondary")">@Model.Importacion.Estado</span></p>
+        </div>
+        <a asp-page="Subir" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <partial name="_PasosImportacion" model="Model.Paso" />
+
+    @if (TempData["ImportarMensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert"><i class="fas fa-check-circle me-2"></i>@TempData["ImportarMensaje"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>
+    }
+    @if (TempData["ImportarError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert"><i class="fas fa-times-circle me-2"></i>@TempData["ImportarError"]<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>
+    }
+
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Filas</div><div class="fs-4 fw-semibold">@Model.Importacion.TotalFilas</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Listas</div><div class="fs-4 fw-semibold text-success">@Model.Listas</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Revisar nombre</div><div class="fs-4 fw-semibold text-warning">@Model.PorRevisar</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Con error / omitidas</div><div class="fs-4 fw-semibold">@Model.ConError / @Model.Omitidas</div></div></div></div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filtrar filas">
+            <a asp-route-id="@Model.Importacion.IdImportacion" class="btn @(Model.SoloPendientes ? "btn-outline-secondary" : "btn-secondary")">Todas</a>
+            <a asp-route-id="@Model.Importacion.IdImportacion" asp-route-ver="pendientes" class="btn @(Model.SoloPendientes ? "btn-secondary" : "btn-outline-secondary")">Solo por revisar o con error (@(Model.PorRevisar + Model.ConError))</a>
+        </div>
+        @if (borrador)
+        {
+            <div class="d-flex gap-2">
+                <form method="post" asp-page-handler="Descartar" asp-route-id="@Model.Importacion.IdImportacion">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Descartar importación</button>
+                </form>
+                <form method="post" asp-page-handler="Confirmar" asp-route-id="@Model.Importacion.IdImportacion">
+                    <button type="submit" class="btn btn-sm btn-primary" disabled="@(Model.PorRevisar + Model.ConError > 0)"
+                            title="@(Model.PorRevisar + Model.ConError > 0 ? "Revisa u omite las filas pendientes primero" : null)">
+                        <i class="fas fa-check me-1"></i>Confirmar @Model.Listas pacientes
+                    </button>
+                </form>
+            </div>
+        }
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0 align-middle">
+                <thead class="table-light">
+                    <tr><th>Fila</th><th>Nombre como viene</th><th>DNI</th><th class="text-end">Edad</th><th class="text-center">Sexo</th><th>Resultado</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.Filas)
+                    {
+                        var pendiente = f.Resultado is ResultadosFilaImportacion.Revisar or ResultadosFilaImportacion.Pendiente;
+                        <tr class="@(pendiente ? "table-warning" : f.Resultado == ResultadosFilaImportacion.Error ? "table-danger" : "")">
+                            <td>@f.NumeroFila</td>
+                            <td>
+                                <div>@f.NombreOriginal</div>
+                                @if (!pendiente && f.PrimerNombre != null)
+                                {
+                                    <div class="small text-muted">@f.PrimerNombre @f.SegundoNombre · @f.PrimerApellido @f.SegundoApellido</div>
+                                }
+                            </td>
+                            <td class="font-monospace small text-nowrap">@DocumentosIdentidad.Enmascarar(f.DniOriginal)</td>
+                            <td class="text-end">@f.EdadOriginal</td>
+                            <td class="text-center">@f.GeneroOriginal</td>
+                            <td><span class="badge @Insignia(f.Resultado)">@Texto(f.Resultado)</span>@if (f.Mensaje != null) { <div class="small text-muted">@f.Mensaje</div> }</td>
+                            <td class="text-end text-nowrap">
+                                @if (borrador && f.Resultado != ResultadosFilaImportacion.Omitida)
+                                {
+                                    <form method="post" asp-page-handler="Omitir" asp-route-id="@Model.Importacion.IdImportacion" class="d-inline">
+                                        <input type="hidden" name="idFila" value="@f.IdImportacionFila" /><input type="hidden" name="omitir" value="true" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Dejar fuera de la importación">Omitir</button>
+                                    </form>
+                                }
+                                else if (borrador && f.Mensaje != eGestion360Web.Services.Psicologia.ImportacionPsicologiaService.MensajeYaAtendida)
+                                {
+                                    <form method="post" asp-page-handler="Omitir" asp-route-id="@Model.Importacion.IdImportacion" class="d-inline">
+                                        <input type="hidden" name="idFila" value="@f.IdImportacionFila" /><input type="hidden" name="omitir" value="false" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Incluir</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                        @if (borrador && pendiente)
+                        {
+                            <tr class="table-warning">
+                                <td></td>
+                                <td colspan="6">
+                                    <form method="post" asp-page-handler="Corregir" asp-route-id="@Model.Importacion.IdImportacion" class="row g-2 align-items-end pb-2">
+                                        <input type="hidden" name="idFila" value="@f.IdImportacionFila" />
+                                        <div class="col-6 col-md-2"><label class="form-label small mb-0">Primer nombre</label><input name="primerNombre" value="@f.PrimerNombre" class="form-control form-control-sm" /></div>
+                                        <div class="col-6 col-md-3"><label class="form-label small mb-0">Segundo nombre</label><input name="segundoNombre" value="@f.SegundoNombre" class="form-control form-control-sm" placeholder="(ninguno)" /></div>
+                                        <div class="col-6 col-md-2"><label class="form-label small mb-0">Primer apellido</label><input name="primerApellido" value="@f.PrimerApellido" class="form-control form-control-sm" /></div>
+                                        <div class="col-6 col-md-3"><label class="form-label small mb-0">Segundo apellido</label><input name="segundoApellido" value="@f.SegundoApellido" class="form-control form-control-sm" placeholder="(ninguno)" /></div>
+                                        <div class="col-12 col-md-2"><button type="submit" class="btn btn-sm btn-warning w-100"><i class="fas fa-check me-1"></i>Confirmar nombre</button></div>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (!borrador && Model.Importacion.Estado == EstadosImportacion.Confirmada)
+    {
+        <div class="mt-3 d-flex gap-2">
+            <a asp-page="/Psicologia/Pacientes/Index" asp-route-idJornada="@Model.Importacion.IdJornada" class="btn btn-primary"><i class="fas fa-users me-2"></i>Ver los pacientes de la jornada</a>
+        </div>
+    }
+</div>

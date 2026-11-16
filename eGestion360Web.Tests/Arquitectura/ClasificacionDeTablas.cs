@@ -156,6 +156,33 @@ namespace eGestion360Web.Tests.Arquitectura
             new("roles_plantilla", P, true, false, "Roles de partida para tenants nuevos, tres por módulo (esquema saas, script 041, D64): plano de control, sin RLS.", "041"),
             new("roles_plantilla_permisos", P, true, false, "Permisos de cada rol plantilla, del mismo módulo que la plantilla (esquema saas, script 041): plano de control, sin RLS.", "041"),
 
+            // ── Módulo de Psicología (script 042, esquema psi): posteriores a la salida de F1 ───────────────────────
+            new("jornadas", T, true, false,
+                "Brigadas o eventos de atención grupal (esquema psi): tabla de TENANT con RLS; entra a seg.pol_tenant en el script 042 con " +
+                "1 filtro y 4 bloqueos.", "042"),
+            new("pacientes", T, true, false,
+                "Ficha de paciente del vínculo 'paciente' (esquema psi, como empleados): tabla de TENANT con RLS (script 042). Datos de salud.", "042"),
+            new("atenciones", T, true, false,
+                "Historial clínico: cada evaluación o consulta (esquema psi): tabla de TENANT con RLS (script 042). Datos de salud.", "042"),
+            new("impresiones", T, true, false,
+                "Registro de cada documento clínico impreso, una atención o una constancia (esquema psi): tabla de TENANT con RLS (script 042).", "042"),
+            new("pruebas", T, true, false,
+                "Catálogo de pruebas psicológicas de la empresa (esquema psi, D12): tabla de TENANT con RLS (script 042).", "042"),
+            new("atencion_pruebas", T, true, false,
+                "Pruebas aplicadas en cada atención (esquema psi): tabla de TENANT con RLS (script 042).", "042"),
+            new("tipos_constancia", T, true, false,
+                "Tipos de constancia de examen psicológico con su formato (esquema psi, D14): tabla de TENANT con RLS (script 042).", "042"),
+            new("constancias", T, true, false,
+                "Constancias extendidas al paciente con su correlativo (esquema psi, D13): tabla de TENANT con RLS (script 042). Datos de salud.", "042"),
+            new("constancia_pruebas", T, true, false,
+                "Pruebas que declara cada constancia (esquema psi): tabla de TENANT con RLS (script 042).", "042"),
+            new("profesionales", T, true, false,
+                "Psicólogos y administradores del centro, sobre la persona maestra (esquema psi, D2 y D11): tabla de TENANT con RLS (script 042).", "042"),
+            new("importaciones", T, true, false,
+                "Lotes de importación de pacientes desde Excel (esquema psi): tabla de TENANT con RLS (script 042).", "042"),
+            new("importacion_filas", T, true, false,
+                "Filas de cada lote de importación, con el DNI completo (esquema psi): tabla de TENANT con RLS (script 042); fuera de la bitácora.", "042"),
+
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
             new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),
             new("usuarios_empresas", L, false, true, "Detalle de la gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),

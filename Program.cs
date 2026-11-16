@@ -125,6 +125,13 @@ builder.Services.AddScoped<IPersonaService, PersonaService>();
 builder.Services.AddScoped<IPersonaConsultaService, PersonaConsultaService>();
 builder.Services.AddScoped<IPersonaAdminConsultaService, PersonaAdminConsultaService>();
 builder.Services.AddScoped<IVinculoService, VinculoService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IPacienteService, eGestion360Web.Services.Psicologia.PacienteService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IImportacionPsicologiaService, eGestion360Web.Services.Psicologia.ImportacionPsicologiaService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.ICatalogoPsicologiaService, eGestion360Web.Services.Psicologia.CatalogoPsicologiaService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IAtencionService, eGestion360Web.Services.Psicologia.AtencionService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IConstanciaService, eGestion360Web.Services.Psicologia.ConstanciaService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IProfesionalService, eGestion360Web.Services.Psicologia.ProfesionalService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IJornadaService, eGestion360Web.Services.Psicologia.ProfesionalService>();
 
 // Usuarios ↔ personas (script 021): cada usuario del sistema vinculado a la persona que lo usa. La persona de un
 // usuario sin empresa (el administrador general) vive en la empresa dueña de la plataforma ("Plataforma:IdEmpresaPropia").

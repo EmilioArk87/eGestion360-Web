@@ -1,0 +1,85 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Importar.SubirModel
+@using eGestion360Web.Models.Psicologia
+@{
+    ViewData["Title"] = "Importar pacientes";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Importar pacientes</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-file-import me-2"></i>Importar pacientes</h2>
+            <p class="text-muted mb-0">Carga el listado de una brigada desde Excel. Nada se guarda como paciente hasta que confirmes.</p>
+        </div>
+        <a asp-page="/Psicologia/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    <partial name="_PasosImportacion" model="1" />
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <form method="post" enctype="multipart/form-data" class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2" role="alert"></div>
+                    @if (Model.Jornadas.Count == 0)
+                    {
+                        <div class="alert alert-warning small">
+                            Primero crea la jornada de la brigada. <a asp-page="/Psicologia/Jornadas/Index" class="alert-link">Crear jornada</a>
+                        </div>
+                    }
+                    <div class="mb-3">
+                        <label asp-for="IdJornada" class="form-label">Jornada</label>
+                        <select asp-for="IdJornada" asp-items="Model.Jornadas" class="form-select">
+                            <option value="">Elige la jornada…</option>
+                        </select>
+                        <span asp-validation-for="IdJornada" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Archivo" class="form-label">Archivo de Excel (.xlsx)</label>
+                        <input asp-for="Archivo" type="file" accept=".xlsx" class="form-control" />
+                        <span asp-validation-for="Archivo" class="text-danger small"></span>
+                        <div class="form-text">Debe tener las columnas «Nombre completo», «DNI», «Edad» y «Género». Hasta 5 MB. El archivo no se guarda en el servidor.</div>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100"><i class="fas fa-upload me-2"></i>Subir y revisar</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-3">Importaciones recientes</h6>
+                    @if (Model.Recientes.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Todavía no hay importaciones.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush small">
+                            @foreach (var i in Model.Recientes)
+                            {
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">@i.Archivo</div>
+                                        <div class="text-muted">@i.Jornada · @i.Total filas · @i.Fecha.AddHours(-6).ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge @(i.Estado == EstadosImportacion.Confirmada ? "bg-success" : i.Estado == EstadosImportacion.Borrador ? "bg-warning text-dark" : "bg-light text-muted border")">@i.Estado</span>
+                                        <a asp-page="Revisar" asp-route-id="@i.IdImportacion" class="btn btn-sm btn-outline-primary">Abrir</a>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

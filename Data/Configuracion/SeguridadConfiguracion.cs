@@ -71,7 +71,9 @@ namespace eGestion360Web.Data.Configuracion
                 new Modulo { IdModulo = 5, Codigo = "catalogos",   Nombre = "Catálogos",           Descripcion = "Clientes, proveedores, productos, impuestos, formas y condiciones de pago", Icono = "fa-book", Orden = 5, Activo = true },
                 new Modulo { IdModulo = 6, Codigo = "facturacion", Nombre = "Facturación",         Descripcion = "Emisión de facturas contado/crédito, notas de crédito/débito, CxC",         Icono = "fa-file-invoice-dollar", Orden = 6, Activo = true },
                 new Modulo { IdModulo = 7, Codigo = "bancos",      Nombre = "Bancos",              Descripcion = "Cuentas bancarias, depósitos, cheques y conciliación",                       Icono = "fa-university",    Orden = 7, Activo = true },
-                new Modulo { IdModulo = 8, Codigo = "contabilidad",Nombre = "Contabilidad",        Descripcion = "Plan de cuentas, asientos, libros y estados financieros (opcional por empresa)", Icono = "fa-calculator", Orden = 8, Activo = true }
+                new Modulo { IdModulo = 8, Codigo = "contabilidad",Nombre = "Contabilidad",        Descripcion = "Plan de cuentas, asientos, libros y estados financieros (opcional por empresa)", Icono = "fa-calculator", Orden = 8, Activo = true },
+                // Script 043: en eBD_SPD el id lo asigna la identidad (va al final del orden del menú).
+                new Modulo { IdModulo = 9, Codigo = "psicologia",  Nombre = "Psicología",          Descripcion = "Pacientes, jornadas, historial clínico e impresión de documentos",          Icono = "fa-brain",         Orden = 9, Activo = true }
             );
         }
     }

@@ -14,6 +14,7 @@ using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Models.Psicologia;
 
 namespace eGestion360Web.Services.Auditoria
 {
@@ -51,13 +52,44 @@ namespace eGestion360Web.Services.Auditoria
             [typeof(PersonaEmpresa)] = "persona_empresa",
             [typeof(Empleado)] = "empleados",
             [typeof(Cliente)] = "clientes",
-            [typeof(User)] = "Users"
+            [typeof(User)] = "Users",
+            [typeof(Paciente)] = "pacientes",
+            [typeof(Atencion)] = "atenciones",
+            [typeof(Constancia)] = "constancias",
+            [typeof(Profesional)] = "profesionales"
         };
 
-        /// <summary>Entidades de las que solo se auditan algunas propiedades: de un usuario, solo su persona.</summary>
+        /// <summary>
+        /// Entidades de las que solo se auditan algunas propiedades. De un usuario, solo su persona. Del módulo de Psicología, solo
+        /// los datos administrativos: la bitácora es inmutable y se ve en el historial de la persona, así que nunca guarda texto
+        /// clínico (las observaciones y los campos clínicos que se agreguen después quedan fuera por no estar en la lista).
+        /// </summary>
         private static readonly Dictionary<Type, HashSet<string>> SoloEstasPropiedades = new()
         {
-            [typeof(User)] = new HashSet<string> { nameof(User.PersonaId) }
+            [typeof(User)] = new HashSet<string> { nameof(User.PersonaId) },
+            [typeof(Paciente)] = new HashSet<string>
+            {
+                nameof(Paciente.IdEmpresa), nameof(Paciente.IdPersonaEmpresa), nameof(Paciente.TipoVinculo), nameof(Paciente.NumeroExpediente),
+                nameof(Paciente.FechaApertura), nameof(Paciente.Activo), nameof(Paciente.Eliminado), nameof(Paciente.FechaEliminado)
+            },
+            [typeof(Atencion)] = new HashSet<string>
+            {
+                nameof(Atencion.IdEmpresa), nameof(Atencion.IdPaciente), nameof(Atencion.IdJornada), nameof(Atencion.FechaAtencion),
+                nameof(Atencion.EdadDeclarada), nameof(Atencion.IdPersonaProfesional), nameof(Atencion.NombreProfesional), nameof(Atencion.Estado),
+                nameof(Atencion.FechaCierre), nameof(Atencion.CerradoPor), nameof(Atencion.MotivoAnulacion)
+            },
+            [typeof(Constancia)] = new HashSet<string>
+            {
+                nameof(Constancia.IdEmpresa), nameof(Constancia.IdPaciente), nameof(Constancia.IdAtencion), nameof(Constancia.IdTipoConstancia),
+                nameof(Constancia.NumeroConstancia), nameof(Constancia.FechaEmision), nameof(Constancia.IdPersonaProfesional),
+                nameof(Constancia.NombreProfesional), nameof(Constancia.Estado), nameof(Constancia.MotivoAnulacion),
+                nameof(Constancia.FechaAnulacion), nameof(Constancia.AnuladaPor)
+            },
+            [typeof(Profesional)] = new HashSet<string>
+            {
+                nameof(Profesional.IdEmpresa), nameof(Profesional.IdPersona), nameof(Profesional.Tipo), nameof(Profesional.Titulo),
+                nameof(Profesional.NombreFirma), nameof(Profesional.NumeroColegiacion), nameof(Profesional.Especialidad), nameof(Profesional.Activo)
+            }
         };
 
         private static readonly HashSet<string> PropiedadesIgnoradas = new()
@@ -363,6 +395,39 @@ namespace eGestion360Web.Services.Auditoria
                                 .Select(v => (int?)v.IdPersona)
                                 .FirstOrDefaultAsync(ct);
                     return (c.IdEmpresa, idPersonaDelCliente, idRegistro);
+
+                // Psicología: la ficha y sus atenciones quedan en el historial de la persona del vínculo.
+                case Paciente pac:
+                    var idPersonaDelPaciente = pac.Vinculo?.IdPersona > 0
+                        ? pac.Vinculo.IdPersona
+                        : await contexto.Set<PersonaEmpresa>().AsNoTracking()
+                            .Where(v => v.IdPersonaEmpresa == pac.IdPersonaEmpresa)
+                            .Select(v => (int?)v.IdPersona)
+                            .FirstOrDefaultAsync(ct);
+                    return (pac.IdEmpresa, idPersonaDelPaciente, idRegistro);
+
+                case Atencion at:
+                    var idPersonaDeLaAtencion = at.Paciente?.Vinculo?.IdPersona > 0
+                        ? at.Paciente.Vinculo.IdPersona
+                        : await (from p in contexto.Set<Paciente>().AsNoTracking()
+                                 join v in contexto.Set<PersonaEmpresa>().AsNoTracking() on p.IdPersonaEmpresa equals v.IdPersonaEmpresa
+                                 where p.IdPaciente == at.IdPaciente
+                                 select (int?)v.IdPersona).FirstOrDefaultAsync(ct);
+                    return (at.IdEmpresa, idPersonaDeLaAtencion, idRegistro);
+
+                case Constancia co:
+                    var idPersonaDeLaConstancia = co.Paciente?.Vinculo?.IdPersona > 0
+                        ? co.Paciente.Vinculo.IdPersona
+                        : await (from p in contexto.Set<Paciente>().AsNoTracking()
+                                 join v in contexto.Set<PersonaEmpresa>().AsNoTracking() on p.IdPersonaEmpresa equals v.IdPersonaEmpresa
+                                 where p.IdPaciente == co.IdPaciente
+                                 select (int?)v.IdPersona).FirstOrDefaultAsync(ct);
+                    return (co.IdEmpresa, idPersonaDeLaConstancia, idRegistro);
+
+                // El profesional queda en el historial de su propia persona.
+                case Profesional pro:
+                    var idPersonaDelProfesional = pro.Persona?.IdPersona > 0 ? pro.Persona.IdPersona : pro.IdPersona;
+                    return (pro.IdEmpresa, idPersonaDelProfesional > 0 ? idPersonaDelProfesional : null, idRegistro);
 
                 // La fila queda en el historial de la persona nueva o, si se quitó, en el de la que tenía.
                 case User u:

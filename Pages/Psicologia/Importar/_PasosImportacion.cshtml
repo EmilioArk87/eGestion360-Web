@@ -1,0 +1,19 @@
+@model int
+@{
+    var pasos = new[] { "Subir archivo", "Revisar filas", "Confirmar" };
+}
+<div class="d-flex flex-wrap gap-4 mb-4 small">
+    @for (var i = 0; i < pasos.Length; i++)
+    {
+        var numero = i + 1;
+        var hecho = numero < Model;
+        var actual = numero == Model;
+        <div class="d-flex align-items-center gap-2 @(actual ? "fw-semibold" : hecho ? "" : "text-muted")">
+            <span class="rounded-circle d-inline-flex align-items-center justify-content-center @(hecho ? "bg-success text-white" : actual ? "bg-primary text-white" : "bg-light border")"
+                  style="width:1.6rem;height:1.6rem;">
+                @if (hecho) { <i class="fas fa-check small"></i> } else { @numero }
+            </span>
+            @pasos[i]
+        </div>
+    }
+</div>

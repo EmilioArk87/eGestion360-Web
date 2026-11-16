@@ -21,6 +21,7 @@ namespace eGestion360Web.Services.Derechos
             ("/Facturacion/", "facturacion"),
             ("/Catalogos/", "catalogos"),
             ("/Contabilidad/", "contabilidad"),
+            ("/Psicologia/", "psicologia"),
         };
 
         /// <summary>Páginas dentro de esas carpetas que no exigen el módulo: la que explica por qué Flota no abre sin empresa.</summary>

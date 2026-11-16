@@ -1,0 +1,205 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Profesionales.IndexModel
+@using eGestion360Web.Models.Psicologia
+@{
+    ViewData["Title"] = "Profesionales";
+    var editando = Model.Input.IdProfesional > 0;
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Profesionales</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-user-doctor me-2"></i>Profesionales</h2>
+            <p class="text-muted mb-0">Psicólogos que atienden y firman constancias, y administradores que también pueden ser responsables de una brigada.</p>
+        </div>
+        <a asp-page="/Psicologia/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    @if (TempData["ProfesionalesMensaje"] is string mensaje)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@mensaje
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        @if (Model.PuedeEditar)
+        {
+            <div class="col-lg-5">
+                <form method="post" asp-page-handler="Guardar" class="card border-0 shadow-sm" id="form-profesional" novalidate>
+                    <div class="card-body">
+                        <h5 class="card-title mb-3"><i class="fas @(editando ? "fa-pen" : "fa-user-plus") me-2"></i>@(editando ? "Editar profesional" : "Nuevo profesional")</h5>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+                        <input type="hidden" asp-for="Input.IdProfesional" />
+
+                        @if (editando)
+                        {
+                            <p class="small mb-3"><span class="text-muted">Persona:</span> <strong>@Model.PersonaEditada</strong>
+                                <span class="text-muted">(sus datos personales se cambian en Personas)</span></p>
+                        }
+                        else
+                        {
+                            <h6 class="text-muted text-uppercase small fw-semibold mb-2">Persona</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.Dni" class="form-label small mb-1">DNI <span class="text-danger">*</span></label>
+                                    <input asp-for="Input.Dni" class="form-control form-control-sm font-monospace" placeholder="0000-0000-00000" autocomplete="off" />
+                                    <span asp-validation-for="Input.Dni" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.Sexo" class="form-label small mb-1">Sexo</label>
+                                    <select asp-for="Input.Sexo" class="form-select form-select-sm">
+                                        <option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.PrimerNombre" class="form-label small mb-1">Primer nombre <span class="text-danger">*</span></label>
+                                    <input asp-for="Input.PrimerNombre" class="form-control form-control-sm" autocomplete="off" />
+                                    <span asp-validation-for="Input.PrimerNombre" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.SegundoNombre" class="form-label small mb-1">Segundo nombre</label>
+                                    <input asp-for="Input.SegundoNombre" class="form-control form-control-sm" autocomplete="off" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.PrimerApellido" class="form-label small mb-1">Primer apellido <span class="text-danger">*</span></label>
+                                    <input asp-for="Input.PrimerApellido" class="form-control form-control-sm" autocomplete="off" />
+                                    <span asp-validation-for="Input.PrimerApellido" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.SegundoApellido" class="form-label small mb-1">Segundo apellido</label>
+                                    <input asp-for="Input.SegundoApellido" class="form-control form-control-sm" autocomplete="off" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.Telefono" class="form-label small mb-1">Teléfono</label>
+                                    <input asp-for="Input.Telefono" class="form-control form-control-sm" placeholder="9999-9999" autocomplete="off" />
+                                    <span asp-validation-for="Input.Telefono" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Input.Correo" class="form-label small mb-1">Correo</label>
+                                    <input asp-for="Input.Correo" type="email" class="form-control form-control-sm" autocomplete="off" />
+                                    <span asp-validation-for="Input.Correo" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <p class="form-text mt-0 mb-3">Si la persona ya está en la cuenta (por ejemplo, porque ya tiene usuario), se usa la misma.</p>
+                        }
+
+                        <h6 class="text-muted text-uppercase small fw-semibold mb-2">Datos profesionales</h6>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <label asp-for="Input.Tipo" class="form-label small mb-1">Tipo <span class="text-danger">*</span></label>
+                                <select asp-for="Input.Tipo" class="form-select form-select-sm">
+                                    <option value="@TiposProfesional.Psicologo">Psicólogo(a)</option>
+                                    <option value="@TiposProfesional.Administrador">Administrador(a)</option>
+                                </select>
+                                <span asp-validation-for="Input.Tipo" class="text-danger small"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="Input.Titulo" class="form-label small mb-1">Título</label>
+                                <input asp-for="Input.Titulo" class="form-control form-control-sm" placeholder="Lic., M.Sc., Dr." autocomplete="off" />
+                                <span asp-validation-for="Input.Titulo" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Input.NombreFirma" class="form-label small mb-1">Nombre para la firma</label>
+                                <input asp-for="Input.NombreFirma" class="form-control form-control-sm" placeholder="Si queda vacío, su nombre completo" autocomplete="off" />
+                                <span asp-validation-for="Input.NombreFirma" class="text-danger small"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="Input.NumeroColegiacion" class="form-label small mb-1">Número de colegiación</label>
+                                <input asp-for="Input.NumeroColegiacion" class="form-control form-control-sm text-uppercase" autocomplete="off" />
+                                <span asp-validation-for="Input.NumeroColegiacion" class="text-danger small"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="Input.Especialidad" class="form-label small mb-1">Especialidad</label>
+                                <input asp-for="Input.Especialidad" class="form-control form-control-sm" autocomplete="off" />
+                                <span asp-validation-for="Input.Especialidad" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            @if (editando) { <a asp-page="Index" class="btn btn-sm btn-outline-secondary">Cancelar</a> }
+                            <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save me-1"></i>@(editando ? "Guardar cambios" : "Registrar profesional")</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        }
+
+        <div class="@(Model.PuedeEditar ? "col-lg-7" : "col-12")">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    @if (Model.Profesionales.Count == 0)
+                    {
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-user-doctor fa-2x mb-2"></i>
+                            <p class="mb-0">Todavía no hay profesionales registrados.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var p in Model.Profesionales)
+                            {
+                                <li class="list-group-item @(p.Activo ? "" : "text-muted")">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div>
+                                            <div class="fw-semibold">
+                                                @p.NombreImpreso
+                                                <span class="badge @(p.Tipo == TiposProfesional.Psicologo ? "bg-primary" : "bg-secondary") ms-1">@(p.Tipo == TiposProfesional.Psicologo ? "psicólogo" : "administrador")</span>
+                                                @if (!p.Activo) { <span class="badge bg-light text-muted border ms-1">inactivo</span> }
+                                            </div>
+                                            <div class="small text-muted">
+                                                @p.Persona · <span class="font-monospace">@(p.Dni ?? "sin DNI")</span>
+                                                @if (p.Colegiacion != null) { <span> · Colegiación <span class="font-monospace">@p.Colegiacion</span></span> }
+                                                @if (p.Especialidad != null) { <span> · @p.Especialidad</span> }
+                                            </div>
+                                            <div class="small mt-1">
+                                                @if (p.Usuario != null)
+                                                {
+                                                    <i class="fas fa-user-check text-success me-1"></i><span>Usuario: <span class="font-monospace">@p.Usuario</span>@(p.UsuarioActivo ? "" : " (sin activar o suspendido)")</span>
+                                                }
+                                                else if (Model.PuedeInvitar)
+                                                {
+                                                    <i class="fas fa-user-xmark text-warning me-1"></i><span>Sin usuario · </span>
+                                                    <a asp-page="/Admin/Invitaciones/Create" asp-route-IdPersonaElegida="@p.IdPersona">Invitar a usar el sistema</a>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-user-xmark text-warning me-1"></i><span class="text-muted">Sin usuario: pide a un administrador que lo invite.</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        @if (Model.PuedeEditar)
+                                        {
+                                            <div class="d-flex gap-1 flex-shrink-0">
+                                                <a asp-page="Index" asp-route-editar="@p.Id" asp-fragment="form-profesional" class="btn btn-sm btn-outline-primary" title="Editar"><i class="fas fa-pen"></i></a>
+                                                <form method="post" asp-page-handler="Estado" asp-route-id="@p.Id" asp-route-activo="@(!p.Activo)">
+                                                    <button type="submit" class="btn btn-sm @(p.Activo ? "btn-outline-secondary" : "btn-outline-success")" title="@(p.Activo ? "Desactivar" : "Activar")">
+                                                        <i class="fas @(p.Activo ? "fa-eye-slash" : "fa-eye")"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -12,7 +12,11 @@ namespace eGestion360Web.Services.Auditoria
             ["persona_empresa"] = "Vínculo con la empresa",
             ["empleados"] = "Ficha de empleado",
             ["clientes"] = "Ficha de cliente",
-            ["Users"] = "Usuario del sistema"
+            ["Users"] = "Usuario del sistema",
+            ["pacientes"] = "Ficha de paciente",
+            ["atenciones"] = "Atención psicológica",
+            ["constancias"] = "Constancia de examen psicológico",
+            ["profesionales"] = "Profesional de psicología"
         };
 
         /// <summary>Entidad de la bitácora con el vínculo de un usuario con su persona (script 021).</summary>
@@ -85,7 +89,30 @@ namespace eGestion360Web.Services.Auditoria
             ["id_condicion_pago_default"] = "Condición de pago",
             ["limite_credito"] = "Límite de crédito",
             ["id_persona_empresa"] = "Vínculo con la empresa",
-            ["PersonaId"] = "Persona vinculada"
+            ["PersonaId"] = "Persona vinculada",
+            // Módulo de Psicología (solo datos administrativos; la bitácora no guarda texto clínico)
+            ["numero_expediente"] = "Número de expediente",
+            ["fecha_apertura"] = "Apertura del expediente",
+            ["id_paciente"] = "Paciente",
+            ["id_jornada"] = "Jornada",
+            ["fecha_atencion"] = "Fecha de la atención",
+            ["edad_declarada"] = "Edad declarada",
+            ["id_persona_profesional"] = "Profesional",
+            ["nombre_profesional"] = "Nombre del profesional",
+            ["estado"] = "Estado",
+            ["fecha_cierre"] = "Fecha de cierre",
+            ["cerrado_por"] = "Cerrada por",
+            ["motivo_anulacion"] = "Motivo de anulación",
+            ["id_atencion"] = "Atención",
+            ["id_tipo_constancia"] = "Tipo de constancia",
+            ["numero_constancia"] = "Número de constancia",
+            ["fecha_emision"] = "Fecha de emisión",
+            ["fecha_anulacion"] = "Fecha de anulación",
+            ["anulada_por"] = "Anulada por",
+            ["titulo"] = "Título",
+            ["nombre_firma"] = "Nombre para la firma",
+            ["numero_colegiacion"] = "Número de colegiación",
+            ["especialidad"] = "Especialidad"
         };
 
         public static string Entidad(string entidad) =>

@@ -1,0 +1,83 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Pacientes.IndexModel
+@{
+    ViewData["Title"] = "Pacientes";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Pacientes</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-user-injured me-2"></i>Pacientes</h2>
+            <p class="text-muted mb-0">
+                @if (Model.NombreJornada != null) { <span>De la jornada <strong>@Model.NombreJornada</strong> · </span> }
+                @Model.Pacientes.Count paciente(s)
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Psicologia/Pacientes/Create" asp-route-idJornada="@Model.IdJornada" class="btn btn-success"><i class="fas fa-user-plus me-2"></i>Nuevo paciente</a>
+            <a asp-page="/Psicologia/Importar/Subir" class="btn btn-warning"><i class="fas fa-file-import me-2"></i>Importar listado</a>
+            <a asp-page="/Psicologia/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+        </div>
+    </div>
+
+    <form method="get" class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <input type="hidden" asp-for="IdJornada" />
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input asp-for="Buscar" class="form-control" placeholder="Buscar por nombre, expediente o DNI" />
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Buscar) || Model.IdJornada != null)
+                {
+                    <a asp-page="Index" class="btn btn-outline-secondary">Ver todos</a>
+                }
+            </div>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (Model.Pacientes.Count == 0)
+            {
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-user-injured fa-2x mb-2"></i>
+                    <p class="mb-2">Todavía no hay pacientes@(string.IsNullOrWhiteSpace(Model.Buscar) ? "" : " con esa búsqueda").</p>
+                    <a asp-page="/Psicologia/Pacientes/Create" class="btn btn-sm btn-success">Registrar un paciente</a>
+                    <a asp-page="/Psicologia/Importar/Subir" class="btn btn-sm btn-warning">Importar el listado de una brigada</a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle paginated-table" data-page-size="20">
+                        <thead class="table-light">
+                            <tr><th>Expediente</th><th>Paciente</th><th>DNI</th><th class="text-center">Sexo</th><th class="text-end">Edad</th><th class="text-end">Atenciones</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Pacientes)
+                            {
+                                <tr class="@(p.Activo ? "" : "text-muted")">
+                                    <td class="text-nowrap font-monospace">@p.Expediente</td>
+                                    <td class="fw-semibold">@p.Nombre</td>
+                                    <td class="text-nowrap font-monospace small">@p.DniEnmascarado</td>
+                                    <td class="text-center">@(p.Sexo ?? "—")</td>
+                                    <td class="text-end">@(p.Edad?.ToString() ?? "—")</td>
+                                    <td class="text-end">@p.Atenciones @if (p.EnBorrador > 0) { <span class="badge bg-warning text-dark ms-1" title="Por completar">@p.EnBorrador borrador</span> }</td>
+                                    <td class="text-end"><a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@p.IdPaciente" class="btn btn-sm btn-outline-primary">Expediente</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

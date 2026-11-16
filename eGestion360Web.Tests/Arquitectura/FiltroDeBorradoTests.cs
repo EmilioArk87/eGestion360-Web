@@ -28,7 +28,7 @@ namespace eGestion360Web.Tests.Arquitectura
         private static readonly string[] PrincipalesSinFiltro =
         {
             "categorias_repuesto", "clientes", "condiciones_pago", "ct_asientos", "ct_centros_costo", "ct_cuentas", "empresas",
-            "facturas", "formas_pago", "impuestos", "pagos", "persona_empresa", "personas", "productos_servicios", "rutas",
+            "facturas", "formas_pago", "impuestos", "pacientes", "pagos", "persona_empresa", "personas", "productos_servicios", "rutas",
             "talleres", "tasas_cambio", "tipos_vehiculo", "vehiculos",
         };
 

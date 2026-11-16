@@ -107,9 +107,15 @@ namespace eGestion360Web.Tests.Arquitectura
             return sb.ToString();
         }
 
+        /// <summary>El catálogo que siembran los scripts: el 041 (órdenes 1 a 72) y el módulo de Psicología del 043 (73 a 84).</summary>
         private static List<FilaDelCatalogo> CatalogoDelScript()
+            => CatalogoDe(S041(), "#catalogo_041")
+                .Concat(CatalogoDe(Leer("2 - Script SQL", "043_psicologia_modulo_permisos.sql"), "#catalogo_043"))
+                .ToList();
+
+        private static List<FilaDelCatalogo> CatalogoDe(string script, string tablaTemporal)
         {
-            var bloque = Regex.Match(S041(), @"INSERT INTO #catalogo_041[\s\S]*?;\s*\r?\n").Value;
+            var bloque = Regex.Match(script, @"INSERT INTO " + tablaTemporal + @"[\s\S]*?;\s*\r?\n").Value;
             var filas = Regex.Matches(bloque,
                 @"^\s*\((?<orden>\d+), '(?<modulo>[a-z_]+)', '(?<recurso>[a-z_]+)', '(?<accion>[a-z_]+)', '(?<ambito>[a-z]+)', (?<legada>NULL|'[a-z]+'), (?<desc>.+)\)[,;]\s*$",
                 RegexOptions.Multiline).Cast<Match>().ToList();
@@ -142,7 +148,7 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             var todos = CatalogoDePermisos.Todos;
 
-            Assert.Equal(72, todos.Count);
+            Assert.Equal(72 + 19, todos.Count);   // 72 del 041 y 19 de psicologia del 043
             Assert.Equal(todos.Count, todos.Select(p => p.Codigo).Distinct(StringComparer.Ordinal).Count());
             Assert.All(todos, p =>
             {
@@ -158,10 +164,11 @@ namespace eGestion360Web.Tests.Arquitectura
                 Assert.Equal(esperado, p.Ambito);
             });
 
-            // Las cifras que repite el verificador salen de aqui.
-            Assert.Equal(new[] { 17, 9, 28, 8, 10 }, new[] { "plataforma", "administracion", "flota", "catalogos", "facturacion" }.Select(m => todos.Count(p => p.Modulo == m)));
-            Assert.Equal(44, todos.Count(p => p.CasillaLegada != null));
-            Assert.Equal(new[] { 17, 9, 46 }, new[] { AmbitoDePermiso.Plataforma, AmbitoDePermiso.Empresa, AmbitoDePermiso.Modulo }.Select(a => todos.Count(p => p.Ambito == a)));
+            // Las cifras que repite el verificador salen de aqui: las del 041 y lo que suma el 043 (19 permisos de modulo con casilla legada).
+            Assert.Equal(new[] { 17, 9, 28, 8, 10, 19 },
+                new[] { "plataforma", "administracion", "flota", "catalogos", "facturacion", "psicologia" }.Select(m => todos.Count(p => p.Modulo == m)));
+            Assert.Equal(44 + 19, todos.Count(p => p.CasillaLegada != null));
+            Assert.Equal(new[] { 17, 9, 46 + 19 }, new[] { AmbitoDePermiso.Plataforma, AmbitoDePermiso.Empresa, AmbitoDePermiso.Modulo }.Select(a => todos.Count(p => p.Ambito == a)));
         }
 
         [Fact]
@@ -172,7 +179,7 @@ namespace eGestion360Web.Tests.Arquitectura
             var modulosReales = db.Modulos.Select(m => m.Codigo).ToList();
 
             Assert.All(CatalogoDePermisos.ModulosConPermisos, m => Assert.Contains(m, modulosReales));
-            Assert.Equal(new[] { "flota", "catalogos", "facturacion" }, CatalogoDePermisos.ModulosConPermisos);
+            Assert.Equal(new[] { "flota", "catalogos", "facturacion", "psicologia" }, CatalogoDePermisos.ModulosConPermisos);
 
             // La migracion de roles necesita que 'ver' conceda algo en cada modulo; 'eliminar' no lo necesita (catalogos y flota si lo tienen).
             foreach (var modulo in CatalogoDePermisos.ModulosConPermisos)
@@ -188,24 +195,31 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.Contains("p.accion_legada IN ('ver', 'crear', 'editar')", s);
             Assert.Contains("p.accion_legada = 'ver'", s);
 
-            var modulos = CatalogoDePermisos.ModulosConPermisos;
-            int Administrador(string m) => CatalogoDePermisos.Todos.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m);
-            int Operador(string m) => CatalogoDePermisos.Todos.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m && p.CasillaLegada is "ver" or "crear" or "editar");
-            int Consulta(string m) => CatalogoDePermisos.Todos.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m && p.CasillaLegada == "ver");
+            // Lo que sembro el 041; el modulo de psicologia lo agrega el 043 y el verificador lo suma con @con043.
+            var del041 = CatalogoDePermisos.Todos.Where(p => p.Modulo != "psicologia").ToList();
+            var modulos = CatalogoDePermisos.ModulosConPermisos.Where(m => m != "psicologia").ToList();
+            int Administrador(string m) => del041.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m);
+            int Operador(string m) => del041.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m && p.CasillaLegada is "ver" or "crear" or "editar");
+            int Consulta(string m) => del041.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m && p.CasillaLegada == "ver");
 
             Assert.Equal(new[] { 28, 26, 11 }, new[] { Administrador("flota"), Operador("flota"), Consulta("flota") });
             Assert.Equal(new[] { 8, 5, 2 }, new[] { Administrador("catalogos"), Operador("catalogos"), Consulta("catalogos") });
             Assert.Equal(new[] { 10, 8, 4 }, new[] { Administrador("facturacion"), Operador("facturacion"), Consulta("facturacion") });
 
+            // Cifras del 041 en el verificador, con lo que suma el 043 si esta aplicado (19 permisos, 3 plantillas con 19 + 17 + 6).
             var verificador = Verificador();
             var total = modulos.Sum(m => Administrador(m) + Operador(m) + Consulta(m));
             Assert.Equal(102, total);
-            Assert.Contains($"N'{total}'", verificador);                                  // permisos de plantilla
-            Assert.Contains($"N'{modulos.Count * 3}'", verificador);                      // plantillas
-            Assert.Contains($"N'{CatalogoDePermisos.Todos.Count}'", verificador);         // permisos en el catalogo
+            var psi = CatalogoDePermisos.Todos.Where(p => p.Modulo == "psicologia").ToList();
+            var plantillasPsi = psi.Count + psi.Count(p => p.CasillaLegada is "ver" or "crear" or "editar") + psi.Count(p => p.CasillaLegada == "ver");
+            Assert.Equal(19 + 17 + 6, plantillasPsi);
+            Assert.Contains("DECLARE @con043 INT", verificador);
+            Assert.Contains($"CAST({total} + {plantillasPsi} * @con043 AS NVARCHAR(400))", verificador);           // permisos de plantilla
+            Assert.Contains($"CAST({modulos.Count * 3} + 3 * @con043 AS NVARCHAR(400))", verificador);          // plantillas
+            Assert.Contains($"CAST({del041.Count} + {psi.Count} * @con043 AS NVARCHAR(400))", verificador);     // permisos en el catalogo
             Assert.Contains("N'17 / 9 / 28 / 8 / 10'", verificador);
-            Assert.Contains("N'17 / 9 / 46'", verificador);
-            Assert.Contains($"N'{CatalogoDePermisos.Todos.Count(p => p.CasillaLegada != null)}'", verificador);
+            Assert.Contains($"CONCAT(N'17 / 9 / ', 46 + {psi.Count} * @con043)", verificador);
+            Assert.Contains($"CAST({del041.Count(p => p.CasillaLegada != null)} + {psi.Count} * @con043 AS NVARCHAR(400))", verificador);
         }
 
         // ── El modelo de EF y el script describen las mismas tablas y columnas ────────────────────────────────────────

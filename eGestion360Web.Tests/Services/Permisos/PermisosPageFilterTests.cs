@@ -409,7 +409,7 @@ namespace eGestion360Web.Tests.Services.Permisos
             var (_, vacio) = SembrarRoles();
 
             var diferencias = Diferencias(
-                () => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }, operadorEnEmpresa: true),
+                () => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil, modulos: CatalogoDePermisos.ModulosConPermisos.ToArray(), operadorEnEmpresa: true),
                 (_, _) => true).GetAwaiter().GetResult();
 
             Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
@@ -566,7 +566,7 @@ namespace eGestion360Web.Tests.Services.Permisos
         {
             var (consulta, _) = SembrarRoles();
             var diferencias = await Diferencias(
-                () => Usuario("empresa_user", idRol: consulta, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }),
+                () => Usuario("empresa_user", idRol: consulta, idTenant: IdTenantDelPerfil, modulos: CatalogoDePermisos.ModulosConPermisos.ToArray()),
                 (_, d) => d is { Ambito: AmbitoDePermiso.Modulo, CasillaLegada: CasillaLegada.Ver });
 
             Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
@@ -577,7 +577,7 @@ namespace eGestion360Web.Tests.Services.Permisos
         {
             var (_, vacio) = SembrarRoles();
             var diferencias = await Diferencias(
-                () => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }),
+                () => Usuario("empresa_user", idRol: vacio, idTenant: IdTenantDelPerfil, modulos: CatalogoDePermisos.ModulosConPermisos.ToArray()),
                 (_, _) => false);
 
             Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
@@ -741,7 +741,7 @@ namespace eGestion360Web.Tests.Services.Permisos
             SembrarRoles();
 
             var diferencias = await DiferenciasReales(
-                () => Usuario("empresa_admin", idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" }),
+                () => Usuario("empresa_admin", idTenant: IdTenantDelPerfil, modulos: CatalogoDePermisos.ModulosConPermisos.ToArray()),
                 d => d.Ambito != AmbitoDePermiso.Plataforma);
 
             Assert.True(diferencias.Count == 0, string.Join("; ", diferencias));
@@ -751,7 +751,7 @@ namespace eGestion360Web.Tests.Services.Permisos
         public async Task Con_la_configuracion_real_un_usuario_con_rol_solo_pasa_por_lo_que_su_rol_concede()
         {
             var (consulta, vacio) = SembrarRoles();
-            Func<int, HttpContext> perfil = rol => Usuario("empresa_user", idRol: rol, idTenant: IdTenantDelPerfil, modulos: new[] { "flota", "catalogos", "facturacion" });
+            Func<int, HttpContext> perfil = rol => Usuario("empresa_user", idRol: rol, idTenant: IdTenantDelPerfil, modulos: CatalogoDePermisos.ModulosConPermisos.ToArray());
 
             // «Consulta» tiene las casillas de ver de los módulos: solo esas pantallas, y ninguna de administración ni de plataforma.
             var deConsulta = await DiferenciasReales(() => perfil(consulta), d => d.Ambito == AmbitoDePermiso.Modulo && d.CasillaLegada == CasillaLegada.Ver);
