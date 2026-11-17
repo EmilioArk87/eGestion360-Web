@@ -12,25 +12,28 @@
     <style>
         /*
          * Hoja "Constancia de examen psicologico para solicitud de licencia de conducir" del Colegio de Psicologos de Honduras.
-         * POSICIONES PROVISIONALES sobre tamano carta (215.9 x 279.4 mm), estimadas de la foto del formulario. Se ajustan aqui,
-         * en milimetros desde la esquina superior izquierda de la hoja, cuando lleguen las medidas reales (D15).
+         * La hoja real mide 215 x 275 mm (medida el 2026-11-16), un poco menos que carta: se imprime en papel Carta y las posiciones van
+         * en milimetros desde la esquina superior izquierda, asi que los 4.4 mm que le faltan quedan abajo, donde no se escribe nada.
+         * La FECHA tiene las medidas reales (D15, 2026-11-16); el parrafo y las pruebas siguen PROVISIONALES, estimadas de la foto.
          */
         :root {
-            --hoja-ancho: 215.9mm;
-            --hoja-alto: 279.4mm;
+            --hoja-ancho: 215mm;
+            --hoja-alto: 275mm;
             --letra: "Arial", "Helvetica", sans-serif;
 
-            --fecha-arriba: 36mm;       /* renglon "__ de ________ del 20__" */
-            --dia-izquierda: 15mm;
-            --mes-izquierda: 30mm;
-            --anio-izquierda: 80mm;     /* despues del "20" impreso */
+            /* Renglon "__ de ________ del 20__": la base de los numeros a 40 mm del borde de arriba; cada blanco, de donde a donde va
+               (el texto se centra en su blanco). */
+            --fecha-base: 40mm;
+            --dia-desde: 14mm;   --dia-hasta: 25mm;
+            --mes-desde: 33mm;   --mes-hasta: 68mm;
+            --anio-desde: 80mm;  --anio-hasta: 92mm;   /* solo los dos ultimos digitos: el "20" ya viene impreso */
 
             --cuerpo-arriba: 74mm;      /* primer renglon del parrafo */
             --cuerpo-izquierda: 26mm;
             --cuerpo-ancho: 160mm;
             --cuerpo-renglon: 14mm;     /* distancia entre renglones de la hoja */
 
-            --pruebas-arriba: 213mm;    /* renglon de "PRUEBAS PSICOLOGICAS APLICADAS:" */
+            --pruebas-arriba: 204mm;    /* renglon de "PRUEBAS PSICOLOGICAS APLICADAS:"; subido un renglon (9 mm) el 2026-11-16 a pedido de Emilio */
             --pruebas-izquierda: 13mm;
             --pruebas-ancho: 190mm;
             --pruebas-sangria: 98mm;    /* el texto empieza despues de la etiqueta impresa */
@@ -51,15 +54,21 @@
 
         .hoja { position: relative; width: var(--hoja-ancho); height: var(--hoja-alto); margin: 16px auto; background: #fff;
                 box-shadow: 0 0 0 1px #bbb; overflow: hidden; }
-        .campo { position: absolute; font-size: 13pt; line-height: 1.2; white-space: nowrap; }
+        /* Un dato de la fecha, centrado en su blanco y apoyado en la base del renglon. Con line-height 1, la base de la letra (Arial)
+           queda a 0.81em de la parte de arriba de la caja (medido en el navegador): por eso la caja empieza 0.81em antes de --fecha-base. */
+        .fecha { position: absolute; top: calc(var(--fecha-base) - 0.81em); font-size: 13pt; line-height: 1; white-space: nowrap;
+                 text-align: center; }
+        /* El cuerpo ("Por este medio se hace constar ... APTO para conducir."): 15 pt, dos puntos más que la fecha (pedido de Emilio, 2026-11-16). */
         .cuerpo { position: absolute; top: var(--cuerpo-arriba); left: var(--cuerpo-izquierda); width: var(--cuerpo-ancho);
-                  font-size: 13pt; line-height: var(--cuerpo-renglon); }
+                  font-size: 15pt; line-height: var(--cuerpo-renglon); }
         .pruebas { position: absolute; top: var(--pruebas-arriba); left: var(--pruebas-izquierda); width: var(--pruebas-ancho);
                    font-size: 12pt; line-height: var(--pruebas-renglon); text-indent: var(--pruebas-sangria); }
 
         /* Guia: lo que ya viene impreso en la hoja del Colegio, para comparar posiciones (solo en la hoja de prueba). */
         .guia { position: absolute; color: #9aa0a6; font-size: 10pt; font-weight: bold; white-space: nowrap; }
         .renglon { position: absolute; left: 12mm; right: 12mm; border-bottom: 0.3mm dotted #c0c4c8; }
+        .guia.fecha { font-size: 10pt; }
+        .blanco { position: absolute; top: var(--fecha-base); border-top: 0.3mm solid #9aa0a6; }
 
         @@media print {
             html, body { background: #fff; }
@@ -93,7 +102,7 @@
         @if (Model.Impedimento != null) { <span class="error">@Model.Impedimento</span> }
         else
         {
-            <span class="aviso">En el cuadro de impresión: papel Carta, márgenes «Ninguno», escala 100 % y sin encabezados ni pies. Posiciones provisionales: se ajustan con las medidas reales de la hoja.
+            <span class="aviso">En el cuadro de impresión: papel Carta, márgenes «Ninguno», escala 100 % y sin encabezados ni pies. La fecha ya va con las medidas reales de la hoja; el párrafo y las pruebas siguen en posiciones provisionales.
                 @if (Model.Guia) { <text> La hoja de prueba no queda registrada: imprímela en papel blanco y compárala a contraluz con la hoja del Colegio.</text> }</span>
         }
     </div>
@@ -105,8 +114,11 @@
             @if (Model.Guia)
             {
                 <div class="guia" style="top:12mm; left:40mm; font-size:14pt;">COLEGIO DE PSICÓLOGOS DE HONDURAS</div>
-                <div class="guia" style="top:var(--fecha-arriba); left:calc(var(--dia-izquierda) + 9mm);">de</div>
-                <div class="guia" style="top:var(--fecha-arriba); left:calc(var(--anio-izquierda) - 13mm);">del 20</div>
+                <div class="blanco" style="left:var(--dia-desde); width:calc(var(--dia-hasta) - var(--dia-desde));"></div>
+                <div class="guia fecha" style="left:var(--dia-hasta); width:calc(var(--mes-desde) - var(--dia-hasta));">de</div>
+                <div class="blanco" style="left:var(--mes-desde); width:calc(var(--mes-hasta) - var(--mes-desde));"></div>
+                <div class="guia fecha" style="left:var(--mes-hasta); width:calc(var(--anio-desde) - var(--mes-hasta));">del 20</div>
+                <div class="blanco" style="left:var(--anio-desde); width:calc(var(--anio-hasta) - var(--anio-desde));"></div>
                 <div class="guia" style="top:46mm; left:12mm;">CONSTANCIA DE EXAMEN PSICOLÓGICO PARA SOLICITUD DE LICENCIA DE CONDUCIR</div>
                 @for (var i = 0; i < 4; i++)
                 {
@@ -118,9 +130,9 @@
                 <div class="renglon" style="top:calc(var(--pruebas-arriba) + 2 * var(--pruebas-renglon) - 2mm);"></div>
             }
 
-            <div class="campo" style="top:var(--fecha-arriba); left:var(--dia-izquierda);">@t.Dia</div>
-            <div class="campo" style="top:var(--fecha-arriba); left:var(--mes-izquierda);">@t.Mes</div>
-            <div class="campo" style="top:var(--fecha-arriba); left:var(--anio-izquierda);">@t.Anio</div>
+            <div class="fecha" style="left:var(--dia-desde); width:calc(var(--dia-hasta) - var(--dia-desde));">@t.Dia</div>
+            <div class="fecha" style="left:var(--mes-desde); width:calc(var(--mes-hasta) - var(--mes-desde));">@t.Mes</div>
+            <div class="fecha" style="left:var(--anio-desde); width:calc(var(--anio-hasta) - var(--anio-desde));">@t.Anio</div>
 
             <div class="cuerpo">@t.Cuerpo</div>
 
