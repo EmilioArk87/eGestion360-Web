@@ -24,33 +24,7 @@
         </div>
     </div>
 
-    @if (Model.IsEmpresaAdmin)
-    {
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="mb-4"><i class="fas fa-credit-card me-2"></i>Panel de Administración</h2>
-            </div>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 5rem; height: 5rem;">
-                            <i class="fas fa-credit-card fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-3">Pago de Servicio</h5>
-                        <p class="card-text text-muted mb-4">Registra el pago de suscripción para activar tu empresa</p>
-                        <a href="#" class="btn btn-success w-100">
-                            <i class="fas fa-plus me-2"></i>Agregar Pago
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-    else
-    {
+    @* Todos ven el mismo menú: las tarjetas de módulo dependen solo de los módulos activos de la empresa, no del rol (D22, F8). *@
         <div class="row mb-4">
             <div class="col-12">
                 <h2 class="mb-4"><i class="fas fa-th-large me-2"></i>Menú Principal</h2>
@@ -251,6 +225,35 @@
             }
         </div>
 
+        <!-- Administración de la empresa (administrador de empresa: los permisos de administración son suyos sin rol, D19) -->
+        @if (Model.IsEmpresaAdmin)
+        {
+            <div class="row mt-5">
+                <div class="col-12">
+                    <h3 class="mb-4"><i class="fas fa-building me-2"></i>Administración de la empresa</h3>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Invitaciones -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-envelope fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Invitaciones</h5>
+                            <p class="card-text text-muted mb-4">Invita por correo a las personas de tu empresa y revisa las que enviaste</p>
+                            <a asp-page="/Admin/Invitaciones/Index" class="btn btn-primary w-100">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- Sección de Administración (solo superadmin) -->
         @if (Model.IsAdmin)
         {
@@ -398,7 +401,6 @@
                 </div>
             </div>
         }
-    }
 
     <div class="row mt-5">
         <div class="col-12">
