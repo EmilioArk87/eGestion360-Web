@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using eGestion360Web.Models.Psicologia;
 
@@ -152,6 +153,11 @@ namespace eGestion360Web.Data.Configuracion
                   .HasForeignKey(c => c.IdPersonaProfesional)
                   .OnDelete(DeleteBehavior.Restrict)
                   .IsRequired(false);
+
+            // Cuándo y quién la registró los pone el servidor al emitir y no cambian nunca, tampoco al corregir la fecha de emisión ni al
+            // anular: EF se niega a guardar una constancia con cualquiera de los dos modificados (pedido de Emilio, 2026-11-16).
+            entity.Property(c => c.FechaCreacion).Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+            entity.Property(c => c.CreadoPor).Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Throw);
 
             // El correlativo no se repite en la empresa, tampoco el de una constancia anulada (decisión D13).
             entity.HasIndex(c => new { c.IdEmpresa, c.NumeroConstancia }).IsUnique().HasDatabaseName("UX_constancias_numero");

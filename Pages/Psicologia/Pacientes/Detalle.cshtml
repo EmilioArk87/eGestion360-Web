@@ -188,6 +188,12 @@
                                                             <i class="fas fa-print"></i>
                                                         </button>
                                                     }
+                                                    @if (Model.PuedeCorregirFecha)
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#fecha-@c.Id" role="button" aria-expanded="false" aria-controls="fecha-@c.Id" title="Corregir la fecha de emisión">
+                                                            <i class="fas fa-calendar-alt"></i>
+                                                        </a>
+                                                    }
                                                     @if (Model.PuedeAnular)
                                                     {
                                                         <a class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" href="#anular-@c.Id" role="button" aria-expanded="false" aria-controls="anular-@c.Id" title="Anular">
@@ -197,6 +203,35 @@
                                                 }
                                             </div>
                                         </div>
+                                        @if (!anulada && Model.PuedeCorregirFecha)
+                                        {
+                                            <div class="collapse" id="fecha-@c.Id">
+                                                <form method="post" asp-page-handler="CorregirFechaConstancia" asp-route-id="@Model.Paciente.IdPaciente" class="border rounded p-2 mt-2">
+                                                    <input type="hidden" name="idConstancia" value="@c.Id" />
+                                                    <label class="form-label small mb-1" for="fecha-nueva-@c.Id">Fecha de emisión correcta de @c.Numero</label>
+                                                    <div class="input-group input-group-sm" style="max-width: 22rem;">
+                                                        <input type="date" class="form-control" id="fecha-nueva-@c.Id" name="fecha" required
+                                                               value="@c.Fecha.ToString("yyyy-MM-dd")" min="@c.Rango.Desde.ToString("yyyy-MM-dd")" max="@c.Rango.Hasta.ToString("yyyy-MM-dd")" />
+                                                        <button type="submit" class="btn btn-primary">Corregir fecha</button>
+                                                    </div>
+                                                    <div class="form-text">
+                                                        @if (c.Rango.Vacio)
+                                                        {
+                                                            <text>Hoy no hay una fecha posible para esta constancia.</text>
+                                                        }
+                                                        else
+                                                        {
+                                                            <text>Puede ir @c.Rango.Texto@(c.Rango.InicioBrigada != null ? ", dentro de los días de la brigada" : "").</text>
+                                                        }
+                                                        Es la fecha que sale impresa; el cambio queda en la bitácora con tu usuario.
+                                                    </div>
+                                                    @if (c.Impresiones > 0)
+                                                    {
+                                                        <div class="form-text text-warning-emphasis"><i class="fas fa-exclamation-triangle me-1"></i>Ya se imprimió @c.Impresiones @(c.Impresiones == 1 ? "vez" : "veces"): la hoja impresa conserva la fecha anterior.</div>
+                                                    }
+                                                </form>
+                                            </div>
+                                        }
                                         @if (!anulada && Model.PuedeAnular)
                                         {
                                             <div class="collapse" id="anular-@c.Id">

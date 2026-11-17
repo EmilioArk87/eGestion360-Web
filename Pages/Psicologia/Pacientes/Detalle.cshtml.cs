@@ -20,12 +20,17 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
     {
         private readonly ApplicationDbContext _db;
         private readonly IConstanciaService _constancias;
+        private readonly TimeProvider _tiempo;
 
-        public DetalleModel(ApplicationDbContext db, IConstanciaService constancias)
+        public DetalleModel(ApplicationDbContext db, IConstanciaService constancias, TimeProvider tiempo)
         {
             _db = db;
             _constancias = constancias;
+            _tiempo = tiempo;
         }
+
+        /// <summary>Hoy en Honduras (UTC-6), igual que el servicio de constancias.</summary>
+        private DateOnly Hoy() => DateOnly.FromDateTime(_tiempo.GetUtcNow().UtcDateTime.AddHours(-6));
 
         public Paciente Paciente { get; private set; } = null!;
         public string Nombre { get; private set; } = string.Empty;
@@ -39,8 +44,11 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
         public Dictionary<int, List<PruebaCatalogo>> PruebasPorAtencion { get; private set; } = new();
 
         /// <param name="Imprimible">Su tipo tiene formato de impresión.</param>
+        /// <param name="Rango">Entre qué fechas se puede corregir su fecha de emisión (la misma regla que al emitir).</param>
+        /// <param name="Impresiones">Cuántas veces se imprimió: la hoja impresa conserva la fecha que tenía entonces.</param>
         public sealed record FilaConstancia(int Id, string Numero, DateOnly Fecha, string Tipo, string? Profesional, string Estado,
-            string? Motivo, IReadOnlyList<string> Pruebas, DateOnly? FechaAtencion, string? Resultado, bool Imprimible);
+            string? Motivo, IReadOnlyList<string> Pruebas, DateOnly? FechaAtencion, string? Resultado, bool Imprimible,
+            RangoFechaEmision Rango, int Impresiones);
 
         public List<FilaConstancia> Constancias { get; private set; } = new();
 
@@ -49,6 +57,8 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
         public bool PuedeVerConstancias => this.Puede("psicologia.constancias.ver");
         public bool PuedeEmitir => this.Puede("psicologia.constancias.emitir");
         public bool PuedeAnular => this.Puede("psicologia.constancias.anular");
+        /// <summary>Corregir la fecha de emisión de una constancia ya emitida pide el mismo permiso que anularla.</summary>
+        public bool PuedeCorregirFecha => this.Puede("psicologia.constancias.anular");
         public bool PuedeVerCatalogos => this.Puede("psicologia.catalogos.ver");
         public bool PuedeImprimir => this.Puede("psicologia.documentos.imprimir");
 
@@ -71,6 +81,25 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
 
             var r = await _constancias.AnularAsync(idEmpresa, idConstancia, motivo, Usuario());
             if (r.Ok) TempData["PacienteMensaje"] = $"Constancia {r.Valor!.NumeroConstancia} anulada. Su número no se vuelve a usar.";
+            else TempData["PacienteError"] = r.Errores[0].Mensaje;
+            return RedirectToPage(new { id });
+        }
+
+        [RequierePermiso("psicologia.constancias.anular")]
+        public async Task<IActionResult> OnPostCorregirFechaConstanciaAsync(int id, int idConstancia, DateOnly? fecha)
+        {
+            if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
+
+            var idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
+            var anterior = await _db.Constancias.AsNoTracking()
+                .Where(c => c.IdConstancia == idConstancia && c.IdPaciente == id && c.IdEmpresa == idEmpresa)
+                .Select(c => (DateOnly?)c.FechaEmision)
+                .FirstOrDefaultAsync();
+            if (anterior == null) return NotFound();
+
+            var r = await _constancias.CorregirFechaEmisionAsync(idEmpresa, idConstancia, fecha, Usuario());
+            if (r.Ok)
+                TempData["PacienteMensaje"] = $"Fecha de emisión de la constancia {r.Valor!.NumeroConstancia} corregida: del {anterior:dd/MM/yyyy} al {r.Valor.FechaEmision:dd/MM/yyyy}. Queda en la bitácora.";
             else TempData["PacienteError"] = r.Errores[0].Mensaje;
             return RedirectToPage(new { id });
         }
@@ -117,12 +146,17 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
                     {
                         c.IdConstancia, c.NumeroConstancia, c.FechaEmision, Tipo = c.Tipo.Nombre, c.NombreProfesional, c.Estado, c.MotivoAnulacion,
                         FechaAtencion = c.Atencion != null ? c.Atencion.FechaAtencion : (DateOnly?)null,
+                        InicioBrigada = c.Atencion != null && c.Atencion.Jornada != null ? c.Atencion.Jornada.FechaInicio : (DateOnly?)null,
+                        FinBrigada = c.Atencion != null && c.Atencion.Jornada != null ? c.Atencion.Jornada.FechaFin : (DateOnly?)null,
                         Pruebas = c.Pruebas.OrderBy(p => p.Prueba.Codigo).Select(p => p.Prueba.Codigo).ToList(),
-                        c.Resultado, c.Tipo.Plantilla
+                        c.Resultado, c.Tipo.Plantilla,
+                        Impresiones = _db.ImpresionesPsicologia.Count(i => i.IdConstancia == c.IdConstancia)
                     })
                     .ToListAsync();
+                var hoy = Hoy();
                 Constancias = filas.Select(c => new FilaConstancia(c.IdConstancia, c.NumeroConstancia, c.FechaEmision, c.Tipo, c.NombreProfesional,
-                    c.Estado, c.MotivoAnulacion, c.Pruebas, c.FechaAtencion, c.Resultado, PlantillasConstancia.Buscar(c.Plantilla) != null)).ToList();
+                    c.Estado, c.MotivoAnulacion, c.Pruebas, c.FechaAtencion, c.Resultado, PlantillasConstancia.Buscar(c.Plantilla) != null,
+                    RangoFechaEmision.Calcular(hoy, paciente.FechaApertura, c.FechaAtencion, c.InicioBrigada, c.FinBrigada), c.Impresiones)).ToList();
             }
             return true;
         }

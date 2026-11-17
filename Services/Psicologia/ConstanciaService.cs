@@ -127,10 +127,10 @@ namespace eGestion360Web.Services.Psicologia
                 else if (atencion.Estado == EstadosAtencion.Anulada) errores.Add(new ErrorValidacion("IdAtencion", "La atención está anulada: elige otra."));
             }
 
-            var fecha = input.FechaEmision ?? Hoy();
-            if (fecha > Hoy()) errores.Add(new ErrorValidacion("FechaEmision", "La fecha de emisión no puede ser futura."));
-            else if (fecha < paciente.FechaApertura)
-                errores.Add(new ErrorValidacion("FechaEmision", $"La fecha de emisión no puede ser anterior a la apertura del expediente ({paciente.FechaApertura:dd/MM/yyyy})."));
+            // Sin fecha, la última posible: hoy o, si la evaluación fue en una brigada ya terminada, su último día.
+            var rango = await RangoAsync(idEmpresa, paciente.FechaApertura, atencion, ct);
+            var fecha = input.FechaEmision ?? rango.Hasta;
+            if (rango.Error(fecha) is { } errorFecha) errores.Add(new ErrorValidacion("FechaEmision", errorFecha));
 
             var pruebas = (input.IdsPruebas ?? Array.Empty<int>()).Distinct().ToList();
             if (pruebas.Count == 0)
@@ -236,6 +236,62 @@ namespace eGestion360Web.Services.Psicologia
                     return ResultadoPsicologia<Constancia>.Error(string.Empty, "No se pudo emitir la constancia. Intenta de nuevo.");
                 }
             }
+        }
+
+        /// <summary>Las fechas posibles para la constancia del paciente (y de la evaluación, si sale de una): ver <see cref="RangoFechaEmision"/>.</summary>
+        private async Task<RangoFechaEmision> RangoAsync(int idEmpresa, DateOnly apertura, Atencion? atencion, CancellationToken ct)
+        {
+            DateOnly? inicio = null, fin = null;
+            if (atencion?.IdJornada is { } idJornada)
+            {
+                var jornada = await _db.JornadasPsicologia.AsNoTracking()
+                    .Where(j => j.IdJornada == idJornada && j.IdEmpresa == idEmpresa)
+                    .Select(j => new { j.FechaInicio, j.FechaFin })
+                    .FirstOrDefaultAsync(ct);
+                if (jornada != null) { inicio = jornada.FechaInicio; fin = jornada.FechaFin; }
+            }
+            return RangoFechaEmision.Calcular(Hoy(), apertura, atencion?.FechaAtencion, inicio, fin);
+        }
+
+        public async Task<ResultadoPsicologia<Constancia>> CorregirFechaEmisionAsync(int idEmpresa, int idConstancia, DateOnly? nuevaFecha, string usuario,
+            CancellationToken ct = default)
+        {
+            var constancia = await _db.Constancias.FirstOrDefaultAsync(c => c.IdConstancia == idConstancia && c.IdEmpresa == idEmpresa, ct);
+            if (constancia == null) return ResultadoPsicologia<Constancia>.Error(string.Empty, "La constancia no existe en esta empresa.");
+            if (constancia.Estado == EstadosConstancia.Anulada)
+                return ResultadoPsicologia<Constancia>.Error(string.Empty, $"La constancia {constancia.NumeroConstancia} está anulada: su fecha ya no se corrige.");
+            if (nuevaFecha is not { } fecha) return ResultadoPsicologia<Constancia>.Error("FechaEmision", "Elige la fecha de emisión correcta.");
+            if (fecha == constancia.FechaEmision)
+                return ResultadoPsicologia<Constancia>.Error("FechaEmision", $"La constancia {constancia.NumeroConstancia} ya tiene la fecha {fecha:dd/MM/yyyy}.");
+
+            var apertura = await _db.Pacientes.AsNoTracking()
+                .Where(p => p.IdPaciente == constancia.IdPaciente && p.IdEmpresa == idEmpresa)
+                .Select(p => p.FechaApertura).FirstAsync(ct);
+            var atencion = constancia.IdAtencion is { } idAtencion
+                ? await _db.AtencionesPsicologia.AsNoTracking().FirstOrDefaultAsync(a => a.IdAtencion == idAtencion && a.IdEmpresa == idEmpresa, ct)
+                : null;
+            var rango = await RangoAsync(idEmpresa, apertura, atencion, ct);
+            if (rango.Error(fecha) is { } errorFecha) return ResultadoPsicologia<Constancia>.Error("FechaEmision", errorFecha);
+
+            // El correlativo lleva el año (CODIGO-AAAA-NNNNN): la fecha corregida no puede ser de otro año que su número.
+            if (AnioDelCorrelativo(constancia.NumeroConstancia) is { } anio && anio != fecha.Year)
+                return ResultadoPsicologia<Constancia>.Error("FechaEmision",
+                    $"El número {constancia.NumeroConstancia} es del año {anio}: la fecha corregida tiene que ser de ese mismo año.");
+
+            // Solo cambia la fecha de emisión; la bitácora guarda la anterior, la nueva, quién y cuándo. La fecha y el usuario de creación
+            // no se tocan (EF rechaza guardarlos cambiados: ver ConstanciaConfiguracion).
+            constancia.FechaEmision = fecha;
+            constancia.ModificadoPor = usuario;
+            constancia.FechaModificacion = Ahora();
+            await _db.SaveChangesAsync(ct);
+            return ResultadoPsicologia<Constancia>.Exito(constancia);
+        }
+
+        /// <summary>El año de un número CODIGO-AAAA-NNNNN; nulo si el número es un folio del talonario (sin año).</summary>
+        internal static int? AnioDelCorrelativo(string numero)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(numero, @"-(\d{4})-\d+$");
+            return m.Success ? int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : null;
         }
 
         public async Task<ResultadoPsicologia<Constancia>> AnularAsync(int idEmpresa, int idConstancia, string? motivo, string usuario, CancellationToken ct = default)

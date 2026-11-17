@@ -73,7 +73,20 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
         public sealed record Opcion(int Id, string Texto);
         /// <param name="IdProfesional">El psicólogo de Profesionales que atendió, si lo hay: se propone como firmante.</param>
         /// <param name="Conclusion">Apto o no apto de la evaluación (D17): se propone como resultado de la constancia.</param>
-        public sealed record OpcionAtencion(int Id, string Texto, string? Profesional, IReadOnlyList<int> Pruebas, int? IdProfesional, string? Conclusion);
+        /// <param name="Rango">Entre qué fechas puede ir la constancia que sale de esta evaluación (los días de su brigada, si fue en una).</param>
+        public sealed record OpcionAtencion(int Id, string Texto, string? Profesional, IReadOnlyList<int> Pruebas, int? IdProfesional, string? Conclusion,
+            RangoFechaEmision Rango);
+
+        /// <summary>Entre qué fechas puede ir una constancia que no sale de ninguna evaluación.</summary>
+        public RangoFechaEmision RangoSinEvaluacion { get; private set; } = RangoFechaEmision.Calcular(DateOnly.MinValue, DateOnly.MinValue);
+
+        /// <summary>El rango de la evaluación elegida (o el de ninguna), para el calendario de la fecha de emisión.</summary>
+        public RangoFechaEmision RangoElegido => Atenciones.FirstOrDefault(a => a.Id == Input.IdAtencion)?.Rango ?? RangoSinEvaluacion;
+
+        private static object RangoJson(RangoFechaEmision r) => new { Desde = r.Desde.ToString("yyyy-MM-dd"), Hasta = r.Hasta.ToString("yyyy-MM-dd"), r.Texto };
+
+        /// <summary>El rango de fechas sin evaluación, para el calendario cuando se elige «Ninguna».</summary>
+        public string RangoSinEvaluacionJson => JsonSerializer.Serialize(RangoJson(RangoSinEvaluacion));
 
         /// <param name="Talonario">Usa los folios preimpresos del talonario del Colegio.</param>
         /// <param name="PideResultado">Su formato imprime apto o no apto.</param>
@@ -93,7 +106,7 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
 
         /// <summary>Pruebas, profesional y conclusión de cada atención, para que el formulario los proponga al elegirla.</summary>
         public string AtencionesJson => JsonSerializer.Serialize(Atenciones.ToDictionary(a => a.Id.ToString(),
-            a => new { a.Profesional, a.Pruebas, a.IdProfesional, a.Conclusion }));
+            a => new { a.Profesional, a.Pruebas, a.IdProfesional, a.Conclusion, Rango = RangoJson(a.Rango) }));
 
         private DateOnly Hoy() => DateOnly.FromDateTime(_tiempo.GetUtcNow().UtcDateTime.AddHours(-6));
 
@@ -106,7 +119,8 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
             Input = new FormularioConstancia
             {
                 IdAtencion = atencion?.Id,
-                FechaEmision = Hoy(),
+                // La última fecha posible: hoy o, si la evaluación fue en una brigada que ya terminó, su último día.
+                FechaEmision = (atencion?.Rango ?? RangoSinEvaluacion).Hasta,
                 Pruebas = atencion?.Pruebas.Where(p => Catalogo.Any(c => c.Id == p)).ToList() ?? new(),
                 IdProfesional = atencion?.IdProfesional ?? (Firmantes.Count == 1 ? Firmantes[0].Id : null),
                 NombreProfesional = Firmantes.Count == 0 ? atencion?.Profesional : null,
@@ -152,10 +166,12 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
             var idEmpresa = AuthHelper.GetEmpresaId(HttpContext) ?? 0;
             var paciente = await _db.Pacientes.AsNoTracking()
                 .Where(p => p.IdPaciente == idPaciente && p.IdEmpresa == idEmpresa && !p.Eliminado)
-                .Select(p => new { p.IdPaciente, p.NumeroExpediente, p.Vinculo.Persona.Nombres, p.Vinculo.Persona.Apellidos })
+                .Select(p => new { p.IdPaciente, p.NumeroExpediente, p.FechaApertura, p.Vinculo.Persona.Nombres, p.Vinculo.Persona.Apellidos })
                 .FirstOrDefaultAsync();
             if (paciente == null) return false;
 
+            var hoy = Hoy();
+            RangoSinEvaluacion = RangoFechaEmision.Calcular(hoy, paciente.FechaApertura);
             IdPaciente = paciente.IdPaciente;
             Expediente = paciente.NumeroExpediente;
             Nombre = $"{paciente.Nombres} {paciente.Apellidos}".Trim();
@@ -190,12 +206,14 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
                 .Select(a => new
                 {
                     a.IdAtencion, a.FechaAtencion, Jornada = a.Jornada != null ? a.Jornada.Nombre : null, a.NombreProfesional, a.IdPersonaProfesional,
-                    Pruebas = a.Pruebas.Select(p => p.IdPrueba).ToList(), a.Conclusion
+                    Pruebas = a.Pruebas.Select(p => p.IdPrueba).ToList(), a.Conclusion,
+                    InicioBrigada = a.Jornada != null ? a.Jornada.FechaInicio : (DateOnly?)null,
+                    FinBrigada = a.Jornada != null ? a.Jornada.FechaFin : (DateOnly?)null
                 })
                 .ToListAsync();
             Atenciones = atenciones.Select(a => new OpcionAtencion(a.IdAtencion, $"{a.FechaAtencion:dd/MM/yyyy} · {a.Jornada ?? "Consulta"}",
                 a.NombreProfesional, a.Pruebas, psicologos.FirstOrDefault(p => p.IdPersona == a.IdPersonaProfesional)?.IdProfesional,
-                a.Conclusion)).ToList();
+                a.Conclusion, RangoFechaEmision.Calcular(hoy, paciente.FechaApertura, a.FechaAtencion, a.InicioBrigada, a.FinBrigada))).ToList();
             return true;
         }
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using eGestion360Web.Data;
@@ -76,6 +77,24 @@ namespace eGestion360Web.Tests.Services.Psicologia
         }
 
         private static string Mensajes(IReadOnlyList<ErrorValidacion> errores) => string.Join(" | ", errores.Select(e => $"{e.Campo}: {e.Mensaje}"));
+
+        /// <summary>Le pone fecha de fin a la brigada de la atención (la de prueba es de un solo día, el 15-nov).</summary>
+        private async Task BrigadaHasta(int atencion, DateOnly fin)
+        {
+            using var db = _bd.Crear();
+            var idJornada = await db.AtencionesPsicologia.Where(a => a.IdAtencion == atencion).Select(a => a.IdJornada).SingleAsync();
+            var jornada = await db.JornadasPsicologia.SingleAsync(j => j.IdJornada == idJornada);
+            jornada.FechaFin = fin;
+            await db.SaveChangesAsync();
+        }
+
+        private async Task<ResultadoPsicologia<Constancia>> CorregirFecha(int idConstancia, DateOnly? fecha, int empresa = DatosBase.EmpresaA,
+            TimeProvider? reloj = null)
+        {
+            using var db = Contexto();
+            return await new ConstanciaService(db, reloj ?? _reloj, NullLogger<ConstanciaService>.Instance)
+                .CorregirFechaEmisionAsync(empresa, idConstancia, fecha, "psi.jefa");
+        }
 
         // ── Catálogos ───────────────────────────────────────────────────────
 
@@ -190,7 +209,7 @@ namespace eGestion360Web.Tests.Services.Psicologia
 
             using var leer = _bd.Crear();
             var c = await leer.Constancias.Include(x => x.Pruebas).SingleAsync();
-            Assert.Equal(new DateOnly(2026, 11, 20), c.FechaEmision);            // hoy en Honduras
+            Assert.Equal(new DateOnly(2026, 11, 15), c.FechaEmision);            // sin fecha, el día de la brigada de un día de la evaluación
             Assert.Equal(EstadosConstancia.Emitida, c.Estado);
             Assert.Equal(tipo, c.IdTipoConstancia);
             Assert.Equal(atencion, c.IdAtencion);
@@ -306,6 +325,123 @@ namespace eGestion360Web.Tests.Services.Psicologia
             var bitacora = await leer.BitacoraCambios.Where(b => b.Entidad == "constancias").ToListAsync();
             Assert.Contains(bitacora, b => b.Operacion == "INSERT" && b.IdPersona != null);
             Assert.Contains(bitacora, b => b.Campo == "estado" && b.ValorNuevo == EstadosConstancia.Anulada);
+        }
+
+        // ── Fecha de emisión: dentro de la brigada, corregible y con la fecha de creación intocable (pedido del 2026-11-16) ──
+
+        [Theory]
+        // hoy, apertura, evaluación, inicio y fin de la brigada -> primera y última fecha posibles
+        [InlineData("2026-11-20", "2026-11-15", null, null, null, "2026-11-15", "2026-11-20")]                         // sin evaluación
+        [InlineData("2026-11-20", "2026-11-10", "2026-11-12", null, null, "2026-11-12", "2026-11-20")]                 // consulta sin brigada
+        [InlineData("2026-11-20", "2026-11-15", "2026-11-15", "2026-11-15", null, "2026-11-15", "2026-11-15")]         // brigada de un día
+        [InlineData("2026-11-20", "2026-11-15", "2026-11-15", "2026-11-15", "2026-11-17", "2026-11-15", "2026-11-17")] // brigada de tres días
+        [InlineData("2026-11-20", "2026-11-15", "2026-11-16", "2026-11-15", "2026-11-17", "2026-11-16", "2026-11-17")] // evaluado el segundo día
+        [InlineData("2026-11-16", "2026-11-15", "2026-11-15", "2026-11-15", "2026-11-18", "2026-11-15", "2026-11-16")] // brigada en curso: hasta hoy
+        public void El_rango_de_la_fecha_de_emision_sigue_la_apertura_la_evaluacion_y_la_brigada(string hoy, string apertura, string? evaluacion,
+            string? inicio, string? fin, string desde, string hasta)
+        {
+            static DateOnly? F(string? s) => s == null ? null : DateOnly.ParseExact(s, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var r = RangoFechaEmision.Calcular(F(hoy)!.Value, F(apertura)!.Value, F(evaluacion), F(inicio), F(fin));
+
+            Assert.Equal(F(desde), r.Desde);
+            Assert.Equal(F(hasta), r.Hasta);
+            Assert.Null(r.Error(r.Desde));
+            Assert.Null(r.Error(r.Hasta));
+            Assert.NotNull(r.Error(r.Desde.AddDays(-1)));
+            Assert.NotNull(r.Error(r.Hasta.AddDays(1)));
+        }
+
+        [Fact]
+        public async Task Al_emitir_desde_una_brigada_la_fecha_va_dentro_de_sus_dias()
+        {
+            var (paciente, atencion) = await NuevoPaciente("0501-1998-00412");   // brigada de un solo día: 15-nov
+            var tipo = await NuevoTipo("ARMAS");
+            var prueba = await NuevaPrueba("RAVEN");
+
+            var fuera = await Emitir(paciente, tipo, new[] { prueba }, atencion, fecha: new DateOnly(2026, 11, 16));
+            Assert.Contains("15/11/2026", Assert.Single(fuera.Errores, e => e.Campo == "FechaEmision").Mensaje);
+            var dentro = await Emitir(paciente, tipo, new[] { prueba }, atencion, fecha: new DateOnly(2026, 11, 15));
+            Assert.True(dentro.Ok, Mensajes(dentro.Errores));
+            // Sin la evaluación, la brigada no cuenta: va de la apertura del expediente a hoy.
+            var sinEvaluacion = await Emitir(paciente, tipo, new[] { prueba }, fecha: new DateOnly(2026, 11, 18));
+            Assert.True(sinEvaluacion.Ok, Mensajes(sinEvaluacion.Errores));
+        }
+
+        [Fact]
+        public async Task Corregir_la_fecha_respeta_la_brigada_queda_en_la_bitacora_y_no_toca_la_creacion()
+        {
+            var (paciente, atencion) = await NuevoPaciente("0501-1998-00412");
+            await BrigadaHasta(atencion, new DateOnly(2026, 11, 17));                       // la brigada duró del 15 al 17
+            var emitida = await Emitir(paciente, await NuevoTipo("ARMAS"), new[] { await NuevaPrueba("RAVEN") }, atencion, fecha: new DateOnly(2026, 11, 15));
+            Assert.True(emitida.Ok, Mensajes(emitida.Errores));
+            var id = emitida.Valor!.IdConstancia;
+            DateTime registrada;
+            using (var antes = _bd.Crear()) registrada = (await antes.Constancias.SingleAsync()).FechaCreacion;
+
+            Assert.Contains("del 15/11/2026 al 17/11/2026", Assert.Single((await CorregirFecha(id, new DateOnly(2026, 11, 18))).Errores).Mensaje);
+            Assert.Contains("del 15/11/2026 al 17/11/2026", Assert.Single((await CorregirFecha(id, new DateOnly(2026, 11, 14))).Errores).Mensaje);
+            Assert.Contains("futura", Assert.Single((await CorregirFecha(id, new DateOnly(2026, 11, 21))).Errores).Mensaje);
+            Assert.Contains("ya tiene", Assert.Single((await CorregirFecha(id, new DateOnly(2026, 11, 15))).Errores).Mensaje);
+            Assert.Equal("FechaEmision", Assert.Single((await CorregirFecha(id, null)).Errores).Campo);
+            Assert.False((await CorregirFecha(id, new DateOnly(2026, 11, 17), DatosBase.EmpresaB)).Ok);   // de otra empresa
+
+            var corregida = await CorregirFecha(id, new DateOnly(2026, 11, 17));
+            Assert.True(corregida.Ok, Mensajes(corregida.Errores));
+
+            using var leer = _bd.Crear();
+            var c = await leer.Constancias.SingleAsync();
+            Assert.Equal(new DateOnly(2026, 11, 17), c.FechaEmision);
+            Assert.Equal(registrada, c.FechaCreacion);        // cuándo se registró no cambia
+            Assert.Equal("psi.ana", c.CreadoPor);             // ni quién
+            Assert.Equal("psi.jefa", c.ModificadoPor);
+            Assert.Equal("ARMAS-2026-00001", c.NumeroConstancia);
+            var cambio = Assert.Single(await leer.BitacoraCambios.Where(b => b.Entidad == "constancias" && b.Campo == "fecha_emision").ToListAsync());
+            Assert.Equal("2026-11-15", cambio.ValorAnterior);
+            Assert.Equal("2026-11-17", cambio.ValorNuevo);
+        }
+
+        [Fact]
+        public async Task Una_constancia_anulada_no_se_corrige_y_el_correlativo_no_cambia_de_anio()
+        {
+            var (paciente, _) = await NuevoPaciente("0501-1998-00412");
+            var tipo = await NuevoTipo("ARMAS");
+            var prueba = await NuevaPrueba("RAVEN");
+            var vigente = (await Emitir(paciente, tipo, new[] { prueba }, fecha: new DateOnly(2026, 11, 20))).Valor!;   // ARMAS-2026-00001
+            var anulada = (await Emitir(paciente, tipo, new[] { prueba }, fecha: new DateOnly(2026, 11, 20))).Valor!;
+            using (var db = Contexto())
+                Assert.True((await Constancias(db).AnularAsync(DatosBase.EmpresaA, anulada.IdConstancia, "Se emitió con el tipo equivocado", "psi.ana")).Ok);
+
+            // En enero de 2027 ya se podría elegir una fecha de 2027, pero el número es de 2026.
+            var enero = new RelojFijo(new DateTimeOffset(2027, 1, 5, 18, 0, 0, TimeSpan.Zero));
+            Assert.Contains("2026", Assert.Single((await CorregirFecha(vigente.IdConstancia, new DateOnly(2027, 1, 2), reloj: enero)).Errores).Mensaje);
+            Assert.True((await CorregirFecha(vigente.IdConstancia, new DateOnly(2026, 12, 30), reloj: enero)).Ok);
+            Assert.Contains("anulada", Assert.Single((await CorregirFecha(anulada.IdConstancia, new DateOnly(2026, 11, 19))).Errores).Mensaje);
+        }
+
+        [Fact]
+        public async Task La_fecha_y_el_usuario_de_creacion_no_se_pueden_cambiar_ni_llegan_desde_el_formulario()
+        {
+            var (paciente, _) = await NuevoPaciente("0501-1998-00412");
+            Assert.True((await Emitir(paciente, await NuevoTipo("ARMAS"), new[] { await NuevaPrueba("RAVEN") })).Ok);
+
+            using (var db = Contexto())
+            {
+                var c = await db.Constancias.SingleAsync();
+                c.FechaCreacion = c.FechaCreacion.AddDays(-30);
+                await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync());
+            }
+            using (var db = Contexto())
+            {
+                var c = await db.Constancias.SingleAsync();
+                c.CreadoPor = "otra.persona";
+                await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync());
+            }
+            using (var leer = _bd.Crear())
+                Assert.Equal("psi.ana", (await leer.Constancias.SingleAsync()).CreadoPor);
+
+            // Ni el formulario de Emitir ni lo que recibe el servicio tienen dónde poner cuándo o quién la registró.
+            foreach (var tipo in new[] { typeof(EmitirConstanciaInput), typeof(eGestion360Web.Pages.Psicologia.Constancias.EmitirModel.FormularioConstancia) })
+                Assert.DoesNotContain(tipo.GetProperties(), p => p.Name is "FechaCreacion" or "CreadoPor");
         }
 
         [Fact]

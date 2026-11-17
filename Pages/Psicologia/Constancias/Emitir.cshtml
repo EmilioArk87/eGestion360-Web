@@ -49,8 +49,10 @@
                     </div>
                     <div class="col-md-3">
                         <label asp-for="Input.FechaEmision" class="form-label">Fecha de emisión <span class="text-danger">*</span></label>
-                        <input asp-for="Input.FechaEmision" type="date" class="form-control" />
+                        <input asp-for="Input.FechaEmision" type="date" class="form-control"
+                               min="@Model.RangoElegido.Desde.ToString("yyyy-MM-dd")" max="@Model.RangoElegido.Hasta.ToString("yyyy-MM-dd")" />
                         <span asp-validation-for="Input.FechaEmision" class="text-danger small"></span>
+                        <div class="form-text" id="fecha-rango">Puede ir @Model.RangoElegido.Texto.</div>
                     </div>
                     <div class="col-md-3">
                         @{ var conTalonario = Model.TipoElegido?.Talonario == true; }
@@ -135,7 +137,8 @@
 
                 <div class="alert alert-light border small mt-3 mb-3">
                     <i class="fas fa-info-circle me-1"></i>Una constancia emitida no se edita ni se borra: si tiene un error, se anula desde el expediente y se emite otra con el número siguiente.
-                    La impresión sobre el papel membretado se habilita cuando llegue el formato de cada tipo.
+                    Solo su fecha de emisión se puede corregir después, desde el expediente, dentro de las mismas fechas posibles.
+                    Si la evaluación fue en una brigada, la fecha va dentro de los días de la brigada.
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 border-top pt-3">
@@ -174,9 +177,20 @@
             const select = document.getElementById('Input_IdAtencion');
             const profesional = document.getElementById('Input_NombreProfesional');
             const firmante = document.getElementById('Input_IdProfesional');
+            const fecha = document.getElementById('Input_FechaEmision');
+            const textoRango = document.getElementById('fecha-rango');
+            const sinEvaluacion = @Html.Raw(Model.RangoSinEvaluacionJson);
             if (!select) return;
             select.addEventListener('change', () => {
                 const a = atenciones[select.value];
+                // El calendario solo deja las fechas posibles para esa evaluación; si la elegida queda afuera, se propone la última posible.
+                const r = a ? a.Rango : sinEvaluacion;
+                if (fecha && r) {
+                    fecha.min = r.Desde;
+                    fecha.max = r.Hasta;
+                    if (!fecha.value || fecha.value < r.Desde || fecha.value > r.Hasta) fecha.value = r.Hasta;
+                    if (textoRango) textoRango.textContent = 'Puede ir ' + r.Texto + '.';
+                }
                 document.querySelectorAll('.js-prueba').forEach(c => { c.checked = !!a && a.Pruebas.includes(Number(c.value)); });
                 if (profesional && a && a.Profesional && !profesional.value) profesional.value = a.Profesional;
                 if (firmante && a && a.IdProfesional) firmante.value = String(a.IdProfesional);

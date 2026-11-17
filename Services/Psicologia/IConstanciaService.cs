@@ -6,13 +6,20 @@ namespace eGestion360Web.Services.Psicologia
     /// Constancias de examen psicológico del expediente del paciente: se emiten con su tipo, la prueba o pruebas aplicadas, la fecha y su
     /// número (decisión D13): el folio preimpreso de la hoja del talonario del Colegio si el tipo usa talonario, o un correlativo propio
     /// del tipo, <c>CODIGO-AAAA-NNNNN</c>. Se anulan con motivo. Una constancia no se borra ni se edita: si tiene un error, se anula
-    /// (su hoja queda inutilizada) y se emite otra con el número siguiente.
+    /// (su hoja queda inutilizada) y se emite otra con el número siguiente. Lo único que se corrige es su fecha de emisión.
     /// </summary>
     public interface IConstanciaService
     {
         Task<ResultadoPsicologia<Constancia>> EmitirAsync(EmitirConstanciaInput input, CancellationToken ct = default);
 
         Task<ResultadoPsicologia<Constancia>> AnularAsync(int idEmpresa, int idConstancia, string? motivo, string usuario, CancellationToken ct = default);
+
+        /// <summary>
+        /// Corrige la fecha de emisión (la que sale impresa) de una constancia emitida, dentro de <see cref="RangoFechaEmision"/> y sin
+        /// cambiar el año de su correlativo. Queda en la bitácora; la fecha y el usuario de creación no cambian.
+        /// </summary>
+        Task<ResultadoPsicologia<Constancia>> CorregirFechaEmisionAsync(int idEmpresa, int idConstancia, DateOnly? nuevaFecha, string usuario,
+            CancellationToken ct = default);
 
         /// <summary>
         /// El número que llevaría la próxima constancia de cada tipo activo, por id de tipo (solo para mostrarlo; el definitivo se asigna
@@ -33,7 +40,10 @@ namespace eGestion360Web.Services.Psicologia
         /// <summary>La evaluación de la que sale, si la hay (debe ser del mismo paciente).</summary>
         public int? IdAtencion { get; set; }
 
-        /// <summary>Si no viene, hoy (Honduras).</summary>
+        /// <summary>
+        /// La que sale impresa, dentro de <see cref="RangoFechaEmision"/>. Si no viene, la última posible: hoy (Honduras) o el último día
+        /// de la brigada de la evaluación, si ya terminó.
+        /// </summary>
         public DateOnly? FechaEmision { get; set; }
 
         /// <summary>La prueba o pruebas aplicadas que declara la constancia: al menos una.</summary>
