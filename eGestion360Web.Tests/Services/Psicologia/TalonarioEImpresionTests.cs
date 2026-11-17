@@ -208,12 +208,31 @@ namespace eGestion360Web.Tests.Services.Psicologia
             Assert.Equal("26", apto.Anio);
             Assert.Equal("Por este medio se hace constar que el señor Carlos Andrés Mejía Rivera, con DNI 0501-1998-00412, posee personalidad estable, APTO para conducir.", apto.Cuerpo);
             Assert.Equal("Prueba Psicológica de Manejo (PPM)", apto.Pruebas);
+            // En partes, para imprimir el nombre y el DNI (con su palabra) cada uno entero en un renglón.
+            Assert.Equal("Carlos Andrés Mejía Rivera", apto.Partes.Nombre);
+            Assert.Equal("DNI 0501-1998-00412", apto.Partes.Dni);
+            Assert.Equal(apto.Cuerpo, apto.Partes.Inicio + apto.Partes.Nombre + apto.Partes.Medio + apto.Partes.Dni + apto.Partes.Final);
 
             var noApto = RedaccionDeConstancias.LicenciaConducir(new DateOnly(2027, 1, 5), "Ana Torres", "F", null, ResultadosConstancia.NoApto, pruebas);
             Assert.Equal(("5", "enero", "27"), (noApto.Dia, noApto.Mes, noApto.Anio));
             Assert.StartsWith("Por este medio se hace constar que la señora Ana Torres, con DNI ", noApto.Cuerpo);
             Assert.EndsWith(", no reúne las condiciones psicológicas requeridas, NO APTO para conducir.", noApto.Cuerpo);
             Assert.Equal("el (la) señor(a)", RedaccionDeConstancias.Tratamiento(null));
+        }
+
+        [Fact]
+        public void La_hoja_imprime_el_nombre_y_el_DNI_sin_cortarlos_en_dos_renglones()
+        {
+            var carpeta = new DirectoryInfo(AppContext.BaseDirectory);
+            while (carpeta != null && !File.Exists(Path.Combine(carpeta.FullName, "eGestion360Web.csproj"))) carpeta = carpeta.Parent;
+            Assert.NotNull(carpeta);
+            var vista = File.ReadAllText(Path.Combine(carpeta!.FullName, "Pages", "Psicologia", "Constancias", "Imprimir.cshtml"));
+
+            Assert.Contains("<span class=\"junto\">@t.Partes.Nombre</span>", vista);
+            Assert.Contains("<span class=\"junto\">@t.Partes.Dni</span>", vista);
+            Assert.Matches(@"\.cuerpo \.junto\s*\{\s*white-space:\s*nowrap;", vista);
+            Assert.DoesNotContain("@t.Cuerpo", vista);   // el párrafo entero dejaría que el navegador corte el nombre
+            Assert.Contains("id=\"ajuste-junto\"", vista); // un nombre que no cabe en un renglón entero se achica en vez de salirse
         }
     }
 }

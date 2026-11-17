@@ -61,6 +61,8 @@
         /* El cuerpo ("Por este medio se hace constar ... APTO para conducir."): 15 pt, dos puntos más que la fecha (pedido de Emilio, 2026-11-16). */
         .cuerpo { position: absolute; top: var(--cuerpo-arriba); left: var(--cuerpo-izquierda); width: var(--cuerpo-ancho);
                   font-size: 15pt; line-height: var(--cuerpo-renglon); }
+        /* El nombre y el DNI no se cortan en dos renglones (pedido de Emilio, 2026-11-17). */
+        .cuerpo .junto { white-space: nowrap; }
         .pruebas { position: absolute; top: var(--pruebas-arriba); left: var(--pruebas-izquierda); width: var(--pruebas-ancho);
                    font-size: 12pt; line-height: var(--pruebas-renglon); text-indent: var(--pruebas-sangria); }
 
@@ -134,10 +136,19 @@
             <div class="fecha" style="left:var(--mes-desde); width:calc(var(--mes-hasta) - var(--mes-desde));">@t.Mes</div>
             <div class="fecha" style="left:var(--anio-desde); width:calc(var(--anio-hasta) - var(--anio-desde));">@t.Anio</div>
 
-            <div class="cuerpo">@t.Cuerpo</div>
+            @* El nombre y el DNI van cada uno completo en un renglón (si no caben al final de uno, pasan enteros al siguiente). *@
+            <div class="cuerpo">@t.Partes.Inicio<span class="junto">@t.Partes.Nombre</span>@t.Partes.Medio<span class="junto">@t.Partes.Dni</span>@t.Partes.Final</div>
 
             <div class="pruebas">@t.Pruebas</div>
         </div>
+        <script id="ajuste-junto">
+            // Un nombre (o un DNI) que no cabe ni en un renglón entero se achica lo justo para caber, en vez de salirse de la hoja (mínimo 10 pt).
+            document.querySelectorAll('.cuerpo .junto').forEach(s => {
+                const ancho = s.parentElement.clientWidth;
+                let pt = parseFloat(getComputedStyle(s).fontSize) * 0.75;
+                while (s.getBoundingClientRect().width > ancho && pt > 10) { pt -= 0.5; s.style.fontSize = pt + 'pt'; }
+            });
+        </script>
     }
 
     @if (Model.Imprimir && Model.Impedimento == null)

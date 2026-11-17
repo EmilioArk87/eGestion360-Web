@@ -29,7 +29,26 @@ namespace eGestion360Web.Services.Psicologia
     /// <param name="Dia">Día del mes (va antes de "de" en la hoja).</param>
     /// <param name="Mes">Mes en letras, en minúsculas (va entre "de" y "del").</param>
     /// <param name="Anio">Los dos últimos dígitos del año (la hoja trae impreso "20").</param>
-    public sealed record TextoDeConstancia(string Dia, string Mes, string Anio, string Cuerpo, string Pruebas);
+    /// <param name="Partes">El párrafo en partes, para imprimir el nombre y el DNI sin cortarlos en dos renglones.</param>
+    public sealed record TextoDeConstancia(string Dia, string Mes, string Anio, CuerpoDeConstancia Partes, string Pruebas)
+    {
+        /// <summary>El párrafo completo, como se lee.</summary>
+        public string Cuerpo => Partes.Texto;
+    }
+
+    /// <summary>
+    /// El párrafo de la constancia en partes: <see cref="Nombre"/> y <see cref="Dni"/> se imprimen cada uno completo en un solo renglón
+    /// (pedido de Emilio, 2026-11-17); el resto corre normal.
+    /// </summary>
+    /// <param name="Inicio">"Por este medio se hace constar que el señor ".</param>
+    /// <param name="Nombre">El nombre completo del paciente.</param>
+    /// <param name="Medio">", con ".</param>
+    /// <param name="Dni">"DNI " y el número: la palabra va con el número para que no quede sola al final de un renglón.</param>
+    /// <param name="Final">", " y la conclusión.</param>
+    public sealed record CuerpoDeConstancia(string Inicio, string Nombre, string Medio, string Dni, string Final)
+    {
+        public string Texto => Inicio + Nombre + Medio + Dni + Final;
+    }
 
     public static class RedaccionDeConstancias
     {
@@ -56,7 +75,8 @@ namespace eGestion360Web.Services.Psicologia
             var conclusion = resultado == ResultadosConstancia.NoApto
                 ? "no reúne las condiciones psicológicas requeridas, NO APTO para conducir."
                 : "posee personalidad estable, APTO para conducir.";
-            var cuerpo = $"Por este medio se hace constar que {Tratamiento(sexo)} {nombre.Trim()}, con DNI {dni ?? "________________"}, {conclusion}";
+            var cuerpo = new CuerpoDeConstancia($"Por este medio se hace constar que {Tratamiento(sexo)} ", nombre.Trim(), ", con ",
+                $"DNI {dni ?? "________________"}", $", {conclusion}");
             var aplicadas = string.Join(", ", pruebas.Select(p => $"{p.Nombre} ({p.Codigo})"));
             return new TextoDeConstancia(fecha.Day.ToString(), Meses[fecha.Month - 1], (fecha.Year % 100).ToString("D2"), cuerpo, aplicadas);
         }
