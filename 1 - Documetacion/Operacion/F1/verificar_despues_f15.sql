@@ -9,8 +9,10 @@
 --              * la politica ENCENDIDA con 204 predicados sobre 41 tablas (40 de filtro y 164 de bloqueo), dbo.accesos_empresa con su filtro
 --                y sus 4 bloqueos de fn_tenant_actual, ninguna tabla de saas en la politica y domain_events fuera;
 --              * que esta conexion NO fija contexto de sesion: sin contexto, la politica no deja ver ninguna fila de accesos_empresa;
---              * dbo.Users intacta (8 filas) y lo migrado por el 039: 6 cuentas (2 activas, 4 inactivas, 1 operador), 4 alias,
---                5 membresias (3 activas, 2 suspendidas) y 5 accesos por empresa; las claves copiadas iguales a las de dbo.Users;
+--              * los 8 usuarios de dbo.Users de la salida (Id 1, 2, 4, 5, 6, 7, 8 y 10) y lo migrado por el 039: 6 cuentas (2 activas,
+--                4 inactivas, 1 operador), 4 alias, 5 membresias (3 activas, 2 suspendidas) y al menos 5 accesos por empresa; las claves
+--                copiadas iguales a las de dbo.Users. Los usuarios, cuentas y accesos que se dan de alta despues (desde la cuenta CAPAE,
+--                2026-11-16) no cuentan: sin contexto de sesion la RLS no deja separar los accesos, por eso ahi se pide "al menos 5";
 --            Es el estado EXACTO de este momento: despues de 038 solamente da FALLA en los datos (no hay cuentas) y antes de 038 da FALLA en casi todo.
 -- Salida   : una fila por comprobacion (comprobacion, esperado, obtenido, estado 'OK' o 'FALLA') y una fila final RESUMEN.
 -- Uso      : ejecutar con ejecutar_verificacion.ps1 (ver LEEME_F15.md). No escribe nada; las filas de las tablas de tenant se cuentan
@@ -274,7 +276,7 @@ c AS (
            (SELECT COUNT(*) FROM dbo.accesos_empresa) AS acc_visibles,
            (SELECT COUNT(*) FROM dbo.empresas) AS emp_visibles,
            COALESCE((SELECT SUM(p.rows) FROM sys.partitions p WHERE p.object_id = OBJECT_ID(N'dbo.empresas') AND p.index_id IN (0, 1)), 0) AS emp_reales,
-           (SELECT COUNT(*) FROM dbo.Users) AS users_filas,
+           (SELECT COUNT(*) FROM dbo.Users WHERE Id IN (1, 2, 4, 5, 6, 7, 8, 10)) AS users_filas,
            (SELECT SUM(filas_reales) FROM pt) AS filas_nuevas
 ),
 -- Lo migrado por el script 039 (las reglas por Id de dbo.Users son las del propio script: 1 admin, 2 cliente_demo, 5 nnolasco, 6 Moran23113,
@@ -353,7 +355,7 @@ r (orden, comprobacion, esperado, obtenido) AS (
         (530, N'Directorio empresas sigue legible: devuelve todas sus filas',            CAST(c.emp_reales AS NVARCHAR(400)), CAST(c.emp_visibles AS NVARCHAR(400)))
         ,(520, N'Cobertura: accesos_empresa tiene filas reales y la politica las oculta (prueba concluyente)', N'1',
               CASE WHEN d.accesos_reales > 0 AND c.acc_visibles = 0 THEN N'1' ELSE N'0' END)
-        ,(600, N'dbo.Users intacta (no se modifica ni se borra hasta F1.6)', N'8', CAST(c.users_filas AS NVARCHAR(400)))
+        ,(600, N'dbo.Users: siguen los 8 usuarios de la salida de F1.5 (Id 1, 2, 4, 5, 6, 7, 8 y 10; las altas posteriores no cuentan)', N'8', CAST(c.users_filas AS NVARCHAR(400)))
         ,(610, N'Cuentas migradas desde dbo.Users (6 de 8 usuarios; egaray y egaray.transgar son alias de la cuenta de Emilio)', N'6', CAST(d.n_cuentas AS NVARCHAR(400)))
         ,(620, N'Cuentas activas (Emilio y cliente_demo)', N'2', CAST(d.activas AS NVARCHAR(400)))
         ,(630, N'Cuentas inactivas (D24: nnolasco, Moran23113, transgar.admin y transgar.flota)', N'4', CAST(d.inactivas AS NVARCHAR(400)))
@@ -369,7 +371,8 @@ r (orden, comprobacion, esperado, obtenido) AS (
         ,(720, N'Membresias suspendidas (transgar.admin y transgar.flota)', N'2', CAST(d.mem_suspendidas AS NVARCHAR(400)))
         ,(730, N'Membresias con el tenant, estado y persona de la regla (SIP 102, TRANSGAR 104, DEMO 103)', N'5', CAST(d.mem_regla AS NVARCHAR(400)))
         ,(740, N'Cuentas inactivas con una membresia activa', N'0', CAST(d.inactivas_con_membresia_activa AS NVARCHAR(400)))
-        ,(750, N'Accesos por empresa (filas reales; sys.partitions no pasa por la RLS)', N'5', CAST(d.accesos_reales AS NVARCHAR(400)))
+        ,(750, N'Accesos por empresa: siguen al menos los 5 migrados (filas reales con sys.partitions, que no pasa por la RLS; las altas posteriores suman)', N'5',
+              CASE WHEN d.accesos_reales >= 5 THEN N'5' ELSE CAST(d.accesos_reales AS NVARCHAR(400)) END)
         ,(760, N'Cuentas con MFA confirmado que no tienen sus 10 codigos de recuperacion (usados o no)', N'0', CAST(d.mfa_sin_codigos AS NVARCHAR(400)))
         ,(770, N'Tenants del script 025 intactos (SIP, DEMO, IISE suspendido y TRANSGAR)', N'4', CAST(d.tenants_ok AS NVARCHAR(400)))
     ) v (orden, comprobacion, esperado, obtenido)
