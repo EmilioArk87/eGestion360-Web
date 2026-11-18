@@ -116,3 +116,20 @@ Quien no puede entrar ve ahora una sola página, con el estilo de `app_offline.h
 - Suite 1336 de 1336. Pruebas de arquitectura nuevas: el modo en la configuración es `Aplicar`; ninguna pantalla de Catálogos o Facturación vuelve a comprobar módulo o acción para dejar entrar; la base de personal de flota ya no comprueba el permiso. Las pruebas del filtro cubren el modo por omisión (bloquea), `Registrar` expreso con y sin `AplicarEn`, y la configuración real contra todas las pantallas. Se quitaron tres pruebas que afirmaban la redirección al menú por falta de módulo en las tasas de cambio: esa barrera es ahora `DerechoDeModuloPageFilter`, que tiene las suyas.
 - En una copia de producción en el SQL Server local (037 a 041, RLS encendida), con roles reales y un navegador automatizado (sin confirmar ningún borrado): el **Operador de Flota** de Transgar y el rol «Flota» de Demo abren Vehículos (lista, nuevo, editar), Control de salidas y KPI, y reciben la página «No tienes permiso para esto» (403) al abrir *Eliminar vehículo*, Nuevo usuario y Empresas; `cliente_demo` abre Clientes y recibe 403 en la configuración de tasas. El **administrador de empresa** de Transgar abre Eliminar vehículo y Nuevo usuario y recibe 403 en Empresas. El **operador** abre Empresas y Soporte en plataforma, ve «Flota pide empresa» sin ella, y dentro de SIP (rol «Flota» sin permisos) y de Transgar abre Vehículos, Nuevo vehículo y Eliminar vehículo (D66). Los módulos sin activar responden «No tienes acceso a este módulo». La copia se borra al terminar.
 - Sin cobertura de navegador: el rol «Consulta» de Transgar no tiene cuenta activa; se cubre con la matriz de pruebas contra el evaluador real.
+
+## F1.6e-1 · Roles y permisos edita el catálogo nuevo
+
+**No toca la base** (ni script ni `/alerta-bd`). Corrige un defecto que dejó F1.6d: editar un rol no cambiaba lo que su gente podía hacer (la pantalla guardaba en la tabla vieja y el sistema decide con `rol_permisos`). Detalle en ADR-029, sección F1.6e.
+
+| Qué | Cómo |
+|---|---|
+| Quién | `Pages/Admin/EmpresaRoles/Permisos` (se abre desde «Roles y permisos» → «Permisos») y `Services/Permisos/PermisosDeRol.cs`. |
+| Qué ofrece | La administración de la empresa y los módulos que la empresa tiene activos, con una casilla por permiso del catálogo. Sin permisos de plataforma. |
+| Cuándo rige | En la petición siguiente: el guardado avisa al evaluador. |
+| Marca «Admin de empresa» | Se quitó de las pantallas de roles (D67): no concedía nada. |
+| Reversa | Publicar el paquete anterior. Lo guardado en `rol_permisos` se conserva (lo lee también F1.6d). |
+
+### Cómo se probó
+
+- Suite 1465 de 1465 (12 pruebas nuevas en `PermisosDeRolTests`): lo que se ofrece, lo que se marca, agregar y quitar solo entre lo ofrecido, ignorar plataforma y módulos inactivos, idempotencia, rastro de quién concedió, aislamiento entre tenants, y que el cambio rige enseguida aunque el evaluador tenga memoria.
+- En una copia de producción en el SQL Server local, con navegador automatizado: el administrador de Transgar abre los permisos de «Operador de Flota», ve la matriz sin plataforma, concede *Vehículos · Eliminar* y el usuario `transgar.flota` pasa de 403 a abrir «Eliminar vehículo» en la petición siguiente; al retirarlo vuelve el 403; guardar sin cambios avisa que no había cambios. 13 de 13, sin errores de JavaScript.

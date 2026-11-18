@@ -39,7 +39,7 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
         }
 
         [RequierePermiso("administracion.roles.crear")]
-        public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion, bool esAdmin)
+        public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
@@ -48,7 +48,6 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
                 IdEmpresa   = empresaId,
                 Nombre      = nombre.Trim(),
                 Descripcion = descripcion?.Trim(),
-                EsAdmin     = esAdmin,
                 Activo      = true
             });
             await _context.SaveChangesAsync();
@@ -57,7 +56,7 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
         }
 
         [RequierePermiso("administracion.roles.editar")]
-        public async Task<IActionResult> OnPostEditarAsync(int rolId, int empresaId, string nombre, string? descripcion, bool esAdmin)
+        public async Task<IActionResult> OnPostEditarAsync(int rolId, int empresaId, string nombre, string? descripcion)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
@@ -66,7 +65,6 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
             {
                 rol.Nombre      = nombre.Trim();
                 rol.Descripcion = descripcion?.Trim();
-                rol.EsAdmin     = esAdmin;
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = $"Rol '{nombre}' actualizado correctamente.";
             }

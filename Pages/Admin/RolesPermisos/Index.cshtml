@@ -98,7 +98,6 @@
                         <tr>
                             <th>Rol</th>
                             <th>Descripción</th>
-                            <th class="text-center">Admin empresa</th>
                             <th class="text-center">Usuarios</th>
                             <th class="text-center">Estado</th>
                             <th class="text-end">Acciones</th>
@@ -115,16 +114,6 @@
                                     </div>
                                 </td>
                                 <td class="text-muted small">@(rol.Descripcion ?? "—")</td>
-                                <td class="text-center">
-                                    @if (rol.EsAdmin)
-                                    {
-                                        <span class="badge bg-primary">Sí</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
-                                    }
-                                </td>
                                 <td class="text-center">
                                     <span class="badge bg-secondary">@rol.Usuarios.Count()</span>
                                 </td>
@@ -145,8 +134,7 @@
                                             data-bs-target="#modalEditarRol"
                                             data-rolid="@rol.IdRol"
                                             data-nombre="@rol.Nombre"
-                                            data-descripcion="@rol.Descripcion"
-                                            data-esadmin="@rol.EsAdmin.ToString().ToLower()">
+                                            data-descripcion="@rol.Descripcion">
                                         <i class="fas fa-edit me-1"></i>Editar
                                     </button>
                                     <form method="post" asp-page-handler="Toggle" class="d-inline">
@@ -164,7 +152,7 @@
                         @if (!Model.Roles.Any())
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
+                                <td colspan="5" class="text-center py-5 text-muted">
                                     <i class="fas fa-user-tag fa-2x mb-2 d-block"></i>
                                     No hay roles definidos para esta empresa.<br>
                                     <small>Usa el botón <strong>Nuevo Rol</strong> para crear el primero.</small>
@@ -209,13 +197,6 @@
                             <input type="text" name="descripcion" class="form-control" maxlength="200"
                                    placeholder="Descripción opcional del rol..." />
                         </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="esAdmin" id="chkNuevoEsAdmin" />
-                            <label class="form-check-label" for="chkNuevoEsAdmin">
-                                Administrador de empresa
-                                <small class="text-muted d-block">Acceso completo a todos los módulos contratados</small>
-                            </label>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -248,13 +229,6 @@
                             <label class="form-label fw-semibold">Descripción</label>
                             <input type="text" name="descripcion" id="editDescripcion" class="form-control" maxlength="200" />
                         </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="esAdmin" id="editEsAdmin" />
-                            <label class="form-check-label" for="editEsAdmin">
-                                Administrador de empresa
-                                <small class="text-muted d-block">Acceso completo a todos los módulos contratados</small>
-                            </label>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -275,7 +249,6 @@
             document.getElementById('editRolId').value       = btn.dataset.rolid;
             document.getElementById('editNombre').value      = btn.dataset.nombre;
             document.getElementById('editDescripcion').value = btn.dataset.descripcion ?? '';
-            document.getElementById('editEsAdmin').checked   = btn.dataset.esadmin === 'true';
         });
     </script>
 }

@@ -1,6 +1,6 @@
 # ADR-029 · Permisos por acción (F1.6)
 
-- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): escrita y probada el 2026-11-12, pendiente de publicar
+- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): publicada el 2026-11-12. F1.6d (módulos en modo Aplicar): publicada el 2026-11-16. F1.6e (roles, menú y limpieza): en curso desde el 2026-11-17, parte e1 hecha
 - **Fecha:** 2026-11-03
 - **Decidió:** Emilio (D57 a D65). Diseño y ejecución de Claude
 - **Fase:** F1.6 (entrega F1.6a)
@@ -103,6 +103,31 @@ Con D66 a D69 aceptadas, el filtro **bloquea en todas las pantallas**: `Permisos
 | Reversa | Publicar el paquete anterior. Poner `Modo = Registrar` en la configuración deja pasar a todos en las pantallas de módulos, pero no sirve para las de administración, que vuelven a las seis carpetas. |
 
 Lo que cambia para una cuenta real, según la revisión de los 7 roles: `cliente_demo` (rol «Flota» de Demo) deja de poder eliminar vehículos y anular salidas; el operador, el administrador de empresa y el «Operador de Flota» de Transgar entran a lo mismo que antes. Quien no tiene el permiso recibe la página «No tienes permiso para esto» y quien no tiene el módulo, «No tienes acceso a este módulo».
+
+## F1.6e: la pantalla de roles, el menú y la limpieza (2026-11-17)
+
+F1.6e se entrega en tres partes publicables, cada una con su recorrido y su reversa:
+
+| Parte | Qué | Estado |
+|---|---|---|
+| e1 | La pantalla de permisos del rol edita el catálogo nuevo y avisa al evaluador | hecha |
+| e2 | El menú, las tarjetas de módulo y los botones preguntan lo mismo que las pantallas (`Puede`) | pendiente |
+| e3 | Se retiran `IsAdmin(`, `AdminOnlyPageFilter`, los permisos copiados a la sesión y la marca `es_admin` | pendiente |
+
+### e1: editar un rol no cambiaba nada
+
+**El defecto.** Desde F1.6d el sistema decide con `rol_permisos` (el evaluador), pero las pantallas «Roles y permisos» seguían guardando las cuatro casillas viejas en `empresa_rol_permisos`, que ya no decide nada, y nadie llamaba a `Invalidar` del evaluador. Quien editaba un rol veía «Permisos guardados» y el rol seguía igual. No se notó antes porque en producción no se había editado ningún rol desde que Flota empezó a aplicar.
+
+**La corrección.**
+
+| Pieza | Cómo queda |
+|---|---|
+| `Services/Permisos/PermisosDeRol.cs` | `ObtenerAsync` arma la matriz y `GuardarAsync` deja al rol con exactamente lo marcado **entre lo que la pantalla ofrece**. Ofrece la administración de la empresa y los permisos de los módulos que la empresa tiene activos; nunca los de plataforma (un rol de empresa no los puede tener, `CK_rol_permisos_ambito`). Un código que no se ofrece se ignora; lo que el rol ya tenga de un módulo que no se ofrece se conserva. Tras guardar llama a `IEvaluadorDePermisos.Invalidar(tenant)`, así que el cambio rige en la petición siguiente y no a los 30 s. |
+| Pantalla `Admin/EmpresaRoles/Permisos` | Una tabla por módulo (y una para la administración): una fila por pantalla y una casilla por acción del catálogo (ver, crear, editar, eliminar y las propias: anular, aprobar, aplicar…). Cada casilla lleva su descripción. Quien trabaja dentro de una empresa solo abre los roles de esa empresa. |
+| `empresa_rol_permisos` | **Ya no se escribe.** Solo la lee `CargadorDePermisos` (la copia en la sesión), que se retira en e3, y la tabla se borra en F1.10. Si hubiera que volver a un paquete de F1.6c o anterior después de editar roles, esos paquetes verían los permisos que tenía el rol antes de e1; el de F1.6d en adelante lee `rol_permisos`. |
+| Marca `es_admin` del rol (D67) | La marca no concede nada: se quitó de las dos pantallas de roles (formulario y columna) y dejó de escribirse; la columna sigue en la base hasta F1.10. El administrador de una empresa se define en su cuenta (`empresa_admin`). |
+
+No hay script ni cambios en la base.
 
 ## Alternativas consideradas
 

@@ -32,7 +32,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
         }
 
         [RequierePermiso("administracion.roles.crear")]
-        public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion, bool esAdmin)
+        public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
@@ -43,7 +43,6 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
                 IdEmpresa   = empresaId,
                 Nombre      = nombre.Trim(),
                 Descripcion = descripcion?.Trim(),
-                EsAdmin     = esAdmin,
                 Activo      = true
             });
             await _context.SaveChangesAsync();
