@@ -32,8 +32,8 @@
         </div>
 
         <div class="row g-4">
-            <!-- Gestión de Usuarios (solo superadmin) -->
-            @if (Model.IsAdmin)
+            <!-- Gestión de Usuarios (solo quien tiene el permiso de plataforma) -->
+            @if (Model.Puede("plataforma.usuarios.ver"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -53,7 +53,7 @@
             }
 
             <!-- Módulos dinámicos según contrato -->
-            @if (Model.TieneModulo("flota"))
+            @if (Model.MostrarModulo("flota"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -72,7 +72,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("catalogos"))
+            @if (Model.MostrarModulo("catalogos"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -91,7 +91,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("facturacion"))
+            @if (Model.MostrarModulo("facturacion"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -110,7 +110,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("psicologia"))
+            @if (Model.MostrarModulo("psicologia"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -129,7 +129,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("bancos"))
+            @if (Model.MostrarModulo("bancos"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -148,7 +148,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("contabilidad"))
+            @if (Model.MostrarModulo("contabilidad"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -167,7 +167,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("inventario"))
+            @if (Model.MostrarModulo("inventario"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -186,7 +186,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("ventas"))
+            @if (Model.MostrarModulo("ventas"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -205,7 +205,7 @@
                 </div>
             }
 
-            @if (Model.TieneModulo("reportes"))
+            @if (Model.MostrarModulo("reportes"))
             {
                 <div class="col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 menu-card">
@@ -225,8 +225,8 @@
             }
         </div>
 
-        <!-- Administración de la empresa (administrador de empresa: los permisos de administración son suyos sin rol, D19) -->
-        @if (Model.IsEmpresaAdmin)
+        <!-- Administración de la empresa: el administrador de empresa tiene los permisos de administración sin rol (D19); un rol puede recibirlos -->
+        @if (Model.PuedeAdministrarLaEmpresa)
         {
             <div class="row mt-5">
                 <div class="col-12">
@@ -236,7 +236,7 @@
 
             <div class="row g-4">
                 <!-- Invitaciones -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/Invitaciones/Index">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -251,11 +251,28 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Roles y Permisos -->
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/RolesPermisos/Index">
+                    <div class="card h-100 shadow-sm border-0 menu-card">
+                        <div class="card-body text-center p-4">
+                            <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 5rem; height: 5rem;">
+                                <i class="fas fa-user-tag fa-2x"></i>
+                            </div>
+                            <h5 class="card-title fw-bold mb-3">Roles y Permisos</h5>
+                            <p class="card-text text-muted mb-4">Crea, edita y gestiona roles por empresa</p>
+                            <a asp-page="/Admin/RolesPermisos/Index" class="btn btn-warning w-100 text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Gestionar
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         }
 
-        <!-- Sección de Administración (solo superadmin) -->
-        @if (Model.IsAdmin)
+        <!-- Administración del sistema: solo quien tiene permisos de plataforma (el personal de la plataforma) -->
+        @if (Model.PuedeAdministrarElSistema)
         {
             <div class="row mt-5">
                 <div class="col-12">
@@ -265,7 +282,7 @@
 
             <div class="row g-4">
                 <!-- Empresas -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Empresas/Index">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -282,7 +299,7 @@
                 </div>
 
                 <!-- Soporte por tenant -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/Soporte/Index">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -299,7 +316,7 @@
                 </div>
 
                 <!-- Personas del sistema -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/Personas/Index">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -315,25 +332,8 @@
                     </div>
                 </div>
 
-                <!-- Roles y Permisos -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm border-0 menu-card">
-                        <div class="card-body text-center p-4">
-                            <div class="menu-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                                 style="width: 5rem; height: 5rem;">
-                                <i class="fas fa-user-tag fa-2x"></i>
-                            </div>
-                            <h5 class="card-title fw-bold mb-3">Roles y Permisos</h5>
-                            <p class="card-text text-muted mb-4">Crea, edita y gestiona roles por empresa</p>
-                            <a asp-page="/Admin/RolesPermisos/Index" class="btn btn-warning w-100 text-white">
-                                <i class="fas fa-arrow-right me-2"></i>Gestionar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Módulos del sistema -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/Modulos/Index">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -350,7 +350,7 @@
                 </div>
 
                 <!-- Outbox / Bus de eventos -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/Outbox/Index">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -367,7 +367,7 @@
                 </div>
 
                 <!-- Email Corporativo -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Admin/EmailConfig">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -384,7 +384,7 @@
                 </div>
 
                 <!-- Gestión de Usuarios -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/UserManagement">
                     <div class="card h-100 shadow-sm border-0 menu-card">
                         <div class="card-body text-center p-4">
                             <div class="menu-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"

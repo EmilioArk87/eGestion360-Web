@@ -1,38 +1,33 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
-using eGestion360Web.Pages.Admin.Invitaciones;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Routing;
+using eGestion360Web.Pages;
 using eGestion360Web.Services.Permisos;
+using eGestion360Web.Tests.Infra;
 
 namespace eGestion360Web.Tests.Paginas
 {
     /// <summary>
-    /// El menú principal (<c>Pages/MainMenu.cshtml</c>). Hasta el ensayo general de F8 (2026-11-16) tenía una rama aparte para el
-    /// administrador de empresa que solo mostraba la tarjeta provisional «Pago de Servicio» y escondía las tarjetas de los módulos: el
-    /// administrador de CAPAE entraba a un menú vacío aunque Psicología le abría escribiendo la dirección (hallazgo D22). Estas pruebas leen la
-    /// vista y exigen que las tarjetas de módulo dependan solo del módulo y que el administrador de empresa tenga su sección de administración.
+    /// El menú principal (<c>Pages/MainMenu.cshtml</c>). Hasta el ensayo general de F8 (2026-11-16) tenía una rama aparte para el administrador
+    /// de empresa que escondía las tarjetas de los módulos (hallazgo D22). Desde F1.6e el menú ya no decide por el rol de nadie: cada tarjeta
+    /// pregunta lo que pregunta la pantalla a la que lleva (<c>Puede</c>) y las de módulo, además, que el módulo esté activo. Estas pruebas leen
+    /// la vista y ejercitan el modelo.
     /// </summary>
     public class MenuPrincipalTests
     {
-        private static readonly Regex CondicionDeRol = new(
-            @"@if\s*\(\s*Model\.(?<rol>IsAdmin|IsEmpresaAdmin)\s*\)", RegexOptions.CultureInvariant);
-
-        /// <summary>Una rama por rol: <c>Inicio</c>/<c>Fin</c> son sus llaves; <c>FinElse</c>, la llave que cierra su <c>else</c> si lo tiene.</summary>
-        private sealed record BloqueDeRol(string Rol, int Inicio, int Fin, int? FinElse)
-        {
-            public bool TieneElse => FinElse.HasValue;
-
-            /// <summary>Lo que depende del rol: el cuerpo y, si lo hay, el <c>else</c> (lo que el rol NO ve).</summary>
-            public bool Contiene(int posicion) => posicion > Inicio && posicion < (FinElse ?? Fin);
-        }
+        private static readonly string[] Modulos = { "flota", "catalogos", "facturacion", "psicologia", "bancos", "contabilidad", "inventario", "ventas", "reportes" };
 
         [Fact]
-        public void Ninguna_rama_por_rol_reemplaza_al_menu_de_modulos()
+        public void El_menu_ya_no_decide_por_el_rol()
         {
-            var conElse = Bloques(Vista()).Where(b => b.TieneElse).Select(b => b.Rol).ToList();
+            var vista = Vista();
 
-            Assert.True(conElse.Count == 0,
-                "Una rama @if (Model.<rol>) con else le cambia el menú entero a ese rol; las tarjetas de módulo deben verse para todos: "
-                + string.Join(", ", conElse));
+            Assert.DoesNotMatch(new Regex(@"Model\.(IsAdmin|IsEmpresaAdmin)\b"), vista);
+            Assert.Null(typeof(MainMenuModel).GetProperty("IsAdmin"));
+            Assert.Null(typeof(MainMenuModel).GetProperty("IsEmpresaAdmin"));
         }
 
         [Theory]
@@ -40,34 +35,52 @@ namespace eGestion360Web.Tests.Paginas
         [InlineData("catalogos")]
         [InlineData("facturacion")]
         [InlineData("psicologia")]
-        public void La_tarjeta_de_cada_modulo_solo_depende_del_modulo(string modulo)
+        public void La_tarjeta_de_cada_modulo_pregunta_por_el_modulo_y_por_los_permisos(string modulo)
         {
-            var vista = Vista();
-            var marca = $"Model.TieneModulo(\"{modulo}\")";
-            var posicion = vista.IndexOf(marca, StringComparison.Ordinal);
-
-            Assert.True(posicion >= 0, $"El menú no tiene la tarjeta del módulo {modulo} ({marca}).");
-            var dentro = Bloques(vista).Where(b => b.Contiene(posicion)).Select(b => b.Rol).ToList();
-            Assert.True(dentro.Count == 0,
-                $"La tarjeta de {modulo} está dentro de una rama por rol ({string.Join(", ", dentro)}): un rol no la vería aunque su empresa tenga el módulo.");
+            Assert.Contains($"@if (Model.MostrarModulo(\"{modulo}\"))", Vista(), StringComparison.Ordinal);
         }
 
         [Fact]
-        public void El_administrador_de_empresa_tiene_la_tarjeta_de_invitaciones_sin_enlaces_vacios()
+        public void Todos_los_modulos_del_menu_pasan_por_la_misma_pregunta()
         {
             var vista = Vista();
-            var deEmpresa = Bloques(vista).Where(b => b.Rol == "IsEmpresaAdmin")
-                                          .Select(b => vista[b.Inicio..b.Fin]).ToList();
 
-            Assert.Contains(deEmpresa, cuerpo => cuerpo.Contains("asp-page=\"/Admin/Invitaciones/Index\"", StringComparison.Ordinal));
-            Assert.DoesNotContain(deEmpresa, cuerpo => cuerpo.Contains("href=\"#\"", StringComparison.Ordinal));
+            foreach (var modulo in Modulos)
+                Assert.Contains($"Model.MostrarModulo(\"{modulo}\")", vista, StringComparison.Ordinal);
+            Assert.DoesNotContain("Model.TieneModulo(", vista, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void Cada_tarjeta_de_administracion_lleva_la_pantalla_que_decide_si_se_ve()
+        {
+            var vista = Vista();
+
+            foreach (var pantalla in new[]
+                     {
+                         "/Admin/Invitaciones/Index", "/Admin/RolesPermisos/Index", "/Empresas/Index", "/Admin/Soporte/Index", "/Admin/Personas/Index",
+                         "/Admin/Modulos/Index", "/Admin/Outbox/Index", "/Admin/EmailConfig", "/UserManagement",
+                     })
+                Assert.Contains($"eg-si-puede-abrir=\"{pantalla}\"", vista, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void La_administracion_de_la_empresa_tiene_la_tarjeta_de_invitaciones_sin_enlaces_vacios()
+        {
+            var vista = Vista();
+            var inicio = vista.IndexOf("@if (Model.PuedeAdministrarLaEmpresa)", StringComparison.Ordinal);
+
+            Assert.True(inicio >= 0, "El menú no tiene la sección de administración de la empresa.");
+            var fin = vista.IndexOf("@if (Model.PuedeAdministrarElSistema)", inicio, StringComparison.Ordinal);
+            var seccion = vista[inicio..fin];
+            Assert.Contains("asp-page=\"/Admin/Invitaciones/Index\"", seccion, StringComparison.Ordinal);
+            Assert.DoesNotContain("href=\"#\"", seccion, StringComparison.Ordinal);
         }
 
         [Fact]
         public void Las_invitaciones_las_abre_cualquier_administrador_de_empresa_sin_rol()
         {
-            // La tarjeta se muestra a todo administrador de empresa; la pantalla tiene que dejarlo entrar sin depender de un rol ni de un módulo.
-            var atributo = typeof(IndexModel).GetCustomAttribute<RequierePermisoAttribute>();
+            // La tarjeta se muestra a quien tiene el permiso; el administrador de empresa lo recibe sin rol y la pantalla no puede depender de un rol ni de un módulo.
+            var atributo = typeof(eGestion360Web.Pages.Admin.Invitaciones.IndexModel).GetCustomAttribute<RequierePermisoAttribute>();
 
             Assert.NotNull(atributo);
             var permiso = CatalogoDePermisos.Buscar(atributo!.Codigo);
@@ -75,35 +88,75 @@ namespace eGestion360Web.Tests.Paginas
             Assert.Equal(AmbitoDePermiso.Empresa, permiso!.Ambito);
         }
 
-        /// <summary>Cada <c>@if (Model.IsAdmin)</c> o <c>@if (Model.IsEmpresaAdmin)</c> con el tramo entre sus llaves y el de su <c>else</c>, si lo tiene.</summary>
-        private static List<BloqueDeRol> Bloques(string vista)
+        // ── El modelo ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+        private sealed class PermisosFalsos : IPermisosDeLaPeticion
         {
-            var bloques = new List<BloqueDeRol>();
-            foreach (Match m in CondicionDeRol.Matches(vista))
-            {
-                var (abre, cierra) = Llaves(vista, m.Index + m.Length, m.Value);
-                int? finElse = null;
-                var siguiente = Regex.Match(vista[(cierra + 1)..], @"^\s*else\b");
-                if (siguiente.Success)
-                    finElse = Llaves(vista, cierra + 1 + siguiente.Length, m.Value + " else").Cierra;
-                bloques.Add(new BloqueDeRol(m.Groups["rol"].Value, abre, cierra, finElse));
-            }
-            return bloques;
+            private readonly PermisosEfectivos _permisos;
+            public PermisosFalsos(params string[] codigos) => _permisos = new PermisosEfectivos(new HashSet<string>(codigos, StringComparer.Ordinal));
+            public Task<PermisosEfectivos> ObtenerAsync() => Task.FromResult(_permisos);
         }
 
-        /// <summary>La primera llave que abre desde <paramref name="desde"/> y la que la cierra, contando las de adentro.</summary>
-        private static (int Abre, int Cierra) Llaves(string vista, int desde, string donde)
+        private static async Task<MainMenuModel> Abrir(string[] permisos, params string[] modulosActivos)
         {
-            var abre = vista.IndexOf('{', desde);
-            Assert.True(abre >= 0, "Rama sin llave de apertura en " + donde);
-            var nivel = 0;
-            for (var i = abre; i < vista.Length; i++)
+            var http = SesionFalsa.Contexto("empresa_user", "1");
+            http.Session.SetString("Modulos", System.Text.Json.JsonSerializer.Serialize(modulosActivos));
+            var modelo = new MainMenuModel(new PermisosFalsos(permisos))
             {
-                if (vista[i] == '{') nivel++;
-                else if (vista[i] == '}' && --nivel == 0) return (abre, i);
-            }
-            Assert.Fail("Rama sin llave de cierre en " + donde);
-            return default;
+                PageContext = new PageContext(new ActionContext(http, new RouteData(), new Microsoft.AspNetCore.Mvc.RazorPages.CompiledPageActionDescriptor())),
+            };
+            Assert.IsType<PageResult>(await modelo.OnGetAsync());
+            return modelo;
+        }
+
+        [Fact]
+        public async Task Un_modulo_activo_se_muestra_a_quien_puede_hacer_algo_en_el_y_se_oculta_a_quien_no()
+        {
+            var conPermiso = await Abrir(new[] { "flota.vehiculos.ver" }, "flota", "catalogos");
+
+            Assert.True(conPermiso.MostrarModulo("flota"));
+            Assert.False(conPermiso.MostrarModulo("catalogos"));   // el módulo está activo, pero su rol no hace nada en él
+        }
+
+        [Fact]
+        public async Task Un_modulo_inactivo_no_se_muestra_aunque_la_persona_tenga_permisos_de_el()
+        {
+            var modelo = await Abrir(new[] { "facturacion.factura.ver" }, "flota");
+
+            Assert.False(modelo.MostrarModulo("facturacion"));
+        }
+
+        [Fact]
+        public async Task Un_modulo_sin_permisos_en_el_catalogo_se_muestra_por_estar_activo()
+        {
+            // Bancos, contabilidad… todavía no tienen pantallas ni permisos: su tarjeta («Próximamente») depende solo del módulo.
+            var modelo = await Abrir(Array.Empty<string>(), "bancos");
+
+            Assert.True(modelo.MostrarModulo("bancos"));
+        }
+
+        [Fact]
+        public async Task Los_encabezados_de_administracion_salen_solo_a_quien_tiene_permisos_de_ese_ambito()
+        {
+            var deEmpresa = await Abrir(new[] { "administracion.roles.ver" });
+            var deSistema = await Abrir(new[] { "plataforma.soporte.ver" });
+            var ninguno = await Abrir(new[] { "flota.vehiculos.ver" }, "flota");
+
+            Assert.True(deEmpresa.PuedeAdministrarLaEmpresa);
+            Assert.False(deEmpresa.PuedeAdministrarElSistema);
+            Assert.True(deSistema.PuedeAdministrarElSistema);
+            Assert.False(deSistema.PuedeAdministrarLaEmpresa);
+            Assert.False(ninguno.PuedeAdministrarLaEmpresa);
+            Assert.False(ninguno.PuedeAdministrarElSistema);
+        }
+
+        [Fact]
+        public async Task El_modelo_responde_la_misma_pregunta_que_el_filtro_de_permisos()
+        {
+            var modelo = await Abrir(new[] { "plataforma.usuarios.ver" });
+
+            Assert.True(modelo.Puede("plataforma.usuarios.ver"));
+            Assert.False(modelo.Puede("plataforma.empresas.ver"));
         }
 
         private static string Vista() => File.ReadAllText(Path.Combine(RaizDelRepositorio(), "Pages", "MainMenu.cshtml"));

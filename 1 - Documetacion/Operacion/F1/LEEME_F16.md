@@ -133,3 +133,22 @@ Quien no puede entrar ve ahora una sola página, con el estilo de `app_offline.h
 
 - Suite 1465 de 1465 (12 pruebas nuevas en `PermisosDeRolTests`): lo que se ofrece, lo que se marca, agregar y quitar solo entre lo ofrecido, ignorar plataforma y módulos inactivos, idempotencia, rastro de quién concedió, aislamiento entre tenants, y que el cambio rige enseguida aunque el evaluador tenga memoria.
 - En una copia de producción en el SQL Server local, con navegador automatizado: el administrador de Transgar abre los permisos de «Operador de Flota», ve la matriz sin plataforma, concede *Vehículos · Eliminar* y el usuario `transgar.flota` pasa de 403 a abrir «Eliminar vehículo» en la petición siguiente; al retirarlo vuelve el 403; guardar sin cambios avisa que no había cambios. 13 de 13, sin errores de JavaScript.
+
+## F1.6e-2 · Menú, tarjetas y botones preguntan lo que pregunta cada pantalla
+
+**No toca la base** (ni script ni `/alerta-bd`). El menú principal, la barra superior, los centros de navegación y los botones de las pantallas muestran solo lo que la persona puede abrir (ADR-029, sección F1.6e). Antes decidían por el rol o por las casillas viejas y mostraban botones que terminaban en «Sin permiso».
+
+| Qué | Cómo |
+|---|---|
+| Botones y enlaces | Los oculta solos `OcultarSinPermisoTagHelper`: lee el permiso de la pantalla (o del handler) a la que lleva cada `asp-page`. No hay que tocar las vistas: un botón nuevo se esconde sin escribir nada. |
+| Tarjetas | `eg-si-puede-abrir="/Ruta/De/La/Pantalla"` en el contenedor; con varias pantallas separadas por «;» se muestra si se puede abrir alguna. |
+| Banderas en los modelos | `this.Puede("modulo.recurso.accion")` (la misma pregunta). Si la pantalla es un centro de navegación (`[PaginaSinPermiso]`) se piden antes con `await _permisos.ObtenerAsync()`. |
+| Menú principal | «Administración de la empresa» (invitaciones, roles) y «Administración del Sistema» (plataforma) según el catálogo. La tarjeta de un módulo pide que el módulo esté activo **y** que la persona pueda hacer algo en él. |
+| Se quitó | La tarjeta «Referencias» del centro de Flota (llevaba a una pantalla que ya no existe). |
+| Reversa | Publicar el paquete anterior. |
+
+### Cómo se probó
+
+- Suite 1509 de 1509. Pruebas nuevas: resolución de rutas relativas y de handlers, el decisor y los tag helpers (se ocultan, se muestran, modo Registrar, verbo por etiqueta y `method`, tarjeta de subcentro), los permisos de la petición (una sola evaluación, sin sesión, un error no tumba la vista) y el menú principal (módulos, encabezados, misma pregunta que el filtro). Una prueba de arquitectura exige que **toda tarjeta de un centro de navegación decida si se muestra**, que cada pantalla nombrada en `eg-si-puede-abrir` exista y que no vuelvan las banderas por rol ni `AuthHelper.PuedeX` en las vistas.
+- En una copia de producción en el SQL Server local, con navegador automatizado y roles reales (26 de 26, sin errores de JavaScript): el **Operador de Flota** ve su menú sin administración, los botones «Nuevo» y «Editar» y **no** el de «Eliminar»; el **administrador de empresa** ve Invitaciones y Roles y Permisos y el botón «Eliminar»; `cliente_demo` ve Flota y Catálogos y no el botón «Eliminar»; el **operador** ve las siete tarjetas del sistema y todo lo que el menú ofrece abre (HTTP 200). Al quitarle al rol los permisos de gastos, la tarjeta «Gastos» desaparece del centro de Flota en la petición siguiente, y vuelve al restaurarlos.
+- Sin cobertura de navegador: el rol «Consulta» de Transgar (no tiene cuenta activa; lo cubre el decisor con los permisos del evaluador).

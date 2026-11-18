@@ -29,7 +29,8 @@ namespace eGestion360Web.Pages
         // Datos del usuario en sesión
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public bool IsAdmin { get; set; }
+        /// <summary>Quien puede administrar los usuarios del sistema (permiso de plataforma): ve la lista y el restablecimiento de claves.</summary>
+        public bool PuedeAdministrar { get; set; }
 
         // Lista de usuarios (solo admin)
         public List<User> Users { get; set; } = new();
@@ -57,7 +58,7 @@ namespace eGestion360Web.Pages
 
             CargarSesion();
 
-            if (IsAdmin)
+            if (PuedeAdministrar)
                 await CargarUsuarios();
 
             return Page();
@@ -115,7 +116,7 @@ namespace eGestion360Web.Pages
         {
             Username = HttpContext.Session.GetString("Username") ?? "Usuario";
             Email = HttpContext.Session.GetString("Email") ?? "";
-            IsAdmin = AuthHelper.IsAdmin(HttpContext);
+            PuedeAdministrar = this.Puede("plataforma.usuarios.ver");
         }
 
         private async Task CargarUsuarios()

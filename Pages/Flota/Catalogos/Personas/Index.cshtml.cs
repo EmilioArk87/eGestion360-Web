@@ -34,8 +34,8 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         /// <summary>Personas con el nombre por revisar (sin importar los filtros), para el aviso de arriba.</summary>
         public int NombresPorRevisar { get; private set; }
 
-        public bool PuedeCrear => AuthHelper.PuedeCrear(HttpContext, "flota");
-        public bool PuedeEditar => AuthHelper.PuedeEditar(HttpContext, "flota");
+        public bool PuedeCrear => this.Puede("flota.personas.crear");
+        public bool PuedeEditar => this.Puede("flota.personas.editar");
 
         public async Task<IActionResult> OnGetAsync(CancellationToken ct)
         {

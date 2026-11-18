@@ -66,7 +66,7 @@
         </div>
     </div>
 
-    @if (Model.IsAdmin)
+    @if (Model.PuedeAdministrar)
     {
         <!-- Panel de administración de usuarios -->
         <div class="card border-0 shadow-sm mb-3">
@@ -206,7 +206,7 @@
 
 </div>
 
-@if (Model.IsAdmin)
+@if (Model.PuedeAdministrar)
 {
     <!-- Modal Reset Contraseña -->
     <div class="modal fade" id="modalReset" tabindex="-1" aria-labelledby="modalResetLabel" aria-hidden="true">

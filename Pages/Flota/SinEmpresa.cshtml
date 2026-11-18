@@ -20,7 +20,7 @@
         </p>
         <p class="mb-0">
             Para trabajar con la flota entra con un usuario de la empresa.
-            @if (Model.IsAdmin)
+            @if (Model.PuedeAdministrarUsuarios)
             {
                 <text>Desde <strong>Gestión de Usuarios</strong> puedes crear o revisar los usuarios de cada empresa.</text>
             }

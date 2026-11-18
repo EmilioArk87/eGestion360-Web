@@ -92,6 +92,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IResolvedorDeTenant, ResolvedorDeTenantEf>();
 builder.Services.AddScoped<IDerechosDeUso, DerechosDeUso>();   // F1.7: derechos de uso y estado del tenant (caché de 30 s)
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IEvaluadorDePermisos, eGestion360Web.Services.Permisos.EvaluadorDePermisos>();   // F1.6a: permisos efectivos (caché de 30 s); nada lo llama hasta F1.6b
+builder.Services.AddSingleton<eGestion360Web.Services.Permisos.IRequisitosDePaginas, eGestion360Web.Services.Permisos.RequisitosDePaginas>();   // F1.6e-2: qué exige cada pantalla, para ocultar lo que no se puede abrir
+builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeLaPeticion, eGestion360Web.Services.Permisos.PermisosDeLaPeticion>();
+builder.Services.AddScoped<eGestion360Web.Services.Permisos.DecisorDeVisibilidad>();
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeRol, eGestion360Web.Services.Permisos.PermisosDeRol>();   // F1.6e: la pantalla de roles guarda en rol_permisos y avisa al evaluador
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());   // los procesos de fondo fijan su tenant en TenantContext

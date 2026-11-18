@@ -20,7 +20,7 @@ namespace eGestion360Web.Pages.Flota.Catalogos.Personas
         public int IdPersona { get; private set; }
         public HistorialPersona? Historial { get; private set; }
 
-        public bool PuedeEditar => AuthHelper.PuedeEditar(HttpContext, "flota");
+        public bool PuedeEditar => this.Puede("flota.personas.editar");
 
         public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct)
         {

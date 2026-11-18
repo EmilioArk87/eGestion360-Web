@@ -1,6 +1,6 @@
 # ADR-029 · Permisos por acción (F1.6)
 
-- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): publicada el 2026-11-12. F1.6d (módulos en modo Aplicar): publicada el 2026-11-16. F1.6e (roles, menú y limpieza): en curso desde el 2026-11-17, parte e1 hecha
+- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): publicada el 2026-11-12. F1.6d (módulos en modo Aplicar): publicada el 2026-11-16. F1.6e (roles, menú y limpieza): en curso desde el 2026-11-17, partes e1 y e2 hechas
 - **Fecha:** 2026-11-03
 - **Decidió:** Emilio (D57 a D65). Diseño y ejecución de Claude
 - **Fase:** F1.6 (entrega F1.6a)
@@ -111,7 +111,7 @@ F1.6e se entrega en tres partes publicables, cada una con su recorrido y su reve
 | Parte | Qué | Estado |
 |---|---|---|
 | e1 | La pantalla de permisos del rol edita el catálogo nuevo y avisa al evaluador | hecha |
-| e2 | El menú, las tarjetas de módulo y los botones preguntan lo mismo que las pantallas (`Puede`) | pendiente |
+| e2 | El menú, las tarjetas de módulo y los botones preguntan lo mismo que las pantallas (`Puede`) | hecha |
 | e3 | Se retiran `IsAdmin(`, `AdminOnlyPageFilter`, los permisos copiados a la sesión y la marca `es_admin` | pendiente |
 
 ### e1: editar un rol no cambiaba nada
@@ -128,6 +128,26 @@ F1.6e se entrega en tres partes publicables, cada una con su recorrido y su reve
 | Marca `es_admin` del rol (D67) | La marca no concede nada: se quitó de las dos pantallas de roles (formulario y columna) y dejó de escribirse; la columna sigue en la base hasta F1.10. El administrador de una empresa se define en su cuenta (`empresa_admin`). |
 
 No hay script ni cambios en la base.
+
+### e2: el menú muestra lo que se puede abrir
+
+**La regla.** Una sola pregunta, la que hace el filtro de permisos antes de cada pantalla: lo que el menú, una tarjeta o un botón ofrece es exactamente lo que la pantalla de destino dejaría abrir. Se oculta solo lo que se vería y fallaría; la guarda real sigue siendo la del filtro de cada pantalla.
+
+| Pieza | Cómo queda |
+|---|---|
+| `IPermisosDeLaPeticion` | Evalúa los permisos de la persona **una vez por petición** y los comparte con el filtro (`HttpContext.Items`). Sin sesión, o si no se pudieron evaluar, no tiene ninguno (se muestra menos, nunca más). `this.Puede("flota.personas.crear")` lee lo mismo desde el modelo de una pantalla (antes solo existía en Psicología). |
+| `OcultarSinPermisoTagHelper` | Oculta cada `<a asp-page>`, `<form asp-page-handler>` y `<button asp-page-handler>` cuyo destino la persona no puede abrir: lee el `[RequierePermiso]` de la pantalla y, si el handler declara el suyo, el del handler (un enlace es GET; un formulario usa su `method`; un botón, POST). Actúa en todas las vistas que ya usan `asp-page` (577 enlaces): **un botón nuevo se esconde sin escribir nada**. En modo Registrar no oculta nada, porque nada se niega. |
+| `eg-si-puede-abrir` | Atributo para el contenedor de una tarjeta o de un elemento de menú: `<div class="col" eg-si-puede-abrir="/Flota/Catalogos/Vehiculos/Index">`. Con varias pantallas separadas por «;» (la tarjeta de un subcentro, como Gastos) se muestra si se puede abrir alguna, para no dejar centros vacíos. Lo llevan los centros de navegación de Flota, Catálogos y Psicología y las tarjetas de administración del menú principal. |
+| Menú principal | Ya no decide por el rol de nadie. La tarjeta de un módulo se muestra si el módulo está activo **y** la persona puede hacer algo en él (un módulo sin permisos en el catálogo, como Bancos, se muestra por estar activo). La administración se divide por ámbito del catálogo: «Administración de la empresa» (`administracion.*`: invitaciones, roles) y «Administración del Sistema» (`plataforma.*`). «Roles y Permisos» pasa a la primera: es su ámbito. El operador ve las dos en cualquier contexto (D66). |
+| Banderas por rol | `IsAdmin` de Flota, de «sin empresa» y de Gestión de usuarios, y las casillas viejas de Personas y de tasas de cambio (`AuthHelper.PuedeCrear/Editar`) pasan a `Puede(permiso)`. «Correo corporativo» de la barra superior se oculta solo. |
+
+Cambios de comportamiento que conviene saber:
+
+- **El operador dentro de una empresa** (por ejemplo Transgar) ve ahora la administración del sistema en el menú, porque conserva todos los permisos (D66); antes solo la veía en el contexto de plataforma.
+- **Gestión de usuarios** muestra su panel a quien tiene `plataforma.usuarios.ver` (el operador, también dentro de una empresa); antes solo al operador en el contexto de plataforma.
+- **Se quitó la tarjeta «Referencias»** del centro de Flota: llevaba a `/Admin/Referencias/Index`, una pantalla que ya no existe (daba 404 y solo la veía el administrador). Una prueba de arquitectura ahora exige que toda pantalla nombrada en `eg-si-puede-abrir` exista.
+
+Lo que queda para e3: las comprobaciones por rol que **acotan datos** y no deciden qué se muestra (qué empresas ve el operador y cuál el administrador de empresa en usuarios, roles e invitaciones), las reglas de las tasas de cambio, `AdminOnlyPageFilter`, `AuthHelper.PuedeX` y la copia de permisos en la sesión.
 
 ## Alternativas consideradas
 

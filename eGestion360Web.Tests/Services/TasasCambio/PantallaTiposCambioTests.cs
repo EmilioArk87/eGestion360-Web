@@ -14,6 +14,7 @@ using Microsoft.Extensions.Primitives;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Pages.Catalogos.TiposCambio;
+using eGestion360Web.Services.Permisos;
 using eGestion360Web.Services.TasasCambio;
 using eGestion360Web.Tests.Infra;
 using Cat = eGestion360Web.Models.Catalogos.TasasCambioCatalogo;
@@ -56,6 +57,13 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             http.Session.SetString("Permisos", JsonSerializer.Serialize(
                 new Dictionary<string, string[]> { ["catalogos"] = permisos ?? new[] { "ver" } }));
             http.Session.SetString("Username", UsuarioDePrueba);
+
+            // Desde F1.6e los botones preguntan por el catálogo de permisos (el filtro de permisos deja el resultado en la petición); aquí va el
+            // equivalente de cada perfil de prueba: el administrador y el administrador de empresa tienen todo lo de las tasas y un usuario con rol, lo que su rol concede.
+            var todos = new[] { "ver", "crear", "aprobar", "configurar" };
+            var concedidos = rol is "admin" or "empresa_admin" ? todos : (permisos ?? new[] { "ver" }).Where(p => p is "ver" or "crear");
+            http.Items[PermisosPageFilter.ClavePermisosEfectivos] =
+                new PermisosEfectivos(concedidos.Select(a => "catalogos.tasas_cambio." + a).ToHashSet(StringComparer.Ordinal));
             return http;
         }
 

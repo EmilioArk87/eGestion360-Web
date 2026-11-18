@@ -77,7 +77,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         public bool JobHabilitado => Opciones.Habilitado;
         public int SolicitudesEnCola => _cola.Pendientes;
 
-        public bool TienePermisoCrear => AuthHelper.PuedeCrear(HttpContext, Modulo);
+        public bool TienePermisoCrear => this.Puede("catalogos.tasas_cambio.crear");
         public bool PuedeRegistrar => TienePermisoCrear && IdEmpresaSesion != null;
         public bool PuedeEjecutar => EsAdminSistema && JobHabilitado;
 
