@@ -26,6 +26,8 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
 
         public List<FilaPaciente> Pacientes { get; private set; } = new();
 
+        public bool PuedeEditar => this.Puede("psicologia.pacientes.editar");
+
         public async Task<IActionResult> OnGetAsync()
         {
             if (!AuthHelper.IsAuthenticated(HttpContext))
