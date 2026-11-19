@@ -449,7 +449,7 @@ namespace eGestion360Web.Tests.Paginas
             Assert.Equal(DatosBase.EmpresaB, AuthHelper.GetEmpresaId(http));
             Assert.Equal(DatosBase.TenantB, AuthHelper.GetTenantId(http));
             Assert.Equal(membresia.IdMembresia, AuthHelper.GetMembresiaId(http));
-            Assert.True(AuthHelper.IsEmpresaAdmin(http));
+            Assert.Equal("empresa_admin", AuthHelper.RolLegadoDeAcceso(http));
             Assert.Equal("ana", AuthHelper.GetNombreUsuario(http));
             Assert.Equal("Emilio Garay", AuthHelper.NombreVisible(http));
             Assert.Null(EntradaEnCurso.Leer(http.Session, Ahora));                       // la entrada en curso se cierra
@@ -541,7 +541,7 @@ namespace eGestion360Web.Tests.Paginas
 
             Assert.Equal("/MainMenu", Pagina(await pagina.OnPostAsync()));
 
-            Assert.True(AuthHelper.IsAdmin(http));
+            Assert.True(AuthHelper.EnPlataforma(http));
             Assert.True(AuthHelper.IsOperador(http));
             Assert.Null(AuthHelper.GetEmpresaId(http));
             Assert.Null(AuthHelper.GetTenantId(http));
@@ -560,8 +560,9 @@ namespace eGestion360Web.Tests.Paginas
 
             await pagina.OnPostAsync();
 
-            Assert.True(AuthHelper.IsEmpresaAdmin(http));
-            Assert.False(AuthHelper.IsAdmin(http));
+            Assert.Equal("empresa_admin", AuthHelper.RolLegadoDeAcceso(http));
+            Assert.False(AuthHelper.EnPlataforma(http));
+            Assert.True(AuthHelper.EsOperador(http));   // la marca de su cuenta sigue aunque entre como persona de la empresa
             Assert.Equal(DatosBase.EmpresaA, AuthHelper.GetEmpresaId(http));
         }
 

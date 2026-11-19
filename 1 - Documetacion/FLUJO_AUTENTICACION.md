@@ -198,7 +198,7 @@ ninguna y entra sin `EmpresaId`.
 Antes, cada pantalla de Flota caía en la empresa 1 (SIP) cuando la sesión no traía empresa, y el administrador general
 terminaba viendo y registrando datos de SIP sin darse cuenta. Ya no hay empresa por defecto:
 
-- `Services/EmpresaRequeridaPageFilter.cs` es un filtro global (registrado en `Program.cs` junto a `AdminOnlyPageFilter`).
+- `Services/EmpresaRequeridaPageFilter.cs` es un filtro global (registrado en `Program.cs` con los demás filtros globales).
   Antes de que corra cualquier handler de `/Flota/**`, una sesión sin empresa va a `/Flota/SinEmpresa`, que explica el
   motivo, y una sin sesión va a `/Login`. Cubre también las pantallas de Flota que se agreguen después.
 - Quedan fuera del filtro `/Flota/SinEmpresa` (el aviso) y `/Flota/Catalogos/Personas/**`, que ya se bloquean solas con

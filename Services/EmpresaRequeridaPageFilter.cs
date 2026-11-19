@@ -9,9 +9,8 @@ namespace eGestion360Web.Services
     /// administrador acababa viendo y registrando datos de SIP creyendo que no tocaba nada. Ahora esas sesiones se
     /// desvían a una página con el motivo antes de que corra cualquier handler.
     ///
-    /// Es un filtro global por prefijo de ruta (y no una guarda por página) por la misma razón que
-    /// <see cref="AdminOnlyPageFilter"/>: cubre de una vez todos los handlers actuales y los que se agreguen después
-    /// dentro de /Flota/. Las pantallas de Personas quedan fuera porque ya se bloquean solas con su propio mensaje.
+    /// Es un filtro global por prefijo de ruta (y no una guarda por página): cubre de una vez todos los handlers actuales y los
+    /// que se agreguen después dentro de /Flota/. Las pantallas de Personas quedan fuera porque ya se bloquean solas con su propio mensaje.
     /// </summary>
     public class EmpresaRequeridaPageFilter : IPageFilter
     {

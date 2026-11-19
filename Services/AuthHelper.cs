@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using System.Text.Json;
 
 namespace eGestion360Web.Services
 {
@@ -29,20 +28,42 @@ namespace eGestion360Web.Services
         public static bool MustChangePassword(HttpContext context)
             => HayCuenta(context) && Reclamo(context, Identidad.ReclamosDeIdentidad.DebeCambiarClave) == "1";
 
-        // ── Nivel de rol ──────────────────────────────────────────────────────
+        // ── Quién es: personal de la plataforma o de una empresa ──────────────
+        // Ninguna de estas preguntas decide qué puede hacer la persona: eso lo decide el catálogo de permisos (ADR-029). Aquí solo se
+        // responde QUIÉN es y en qué contexto trabaja, para acotar de qué datos se ocupa una pantalla.
 
         private static bool TieneRol(HttpContext context, string rol)
             => HayCuenta(context) && string.Equals(Reclamo(context, System.Security.Claims.ClaimTypes.Role), rol, StringComparison.OrdinalIgnoreCase);
 
-        public static bool IsAdmin(HttpContext context) => TieneRol(context, AdminRole);
+        /// <summary>
+        /// Personal de la plataforma (operador), en cualquier contexto: la marca de su cuenta o, en el contexto de plataforma, el rol
+        /// «admin» de su acceso. Dentro de una empresa el operador entra con el rol de ese acceso, así que el rol solo no basta (D66).
+        /// El operador actúa sobre cualquiera de las empresas que ve su contexto (el filtro de tenant ya las acota); el resto de las
+        /// personas, solo sobre la empresa de su sesión (<see cref="PuedeActuarSobreEmpresa"/>).
+        /// </summary>
+        public static bool EsOperador(HttpContext context) => IsOperador(context) || TieneRol(context, AdminRole);
 
-        public static bool IsEmpresaAdmin(HttpContext context) => TieneRol(context, EmpresaAdminRole);
+        /// <summary>
+        /// El operador en el contexto de plataforma, sin empresa elegida: entra con el rol «admin» (lo que antes se llamaba
+        /// <c>IsAdmin</c>). Decide el ámbito de tenant de la petición y el tenant de soporte; no es un permiso.
+        /// </summary>
+        public static bool EnPlataforma(HttpContext context) => TieneRol(context, AdminRole);
 
-        public static bool IsEmpresaUser(HttpContext context) => TieneRol(context, EmpresaUserRole);
+        /// <summary>
+        /// Rol de texto del acceso con el que se evalúan los permisos: <c>empresa_admin</c> o <c>empresa_user</c>. Lo usa solo el
+        /// armado del contexto del evaluador (<see cref="Permisos.ContextoDePermisosHttp"/>); ninguna pantalla decide con él.
+        /// </summary>
+        public static string RolLegadoDeAcceso(HttpContext context)
+            => TieneRol(context, EmpresaAdminRole) ? EmpresaAdminRole : EmpresaUserRole;
 
-        /// <summary>True si es admin del sistema o admin de empresa.</summary>
-        public static bool IsAnyAdmin(HttpContext context)
-            => IsAdmin(context) || IsEmpresaAdmin(context);
+        /// <summary>
+        /// ¿Puede quien hace la petición actuar sobre los datos de esa empresa? El operador, sobre cualquiera de las que ve su contexto;
+        /// el resto de las personas, solo sobre la empresa de su sesión. Es el alcance de los datos, no un permiso: el permiso de la
+        /// pantalla lo comprueba antes el filtro de permisos. Sin esta pregunta, un rol con permisos de administración podría tocar
+        /// las demás empresas de su tenant.
+        /// </summary>
+        public static bool PuedeActuarSobreEmpresa(HttpContext context, int? idEmpresa)
+            => EsOperador(context) || (idEmpresa is > 0 && idEmpresa == GetEmpresaId(context));
 
         // ── Datos de la identidad ─────────────────────────────────────────────
 
@@ -106,7 +127,7 @@ namespace eGestion360Web.Services
         /// </summary>
         public static int? GetTenantDeSoporte(HttpContext context)
         {
-            if (!IsAdmin(context) || GetEmpresaId(context) is > 0) return null;
+            if (!EnPlataforma(context) || GetEmpresaId(context) is > 0) return null;
             return int.TryParse(context.Session.GetString(ClaveTenantDeSoporte), out var id) && id > 0 ? id : null;
         }
 
@@ -128,64 +149,23 @@ namespace eGestion360Web.Services
 
         // ── Acceso a módulos ──────────────────────────────────────────────────
 
-        /// <summary>Devuelve los códigos de módulo accesibles para el usuario en sesión.</summary>
-        public static HashSet<string> GetModulos(HttpContext context)
-        {
-            var json = context.Session.GetString("Modulos");
-            if (string.IsNullOrEmpty(json)) return new HashSet<string>();
-            return JsonSerializer.Deserialize<HashSet<string>>(json) ?? new HashSet<string>();
-        }
-
         /// <summary>
-        /// True si el usuario tiene acceso al módulo indicado. Desde F1.7 lo deciden, en cada petición, el plan del tenant (el derecho
-        /// <c>modulo.&lt;código&gt;</c>) y la activación vigente de la empresa; ya no la copia de módulos que el inicio de sesión dejó
-        /// en la sesión. Si la petición no pasó por <see cref="Derechos.EstadoDelTenantMiddleware"/> (pruebas, procesos sin petición
-        /// web), se usa la copia de la sesión como antes.
+        /// True si el usuario tiene acceso al módulo indicado. Lo deciden, en cada petición, el plan del tenant (el derecho
+        /// <c>modulo.&lt;código&gt;</c>) y la activación vigente de la empresa, que <see cref="Derechos.EstadoDelTenantMiddleware"/> deja
+        /// en la petición (F1.7). Ya no hay una copia de los módulos en la sesión (F1.6e-3): una petición que no pasó por ese middleware
+        /// no tiene ningún módulo, así que se ofrece menos, nunca más. El operador en el contexto de plataforma no depende de ninguna
+        /// empresa y entra a todos.
         /// </summary>
         public static bool HasModulo(HttpContext context, string moduloCodigo)
         {
-            if (IsAdmin(context)) return true;
-            if (context.Items.TryGetValue(Derechos.EstadoDelTenantMiddleware.ClaveDerechos, out var evaluados)
-                && evaluados is Derechos.DerechosDeLaPeticion derechos)
-                return derechos.TieneModulo(moduloCodigo);
-
-            return GetModulos(context).Contains(moduloCodigo.ToLowerInvariant());
+            if (EnPlataforma(context)) return true;
+            return context.Items.TryGetValue(Derechos.EstadoDelTenantMiddleware.ClaveDerechos, out var evaluados)
+                   && evaluados is Derechos.DerechosDeLaPeticion derechos
+                   && derechos.TieneModulo(moduloCodigo);
         }
 
-        // ── Permisos granulares ───────────────────────────────────────────────
-
-        /// <summary>Carga el mapa de permisos desde sesión: { "flota": ["ver","crear",...] }</summary>
-        public static Dictionary<string, HashSet<string>> GetPermisos(HttpContext context)
-        {
-            var json = context.Session.GetString("Permisos");
-            if (string.IsNullOrEmpty(json))
-                return new Dictionary<string, HashSet<string>>();
-
-            return JsonSerializer.Deserialize<Dictionary<string, HashSet<string>>>(json)
-                   ?? new Dictionary<string, HashSet<string>>();
-        }
-
-        public static bool PuedeVer(HttpContext context, string moduloCodigo)
-            => TienePermiso(context, moduloCodigo, "ver");
-
-        public static bool PuedeCrear(HttpContext context, string moduloCodigo)
-            => TienePermiso(context, moduloCodigo, "crear");
-
-        public static bool PuedeEditar(HttpContext context, string moduloCodigo)
-            => TienePermiso(context, moduloCodigo, "editar");
-
-        public static bool PuedeEliminar(HttpContext context, string moduloCodigo)
-            => TienePermiso(context, moduloCodigo, "eliminar");
-
-        private static bool TienePermiso(HttpContext context, string moduloCodigo, string permiso)
-        {
-            if (IsAdmin(context)) return true;
-            if (IsEmpresaAdmin(context)) return HasModulo(context, moduloCodigo);
-
-            var permisos = GetPermisos(context);
-            return permisos.TryGetValue(moduloCodigo.ToLowerInvariant(), out var set)
-                   && set.Contains(permiso);
-        }
+        // Los permisos por acción (ver, crear, editar, eliminar y las propias de cada pantalla) ya no viven aquí: los decide el
+        // evaluador de permisos en cada petición y las pantallas los piden con [RequierePermiso] y this.Puede(...).
 
         // ── Persona de la cuenta (script 021) ─────────────────────────────────
 

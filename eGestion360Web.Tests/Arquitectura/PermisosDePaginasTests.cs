@@ -277,7 +277,7 @@ namespace eGestion360Web.Tests.Arquitectura
             var filtros = Regex.Matches(program, @"options\.Filters\.Add<").Count;
             var ultimo = program.LastIndexOf("options.Filters.Add<", StringComparison.Ordinal);
             Assert.Equal(permisos, ultimo);
-            Assert.True(filtros >= 6);
+            Assert.True(filtros >= 5);
 
             Assert.Contains("OpcionesDePermisos>(builder.Configuration.GetSection(", program);
         }

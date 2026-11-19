@@ -271,8 +271,6 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         private static HttpContext Sesion(string? rol, int? empresa = null, bool conModulo = true, bool autenticado = true)
         {
             var http = SesionFalsa.Contexto(rol, empresa?.ToString(), autenticado);
-            if (conModulo) http.Session.SetString("Modulos", JsonSerializer.Serialize(new[] { "catalogos" }));
-            http.Session.SetString("Permisos", JsonSerializer.Serialize(new Dictionary<string, string[]> { ["catalogos"] = new[] { "ver" } }));
             http.Session.SetString("Username", "usuario.prueba");
             return http;
         }

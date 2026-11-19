@@ -280,7 +280,6 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         private ConfiguracionModel Pagina(string rol, TasasCambioConfiguracionService servicio, TasasCambioOptions opciones, bool autenticado = true)
         {
             var http = SesionFalsa.Contexto(rol, null, autenticado);
-            http.Session.SetString("Modulos", JsonSerializer.Serialize(new[] { "catalogos" }));
             http.Session.SetString("Username", "usuario.prueba");
             var modelo = new ConfiguracionModel(servicio, Options.Create(opciones), NullLogger<ConfiguracionModel>.Instance)
             {

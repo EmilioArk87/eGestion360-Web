@@ -81,10 +81,14 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         public bool PuedeRegistrar => TienePermisoCrear && IdEmpresaSesion != null;
         public bool PuedeEjecutar => EsAdminSistema && JobHabilitado;
 
-        /// <summary>¿La sesión puede aprobar o rechazar una tasa de esta empresa (nulo = oficial)?</summary>
-        public bool PuedeRevisar(int? idEmpresaTasa) => idEmpresaTasa == null
-            ? EsAdminSistema
-            : AuthHelper.IsAnyAdmin(HttpContext) && idEmpresaTasa == IdEmpresaSesion;
+        public bool TienePermisoAprobar => this.Puede("catalogos.tasas_cambio.aprobar");
+
+        /// <summary>
+        /// ¿La sesión puede aprobar o rechazar una tasa de esta empresa (nulo = oficial)? Hace falta el permiso de aprobar y, además,
+        /// el alcance: la oficial es de la plataforma y la de una empresa solo la revisa quien trabaja en ella.
+        /// </summary>
+        public bool PuedeRevisar(int? idEmpresaTasa) => TienePermisoAprobar
+            && (idEmpresaTasa == null ? EsAdminSistema : idEmpresaTasa == IdEmpresaSesion);
 
         // ──────────────────────────────────────────────────────────────────
         //  GET
@@ -201,8 +205,8 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         /// </summary>
         private async Task<(TasaPendienteRevision? Pendiente, IActionResult? Rechazo)> PendienteAutorizadaAsync(int idTasaCambio, string accion)
         {
-            if (!AuthHelper.IsAnyAdmin(HttpContext))
-                return (null, Denegado(accion, idTasaCambio, "Solo un administrador puede aprobar o rechazar tasas en revisión.", "pendientes"));
+            if (!TienePermisoAprobar)
+                return (null, Denegado(accion, idTasaCambio, "No tiene permiso para aprobar o rechazar tasas en revisión.", "pendientes"));
 
             var empresa = IdEmpresaSesion;
             var pendiente = (await _consultas.PendientesRevisionAsync(empresa, Ct)).FirstOrDefault(p => p.IdTasaCambio == idTasaCambio);

@@ -53,9 +53,6 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             bool autenticado = true)
         {
             var http = SesionFalsa.Contexto(rol, empresa?.ToString(), autenticado);
-            if (conModulo) http.Session.SetString("Modulos", JsonSerializer.Serialize(new[] { "catalogos" }));
-            http.Session.SetString("Permisos", JsonSerializer.Serialize(
-                new Dictionary<string, string[]> { ["catalogos"] = permisos ?? new[] { "ver" } }));
             http.Session.SetString("Username", UsuarioDePrueba);
 
             // Desde F1.6e los botones preguntan por el catálogo de permisos (el filtro de permisos deja el resultado en la petición); aquí va el
@@ -231,7 +228,6 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         public async Task Quien_debe_cambiar_la_clave_va_al_login()
         {
             var http = SesionFalsa.Contexto("admin", debeCambiarClave: true);   // el cambio de clave pendiente viaja en la identidad
-            http.Session.SetString("Modulos", JsonSerializer.Serialize(new[] { "catalogos" }));
             http.Session.SetString("Username", UsuarioDePrueba);
 
             Redirige(await Pagina(http).OnGetAsync(), "/Login");
@@ -259,11 +255,11 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             {
                 var aprobar = Pagina(http);
                 Redirige(await aprobar.OnPostAprobarAsync(id), "Index");
-                Assert.Contains("Solo un administrador", Error(aprobar));
+                Assert.Contains("No tiene permiso para aprobar", Error(aprobar));
 
                 var rechazar = Pagina(http);
                 Redirige(await rechazar.OnPostRechazarAsync(id, "Valor raro."), "Index");
-                Assert.Contains("Solo un administrador", Error(rechazar));
+                Assert.Contains("No tiene permiso para aprobar", Error(rechazar));
 
                 Assert.Equal(Cat.EstadoTasa.EnRevision, Leer(id).Estado);
             }

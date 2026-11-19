@@ -38,7 +38,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
 
         public string? AvisoBaseDatos { get; private set; }
 
-        public bool EsAdminSistema => AuthHelper.IsAdmin(HttpContext);
+        public bool EsAdminSistema => AuthHelper.EsOperador(HttpContext);
         public string MonedaLocal => _opt.MonedaLocalEfectiva;
         public bool IgnoraInterruptorGuardado => _config.IgnoraInterruptorGuardado;
 

@@ -231,22 +231,11 @@ namespace eGestion360Web.Tests.Services.Permisos
             Assert.False(PermisosEfectivos.Ninguno.PuedeAlguno("flota.vehiculos.ver"));
         }
 
-        // ── Equivalencia con el sistema anterior (los tres roles de prueba de Transgar) ──────────────────────────────────
-
-        /// <summary>
-        /// Lo que decidía el sistema anterior para este rol: se carga con el <see cref="CargadorDePermisos"/> de verdad, se copia a la sesión
-        /// como lo hace <c>SesionDesdeIdentidadMiddleware</c> y se pregunta con <c>AuthHelper.PuedeVer</c> y compañía.
-        /// </summary>
-        private async Task<HttpContext> ContextoDeAntes(string rolDeTexto, int idEmpresa, int? idRol)
-        {
-            await using var db = _base.CrearComo(DatosBase.TenantDe(idEmpresa));
-            var cargados = await new CargadorDePermisos(db).CargarAsync(idEmpresa, idRol, rolDeTexto);
-
-            var http = SesionFalsa.Contexto(rol: rolDeTexto, empresaId: idEmpresa.ToString(), idTenant: DatosBase.TenantDe(idEmpresa));
-            http.Session.SetString("Modulos", JsonSerializer.Serialize(cargados.Modulos.Select(m => m.ToLowerInvariant()).ToHashSet()));
-            http.Session.SetString("Permisos", JsonSerializer.Serialize(cargados.Permisos));
-            return http;
-        }
+        // ── Equivalencia con las casillas de antes (la regla del sistema anterior, ya retirado en F1.6e-3) ───────────────
+        //
+        // El sistema anterior decidía por cuatro casillas por módulo (ver, crear, editar, eliminar): un rol tenía la casilla o no, el
+        // administrador de empresa las tenía todas en sus módulos y el operador pasaba cualquier guarda. Esa regla es lo que la migración
+        // (script 041) tradujo a permisos, y es lo que estas pruebas siguen vigilando con las casillas como entrada.
 
         private void ActivarModulos(int idEmpresa, params string[] modulos)
         {
@@ -273,21 +262,22 @@ namespace eGestion360Web.Tests.Services.Permisos
             var rol = NuevoRol(DatosBase.EmpresaA, nombre,
                 ("flota", ver, crear, editar, eliminar), ("catalogos", ver, crear, editar, eliminar), ("facturacion", ver, crear, editar, eliminar));
 
-            var antes = await ContextoDeAntes(AuthHelper.EmpresaUserRole, DatosBase.EmpresaA, rol);
             await using var db = _base.CrearComo(DatosBase.TenantA);
             var ahora = await Evaluador(db).EvaluarAsync(ComoUsuario(DatosBase.TenantA, rol, "flota", "catalogos", "facturacion"));
 
-            var casillas = new (string Casilla, Func<HttpContext, string, bool> Antes)[]
+            // Lo que decía el sistema anterior: la casilla marcada en el rol (las mismas en los tres módulos que se le dieron; en los demás,
+            // como no tenía fila, ninguna).
+            var delRol = new[] { "flota", "catalogos", "facturacion" };
+            var casillas = new (string Casilla, bool Antes)[]
             {
-                (CasillaLegada.Ver, AuthHelper.PuedeVer), (CasillaLegada.Crear, AuthHelper.PuedeCrear),
-                (CasillaLegada.Editar, AuthHelper.PuedeEditar), (CasillaLegada.Eliminar, AuthHelper.PuedeEliminar)
+                (CasillaLegada.Ver, ver), (CasillaLegada.Crear, crear), (CasillaLegada.Editar, editar), (CasillaLegada.Eliminar, eliminar)
             };
 
             var comparados = 0;
             foreach (var modulo in CatalogoDePermisos.ModulosConPermisos)
-                foreach (var (casilla, preguntar) in casillas)
+                foreach (var (casilla, marcada) in casillas)
                 {
-                    var antesDecia = preguntar(antes, modulo);
+                    var antesDecia = marcada && delRol.Contains(modulo);
                     foreach (var p in CatalogoDePermisos.DeCasillaLegada(modulo, casilla))
                     {
                         Assert.True(antesDecia == ahora.Puede(p.Codigo),
@@ -310,24 +300,13 @@ namespace eGestion360Web.Tests.Services.Permisos
             await using var db = _base.CrearComo(DatosBase.TenantA);
             var evaluador = Evaluador(db);
 
-            // Administrador de empresa: antes, todo lo de los módulos que tiene.
-            var antesAdmin = await ContextoDeAntes(AuthHelper.EmpresaAdminRole, DatosBase.EmpresaA, null);
-            var adminAhora = await evaluador.EvaluarAsync(new ContextoDePermisos(false, DatosBase.TenantA, null, AuthHelper.EmpresaAdminRole, Habilitados("flota", "catalogos")));
+            // Administrador de empresa: antes, las cuatro casillas de cada módulo que tiene (y nada de los que no tiene: facturación).
+            var modulosDelAdmin = new[] { "flota", "catalogos" };
+            var adminAhora = await evaluador.EvaluarAsync(new ContextoDePermisos(false, DatosBase.TenantA, null, AuthHelper.EmpresaAdminRole, Habilitados(modulosDelAdmin)));
             foreach (var p in CatalogoDePermisos.Todos.Where(p => p.Ambito == AmbitoDePermiso.Modulo && p.CasillaLegada != null))
-            {
-                var anterior = p.CasillaLegada switch
-                {
-                    CasillaLegada.Ver => AuthHelper.PuedeVer(antesAdmin, p.Modulo),
-                    CasillaLegada.Crear => AuthHelper.PuedeCrear(antesAdmin, p.Modulo),
-                    CasillaLegada.Editar => AuthHelper.PuedeEditar(antesAdmin, p.Modulo),
-                    _ => AuthHelper.PuedeEliminar(antesAdmin, p.Modulo)
-                };
-                Assert.True(anterior == adminAhora.Puede(p.Codigo), p.Codigo);
-            }
+                Assert.True(modulosDelAdmin.Contains(p.Modulo) == adminAhora.Puede(p.Codigo), p.Codigo);
 
-            // Operador: antes, cualquier guarda pasaba (IsAdmin); ahora, todo el catálogo.
-            var antesOperador = SesionFalsa.Contexto(rol: AuthHelper.AdminRole);
-            Assert.True(AuthHelper.PuedeEliminar(antesOperador, "facturacion"));
+            // Operador: antes, cualquier guarda pasaba; ahora, todo el catálogo.
             var operadorAhora = await evaluador.EvaluarAsync(new ContextoDePermisos(true, null, null, AuthHelper.AdminRole, Habilitados()));
             Assert.All(CatalogoDePermisos.Todos, p => Assert.True(operadorAhora.Puede(p.Codigo), p.Codigo));
         }

@@ -304,11 +304,36 @@ namespace eGestion360Web.Tests.Services.Permisos
         [Theory]
         [InlineData("Registrar")]
         [InlineData("Aplicar")]
-        public async Task Sin_sesion_el_filtro_no_actua_y_cada_pantalla_manda_sola_al_inicio_de_sesion(string modo)
+        public async Task Sin_sesion_una_pantalla_que_exige_permiso_manda_al_inicio_de_sesion(string modo)
         {
+            // F1.6e-3: autenticar no depende del modo. Antes cada pantalla se mandaba sola y las de diagnóstico las cerraba AdminOnlyPageFilter.
             var evaluador = new EvaluadorFalso();
 
             var r = await Correr(typeof(PaginaDeVehiculos), "OnGet", SinSesion(), evaluador, modo);
+
+            Assert.False(r.Siguio);
+            Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(r.Respuesta).PageName);
+            Assert.Equal(0, evaluador.Llamadas);
+        }
+
+        [Fact]
+        public async Task Sin_sesion_una_llamada_de_datos_recibe_403_y_no_una_pagina()
+        {
+            var http = SinSesion();
+            http.Request.Headers["X-Requested-With"] = "XMLHttpRequest";
+
+            var r = await Correr(typeof(PaginaDeVehiculos), "OnGet", http, new EvaluadorFalso(), "Aplicar");
+
+            Assert.False(r.Siguio);
+            Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<StatusCodeResult>(r.Respuesta).StatusCode);
+        }
+
+        [Fact]
+        public async Task Sin_sesion_una_pantalla_publica_sigue_su_curso()
+        {
+            var evaluador = new EvaluadorFalso();
+
+            var r = await Correr(typeof(PaginaLibre), "OnGet", SinSesion(), evaluador, "Aplicar");
 
             Assert.True(r.Siguio);
             Assert.Null(r.Respuesta);
@@ -316,14 +341,15 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
-        public async Task Con_cambio_de_clave_pendiente_tampoco_actua()
+        public async Task Con_cambio_de_clave_pendiente_tambien_se_manda_al_inicio_de_sesion()
         {
             var http = SesionFalsa.Contexto("empresa_user", "1", debeCambiarClave: true);
             var evaluador = new EvaluadorFalso();
 
             var r = await Correr(typeof(PaginaDeVehiculos), "OnGet", http, evaluador, "Aplicar");
 
-            Assert.True(r.Siguio);
+            Assert.False(r.Siguio);
+            Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(r.Respuesta).PageName);
             Assert.Equal(0, evaluador.Llamadas);
         }
 
@@ -389,7 +415,7 @@ namespace eGestion360Web.Tests.Services.Permisos
 
             var contexto = ContextoDePermisosHttp.Crear(http);
 
-            Assert.False(AuthHelper.IsAdmin(http));
+            Assert.False(AuthHelper.EnPlataforma(http));
             Assert.True(contexto.EsOperador);
             Assert.Equal(AuthHelper.EmpresaUserRole, contexto.RolLegado);
             Assert.Equal(9, contexto.IdRol);
@@ -811,12 +837,24 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
-        public async Task Sin_sesion_el_filtro_sigue_sin_actuar_tambien_en_las_carpetas_que_aplican()
+        public async Task Sin_sesion_las_pantallas_de_administracion_y_las_de_diagnostico_mandan_al_inicio_de_sesion()
         {
             SembrarRoles();
 
-            Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", SinSesion()), "Usuarios/Create sin sesión");
-            Pasa(await CorrerConConfiguracionReal("/Empresas/Index", "OnGetAsync", SinSesion()), "Empresas/Index sin sesión");
+            // Las cuatro de diagnóstico no tienen guarda propia de sesión: las cerraba AdminOnlyPageFilter y ahora las cierra este filtro.
+            var pantallas = new[]
+            {
+                ("/Admin/Usuarios/Create", "OnGetAsync"), ("/Empresas/Index", "OnGetAsync"),
+                ("/DebugUsers", "OnGetAsync"), ("/ResetCodesHistory", "OnGetAsync"), ("/ValidarEmails", "OnGetAsync"),
+                ("/Admin/EmailConfig", "OnGetAsync"),
+            };
+            foreach (var (ruta, handler) in pantallas)
+            {
+                var r = await CorrerConConfiguracionReal(ruta, handler, SinSesion());
+
+                Assert.False(r.Siguio, $"{ruta} sin sesión: debía mandar al inicio de sesión y pasó");
+                Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(r.Respuesta).PageName);
+            }
         }
     }
 }

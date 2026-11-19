@@ -1,6 +1,6 @@
 # ADR-029 · Permisos por acción (F1.6)
 
-- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): publicada el 2026-11-12. F1.6d (módulos en modo Aplicar): publicada el 2026-11-16. F1.6e (roles, menú y limpieza): en curso desde el 2026-11-17, partes e1 y e2 hechas
+- **Estado:** Aceptada por Emilio el 2026-11-03 (decisiones D57 a D65 del plan de la etapa F1.6, sin cambios sobre lo recomendado). F1.6a (catálogo, roles y evaluador): script 041 aplicado y verificado en producción el 2026-11-09. F1.6b (filtro de permisos en modo Registrar): publicada el 2026-11-10. F1.6c (plataforma y administración en modo Aplicar): publicada el 2026-11-12. F1.6d (módulos en modo Aplicar): publicada el 2026-11-16. F1.6e (roles, menú y limpieza): desde el 2026-11-17; e1 y e2 publicadas, e3 hecha el 2026-11-18
 - **Fecha:** 2026-11-03
 - **Decidió:** Emilio (D57 a D65). Diseño y ejecución de Claude
 - **Fase:** F1.6 (entrega F1.6a)
@@ -73,7 +73,7 @@ Desde esta entrega el filtro **bloquea** en las pantallas de plataforma y de adm
 | `Permisos:AplicarEn` | Prefijos de ruta que aplican aunque el modo global sea `Registrar`: `/Admin`, `/Empresas`, `/UserManagement`, `/DebugUsers`, `/ResetCodesHistory` y `/ValidarEmails`. Cubre la ruta exacta y lo que cuelga de ella. **Si la clave falta, valen esas mismas carpetas** (`OpcionesDePermisos.CarpetasDeAdministracion`): solo una lista vacía expresa las apaga. |
 | Guardas por rol retiradas | 46 comprobaciones `IsAdmin(` o `IsAnyAdmin(` con redirección al menú o 403, en 20 archivos de `Pages/Admin`, `Pages/Empresas` y `UserManagement`. Cada pantalla conserva su comprobación de sesión. Quién entra lo decide el permiso que declara: `plataforma.*` (solo el operador) o `administracion.*` (operador y administrador de empresa). |
 | Lo que NO se retiró | Los 6 usos de `IsAdmin`/`IsEmpresaAdmin` que deciden **qué se muestra** y no quién entra (por ejemplo, el operador ve todas las empresas y el administrador solo la suya) y la comprobación «sin empresa en la sesión» de `/Admin/Soporte`. Se retiran en F1.6e con el `Puede()` de vistas. |
-| `AdminOnlyPageFilter` | Se queda como red de seguridad hasta F1.6e (D63). |
+| `AdminOnlyPageFilter` | Se quedó como red de seguridad hasta F1.6e (D63); se retiró en e3 (su trabajo, cerrar a los anónimos las pantallas de diagnóstico, lo hace ahora `PermisosPageFilter`). |
 
 Lo que cambia para quien no tiene permiso: en lugar de volver en silencio al menú, recibe la página «Sin permiso» (403) con el nombre del permiso que le falta. Con los permisos de hoy nadie gana ni pierde acceso: todas las cuentas activas de producción entran como `empresa_user` o como operador, y las pantallas ya les cerraban el paso.
 
@@ -112,7 +112,7 @@ F1.6e se entrega en tres partes publicables, cada una con su recorrido y su reve
 |---|---|---|
 | e1 | La pantalla de permisos del rol edita el catálogo nuevo y avisa al evaluador | hecha |
 | e2 | El menú, las tarjetas de módulo y los botones preguntan lo mismo que las pantallas (`Puede`) | hecha |
-| e3 | Se retiran `IsAdmin(`, `AdminOnlyPageFilter`, los permisos copiados a la sesión y la marca `es_admin` | pendiente |
+| e3 | Se retiran `IsAdmin(`, `AdminOnlyPageFilter` y los permisos copiados a la sesión; la marca `es_admin` ya no se lee ni se escribe y se borra en F1.10 | hecha |
 
 ### e1: editar un rol no cambiaba nada
 
@@ -124,7 +124,7 @@ F1.6e se entrega en tres partes publicables, cada una con su recorrido y su reve
 |---|---|
 | `Services/Permisos/PermisosDeRol.cs` | `ObtenerAsync` arma la matriz y `GuardarAsync` deja al rol con exactamente lo marcado **entre lo que la pantalla ofrece**. Ofrece la administración de la empresa y los permisos de los módulos que la empresa tiene activos; nunca los de plataforma (un rol de empresa no los puede tener, `CK_rol_permisos_ambito`). Un código que no se ofrece se ignora; lo que el rol ya tenga de un módulo que no se ofrece se conserva. Tras guardar llama a `IEvaluadorDePermisos.Invalidar(tenant)`, así que el cambio rige en la petición siguiente y no a los 30 s. |
 | Pantalla `Admin/EmpresaRoles/Permisos` | Una tabla por módulo (y una para la administración): una fila por pantalla y una casilla por acción del catálogo (ver, crear, editar, eliminar y las propias: anular, aprobar, aplicar…). Cada casilla lleva su descripción. Quien trabaja dentro de una empresa solo abre los roles de esa empresa. |
-| `empresa_rol_permisos` | **Ya no se escribe.** Solo la lee `CargadorDePermisos` (la copia en la sesión), que se retira en e3, y la tabla se borra en F1.10. Si hubiera que volver a un paquete de F1.6c o anterior después de editar roles, esos paquetes verían los permisos que tenía el rol antes de e1; el de F1.6d en adelante lee `rol_permisos`. |
+| `empresa_rol_permisos` | **Ya no se escribe.** Solo la leía `CargadorDePermisos` (la copia en la sesión), retirado en e3; ya nadie la lee y la tabla se borra en F1.10. Si hubiera que volver a un paquete de F1.6c o anterior después de editar roles, esos paquetes verían los permisos que tenía el rol antes de e1; el de F1.6d en adelante lee `rol_permisos`. |
 | Marca `es_admin` del rol (D67) | La marca no concede nada: se quitó de las dos pantallas de roles (formulario y columna) y dejó de escribirse; la columna sigue en la base hasta F1.10. El administrador de una empresa se define en su cuenta (`empresa_admin`). |
 
 No hay script ni cambios en la base.
@@ -147,7 +147,34 @@ Cambios de comportamiento que conviene saber:
 - **Gestión de usuarios** muestra su panel a quien tiene `plataforma.usuarios.ver` (el operador, también dentro de una empresa); antes solo al operador en el contexto de plataforma.
 - **Se quitó la tarjeta «Referencias»** del centro de Flota: llevaba a `/Admin/Referencias/Index`, una pantalla que ya no existe (daba 404 y solo la veía el administrador). Una prueba de arquitectura ahora exige que toda pantalla nombrada en `eg-si-puede-abrir` exista.
 
-Lo que queda para e3: las comprobaciones por rol que **acotan datos** y no deciden qué se muestra (qué empresas ve el operador y cuál el administrador de empresa en usuarios, roles e invitaciones), las reglas de las tasas de cambio, `AdminOnlyPageFilter`, `AuthHelper.PuedeX` y la copia de permisos en la sesión.
+### e3: se retira la decisión por el texto del rol (2026-11-18)
+
+**La regla.** Ninguna pantalla ni servicio decide ya qué puede hacer alguien por el texto de su rol (`admin`, `empresa_admin`, `empresa_user`), por las cuatro casillas viejas ni por una copia de permisos en la sesión. Quién puede qué lo decide el catálogo (`[RequierePermiso]` y `this.Puede`). Lo que queda, con nombre propio, son hechos de identidad que no son permisos:
+
+| Pregunta | Para qué sirve |
+|---|---|
+| `AuthHelper.EsOperador` | Personal de la plataforma, en cualquier contexto: la marca de su cuenta o el rol `admin` del contexto de plataforma. Marca lo que es de la plataforma (las tasas oficiales y el job de tasas) y acota de qué empresas se ocupa una pantalla. |
+| `AuthHelper.PuedeActuarSobreEmpresa(idEmpresa)` | El alcance de los datos: el operador, sobre cualquiera de las empresas que ve su contexto; el resto, solo sobre la empresa de su sesión. No es un permiso: el permiso de la pantalla lo comprueba antes el filtro. |
+| `AuthHelper.EnPlataforma` (antes `IsAdmin`) | El contexto: operador sin empresa elegida. Decide el ámbito de tenant, el tenant de soporte y que el módulo y el estado del tenant no le apliquen. |
+| `AuthHelper.RolLegadoDeAcceso` | Alimenta solo al evaluador (`ContextoDePermisosHttp`). |
+
+| Pieza | Cómo queda |
+|---|---|
+| `AdminOnlyPageFilter` | **Retirado.** Cerraba el acceso anónimo de cuatro pantallas de mantenimiento (`/DebugUsers`, `/ResetCodesHistory`, `/ValidarEmails`, `/Admin/EmailConfig`) que no tienen guarda de sesión propia. Ahora lo hace `PermisosPageFilter`: **una pantalla que exige permiso exige sesión**, en cualquier modo; sin ella manda a `/Login` (a una llamada de datos le responde 403). Es autenticar, no autorizar, así que no depende de `Permisos:Modo`. |
+| Copia de permisos en la sesión | **Retirada.** `CargadorDePermisos`, `ICargadorDePermisos`, `Session["Modulos"]`, `Session["Permisos"]` y `Session["ContextoDePermisos"]` ya no existen; el middleware de la sesión solo refleja la identidad para el código anterior. `AuthHelper.GetModulos`, `GetPermisos` y `PuedeVer/Crear/Editar/Eliminar` también. `HasModulo` lee solo lo que dejó `EstadoDelTenantMiddleware` (el plan y la empresa); una petición que no pasó por él no tiene ningún módulo: se ofrece menos, nunca más. |
+| `IsAdmin(`, `IsEmpresaAdmin(`, `IsAnyAdmin(`, `IsEmpresaUser(` | **Retirados.** Una prueba de arquitectura (`RolesRetiradosTests`) vigila que no vuelvan ni en las pantallas ni en los servicios. |
+| Alcance por empresa | Usuarios (crear y editar), roles (las dos pantallas y la matriz de permisos) e invitaciones: quien no es del personal de la plataforma queda acotado a la empresa de su sesión, tenga el rol de texto que tenga. Los handlers de crear, editar y activar roles comprueban además la empresa del rol, que antes llegaba del formulario sin revisar. |
+| Tasas de cambio | Aprobar o rechazar pide `catalogos.tasas_cambio.aprobar` (antes, ser administrador) y el alcance: la tasa oficial es de la plataforma y la de una empresa, de quien trabaja en ella. Configurar y ejecutar el job siguen siendo solo del personal de la plataforma: la configuración es global y el administrador de empresa recibe ese permiso con el resto de los de su módulo. |
+| `es_admin` y `empresa_rol_permisos` | Ya nadie las lee ni las escribe. La columna, la tabla y la propiedad del modelo se borran en F1.10 (necesitan un script con `/alerta-bd`). |
+
+**Un hallazgo que esta parte cierra.** Desde que la pantalla de roles (e1) puede conceder permisos de administración, un rol de texto `empresa_user` con `administracion.usuarios.crear` o `administracion.roles.crear` no quedaba acotado a su empresa (solo lo acotaba `IsEmpresaAdmin`): podía crear usuarios y roles en otra empresa de su tenant, o editar un superadmin. Ahora las pantallas comprueban el alcance con `PuedeActuarSobreEmpresa`. En producción nadie tenía esos permisos en un rol, así que no hubo uso indebido posible.
+
+Cambios de comportamiento que conviene saber:
+
+- **El operador dentro de una empresa** (por ejemplo Transgar) elige la empresa en usuarios, roles e invitaciones, y en la configuración y la aprobación de las tasas oficiales; antes solo lo hacía en el contexto de plataforma, y dentro de una empresa quedaba sin lista de empresas. Es la misma coherencia que D66 dio a los permisos.
+- **Un rol con el permiso de aprobar tasas** aprueba y rechaza las tasas de su empresa (antes la pantalla lo ignoraba y solo dejaba a un administrador).
+- **Un usuario sin empresa (superadmin)** solo se abre y se edita desde el contexto de plataforma.
+- **Sin sesión**, las pantallas que exigen permiso mandan a `/Login` aunque el modo no bloquee.
 
 ## Alternativas consideradas
 

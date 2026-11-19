@@ -65,8 +65,8 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            // Un administrador de empresa solo invita a su empresa.
-            if (AuthHelper.IsEmpresaAdmin(HttpContext)) IdEmpresa = AuthHelper.GetEmpresaId(HttpContext);
+            // Quien no es del personal de la plataforma solo invita a su empresa.
+            if (!AuthHelper.EsOperador(HttpContext)) IdEmpresa = AuthHelper.GetEmpresaId(HttpContext);
 
             await CargarListasAsync();
             return Page();
@@ -91,7 +91,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
             if (!AuthHelper.IsAuthenticated(HttpContext))
                 return StatusCode(StatusCodes.Status403Forbidden);
 
-            if (AuthHelper.IsEmpresaAdmin(HttpContext) && idEmpresa != AuthHelper.GetEmpresaId(HttpContext))
+            if (!AuthHelper.PuedeActuarSobreEmpresa(HttpContext, idEmpresa))
                 return new JsonResult(Array.Empty<object>());
 
             var roles = await _context.EmpresaRoles.AsNoTracking()
@@ -106,7 +106,7 @@ namespace eGestion360Web.Pages.Admin.Invitaciones
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            if (AuthHelper.IsEmpresaAdmin(HttpContext)) IdEmpresa = AuthHelper.GetEmpresaId(HttpContext);
+            if (!AuthHelper.EsOperador(HttpContext)) IdEmpresa = AuthHelper.GetEmpresaId(HttpContext);
 
             if (!ModelState.IsValid) return await VolverAsync();
             if (IdEmpresa is not > 0)

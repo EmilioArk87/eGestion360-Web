@@ -152,3 +152,28 @@ Quien no puede entrar ve ahora una sola página, con el estilo de `app_offline.h
 - Suite 1509 de 1509. Pruebas nuevas: resolución de rutas relativas y de handlers, el decisor y los tag helpers (se ocultan, se muestran, modo Registrar, verbo por etiqueta y `method`, tarjeta de subcentro), los permisos de la petición (una sola evaluación, sin sesión, un error no tumba la vista) y el menú principal (módulos, encabezados, misma pregunta que el filtro). Una prueba de arquitectura exige que **toda tarjeta de un centro de navegación decida si se muestra**, que cada pantalla nombrada en `eg-si-puede-abrir` exista y que no vuelvan las banderas por rol ni `AuthHelper.PuedeX` en las vistas.
 - En una copia de producción en el SQL Server local, con navegador automatizado y roles reales (26 de 26, sin errores de JavaScript): el **Operador de Flota** ve su menú sin administración, los botones «Nuevo» y «Editar» y **no** el de «Eliminar»; el **administrador de empresa** ve Invitaciones y Roles y Permisos y el botón «Eliminar»; `cliente_demo` ve Flota y Catálogos y no el botón «Eliminar»; el **operador** ve las siete tarjetas del sistema y todo lo que el menú ofrece abre (HTTP 200). Al quitarle al rol los permisos de gastos, la tarjeta «Gastos» desaparece del centro de Flota en la petición siguiente, y vuelve al restaurarlos.
 - Sin cobertura de navegador: el rol «Consulta» de Transgar (no tiene cuenta activa; lo cubre el decisor con los permisos del evaluador).
+
+## F1.6e-3 · Se retira la decisión por el texto del rol
+
+**No toca la base** (ni script ni `/alerta-bd`). Termina F1.6e (ADR-029, D63): ninguna pantalla ni servicio decide qué puede hacer alguien por su rol de texto (`admin`, `empresa_admin`, `empresa_user`), por las cuatro casillas viejas ni por una copia de permisos en la sesión.
+
+| Qué | Cómo queda |
+|---|---|
+| `AdminOnlyPageFilter` | Retirado. Cerraba el acceso anónimo de `/DebugUsers`, `/ResetCodesHistory`, `/ValidarEmails` y `/Admin/EmailConfig`, que no tienen guarda propia de sesión. Ahora lo hace `PermisosPageFilter`: **una pantalla que exige permiso exige sesión** (a `/Login`; a una llamada de datos, 403), en cualquier modo. |
+| Copia en la sesión | Retirada: `CargadorDePermisos`, `Session["Modulos"]`, `["Permisos"]` y `["ContextoDePermisos"]`, y `AuthHelper.GetModulos`, `GetPermisos` y `PuedeVer/Crear/Editar/Eliminar`. `HasModulo` lee solo lo que deja `EstadoDelTenantMiddleware`. |
+| `IsAdmin(`, `IsEmpresaAdmin(`, `IsAnyAdmin(`, `IsEmpresaUser(` | Retirados. Quedan tres preguntas de identidad con nombre: `EsOperador` (personal de la plataforma), `PuedeActuarSobreEmpresa(idEmpresa)` (alcance de los datos) y `EnPlataforma` (el contexto del operador sin empresa; antes `IsAdmin`). |
+| Alcance por empresa | Usuarios (crear y editar), roles (las dos pantallas y la matriz) e invitaciones: quien no es del personal de la plataforma queda en la empresa de su sesión. Los handlers de roles comprueban la empresa del rol. |
+| Tasas de cambio | Aprobar y rechazar piden `catalogos.tasas_cambio.aprobar` (antes, ser administrador) y el alcance; configurar y ejecutar el job siguen siendo del personal de la plataforma. |
+| Reversa | Publicar el paquete anterior (F1.6e-2). |
+
+### Qué cambia para una persona
+
+- Un **rol con el permiso de aprobar tasas** ahora aprueba las de su empresa (antes la pantalla lo ignoraba).
+- El **operador dentro de una empresa** elige la empresa en usuarios, roles e invitaciones y ve la configuración de tasas; es lo que D66 ya le daba en permisos.
+- Un **usuario sin empresa (superadmin)** solo se abre y se edita desde el contexto de plataforma.
+- Hallazgo cerrado: un rol de empresa con permisos de administración (que la pantalla de roles ya concedía) no quedaba acotado a su empresa y podía crear usuarios y roles en otra empresa del tenant. En producción nadie tenía esos permisos.
+
+### Cómo se probó
+
+- Suite completa; pruebas nuevas: `RolesRetiradosTests` (arquitectura: no vuelven los roles por texto, las casillas viejas ni la copia en la sesión, y los archivos retirados no existen), `AlcanceDeEmpresaTests` (usuarios, roles y listas de roles: quien trabaja en una empresa no toca otra, el operador sí) y las del filtro de permisos sin sesión (incluidas las cuatro pantallas de diagnóstico con la configuración real). Las pruebas de equivalencia con el sistema anterior pasan a usar la regla de las casillas como entrada.
+- Recorrido en una copia de producción con navegador automatizado: ver el resultado al cerrar la prueba.
