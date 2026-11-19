@@ -1,0 +1,154 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Catalogos.TiposConstanciaModel
+@{
+    ViewData["Title"] = "Tipos de constancia";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tipos de constancia</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-file-signature me-2"></i>Tipos de constancia</h2>
+            <p class="text-muted mb-0">Cada tipo lleva su propia numeración y su propio formato de impresión sobre el papel membretado. El código no cambia una vez que el tipo tiene constancias. Lo que ya se usó no se borra: se desactiva.</p>
+        </div>
+        <a asp-page="/Psicologia/Catalogos/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    @if (TempData["CatalogosMensaje"] is string mensaje)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@mensaje
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+    <div class="row g-4">
+        @if (Model.PuedeEditar)
+        {
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">@(Model.Tipo.Id > 0 ? "Editar tipo" : "Agregar tipo")</h5>
+                        <form method="post" asp-page-handler="Guardar" id="form-tipo">
+                            <input type="hidden" asp-for="Tipo.Id" />
+                            <div class="row g-2">
+                                <div class="col-sm-4">
+                                    <label asp-for="Tipo.Codigo" class="form-label small mb-1">Código</label>
+                                    <input asp-for="Tipo.Codigo" class="form-control form-control-sm text-uppercase" placeholder="ARMAS" maxlength="10" autocomplete="off" />
+                                    <span asp-validation-for="Tipo.Codigo" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label asp-for="Tipo.Nombre" class="form-label small mb-1">Nombre</label>
+                                    <input asp-for="Tipo.Nombre" class="form-control form-control-sm" placeholder="Constancia para portación de armas" autocomplete="off" />
+                                    <span asp-validation-for="Tipo.Nombre" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12 form-text mt-0">El código es el prefijo de su numeración (ARMAS-2026-00001), hasta 10 caracteres.</div>
+                                <div class="col-12">
+                                    <label asp-for="Tipo.Plantilla" class="form-label small mb-1">Formato de impresión</label>
+                                    <select asp-for="Tipo.Plantilla" class="form-select form-select-sm">
+                                        <option value="">Por recibir (no se imprime todavía)</option>
+                                        @foreach (var p in eGestion360Web.Services.Psicologia.PlantillasConstancia.Todas)
+                                        {
+                                            <option value="@p.Codigo">@p.Nombre</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Tipo.Plantilla" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Tipo.FolioDesde" class="form-label small mb-1">Talonario: primer folio</label>
+                                    <input asp-for="Tipo.FolioDesde" type="number" min="1" class="form-control form-control-sm font-monospace" placeholder="1374060" />
+                                    <span asp-validation-for="Tipo.FolioDesde" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="Tipo.FolioHasta" class="form-label small mb-1">Último folio</label>
+                                    <input asp-for="Tipo.FolioHasta" type="number" min="1" class="form-control form-control-sm font-monospace" placeholder="1374084" />
+                                    <span asp-validation-for="Tipo.FolioHasta" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12 form-text mt-0">Si las hojas del Colegio traen número impreso, escribe el talonario en uso: cada constancia toma el siguiente folio libre. Vacío: correlativo propio (CODIGO-AAAA-NNNNN).</div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                @if (Model.Tipo.Id > 0)
+                                {
+                                    <a asp-page="TiposConstancia" class="btn btn-sm btn-outline-secondary">Cancelar</a>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-1"></i>Guardar cambios</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-plus me-1"></i>Agregar tipo</button>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="@(Model.PuedeEditar ? "col-lg-7" : "col-12")">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Catálogo <span class="badge bg-light text-secondary border ms-1">@Model.Tipos.Count</span></h5>
+                    @if (Model.Tipos.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Todavía no hay tipos de constancia.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var t in Model.Tipos)
+                            {
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2 @(t.Activo ? "" : "text-muted")">
+                                    <div>
+                                        <span class="badge bg-light text-dark border font-monospace me-1">@t.Codigo</span>
+                                        <span class="fw-semibold">@t.Nombre</span>
+                                        @if (!t.Activo) { <span class="badge bg-secondary ms-1">inactivo</span> }
+                                        <div class="small text-muted">
+                                            Formato: @t.Formato · @(t.Usos == 0 ? "sin constancias" : $"{t.Usos} constancia(s)")
+                                        </div>
+                                        <div class="small text-muted">
+                                            @if (t.FolioDesde != null)
+                                            {
+                                                <span>Talonario <span class="font-monospace">@t.FolioDesde–@t.FolioHasta</span></span>
+                                            }
+                                            else
+                                            {
+                                                <span>Correlativo propio</span>
+                                            }
+                                            @if (t.Activo && Model.Siguientes.TryGetValue(t.Id, out var siguiente))
+                                            {
+                                                <span> · siguiente: <span class="font-monospace">@siguiente</span></span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <div class="d-flex gap-1 flex-shrink-0">
+                                            <a asp-page="TiposConstancia" asp-route-editar="@t.Id" asp-fragment="form-tipo" class="btn btn-sm btn-outline-primary" title="Editar"><i class="fas fa-pen"></i></a>
+                                            <form method="post" asp-page-handler="Estado" asp-route-id="@t.Id" asp-route-activo="@(!t.Activo)">
+                                                <button type="submit" class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")" title="@(t.Activo ? "Desactivar" : "Activar")">
+                                                    <i class="fas @(t.Activo ? "fa-eye-slash" : "fa-eye")"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

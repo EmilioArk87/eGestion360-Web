@@ -16,212 +16,53 @@
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="mb-1"><i class="fas fa-list-check me-2"></i>Catálogos</h2>
-            <p class="text-muted mb-0">Pruebas psicológicas que aplica el centro y tipos de constancia que extiende. Lo que ya se usó no se borra: se desactiva.</p>
+            <p class="text-muted mb-0">Pruebas psicológicas que aplica el centro y tipos de constancia que extiende</p>
         </div>
         <a asp-page="/Psicologia/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
     </div>
 
-    @if (TempData["CatalogosMensaje"] is string mensaje)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>@mensaje
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-    }
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
-
     <div class="row g-4">
-        @* ── Pruebas psicológicas ── *@
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title mb-1"><i class="fas fa-clipboard-list me-2"></i>Pruebas psicológicas</h5>
-                    <p class="small text-muted">Se marcan en cada atención y se declaran en las constancias.</p>
 
-                    @if (Model.PuedeEditar)
-                    {
-                        <form method="post" asp-page-handler="GuardarPrueba" class="border rounded p-3 mb-3 bg-light" id="form-prueba">
-                            <input type="hidden" asp-for="Prueba.Id" />
-                            <div class="row g-2">
-                                <div class="col-sm-4">
-                                    <label asp-for="Prueba.Codigo" class="form-label small mb-1">Código</label>
-                                    <input asp-for="Prueba.Codigo" class="form-control form-control-sm text-uppercase" placeholder="MMPI-2" autocomplete="off" />
-                                    <span asp-validation-for="Prueba.Codigo" class="text-danger small"></span>
-                                </div>
-                                <div class="col-sm-8">
-                                    <label asp-for="Prueba.Nombre" class="form-label small mb-1">Nombre</label>
-                                    <input asp-for="Prueba.Nombre" class="form-control form-control-sm" placeholder="Inventario Multifásico de Personalidad de Minnesota-2" autocomplete="off" />
-                                    <span asp-validation-for="Prueba.Nombre" class="text-danger small"></span>
-                                </div>
-                                <div class="col-12">
-                                    <label asp-for="Prueba.Descripcion" class="form-label small mb-1">Descripción (opcional)</label>
-                                    <input asp-for="Prueba.Descripcion" class="form-control form-control-sm" autocomplete="off" />
-                                    <span asp-validation-for="Prueba.Descripcion" class="text-danger small"></span>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-2">
-                                @if (Model.Prueba.Id > 0)
-                                {
-                                    <a asp-page="Index" class="btn btn-sm btn-outline-secondary">Cancelar</a>
-                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-1"></i>Guardar cambios</button>
-                                }
-                                else
-                                {
-                                    <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-plus me-1"></i>Agregar prueba</button>
-                                }
-                            </div>
-                        </form>
-                    }
-
-                    @if (Model.Pruebas.Count == 0)
-                    {
-                        <p class="text-muted small mb-0">Todavía no hay pruebas en el catálogo.</p>
-                    }
-                    else
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var p in Model.Pruebas)
-                            {
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2 @(p.Activo ? "" : "text-muted")">
-                                    <div>
-                                        <span class="badge bg-light text-primary border font-monospace me-1">@p.Codigo</span>
-                                        <span class="fw-semibold">@p.Nombre</span>
-                                        @if (!p.Activo) { <span class="badge bg-secondary ms-1">inactiva</span> }
-                                        @if (p.Descripcion != null) { <div class="small text-muted">@p.Descripcion</div> }
-                                        <div class="small text-muted">@(p.Usos == 0 ? "Sin usar" : $"Usada {p.Usos} vez(ces)")</div>
-                                    </div>
-                                    @if (Model.PuedeEditar)
-                                    {
-                                        <div class="d-flex gap-1 flex-shrink-0">
-                                            <a asp-page="Index" asp-route-editarPrueba="@p.Id" asp-fragment="form-prueba" class="btn btn-sm btn-outline-primary" title="Editar"><i class="fas fa-pen"></i></a>
-                                            <form method="post" asp-page-handler="EstadoPrueba" asp-route-id="@p.Id" asp-route-activo="@(!p.Activo)">
-                                                <button type="submit" class="btn btn-sm @(p.Activo ? "btn-outline-secondary" : "btn-outline-success")" title="@(p.Activo ? "Desactivar" : "Activar")">
-                                                    <i class="fas @(p.Activo ? "fa-eye-slash" : "fa-eye")"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    }
-                                </li>
-                            }
-                        </ul>
-                    }
+        <!-- Pruebas psicológicas -->
+        <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Psicologia/Catalogos/Pruebas">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4.5rem; height: 4.5rem; background-color: #20c997;">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-2">Pruebas psicológicas</h5>
+                    <p class="card-text text-muted small mb-4">Las que se marcan en cada atención y se declaran en las constancias</p>
+                    <a asp-page="/Psicologia/Catalogos/Pruebas" class="btn w-100 text-white" style="background-color: #20c997;">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
                 </div>
             </div>
         </div>
 
-        @* ── Tipos de constancia ── *@
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title mb-1"><i class="fas fa-file-signature me-2"></i>Tipos de constancia</h5>
-                    <p class="small text-muted">Cada tipo lleva su propia numeración y tendrá su propio formato de impresión sobre el papel membretado, que se carga cuando llegue. El código no cambia una vez que el tipo tiene constancias.</p>
-
-                    @if (Model.PuedeEditar)
-                    {
-                        <form method="post" asp-page-handler="GuardarTipo" class="border rounded p-3 mb-3 bg-light" id="form-tipo">
-                            <input type="hidden" asp-for="Tipo.Id" />
-                            <div class="row g-2">
-                                <div class="col-sm-4">
-                                    <label asp-for="Tipo.Codigo" class="form-label small mb-1">Código</label>
-                                    <input asp-for="Tipo.Codigo" class="form-control form-control-sm text-uppercase" placeholder="ARMAS" maxlength="10" autocomplete="off" />
-                                    <span asp-validation-for="Tipo.Codigo" class="text-danger small"></span>
-                                    <div class="form-text">Prefijo de su numeración (ARMAS-2026-00001), hasta 10 caracteres.</div>
-                                </div>
-                                <div class="col-sm-8">
-                                    <label asp-for="Tipo.Nombre" class="form-label small mb-1">Nombre</label>
-                                    <input asp-for="Tipo.Nombre" class="form-control form-control-sm" placeholder="Constancia para portación de armas" autocomplete="off" />
-                                    <span asp-validation-for="Tipo.Nombre" class="text-danger small"></span>
-                                </div>
-                                <div class="col-12">
-                                    <label asp-for="Tipo.Plantilla" class="form-label small mb-1">Formato de impresión</label>
-                                    <select asp-for="Tipo.Plantilla" class="form-select form-select-sm">
-                                        <option value="">Por recibir (no se imprime todavía)</option>
-                                        @foreach (var p in eGestion360Web.Services.Psicologia.PlantillasConstancia.Todas)
-                                        {
-                                            <option value="@p.Codigo">@p.Nombre</option>
-                                        }
-                                    </select>
-                                    <span asp-validation-for="Tipo.Plantilla" class="text-danger small"></span>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label asp-for="Tipo.FolioDesde" class="form-label small mb-1">Talonario: primer folio</label>
-                                    <input asp-for="Tipo.FolioDesde" type="number" min="1" class="form-control form-control-sm font-monospace" placeholder="1374060" />
-                                    <span asp-validation-for="Tipo.FolioDesde" class="text-danger small"></span>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label asp-for="Tipo.FolioHasta" class="form-label small mb-1">Último folio</label>
-                                    <input asp-for="Tipo.FolioHasta" type="number" min="1" class="form-control form-control-sm font-monospace" placeholder="1374084" />
-                                    <span asp-validation-for="Tipo.FolioHasta" class="text-danger small"></span>
-                                </div>
-                                <div class="col-12 form-text mt-0">Si las hojas del Colegio traen número impreso, escribe el talonario en uso: cada constancia toma el siguiente folio libre. Vacío: correlativo propio (CODIGO-AAAA-NNNNN).</div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-2">
-                                @if (Model.Tipo.Id > 0)
-                                {
-                                    <a asp-page="Index" class="btn btn-sm btn-outline-secondary">Cancelar</a>
-                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-1"></i>Guardar cambios</button>
-                                }
-                                else
-                                {
-                                    <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-plus me-1"></i>Agregar tipo</button>
-                                }
-                            </div>
-                        </form>
-                    }
-
-                    @if (Model.Tipos.Count == 0)
-                    {
-                        <p class="text-muted small mb-0">Todavía no hay tipos de constancia.</p>
-                    }
-                    else
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var t in Model.Tipos)
-                            {
-                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2 @(t.Activo ? "" : "text-muted")">
-                                    <div>
-                                        <span class="badge bg-light text-dark border font-monospace me-1">@t.Codigo</span>
-                                        <span class="fw-semibold">@t.Nombre</span>
-                                        @if (!t.Activo) { <span class="badge bg-secondary ms-1">inactivo</span> }
-                                        <div class="small text-muted">
-                                            Formato: @t.Formato · @(t.Usos == 0 ? "sin constancias" : $"{t.Usos} constancia(s)")
-                                        </div>
-                                        <div class="small text-muted">
-                                            @if (t.FolioDesde != null)
-                                            {
-                                                <span>Talonario <span class="font-monospace">@t.FolioDesde–@t.FolioHasta</span></span>
-                                            }
-                                            else
-                                            {
-                                                <span>Correlativo propio</span>
-                                            }
-                                            @if (t.Activo && Model.Siguientes.TryGetValue(t.Id, out var siguiente))
-                                            {
-                                                <span> · siguiente: <span class="font-monospace">@siguiente</span></span>
-                                            }
-                                        </div>
-                                    </div>
-                                    @if (Model.PuedeEditar)
-                                    {
-                                        <div class="d-flex gap-1 flex-shrink-0">
-                                            <a asp-page="Index" asp-route-editarTipo="@t.Id" asp-fragment="form-tipo" class="btn btn-sm btn-outline-primary" title="Editar"><i class="fas fa-pen"></i></a>
-                                            <form method="post" asp-page-handler="EstadoTipo" asp-route-id="@t.Id" asp-route-activo="@(!t.Activo)">
-                                                <button type="submit" class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")" title="@(t.Activo ? "Desactivar" : "Activar")">
-                                                    <i class="fas @(t.Activo ? "fa-eye-slash" : "fa-eye")"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    }
-                                </li>
-                            }
-                        </ul>
-                    }
+        <!-- Tipos de constancia -->
+        <div class="col-md-6 col-lg-4" eg-si-puede-abrir="/Psicologia/Catalogos/TiposConstancia">
+            <div class="card h-100 shadow-sm border-0 menu-card">
+                <div class="card-body text-center p-4">
+                    <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 4.5rem; height: 4.5rem; background-color: #d63384;">
+                        <i class="fas fa-file-signature fa-2x"></i>
+                    </div>
+                    <h5 class="card-title fw-bold mb-2">Tipos de constancia</h5>
+                    <p class="card-text text-muted small mb-4">Numeración, talonario del Colegio y formato de impresión de cada tipo</p>
+                    <a asp-page="/Psicologia/Catalogos/TiposConstancia" class="btn w-100 text-white" style="background-color: #d63384;">
+                        <i class="fas fa-arrow-right me-2"></i>Acceder
+                    </a>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <style>
+        .menu-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12) !important; }
+    </style>
 }
