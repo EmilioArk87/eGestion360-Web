@@ -130,6 +130,7 @@ builder.Services.AddScoped<IPersonaConsultaService, PersonaConsultaService>();
 builder.Services.AddScoped<IPersonaAdminConsultaService, PersonaAdminConsultaService>();
 builder.Services.AddScoped<IVinculoService, VinculoService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IPacienteService, eGestion360Web.Services.Psicologia.PacienteService>();
+builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IEdicionPacienteService, eGestion360Web.Services.Psicologia.EdicionPacienteService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IImportacionPsicologiaService, eGestion360Web.Services.Psicologia.ImportacionPsicologiaService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.ICatalogoPsicologiaService, eGestion360Web.Services.Psicologia.CatalogoPsicologiaService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IAtencionService, eGestion360Web.Services.Psicologia.AtencionService>();

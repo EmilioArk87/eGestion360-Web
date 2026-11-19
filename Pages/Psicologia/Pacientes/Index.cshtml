@@ -71,7 +71,13 @@
                                     <td class="text-center">@(p.Sexo ?? "—")</td>
                                     <td class="text-end">@(p.Edad?.ToString() ?? "—")</td>
                                     <td class="text-end">@p.Atenciones @if (p.EnBorrador > 0) { <span class="badge bg-warning text-dark ms-1" title="Por completar">@p.EnBorrador borrador</span> }</td>
-                                    <td class="text-end"><a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@p.IdPaciente" class="btn btn-sm btn-outline-primary">Expediente</a></td>
+                                    <td class="text-end text-nowrap">
+                                        @if (Model.PuedeEditar)
+                                        {
+                                            <a asp-page="/Psicologia/Pacientes/Editar" asp-route-id="@p.IdPaciente" class="btn btn-sm btn-outline-secondary me-1" title="Editar los datos del paciente"><i class="fas fa-user-edit"></i></a>
+                                        }
+                                        <a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@p.IdPaciente" class="btn btn-sm btn-outline-primary">Expediente</a>
+                                    </td>
                                 </tr>
                             }
                         </tbody>

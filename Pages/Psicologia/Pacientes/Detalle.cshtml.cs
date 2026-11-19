@@ -52,6 +52,7 @@ namespace eGestion360Web.Pages.Psicologia.Pacientes
 
         public List<FilaConstancia> Constancias { get; private set; } = new();
 
+        public bool PuedeEditar => this.Puede("psicologia.pacientes.editar");
         public bool PuedeVerAtenciones => this.Puede("psicologia.atenciones.ver");
         public bool PuedeRegistrarAtenciones => this.Puede("psicologia.atenciones.registrar");
         public bool PuedeVerConstancias => this.Puede("psicologia.constancias.ver");
