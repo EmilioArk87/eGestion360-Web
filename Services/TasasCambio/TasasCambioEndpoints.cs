@@ -84,7 +84,7 @@ namespace eGestion360Web.Services.TasasCambio
 
     /// <summary>
     /// POST /internal/jobs/tasas-cambio/ejecutar con el encabezado X-Job-Token. Minimal API: no pasa por los filtros de
-    /// Razor Pages (AdminOnlyPageFilter, EmpresaRequeridaPageFilter) ni usa la sesión. Responde 404 si el job está
+    /// Razor Pages (EmpresaRequeridaPageFilter, PermisosPageFilter) ni usa la sesión. Responde 404 si el job está
     /// deshabilitado o no hay token configurado, 401 si el token no coincide y 202 sin contenido si lo acepta (la
     /// evaluación, y la ejecución si toca, corren en el worker, no en la petición).
     /// </summary>

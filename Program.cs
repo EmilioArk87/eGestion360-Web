@@ -14,14 +14,13 @@ using eGestion360Web.Services.Tenancy;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// AdminOnlyPageFilter cierra el acceso anónimo a las páginas de mantenimiento
-// (/DebugUsers, /ResetCodesHistory, config SMTP…). Ver el filtro.
+// El acceso anónimo a las páginas de mantenimiento (/DebugUsers, /ResetCodesHistory, config SMTP…) lo cierra PermisosPageFilter:
+// una pantalla que exige permiso exige sesión (F1.6e-3; antes lo hacía AdminOnlyPageFilter, ya retirado).
 // EmpresaRequeridaPageFilter desvía a quien no trae empresa en la sesión (el administrador general) de las pantallas
 // de Flota, que operan sobre una sola empresa y ya no caen en la empresa 1 por defecto. Ver el filtro.
 builder.Services.AddRazorPages()
     .AddMvcOptions(options =>
     {
-        options.Filters.Add<AdminOnlyPageFilter>();
         options.Filters.Add<EmpresaRequeridaPageFilter>();
         options.Filters.Add<AmbitoDePlataformaPageFilter>();   // F1.3: pantallas que ven todos los tenants (lista revisada)
         options.Filters.Add<TenantDeSoporteRequeridoPageFilter>();   // F1.4c: pantallas de datos de un tenant: el administrador general elige antes cuál
@@ -208,7 +207,6 @@ builder.Services.AddAuthentication(ReclamosDeIdentidad.Esquema)
         o.Events.OnValidatePrincipal = EventosDeCookieDeIdentidad.AlValidarAsync;
     });
 builder.Services.AddSingleton<IValidadorDeIdentidad, ValidadorDeIdentidad>();
-builder.Services.AddScoped<ICargadorDePermisos, CargadorDePermisos>();
 builder.Services.AddScoped<IBloqueoDeCuentas, BloqueoDeCuentas>();
 builder.Services.AddScoped<IServicioMfa, ServicioMfa>();
 builder.Services.AddScoped<IDirectorioDeCuentas, DirectorioDeCuentas>();

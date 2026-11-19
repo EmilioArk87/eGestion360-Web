@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
+using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Pages;
+using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Permisos;
 using eGestion360Web.Tests.Infra;
 
@@ -100,7 +102,11 @@ namespace eGestion360Web.Tests.Paginas
         private static async Task<MainMenuModel> Abrir(string[] permisos, params string[] modulosActivos)
         {
             var http = SesionFalsa.Contexto("empresa_user", "1");
-            http.Session.SetString("Modulos", System.Text.Json.JsonSerializer.Serialize(modulosActivos));
+            // Los módulos de la petición, como los deja EstadoDelTenantMiddleware (el plan los concede y la empresa los tiene activos).
+            http.Items[EstadoDelTenantMiddleware.ClaveDerechos] = new DerechosDeLaPeticion(
+                new DerechosDelTenant(1, "T", TipoTenant.Cliente, EstadoTenant.Activo, ModoDeSuspension.Lectura, null, "plan",
+                    new HashSet<string>(modulosActivos.Select(CodigosDeDerecho.DeModulo)), new Dictionary<string, int?>()),
+                new HashSet<string>(modulosActivos));
             var modelo = new MainMenuModel(new PermisosFalsos(permisos))
             {
                 PageContext = new PageContext(new ActionContext(http, new RouteData(), new Microsoft.AspNetCore.Mvc.RazorPages.CompiledPageActionDescriptor())),

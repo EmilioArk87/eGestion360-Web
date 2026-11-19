@@ -303,7 +303,7 @@ namespace eGestion360Web.Tests.Services.Derechos
             Assert.Null(Ejecutar("/Admin/Usuarios/Index", http).Result);
         }
 
-        // ── AuthHelper.HasModulo: la petición manda, la sesión es el respaldo ─
+        // ── AuthHelper.HasModulo: solo cuenta lo que dejó la petición (ya no hay copia en la sesión) ─
 
         [Fact]
         public void HasModulo_lee_los_derechos_de_la_peticion_y_no_la_copia_de_la_sesion()
@@ -317,14 +317,23 @@ namespace eGestion360Web.Tests.Services.Derechos
         }
 
         [Fact]
-        public void HasModulo_sin_derechos_de_la_peticion_usa_la_copia_de_la_sesion_como_antes()
+        public void HasModulo_sin_derechos_de_la_peticion_no_concede_ningun_modulo_aunque_la_sesion_lo_diga()
         {
+            // F1.6e-3: la copia de módulos de la sesión se retiró; una petición que no pasó por el middleware ve menos, nunca más.
             var http = SesionFalsa.Contexto("empresa_user", "1");
             http.Session.SetString("Modulos", "[\"flota\"]");
 
-            Assert.True(AuthHelper.HasModulo(http, "flota"));
-            Assert.True(AuthHelper.HasModulo(http, "FLOTA"));
+            Assert.False(AuthHelper.HasModulo(http, "flota"));
             Assert.False(AuthHelper.HasModulo(http, "facturacion"));
+        }
+
+        [Fact]
+        public void HasModulo_ignora_mayusculas_en_el_codigo_del_modulo()
+        {
+            var http = SesionFalsa.Contexto("empresa_user", "1");
+            http.Items[EstadoDelTenantMiddleware.ClaveDerechos] = Peticion(new[] { "modulo.flota" }, new[] { "flota" });
+
+            Assert.True(AuthHelper.HasModulo(http, "FLOTA"));
         }
 
         [Fact]
@@ -337,13 +346,13 @@ namespace eGestion360Web.Tests.Services.Derechos
         }
 
         [Fact]
-        public void El_empresa_admin_pierde_los_permisos_de_un_modulo_que_el_plan_ya_no_concede()
+        public void El_empresa_admin_pierde_el_modulo_que_el_plan_ya_no_concede()
         {
             var http = SesionFalsa.Contexto("empresa_admin", "1");
             http.Items[EstadoDelTenantMiddleware.ClaveDerechos] = Peticion(new[] { "modulo.flota" }, new[] { "flota", "facturacion" });
 
-            Assert.True(AuthHelper.PuedeCrear(http, "flota"));
-            Assert.False(AuthHelper.PuedeCrear(http, "facturacion"));
+            Assert.True(AuthHelper.HasModulo(http, "flota"));
+            Assert.False(AuthHelper.HasModulo(http, "facturacion"));
         }
 
         // ── Que ninguna carpeta de módulo se escape del filtro ────────────────

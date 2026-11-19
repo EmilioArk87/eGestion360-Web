@@ -106,8 +106,8 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            // empresa_admin solo puede crear usuarios para su empresa
-            if (AuthHelper.IsEmpresaAdmin(HttpContext))
+            // Quien no es del personal de la plataforma solo crea usuarios de su empresa.
+            if (!AuthHelper.EsOperador(HttpContext))
                 EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
 
             await CargarListasAsync();
@@ -135,9 +135,15 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            // empresa_admin solo puede crear en su empresa
-            if (AuthHelper.IsEmpresaAdmin(HttpContext))
+            // Quien no es del personal de la plataforma solo crea en su empresa. El usuario sin empresa (superadmin) solo se crea desde el
+            // contexto de plataforma: en cualquier otro, la empresa es obligatoria.
+            if (!AuthHelper.EsOperador(HttpContext))
                 EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
+            if (EmpresaId is not > 0 && !AuthHelper.EnPlataforma(HttpContext))
+            {
+                if (!AuthHelper.EsOperador(HttpContext)) return RedirectToPage("/MainMenu");
+                ModelState.AddModelError(nameof(EmpresaId), "Elige la empresa del usuario.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -247,14 +253,15 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 if (NombrePersonaElegida == null) IdPersonaElegida = null;
             }
 
-            if (AuthHelper.IsAdmin(HttpContext))
+            if (AuthHelper.EsOperador(HttpContext))
             {
                 Empresas = await _context.Empresas
                     .Where(e => !e.Eliminado && e.Activa)
                     .OrderBy(e => e.RazonSocial)
                     .Select(e => new SelectListItem(e.RazonSocial, e.IdEmpresa.ToString()))
                     .ToListAsync();
-                Empresas.Insert(0, new SelectListItem("— Sin empresa (superadmin) —", ""));
+                if (AuthHelper.EnPlataforma(HttpContext))
+                    Empresas.Insert(0, new SelectListItem("— Sin empresa (superadmin) —", ""));
             }
 
             if (EmpresaId.HasValue)

@@ -34,9 +34,9 @@ namespace eGestion360Web.Pages.Admin.Usuarios
     /// <summary>Lo que comparten Crear y Editar usuario para trabajar con la persona.</summary>
     internal static class PersonaDeUsuarioPagina
     {
-        /// <summary>Quién opera, según la sesión: el administrador general o el administrador de una empresa.</summary>
+        /// <summary>Quién opera, según la sesión: el administrador general (el personal de la plataforma) o quien trabaja en una empresa.</summary>
         public static QuienOperaUsuarios Quien(HttpContext http) => new(
-            AuthHelper.IsAdmin(http),
+            AuthHelper.EsOperador(http),
             AuthHelper.GetEmpresaId(http),
             http.Session.GetString("Username") ?? "system");
 

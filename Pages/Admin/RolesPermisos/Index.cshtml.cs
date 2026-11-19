@@ -26,8 +26,8 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            // empresa_admin solo ve su propia empresa
-            if (AuthHelper.IsEmpresaAdmin(HttpContext))
+            // Quien no es del personal de la plataforma solo ve la empresa de su sesión.
+            if (!AuthHelper.EsOperador(HttpContext))
                 EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
 
             await CargarEmpresasAsync();
@@ -42,6 +42,7 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
         public async Task<IActionResult> OnPostCrearAsync(int empresaId, string nombre, string? descripcion)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
+            if (!AuthHelper.PuedeActuarSobreEmpresa(HttpContext, empresaId)) return RedirectToPage("/MainMenu");
 
             _context.EmpresaRoles.Add(new EmpresaRol
             {
@@ -61,6 +62,7 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
             var rol = await _context.EmpresaRoles.FindAsync(rolId);
+            if (rol != null && !AuthHelper.PuedeActuarSobreEmpresa(HttpContext, rol.IdEmpresa)) return RedirectToPage("/MainMenu");
             if (rol != null)
             {
                 rol.Nombre      = nombre.Trim();
@@ -77,6 +79,7 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
             var rol = await _context.EmpresaRoles.FindAsync(rolId);
+            if (rol != null && !AuthHelper.PuedeActuarSobreEmpresa(HttpContext, rol.IdEmpresa)) return RedirectToPage("/MainMenu");
             if (rol != null)
             {
                 rol.Activo = activo;
@@ -88,14 +91,14 @@ namespace eGestion360Web.Pages.Admin.RolesPermisos
 
         private async Task CargarEmpresasAsync()
         {
-            if (AuthHelper.IsAdmin(HttpContext))
+            if (AuthHelper.EsOperador(HttpContext))
             {
                 Empresas = await _context.Empresas
                     .Where(e => !e.Eliminado)
                     .OrderBy(e => e.RazonSocial)
                     .ToListAsync();
             }
-            else if (AuthHelper.IsEmpresaAdmin(HttpContext) && EmpresaId.HasValue)
+            else if (EmpresaId.HasValue)
             {
                 var emp = await _context.Empresas.FindAsync(EmpresaId.Value);
                 if (emp != null) Empresas.Add(emp);

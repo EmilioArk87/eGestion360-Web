@@ -20,9 +20,11 @@ namespace eGestion360Web.Services.Permisos
     /// niega (cierra por omisión).</description></item>
     /// </list>
     ///
-    /// Va al final de los filtros globales: si uno anterior ya desvió la petición (sin sesión, sin empresa, módulo sin derecho), este no
-    /// llega a correr, y el registro solo habla de lo que de verdad habría ejecutado la pantalla. No actúa sin sesión iniciada: cada
-    /// pantalla manda sola al inicio de sesión. Un error al evaluar nunca tumba la petición en modo Registrar.
+    /// Va al final de los filtros globales: si uno anterior ya desvió la petición (sin empresa, módulo sin derecho), este no llega a
+    /// correr, y el registro solo habla de lo que de verdad habría ejecutado la pantalla. Una pantalla que exige permiso exige una
+    /// sesión: sin ella manda al inicio de sesión (a una llamada de datos le responde 403), también en modo Registrar, porque eso es
+    /// autenticar y no autorizar. Desde F1.6e-3 lo hace este filtro y no cada pantalla; así las cuatro de diagnóstico, que
+    /// <c>AdminOnlyPageFilter</c> cerraba, no quedan abiertas al retirarlo. Un error al evaluar nunca tumba la petición en modo Registrar.
     /// </summary>
     public sealed class PermisosPageFilter : IAsyncPageFilter
     {
@@ -64,7 +66,7 @@ namespace eGestion360Web.Services.Permisos
             var requisito = RequisitoDePagina.De(TipoDeLaPagina(context), context.HandlerMethod?.MethodInfo);
 
             if (requisito.Tipo == TipoDeRequisito.SinPermiso) return null;
-            if (!AuthHelper.IsAuthenticated(http)) return null;
+            if (!AuthHelper.IsAuthenticated(http)) return SinSesion(http);
 
             var ruta = context.ActionDescriptor.ViewEnginePath;
             var modo = _opciones.CurrentValue.ModoPara(ruta);
@@ -123,12 +125,18 @@ namespace eGestion360Web.Services.Permisos
             return permisos;
         }
 
+        private static bool PideDatos(HttpContext http)
+            => http.Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(http.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Sin sesión (o con un cambio de clave pendiente) no hay a quién evaluar: al inicio de sesión, o 403 a una llamada de datos.</summary>
+        private static IActionResult SinSesion(HttpContext http)
+            => PideDatos(http) ? new StatusCodeResult(StatusCodes.Status403Forbidden) : new RedirectToPageResult("/Login");
+
         private static IActionResult Negar(HttpContext http, string? codigo)
         {
             // Una llamada de datos (fetch) no sigue una página: recibe el 403 directo.
-            var pideDatos = http.Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(http.Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
-            if (pideDatos) return new StatusCodeResult(StatusCodes.Status403Forbidden);
+            if (PideDatos(http)) return new StatusCodeResult(StatusCodes.Status403Forbidden);
 
             var definicion = codigo != null ? CatalogoDePermisos.Buscar(codigo) : null;
             var lineas = definicion != null

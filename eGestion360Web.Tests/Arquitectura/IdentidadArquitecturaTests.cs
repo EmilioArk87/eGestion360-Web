@@ -79,7 +79,7 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.Contains("o.Events.OnValidatePrincipal = EventosDeCookieDeIdentidad.AlValidarAsync", programa);
             Assert.Contains("AddDataProtection().SetApplicationName(\"eGestion360\")", programa);
             Assert.Contains("new RepositorioDeLlaves(", programa);
-            foreach (var servicio in new[] { "IValidadorDeIdentidad, ValidadorDeIdentidad", "ICargadorDePermisos, CargadorDePermisos", "IBloqueoDeCuentas, BloqueoDeCuentas",
+            foreach (var servicio in new[] { "IValidadorDeIdentidad, ValidadorDeIdentidad", "IBloqueoDeCuentas, BloqueoDeCuentas",
                          "IServicioMfa, ServicioMfa", "IDirectorioDeCuentas, DirectorioDeCuentas", "IAutenticador, Autenticador",
                          "ISincronizadorDeCuentas, SincronizadorDeCuentas" })
                 Assert.Contains(servicio, programa);

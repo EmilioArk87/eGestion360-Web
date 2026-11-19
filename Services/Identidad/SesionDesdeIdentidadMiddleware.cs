@@ -3,12 +3,10 @@ namespace eGestion360Web.Services.Identidad
     /// <summary>
     /// Deja en la sesión una copia de la identidad de la cookie para el código anterior a F1.5 (D50): unas 50 páginas leen
     /// <c>Session["Username"]</c> para el «creado por», y otras leen <c>UserId</c>, <c>Role</c> o <c>Email</c>. La cookie manda; la sesión
-    /// es solo un espejo que se rehace sola si falta (por ejemplo, tras reiniciar el sitio) y se vacía si la cookie ya no sirve. También
-    /// guarda en la sesión los módulos y permisos de la empresa (la caché que antes llenaba el Login), y los vuelve a leer cuando la
-    /// persona cambia de empresa o de rol.
+    /// es solo un espejo que se rehace sola si falta (por ejemplo, tras reiniciar el sitio) y se vacía si la cookie ya no sirve.
     ///
-    /// Va después de <see cref="Tenancy.TenantMiddleware"/> y del middleware de estado del tenant: para leer los permisos necesita el
-    /// tenant de la petición ya fijado.
+    /// Ya no guarda los módulos ni los permisos de la empresa (F1.6e-3, ADR-029): los módulos los decide en cada petición el plan del
+    /// tenant (<see cref="Derechos.EstadoDelTenantMiddleware"/>) y los permisos los evalúa el evaluador de permisos (<c>Services/Permisos</c>).
     /// </summary>
     public sealed class SesionDesdeIdentidadMiddleware
     {
@@ -16,13 +14,11 @@ namespace eGestion360Web.Services.Identidad
         public static readonly string[] ClavesDeIdentidad =
             { "UserId", "Username", "Email", "Role", "EmpresaId", "EmpresaRolId", "MustChangePassword", AuthHelper.ClaveNombrePersona };
 
-        private const string ClaveContexto = "ContextoDePermisos";
-
         private readonly RequestDelegate _siguiente;
 
         public SesionDesdeIdentidadMiddleware(RequestDelegate siguiente) => _siguiente = siguiente;
 
-        public async Task InvokeAsync(HttpContext context, ICargadorDePermisos cargador, ILogger<SesionDesdeIdentidadMiddleware> log)
+        public async Task InvokeAsync(HttpContext context)
         {
             ISession sesion;
             try
@@ -47,38 +43,6 @@ namespace eGestion360Web.Services.Identidad
 
             Reflejar(sesion, datos);
 
-            // Módulos y permisos de la empresa: caché de la sesión. Se rehace si falta, si la identidad se renovó o si cambió la empresa o el rol.
-            if (datos.IdEmpresa is { } idEmpresa && !datos.DebeCambiarClave)
-            {
-                var contexto = $"{idEmpresa}:{datos.IdRolEmpresa}:{datos.Rol}";
-                var renovada = context.Items.ContainsKey(EventosDeCookieDeIdentidad.ClaveIdentidadRenovada);
-                if (renovada || sesion.GetString(ClaveContexto) != contexto
-                    || string.IsNullOrEmpty(sesion.GetString("Modulos")) || string.IsNullOrEmpty(sesion.GetString("Permisos")))
-                {
-                    try
-                    {
-                        var permisos = await cargador.CargarAsync(idEmpresa, datos.IdRolEmpresa, datos.Rol, context.RequestAborted);
-                        sesion.SetString("Modulos", System.Text.Json.JsonSerializer.Serialize(permisos.Modulos));
-                        sesion.SetString("Permisos", System.Text.Json.JsonSerializer.Serialize(permisos.Permisos));
-                        sesion.SetString(ClaveContexto, contexto);
-                    }
-                    catch (Exception ex) when (ex is not OperationCanceledException)
-                    {
-                        // Sin permisos la persona ve menos, nunca más: se deja la caché vacía y se registra para revisarlo.
-                        log.LogError(ex, "No se pudieron leer los módulos y permisos de la empresa {IdEmpresa} para la cuenta {IdCuenta}.", idEmpresa, datos.IdCuenta);
-                        sesion.Remove("Modulos");
-                        sesion.Remove("Permisos");
-                        sesion.Remove(ClaveContexto);
-                    }
-                }
-            }
-            else
-            {
-                sesion.Remove("Modulos");
-                sesion.Remove("Permisos");
-                sesion.Remove(ClaveContexto);
-            }
-
             await _siguiente(context);
         }
 
@@ -99,9 +63,6 @@ namespace eGestion360Web.Services.Identidad
         public static void Vaciar(ISession sesion)
         {
             foreach (var clave in ClavesDeIdentidad) sesion.Remove(clave);
-            sesion.Remove("Modulos");
-            sesion.Remove("Permisos");
-            sesion.Remove(ClaveContexto);
         }
 
         private static void Poner(ISession sesion, string clave, string? valor)

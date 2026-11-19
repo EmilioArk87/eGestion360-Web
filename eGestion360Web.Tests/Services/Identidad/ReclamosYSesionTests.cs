@@ -14,6 +14,9 @@ namespace eGestion360Web.Tests.Services.Identidad
             EsOperador: false, DebeCambiarClave: debeCambiarClave, IdMembresia: 20, IdTenant: idTenant, CodigoTenant: "SIP", IdEmpresa: idEmpresa,
             IdRolEmpresa: idRol, MfaVerificada: false, Sello: "sello-1");
 
+        /// <summary>El operador dentro de una empresa: la marca de su cuenta sigue, pero entra con el rol de ese acceso (D66).</summary>
+        public static DatosDeIdentidad OperadorEnEmpresa(int idEmpresa = 1, int idTenant = 1) => Empresa("empresa_user", idEmpresa, idTenant) with { EsOperador = true };
+
         public static DatosDeIdentidad Plataforma() => new(
             IdCuenta: 10, IdUserLegado: 1, NombreUsuario: "admin", Correo: "admin@prueba.local", NombrePersona: "Emilio Garay", Rol: "admin",
             EsOperador: true, DebeCambiarClave: false, IdMembresia: null, IdTenant: null, CodigoTenant: null, IdEmpresa: null,
@@ -91,9 +94,9 @@ namespace eGestion360Web.Tests.Services.Identidad
             var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa("empresa_admin", idEmpresa: 4, idTenant: 2, idRol: 9));
 
             Assert.True(AuthHelper.IsAuthenticated(http));
-            Assert.True(AuthHelper.IsEmpresaAdmin(http));
-            Assert.True(AuthHelper.IsAnyAdmin(http));
-            Assert.False(AuthHelper.IsAdmin(http));
+            Assert.Equal("empresa_admin", AuthHelper.RolLegadoDeAcceso(http));
+            Assert.False(AuthHelper.EsOperador(http));
+            Assert.False(AuthHelper.EnPlataforma(http));
             Assert.Equal(4, AuthHelper.GetEmpresaId(http));
             Assert.Equal(9, AuthHelper.GetEmpresaRolId(http));
             Assert.Equal(2, AuthHelper.GetTenantId(http));
@@ -108,10 +111,46 @@ namespace eGestion360Web.Tests.Services.Identidad
         {
             var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Plataforma());
 
-            Assert.True(AuthHelper.IsAdmin(http));
+            Assert.True(AuthHelper.EnPlataforma(http));
+            Assert.True(AuthHelper.EsOperador(http));
             Assert.True(AuthHelper.IsOperador(http));
             Assert.Null(AuthHelper.GetEmpresaId(http));
             Assert.Null(AuthHelper.GetTenantId(http));
+        }
+
+        [Fact]
+        public void El_operador_dentro_de_una_empresa_sigue_siendo_operador_pero_ya_no_esta_en_plataforma()
+        {
+            var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.OperadorEnEmpresa(idEmpresa: 4));
+
+            Assert.True(AuthHelper.EsOperador(http));      // la marca de su cuenta
+            Assert.False(AuthHelper.EnPlataforma(http));   // entra con el rol de ese acceso
+            Assert.Equal("empresa_user", AuthHelper.RolLegadoDeAcceso(http));
+        }
+
+        [Fact]
+        public void El_alcance_sobre_una_empresa_es_del_operador_en_cualquiera_y_del_resto_solo_en_la_suya()
+        {
+            var deLaEmpresa4 = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa("empresa_user", idEmpresa: 4));
+            var admin4 = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa("empresa_admin", idEmpresa: 4));
+            var operadorEnEmpresa = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.OperadorEnEmpresa(idEmpresa: 4));
+            var operador = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Plataforma());
+            var sinSesion = new DefaultHttpContext();
+
+            foreach (var http in new[] { deLaEmpresa4, admin4 })
+            {
+                Assert.True(AuthHelper.PuedeActuarSobreEmpresa(http, 4));
+                Assert.False(AuthHelper.PuedeActuarSobreEmpresa(http, 5));      // otra empresa del tenant
+                Assert.False(AuthHelper.PuedeActuarSobreEmpresa(http, null));   // sin empresa: solo el personal de la plataforma
+                Assert.False(AuthHelper.PuedeActuarSobreEmpresa(http, 0));
+            }
+            foreach (var http in new[] { operadorEnEmpresa, operador })
+            {
+                Assert.True(AuthHelper.PuedeActuarSobreEmpresa(http, 4));
+                Assert.True(AuthHelper.PuedeActuarSobreEmpresa(http, 5));
+                Assert.True(AuthHelper.PuedeActuarSobreEmpresa(http, null));
+            }
+            Assert.False(AuthHelper.PuedeActuarSobreEmpresa(sinSesion, 4));
         }
 
         [Fact]
@@ -125,7 +164,8 @@ namespace eGestion360Web.Tests.Services.Identidad
 
             Assert.False(AuthHelper.IsAuthenticated(http));
             Assert.False(AuthHelper.HayCuenta(http));
-            Assert.False(AuthHelper.IsAdmin(http));
+            Assert.False(AuthHelper.EsOperador(http));
+            Assert.False(AuthHelper.EnPlataforma(http));
             Assert.Null(AuthHelper.GetEmpresaId(http));
             Assert.Null(AuthHelper.GetCuentaId(http));
         }
@@ -153,24 +193,10 @@ namespace eGestion360Web.Tests.Services.Identidad
     /// <summary>El espejo de la identidad en la sesión para el código anterior a F1.5 (D50).</summary>
     public class SesionDesdeIdentidadMiddlewareTests
     {
-        private sealed class CargadorFalso : ICargadorDePermisos
-        {
-            public int Llamadas { get; private set; }
-            public int? UltimaEmpresa { get; private set; }
-
-            public Task<PermisosDeEmpresa> CargarAsync(int idEmpresa, int? idRol, string rol, CancellationToken ct = default)
-            {
-                Llamadas++;
-                UltimaEmpresa = idEmpresa;
-                return Task.FromResult(new PermisosDeEmpresa(new[] { "flota" },
-                    new Dictionary<string, HashSet<string>> { ["flota"] = new() { "ver" } }));
-            }
-        }
-
-        private static async Task Pasar(HttpContext http, CargadorFalso cargador)
+        private static async Task Pasar(HttpContext http)
         {
             var middleware = new SesionDesdeIdentidadMiddleware(_ => Task.CompletedTask);
-            await middleware.InvokeAsync(http, cargador, NullLogger<SesionDesdeIdentidadMiddleware>.Instance);
+            await middleware.InvokeAsync(http);
         }
 
         [Fact]
@@ -179,7 +205,7 @@ namespace eGestion360Web.Tests.Services.Identidad
             var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa("empresa_admin", idEmpresa: 4));
             http.Session.Clear();
 
-            await Pasar(http, new CargadorFalso());
+            await Pasar(http);
 
             Assert.Equal("4", http.Session.GetString("UserId"));            // el usuario de dbo.Users de la cuenta
             Assert.Equal("egaray", http.Session.GetString("Username"));
@@ -198,7 +224,7 @@ namespace eGestion360Web.Tests.Services.Identidad
             var http = SesionFalsa.ConIdentidad(datos);
             http.Session.Clear();
 
-            await Pasar(http, new CargadorFalso());
+            await Pasar(http);
 
             Assert.Equal("10", http.Session.GetString("UserId"));
         }
@@ -210,104 +236,54 @@ namespace eGestion360Web.Tests.Services.Identidad
             {
                 Session = new SesionFalsa(new Dictionary<string, string>
                 {
-                    ["UserId"] = "1", ["Role"] = "admin", ["EmpresaId"] = "1", ["Modulos"] = "[\"flota\"]", ["Permisos"] = "{}",
+                    ["UserId"] = "1", ["Role"] = "admin", ["EmpresaId"] = "1",
                     [AuthHelper.ClaveTenantDeSoporte] = "2", ["Entrada.Cuenta"] = "5"
                 })
             };
 
-            await Pasar(http, new CargadorFalso());
+            await Pasar(http);
 
             Assert.Null(http.Session.GetString("UserId"));
             Assert.Null(http.Session.GetString("Role"));
             Assert.Null(http.Session.GetString("EmpresaId"));
-            Assert.Null(http.Session.GetString("Modulos"));
-            Assert.Null(http.Session.GetString("Permisos"));
             Assert.Equal("2", http.Session.GetString(AuthHelper.ClaveTenantDeSoporte));   // estado de pantalla: no es del espejo
             Assert.Equal("5", http.Session.GetString("Entrada.Cuenta"));                  // un inicio de sesión a medias tampoco
         }
 
         [Fact]
-        public async Task Lee_modulos_y_permisos_una_vez_y_los_vuelve_a_leer_solo_si_cambia_la_empresa_o_el_rol()
+        public async Task Ya_no_guarda_en_la_sesion_los_modulos_ni_los_permisos()
         {
-            var cargador = new CargadorFalso();
+            // Los decide cada petición (plan del tenant y evaluador de permisos), no una copia de la sesión (F1.6e-3).
             var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa(idEmpresa: 1));
             http.Session.Clear();
 
-            await Pasar(http, cargador);
-            await Pasar(http, cargador);
-            Assert.Equal(1, cargador.Llamadas);
-            Assert.Equal("[\"flota\"]", http.Session.GetString("Modulos"));
+            await Pasar(http);
+            await Pasar(http);
 
-            // Misma sesión, otro sitio (cambió de empresa): se rehace.
-            http.User = ReclamosDeIdentidad.Crear(DatosDeIdentidadDePrueba.Empresa(idEmpresa: 3));
-            await Pasar(http, cargador);
-            Assert.Equal(2, cargador.Llamadas);
-            Assert.Equal(3, cargador.UltimaEmpresa);
-
-            // Otro rol en la misma empresa: también.
-            http.User = ReclamosDeIdentidad.Crear(DatosDeIdentidadDePrueba.Empresa("empresa_admin", idEmpresa: 3));
-            await Pasar(http, cargador);
-            Assert.Equal(3, cargador.Llamadas);
+            Assert.Null(http.Session.GetString("Modulos"));
+            Assert.Null(http.Session.GetString("Permisos"));
+            Assert.Null(http.Session.GetString("ContextoDePermisos"));
         }
 
         [Fact]
-        public async Task Una_identidad_renovada_fuerza_la_relectura_de_los_permisos()
+        public async Task Con_el_cambio_de_clave_pendiente_solo_se_marca_en_el_espejo()
         {
-            var cargador = new CargadorFalso();
-            var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa());
-            http.Session.Clear();
-            await Pasar(http, cargador);
-
-            http.Items[EventosDeCookieDeIdentidad.ClaveIdentidadRenovada] = true;
-            await Pasar(http, cargador);
-
-            Assert.Equal(2, cargador.Llamadas);
-        }
-
-        [Fact]
-        public async Task Con_el_cambio_de_clave_pendiente_no_se_leen_permisos()
-        {
-            var cargador = new CargadorFalso();
             var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa(debeCambiarClave: true));
 
-            await Pasar(http, cargador);
+            await Pasar(http);
 
-            Assert.Equal(0, cargador.Llamadas);
             Assert.Equal("1", http.Session.GetString("MustChangePassword"));
         }
 
         [Fact]
-        public async Task El_operador_en_plataforma_no_tiene_empresa_ni_permisos_de_empresa()
+        public async Task El_operador_en_plataforma_no_tiene_empresa_en_el_espejo()
         {
-            var cargador = new CargadorFalso();
             var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Plataforma());
-            http.Session.SetString("Modulos", "[\"flota\"]");
 
-            await Pasar(http, cargador);
+            await Pasar(http);
 
-            Assert.Equal(0, cargador.Llamadas);
             Assert.Equal("admin", http.Session.GetString("Role"));
             Assert.Null(http.Session.GetString("EmpresaId"));
-            Assert.Null(http.Session.GetString("Modulos"));
-        }
-
-        [Fact]
-        public async Task Si_no_se_pueden_leer_los_permisos_la_persona_ve_menos_nunca_mas()
-        {
-            var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa());
-            http.Session.SetString("Modulos", "[\"facturacion\"]");   // restos de otra sesión
-            var middleware = new SesionDesdeIdentidadMiddleware(_ => Task.CompletedTask);
-
-            await middleware.InvokeAsync(http, new CargadorQueFalla(), NullLogger<SesionDesdeIdentidadMiddleware>.Instance);
-
-            Assert.Null(http.Session.GetString("Modulos"));
-            Assert.Null(http.Session.GetString("Permisos"));
-        }
-
-        private sealed class CargadorQueFalla : ICargadorDePermisos
-        {
-            public Task<PermisosDeEmpresa> CargarAsync(int idEmpresa, int? idRol, string rol, CancellationToken ct = default)
-                => throw new InvalidOperationException("base caída");
         }
     }
 }

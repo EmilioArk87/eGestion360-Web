@@ -12,8 +12,7 @@ namespace eGestion360Web.Services.Tenancy
     ///
     /// Solo actúa sobre el administrador general sin empresa en la sesión: un administrador de empresa trabaja en su tenant, y
     /// una petición sin sesión la resuelve cada página con su propio redirección al inicio de sesión. Es un filtro global por
-    /// prefijo de ruta, como <see cref="AdminOnlyPageFilter"/> y <see cref="EmpresaRequeridaPageFilter"/>, para cubrir de una vez
-    /// todos los handlers de la carpeta.
+    /// prefijo de ruta, como <see cref="EmpresaRequeridaPageFilter"/>, para cubrir de una vez todos los handlers de la carpeta.
     /// </summary>
     public class TenantDeSoporteRequeridoPageFilter : IPageFilter
     {
@@ -38,7 +37,7 @@ namespace eGestion360Web.Services.Tenancy
             if (!Aplica(context.ActionDescriptor.ViewEnginePath)) return;
 
             var http = context.HttpContext;
-            if (!AuthHelper.IsAuthenticated(http) || !AuthHelper.IsAdmin(http)) return;
+            if (!AuthHelper.IsAuthenticated(http) || !AuthHelper.EnPlataforma(http)) return;
             if (AuthHelper.GetEmpresaId(http) is > 0) return;
             if (AuthHelper.GetTenantDeSoporte(http) != null) return;
 

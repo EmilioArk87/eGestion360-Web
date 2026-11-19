@@ -43,7 +43,7 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
 
             RolId = rolId;
             var datos = await _permisosDeRol.ObtenerAsync(rolId);
-            if (datos == null || !EsDeLaEmpresaDeLaSesion(datos.IdEmpresa)) return NotFound();
+            if (datos == null || !AuthHelper.PuedeActuarSobreEmpresa(HttpContext, datos.IdEmpresa)) return NotFound();
 
             var usuario = AuthHelper.GetNombreUsuario(HttpContext) ?? "sistema";
             var resultado = await _permisosDeRol.GuardarAsync(rolId, codigos ?? new List<string>(), usuario);
@@ -55,17 +55,11 @@ namespace eGestion360Web.Pages.Admin.EmpresaRoles
             return RedirectToPage(new { rolId });
         }
 
-        /// <summary>Quien trabaja dentro de una empresa solo toca los roles de esa empresa; el operador sin empresa en la sesión ve los de todo el tenant que eligió.</summary>
-        private bool EsDeLaEmpresaDeLaSesion(int idEmpresaDelRol)
-        {
-            var empresaDeLaSesion = AuthHelper.GetEmpresaId(HttpContext);
-            return empresaDeLaSesion is not > 0 || empresaDeLaSesion == idEmpresaDelRol;
-        }
-
         private async Task<IActionResult> CargarAsync()
         {
             Datos = await _permisosDeRol.ObtenerAsync(RolId);
-            if (Datos == null || !EsDeLaEmpresaDeLaSesion(Datos.IdEmpresa)) return NotFound();
+            // Quien no es del personal de la plataforma solo toca los roles de su empresa; el operador, los de las empresas que ve su contexto.
+            if (Datos == null || !AuthHelper.PuedeActuarSobreEmpresa(HttpContext, Datos.IdEmpresa)) return NotFound();
 
             Empresa = await _context.Empresas.FindAsync(Datos.IdEmpresa);
             return Page();

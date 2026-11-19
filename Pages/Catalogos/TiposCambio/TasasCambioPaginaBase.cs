@@ -37,7 +37,8 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         public string MonedaLocal => Opciones.MonedaLocalEfectiva;
 
         public int? IdEmpresaSesion => AuthHelper.GetEmpresaId(HttpContext) is int id && id > 0 ? id : null;
-        public bool EsAdminSistema => AuthHelper.IsAdmin(HttpContext);
+        /// <summary>Personal de la plataforma: las tasas oficiales y el job son de la plataforma, no de una empresa (no es un permiso).</summary>
+        public bool EsAdminSistema => AuthHelper.EsOperador(HttpContext);
 
         protected string Usuario => HttpContext.Session.GetString("Username") ?? "system";
         protected CancellationToken Ct => HttpContext.RequestAborted;

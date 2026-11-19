@@ -46,7 +46,7 @@ namespace eGestion360Web.Services.Derechos
                     if (delTenant.PlanCodigo == null)
                         log.LogWarning("El tenant {IdTenant} ({Codigo}) no tiene un plan vigente: no concede ningún derecho.", delTenant.IdTenant, delTenant.Codigo);
 
-                    if (Bloquea(delTenant, context.Request.Method, context.Request.Path, AuthHelper.IsAdmin(context)))
+                    if (Bloquea(delTenant, context.Request.Method, context.Request.Path, AuthHelper.EnPlataforma(context)))
                     {
                         log.LogWarning("Tenant {IdTenant} ({Codigo}) {Estado}/{Modo}: se rechaza {Metodo} {Ruta}.",
                             delTenant.IdTenant, delTenant.Codigo, delTenant.Estado, delTenant.ModoSuspension, context.Request.Method, context.Request.Path);

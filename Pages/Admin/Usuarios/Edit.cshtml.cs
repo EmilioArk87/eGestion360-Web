@@ -65,7 +65,7 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
             if (!await CargarUsuarioAsync(id)) return NotFound();
-            if (AuthHelper.IsEmpresaAdmin(HttpContext) && EmpresaId != AuthHelper.GetEmpresaId(HttpContext))
+            if (!PuedeEditarUsuarioDe(EmpresaId))
                 return RedirectToPage("/MainMenu");
             if (await EsDeOtroTenantAsync(EmpresaId)) return AElegirTenantDelUsuario();
 
@@ -78,7 +78,7 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
 
-            if (AuthHelper.IsEmpresaAdmin(HttpContext))
+            if (!AuthHelper.EsOperador(HttpContext))
                 EmpresaId = AuthHelper.GetEmpresaId(HttpContext);
 
             if (!ModelState.IsValid)
@@ -91,8 +91,8 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == Id);
             if (user == null) return NotFound();
 
-            // empresa_admin solo puede editar usuarios de su empresa
-            if (AuthHelper.IsEmpresaAdmin(HttpContext) && user.EmpresaId != AuthHelper.GetEmpresaId(HttpContext))
+            // Quien no es del personal de la plataforma solo edita usuarios de su empresa.
+            if (!PuedeEditarUsuarioDe(user.EmpresaId))
                 return RedirectToPage("/MainMenu");
             if (await EsDeOtroTenantAsync(user.EmpresaId)) return AElegirTenantDelUsuario();
 
@@ -208,12 +208,21 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         }
 
         /// <summary>
+        /// El alcance de quien edita: el personal de la plataforma, cualquier usuario de las empresas que ve su contexto; el resto, solo
+        /// los de la empresa de su sesión. Un usuario sin empresa (superadmin) solo se edita desde el contexto de plataforma: en una
+        /// empresa la lista no ofrece «sin empresa» y guardarlo lo asignaría a otra.
+        /// </summary>
+        private bool PuedeEditarUsuarioDe(int? empresaDelUsuario)
+            => AuthHelper.PuedeActuarSobreEmpresa(HttpContext, empresaDelUsuario)
+               && (empresaDelUsuario is > 0 || AuthHelper.EnPlataforma(HttpContext));
+
+        /// <summary>
         /// Un usuario de otro tenant no se edita desde el tenant de soporte equivocado: la lista de empresas solo trae las del
-        /// tenant de soporte, y guardar sin su empresa la dejaría en blanco (F1.4c, ADR-025). Solo aplica al administrador
-        /// general; el de empresa ya queda acotado a su empresa.
+        /// tenant de soporte, y guardar sin su empresa la dejaría en blanco (F1.4c, ADR-025). Solo aplica al personal de la
+        /// plataforma; quien trabaja en una empresa ya queda acotado a ella.
         /// </summary>
         private async Task<bool> EsDeOtroTenantAsync(int? empresaDelUsuario)
-            => AuthHelper.IsAdmin(HttpContext) && empresaDelUsuario is > 0
+            => AuthHelper.EsOperador(HttpContext) && empresaDelUsuario is > 0
                && !await _context.Empresas.AsNoTracking().AnyAsync(e => e.IdEmpresa == empresaDelUsuario);
 
         private IActionResult AElegirTenantDelUsuario()
@@ -255,14 +264,15 @@ namespace eGestion360Web.Pages.Admin.Usuarios
 
         private async Task CargarListasAsync()
         {
-            if (AuthHelper.IsAdmin(HttpContext))
+            if (AuthHelper.EsOperador(HttpContext))
             {
                 Empresas = await _context.Empresas
                     .Where(e => !e.Eliminado && e.Activa)
                     .OrderBy(e => e.RazonSocial)
                     .Select(e => new SelectListItem(e.RazonSocial, e.IdEmpresa.ToString()))
                     .ToListAsync();
-                Empresas.Insert(0, new SelectListItem("— Sin empresa (superadmin) —", ""));
+                if (AuthHelper.EnPlataforma(HttpContext))
+                    Empresas.Insert(0, new SelectListItem("— Sin empresa (superadmin) —", ""));
             }
 
             var empId = EmpresaId ?? AuthHelper.GetEmpresaId(HttpContext);

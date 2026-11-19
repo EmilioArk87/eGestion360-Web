@@ -16,8 +16,8 @@ namespace eGestion360Web.Services.Tenancy
     ///     tenant (ADR-023, D36): las pantallas que los muestran ya no están aquí y trabajan dentro del tenant de soporte que el
     ///     administrador elige (<see cref="TenantDeSoporteRequeridoPageFilter"/>, F1.4c, ADR-025).
     ///
-    /// Es un filtro global por prefijo de ruta, como <see cref="AdminOnlyPageFilter"/> y
-    /// <see cref="EmpresaRequeridaPageFilter"/>, para cubrir de una vez todos los handlers de la carpeta.
+    /// Es un filtro global por prefijo de ruta, como <see cref="EmpresaRequeridaPageFilter"/>, para cubrir de una vez todos los
+    /// handlers de la carpeta.
     /// </summary>
     public class AmbitoDePlataformaPageFilter : IPageFilter
     {
@@ -56,7 +56,7 @@ namespace eGestion360Web.Services.Tenancy
             var http = context.HttpContext;
 
             var plataforma = EsRutaSinSesion(ruta)
-                             || (EsRutaDelAdministradorGeneral(ruta) && AuthHelper.IsAuthenticated(http) && AuthHelper.IsAdmin(http));
+                             || (EsRutaDelAdministradorGeneral(ruta) && AuthHelper.IsAuthenticated(http) && AuthHelper.EnPlataforma(http));
 
             if (plataforma) http.Items[TenantMiddleware.ClaveEsPlataforma] = true;
         }

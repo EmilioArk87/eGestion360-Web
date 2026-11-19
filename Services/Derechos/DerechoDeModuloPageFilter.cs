@@ -5,7 +5,7 @@ namespace eGestion360Web.Services.Derechos
 {
     /// <summary>
     /// Cada carpeta de módulo exige el derecho de uso de ese módulo (paso F1.7): sin él, la pantalla responde 403 y el menú ya no
-    /// la ofrece. Es un filtro global por prefijo de ruta, como <see cref="AdminOnlyPageFilter"/>: cubre de una vez todas las
+    /// la ofrece. Es un filtro global por prefijo de ruta, como <see cref="EmpresaRequeridaPageFilter"/>: cubre de una vez todas las
     /// pantallas de la carpeta, también las que se agreguen después, y evita una guarda manual en cada página. «Tener el módulo» es
     /// lo que decide <see cref="DerechosDeLaPeticion.TieneModulo"/>: el plan del tenant lo concede y la empresa lo tiene activo y
     /// vigente. El administrador general (operador) entra a todo.
@@ -47,7 +47,7 @@ namespace eGestion360Web.Services.Derechos
 
             var http = context.HttpContext;
             // Sin sesión, cada pantalla manda al inicio de sesión; el operador entra a todo.
-            if (!AuthHelper.IsAuthenticated(http) || AuthHelper.IsAdmin(http)) return;
+            if (!AuthHelper.IsAuthenticated(http) || AuthHelper.EnPlataforma(http)) return;
             if (AuthHelper.HasModulo(http, modulo)) return;
 
             context.Result = PaginaDeAcceso.Respuesta(StatusCodes.Status403Forbidden, new DatosDePaginaDeAcceso(
