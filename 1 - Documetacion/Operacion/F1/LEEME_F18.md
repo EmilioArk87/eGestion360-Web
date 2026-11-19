@@ -2,7 +2,7 @@
 
 Complemento de [`LEEME.md`](LEEME.md). Este archivo cubre el **script 045** (`2 - Script SQL/045_auditoria_seguridad.sql`), su verificación de solo lectura, el orden de publicación y cómo consultar la auditoría mientras no existan las pantallas (F1.8c). Las decisiones están en [ADR-030](../../Arquitectura/ADR-030-auditoria-de-seguridad.md) (D70 a D76, aceptadas el 2026-11-18).
 
-> **Estado:** el script 045 está **sin aplicar en producción**. Se ensayó solo en copias locales. Aplicarlo requiere la aprobación de `/alerta-bd`.
+> **Estado:** el script 045 está **aplicado en producción desde el 2026-11-19** (con la aprobación de `/alerta-bd`): PRECHECK correcto, 2 tablas, 5 predicados y 2 columnas nuevas, ninguna fila existente cambió, y `verificar_despues_045.sql` dio 14 de 14 OK. El código de F1.8a se publica después, con su kit.
 
 ## Qué crea el script 045
 
@@ -21,7 +21,7 @@ El script **solo agrega**: no cambia ninguna fila ni objeto existente (salvo amp
 
 | Archivo | Para qué sirve |
 |---|---|
-| `2 - Script SQL/045_auditoria_seguridad.sql` | El cambio: PRECHECK, CAMBIO y POSTCHECK en una transacción, idempotente, con ROLLBACK comentado. **Sin aplicar en producción.** |
+| `2 - Script SQL/045_auditoria_seguridad.sql` | El cambio: PRECHECK, CAMBIO y POSTCHECK en una transacción, idempotente, con ROLLBACK comentado. **Aplicado en producción el 2026-11-19.** |
 | `verificar_despues_045.sql` | Comprobación de solo lectura del estado posterior a 045. 14 comprobaciones (`OK` o `FALLA` más la fila `RESUMEN`) y una fila informativa con las filas reales de cada tabla. |
 | `LEEME_F18.md` | Este archivo. |
 
@@ -35,7 +35,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\ejecutar_verificacion.ps1 
 
 | Momento | Se espera |
 |---|---|
-| Justo **después** de aplicar 045 | 14 de 14 OK |
+| Justo **después** de aplicar 045 | 14 de 14 OK (producción, 2026-11-19) |
 | **Antes** de aplicar 045 | FALLA en casi todo (no existen las tablas): sirve para confirmar que 045 aún no se aplicó |
 | Cualquier día después | 14 de 14 OK. Con filas reales en la tabla de tenant, la fila 360 confirma que la política las oculta a una conexión sin tenant (prueba concluyente de la RLS) |
 
@@ -47,10 +47,10 @@ La **comprobación diaria** (`comprobacion_diaria.ps1`) corre este verificador s
 
 ## Orden de publicación
 
-1. `/alerta-bd` y aprobación expresa de Emilio.
-2. Aplicar el 045 con el ejecutor de siempre, **antes** de publicar el código.
-3. `verificar_despues_045.sql` (14 OK) y la comprobación diaria.
-4. Publicar el código de F1.8a.
+1. `/alerta-bd` y aprobación expresa de Emilio. **Hecho el 2026-11-19.**
+2. Aplicar el 045 con el ejecutor de siempre, **antes** de publicar el código. **Hecho el 2026-11-19.**
+3. `verificar_despues_045.sql` (14 OK) y la comprobación diaria. **Hecho el 2026-11-19: 14 de 14.**
+4. Publicar el código de F1.8a. **Pendiente.**
 
 **El 045 va ANTES del código**: el interceptor de la bitácora escribe `id_cuenta` e `id_correlacion` en cada cambio de personas, de modo que sin las columnas ese guardado falla. Al revés (045 aplicado con el código anterior) no pasa nada: el código anterior ignora las tablas y las columnas nuevas.
 
@@ -95,7 +95,7 @@ Para saber cuántas filas hay sin pasar por la RLS, `verificar_despues_045.sql` 
 
 Sobre copias locales de producción (servidor `localhost,1433`, bases `egestion_*`): aplicar el 045, repetirlo (idempotencia: «Nada que hacer»), y una batería funcional con dos tenants: insertar en el tenant propio, que la política rechace insertar en otro, que cada tenant vea solo lo suyo y una conexión sin tenant no vea nada, que `UPDATE` y `DELETE` fallen en las dos tablas, que se rechacen un resultado inválido, un tipo sin forma `grupo.accion`, un detalle que no es JSON y un tenant inexistente, y que la bitácora acepte las columnas nuevas. También las rutas del ROLLBACK (se detiene con filas en las tablas o con datos en las columnas nuevas, y limpio las quita).
 
-El verificador `verificar_despues_045.sql` dio 14 de 14 OK en la copia de ensayo. En la copia de desarrollo (identidad global, planes y permisos, 038 a 041, con el 045 puesto), `verificar_despues_f17.sql` da 46 OK y `verificar_despues_041.sql` 24 OK: sus cifras de objetos aceptan el 045. `verificar_despues_f15.sql` da 53 OK y 6 FALLA, todas sobre los **datos** de las cuentas de esa copia (cuentas activas e inactivas, claves, membresías), ninguna sobre cifras de objetos. **No se ejecutó nada contra producción.**
+El verificador `verificar_despues_045.sql` dio 14 de 14 OK en la copia de ensayo. En la copia de desarrollo (identidad global, planes y permisos, 038 a 041, con el 045 puesto), `verificar_despues_f17.sql` da 46 OK y `verificar_despues_041.sql` 24 OK: sus cifras de objetos aceptan el 045. `verificar_despues_f15.sql` da 53 OK y 6 FALLA, todas sobre los **datos** de las cuentas de esa copia (cuentas activas e inactivas, claves, membresías), ninguna sobre cifras de objetos. El 2026-11-19 se aplicó en producción tras la línea base de la comprobación diaria; después de aplicar, la comprobación diaria dio lo mismo que antes (solo la alerta conocida de las claves de `verificar_despues_f15.sql`) y los verificadores de F1.7 y F1.6 siguieron en OK.
 
 ## Límites conocidos
 
