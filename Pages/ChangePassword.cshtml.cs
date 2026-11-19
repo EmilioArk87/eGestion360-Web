@@ -16,8 +16,12 @@ namespace eGestion360Web.Pages
         private readonly ISincronizadorDeCuentas _cuentas;
         private readonly IAutenticador _autenticador;
 
-        public ChangePasswordModel(ApplicationDbContext context, ISincronizadorDeCuentas cuentas, IAutenticador autenticador)
+        private readonly eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? _auditoria;
+
+        public ChangePasswordModel(ApplicationDbContext context, ISincronizadorDeCuentas cuentas, IAutenticador autenticador,
+            eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? auditoria = null)
         {
+            _auditoria = auditoria;
             _context = context;
             _cuentas = cuentas;
             _autenticador = autenticador;
@@ -89,6 +93,11 @@ namespace eGestion360Web.Pages
 
             if (!BCrypt.Net.BCrypt.Verify(CurrentPassword, user.Password))
             {
+                if (_auditoria != null)
+                    await _auditoria.RegistrarAsync(new eGestion360Web.Services.Auditoria.EventoDeSeguridad(eGestion360Web.Services.Auditoria.TiposDeEvento.ClaveCambiada)
+                    {
+                        Resultado = eGestion360Web.Models.Auditoria.ResultadosDeEvento.Fallo, Detalle = new { motivo = "clave_actual_incorrecta" },
+                    });
                 ModelState.AddModelError(nameof(CurrentPassword), "La contraseña actual es incorrecta.");
                 return Page();
             }
@@ -113,6 +122,12 @@ namespace eGestion360Web.Pages
             user.RequirePasswordChange = false;
             await _context.SaveChangesAsync();
             await _cuentas.SincronizarClaveAsync(user.Id);
+
+            if (_auditoria != null)
+                await _auditoria.RegistrarAsync(new eGestion360Web.Services.Auditoria.EventoDeSeguridad(eGestion360Web.Services.Auditoria.TiposDeEvento.ClaveCambiada)
+                {
+                    Detalle = new { obligatorio = wasForced },
+                });
 
             if (wasForced)
             {

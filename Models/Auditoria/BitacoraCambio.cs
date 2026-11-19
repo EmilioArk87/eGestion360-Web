@@ -70,6 +70,15 @@ namespace eGestion360Web.Models.Auditoria
         [StringLength(50)]
         [Column("origen", TypeName = "varchar(50)")]
         public string Origen { get; set; } = "app";
+
+        /// <summary>Cuenta global de quien hizo el cambio (script 045, F1.8). Nulo en las filas anteriores y en las de scripts.</summary>
+        [Column("id_cuenta")]
+        public int? IdCuenta { get; set; }
+
+        /// <summary>Id de la petición (<c>X-Correlation-Id</c>) que hizo el cambio (script 045, F1.8). Nulo en las filas anteriores y en las de scripts.</summary>
+        [StringLength(64)]
+        [Column("id_correlacion", TypeName = "varchar(64)")]
+        public string? IdCorrelacion { get; set; }
     }
 
     /// <summary>Valores permitidos de <see cref="BitacoraCambio.Operacion"/> (CK_bitacora_cambios_operacion).</summary>

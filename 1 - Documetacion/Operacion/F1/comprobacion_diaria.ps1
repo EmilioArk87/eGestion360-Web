@@ -40,11 +40,12 @@ try {
     Anotar 'INFO' ('Base: ' + $cn.Database)
 
     # Cada verificador describe el estado exacto de su etapa: con 038/039/040/041 aplicados los de la salida de F1 dejan de dar OK por diseno.
-    # Sin -Verificador se elige el que corresponde a lo que existe en la base (038 = identidad, 039 = cuentas migradas, 040 = planes, 041 = permisos).
+    # Sin -Verificador se elige el que corresponde a lo que existe en la base (038 = identidad, 039 = cuentas migradas, 040 = planes, 041 = permisos, 045 = auditoria).
     $con038 = [int](Escalar "SELECT CASE WHEN OBJECT_ID(N'dbo.accesos_empresa', N'U') IS NOT NULL THEN 1 ELSE 0 END")
     $con039 = if ($con038 -eq 1) { [int](Escalar "SELECT CASE WHEN EXISTS (SELECT 1 FROM saas.cuentas) THEN 1 ELSE 0 END") } else { 0 }
     $con040 = [int](Escalar "SELECT CASE WHEN OBJECT_ID(N'saas.planes', N'U') IS NOT NULL THEN 1 ELSE 0 END")
     $con041 = [int](Escalar "SELECT CASE WHEN OBJECT_ID(N'dbo.rol_permisos', N'U') IS NOT NULL THEN 1 ELSE 0 END")
+    $con045 = [int](Escalar "SELECT CASE WHEN OBJECT_ID(N'dbo.auditoria_seguridad', N'U') IS NOT NULL THEN 1 ELSE 0 END")
     if ($Verificador) { $verificadores = @($Verificador) }
     else {
         $verificadores = @()
@@ -53,6 +54,7 @@ try {
         if ($con039 -eq 1) { $verificadores += 'verificar_despues_f15.sql' }
         if ($con040 -eq 1) { $verificadores += 'verificar_despues_f17.sql' }
         if ($con041 -eq 1) { $verificadores += 'verificar_despues_041.sql' }
+        if ($con045 -eq 1) { $verificadores += 'verificar_despues_045.sql' }
     }
     $ejec = Join-Path $aqui 'ejecutar_verificacion.ps1'
     foreach ($ver in $verificadores) {

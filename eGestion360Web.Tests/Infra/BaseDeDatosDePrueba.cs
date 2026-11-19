@@ -115,6 +115,26 @@ namespace eGestion360Web.Tests.Infra
             return new ContextoDePrueba(opciones, new TenantContextFijo { IdTenant = idTenant, EsPlataforma = plataforma });
         }
 
+        /// <summary>
+        /// Un proveedor de servicios como el de la aplicación para quien abre ámbitos nuevos (la auditoría de seguridad, F1.8): cada ámbito
+        /// trae su propio <see cref="TenantContext"/> y su propio contexto de EF, todos sobre esta misma base. Quien llama es dueño del
+        /// proveedor y lo desecha; la base sigue siendo de esta clase.
+        /// </summary>
+        public ServiceProvider CrearProveedorDeAmbitos(Microsoft.AspNetCore.Http.IHttpContextAccessor? accesor = null)
+        {
+            var servicios = new ServiceCollection();
+            servicios.AddSingleton(accesor ?? new Microsoft.AspNetCore.Http.HttpContextAccessor());
+            servicios.AddScoped<TenantContext>();
+            servicios.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+            servicios.AddScoped<ApplicationDbContext>(sp =>
+            {
+                var opciones = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_conexion)
+                    .AddInterceptors(new TenantAlGuardarInterceptor(sp.GetRequiredService<ITenantContext>(), Resolvedor)).Options;
+                return new ContextoDePrueba(opciones, sp.GetRequiredService<ITenantContext>());
+            });
+            return servicios.BuildServiceProvider();
+        }
+
         public void Dispose()
         {
             _servicios.Dispose();

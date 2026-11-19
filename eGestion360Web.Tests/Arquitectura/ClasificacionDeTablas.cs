@@ -40,7 +40,7 @@ namespace eGestion360Web.Tests.Arquitectura
     /// Inventario de todas las tablas, con la regla de aislamiento de cada una (paso F0.6). Cubre las 60 tablas de eBD_SPD
     /// del 2026-10-10, las 6 del módulo contable que solo existen en el modelo de EF (el script 010 está en espera,
     /// ADR-014), las 9 de la identidad global que crea el script 038 (F1.5), las 5 de planes y derechos del 040 (F1.7) y las 4 de
-    /// permisos del 041 (F1.6a). <see cref="ArnesAislamientoTests"/> falla si aparece una tabla sin clasificar.
+    /// permisos del 041 (F1.6a) y las 2 de auditoría de seguridad del 045 (F1.8a).<see cref="ArnesAislamientoTests"/> falla si aparece una tabla sin clasificar.
     /// </summary>
     public static class ClasificacionDeTablas
     {
@@ -182,6 +182,13 @@ namespace eGestion360Web.Tests.Arquitectura
                 "Lotes de importación de pacientes desde Excel (esquema psi): tabla de TENANT con RLS (script 042).", "042"),
             new("importacion_filas", T, true, false,
                 "Filas de cada lote de importación, con el DNI completo (esquema psi): tabla de TENANT con RLS (script 042); fuera de la bitácora.", "042"),
+
+            // ── Auditoría de seguridad (F1.8a, script 045): posteriores a la salida de F1 ───────────────────────────
+            new("auditoria_seguridad", T, true, false,
+                "Eventos de seguridad de un tenant (ADR-030, D70): tabla de TENANT con RLS, inmutable (INSTEAD OF UPDATE, DELETE); entra a seg.pol_tenant en el " +
+                "script 045 con 1 filtro y 4 bloqueos.", "045"),
+            new("auditoria_plataforma", P, true, false,
+                "Eventos de las cuentas y del operador (esquema saas, ADR-030, D70): plano de control, sin RLS, inmutable; lleva id_tenant como referencia, no filtra.", "045"),
 
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
             new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Identidad;
 using eGestion360Web.Services.Personas;
@@ -74,9 +75,9 @@ namespace eGestion360Web.Tests.Infra
         /// <paramref name="idTenantDeLaPeticion"/> y no se puede fijar otro.
         /// </param>
         public static ServicioDeInvitaciones Servicio(ApplicationDbContext db, TimeProvider reloj, IEmailService correo, IDerechosDeUso? derechos,
-            int idTenantDeLaPeticion = DatosBase.TenantA, TenantContext? contextoFijable = null)
+            int idTenantDeLaPeticion = DatosBase.TenantA, TenantContext? contextoFijable = null, IAuditoriaDeSeguridad? auditoria = null)
             => new(db, Personas(db, reloj), Sincronizador(db, reloj), new ClavesRapidas(), correo,
                 contextoFijable != null ? contextoFijable : new TenantContextFijo { IdTenant = idTenantDeLaPeticion }, IdentidadDePrueba.Opciones(),
-                NullLogger<ServicioDeInvitaciones>.Instance, derechos, reloj, contextoFijable);
+                NullLogger<ServicioDeInvitaciones>.Instance, derechos, reloj, contextoFijable, auditoria);
     }
 }

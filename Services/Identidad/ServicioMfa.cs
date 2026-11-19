@@ -6,7 +6,9 @@ using Microsoft.Extensions.Options;
 using OtpNet;
 using QRCoder;
 using eGestion360Web.Data;
+using eGestion360Web.Models.Auditoria;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Services.Auditoria;
 
 namespace eGestion360Web.Services.Identidad
 {
@@ -56,9 +58,12 @@ namespace eGestion360Web.Services.Identidad
         private readonly IDataProtector _protector;
         private readonly OpcionesDeIdentidad _opciones;
         private readonly TimeProvider _tiempo;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
 
-        public ServicioMfa(ApplicationDbContext db, IDataProtectionProvider proteccion, IOptions<OpcionesDeIdentidad> opciones, TimeProvider? tiempo = null)
+        public ServicioMfa(ApplicationDbContext db, IDataProtectionProvider proteccion, IOptions<OpcionesDeIdentidad> opciones, TimeProvider? tiempo = null,
+            IAuditoriaDeSeguridad? auditoria = null)
         {
+            _auditoria = auditoria;
             _db = db;
             _protector = proteccion.CreateProtector(PropositoDelSecreto);
             _opciones = opciones.Value;
@@ -103,7 +108,11 @@ namespace eGestion360Web.Services.Identidad
             var fila = await _db.CuentaMfa.FirstOrDefaultAsync(m => m.IdCuenta == idCuenta, ct);
             if (fila == null || fila.Confirmada) return null;
 
-            if (!TryVerificarTotp(Desproteger(fila), codigo, fila.UltimoPasoUsado, out var paso)) return null;
+            if (!TryVerificarTotp(Desproteger(fila), codigo, fila.UltimoPasoUsado, out var paso))
+            {
+                await RegistrarAsync(TiposDeEvento.MfaAlta, ResultadosDeEvento.Fallo, idCuenta, new { motivo = "codigo_invalido" }, ct);
+                return null;
+            }
 
             var ahora = Ahora;
             fila.Confirmada = true;
@@ -124,6 +133,7 @@ namespace eGestion360Web.Services.Identidad
             }
 
             await _db.SaveChangesAsync(ct);
+            await RegistrarAsync(TiposDeEvento.MfaAlta, ResultadosDeEvento.Ok, idCuenta, new { codigos_de_recuperacion = codigos.Count }, ct);
             return codigos;
         }
 
@@ -140,6 +150,7 @@ namespace eGestion360Web.Services.Identidad
                 fila.UltimoPasoUsado = paso;
                 fila.FechaModificacion = Ahora;
                 await _db.SaveChangesAsync(ct);
+                await RegistrarAsync(TiposDeEvento.MfaVerificada, ResultadosDeEvento.Ok, idCuenta, new { metodo = "totp" }, ct);
                 return true;
             }
 
@@ -147,10 +158,16 @@ namespace eGestion360Web.Services.Identidad
             var huella = Huella(codigo);
             var recuperacion = await _db.CuentaMfaRecuperacion
                 .FirstOrDefaultAsync(r => r.IdCuenta == idCuenta && r.HashCodigo == huella && r.UsadoEn == null, ct);
-            if (recuperacion == null) return false;
+            if (recuperacion == null)
+            {
+                await RegistrarAsync(TiposDeEvento.MfaVerificada, ResultadosDeEvento.Fallo, idCuenta, new { motivo = "codigo_invalido" }, ct);
+                return false;
+            }
 
             recuperacion.UsadoEn = Ahora;
             await _db.SaveChangesAsync(ct);
+            var restantes = await _db.CuentaMfaRecuperacion.CountAsync(r => r.IdCuenta == idCuenta && r.UsadoEn == null, ct);
+            await RegistrarAsync(TiposDeEvento.MfaRecuperacion, ResultadosDeEvento.Ok, idCuenta, new { restantes }, ct);
             return true;
         }
 
@@ -159,7 +176,13 @@ namespace eGestion360Web.Services.Identidad
             _db.CuentaMfaRecuperacion.RemoveRange(await _db.CuentaMfaRecuperacion.Where(r => r.IdCuenta == idCuenta).ToListAsync(ct));
             _db.CuentaMfa.RemoveRange(await _db.CuentaMfa.Where(m => m.IdCuenta == idCuenta).ToListAsync(ct));
             await _db.SaveChangesAsync(ct);
+            await RegistrarAsync(TiposDeEvento.MfaDesactivada, ResultadosDeEvento.Ok, idCuenta, new { por = quien }, ct);
         }
+
+        /// <summary>Un evento del segundo factor sobre una cuenta. El nombre, la dirección y la petición los pone el servicio de auditoría.</summary>
+        private Task RegistrarAsync(string tipo, string resultado, int idCuenta, object detalle, CancellationToken ct)
+            => _auditoria == null ? Task.CompletedTask
+                : _auditoria.RegistrarAsync(new EventoDeSeguridad(tipo) { Resultado = resultado, IdCuenta = idCuenta, Detalle = detalle }, ct);
 
         // ── Ayudas ────────────────────────────────────────────────────────────
 

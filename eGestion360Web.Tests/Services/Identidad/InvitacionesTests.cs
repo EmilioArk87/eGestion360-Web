@@ -391,6 +391,47 @@ namespace eGestion360Web.Tests.Services.Identidad
         }
 
         [Fact]
+        public async Task Aceptar_deja_un_evento_de_invitacion_aceptada_con_el_tenant_y_sin_la_clave_ni_el_token()
+        {
+            var espia = new AuditoriaEspia();
+            var (idPersona, _, token, idInvitacion) = await InvitacionValida();
+
+            ResultadoDeAceptar r;
+            using (var db = _bd.Crear()) r = await InvitacionesDePrueba.Servicio(db, _reloj, _correo, _derechos, auditoria: espia).AceptarAsync(token, ClaveSegura);
+
+            Assert.True(r.Ok, string.Join(" | ", r.Errores));
+            var e = Assert.Single(espia.Eventos);
+            using var verificacion = _bd.Crear();
+            var usuario = Invitado(verificacion);
+            Assert.Equal(eGestion360Web.Services.Auditoria.TiposDeEvento.InvitacionAceptada, e.Tipo);
+            Assert.Equal(eGestion360Web.Models.Auditoria.ResultadosDeEvento.Ok, e.Resultado);
+            Assert.Equal(usuario.Id, e.IdUserLegado);
+            Assert.Equal(usuario.Username, e.Usuario);
+            Assert.Equal(DatosBase.TenantA, e.IdTenant);
+            Assert.Equal(DatosBase.EmpresaA, e.IdEmpresa);
+            Assert.Equal("invitacion", e.ObjetoTipo);
+            Assert.Equal(idInvitacion.ToString(), e.ObjetoId);
+            Assert.DoesNotContain(ClaveSegura, espia.Detalles());
+            Assert.DoesNotContain(token, espia.Detalles());   // el enlace de un solo uso nunca queda en la auditoría
+        }
+
+        [Fact]
+        public async Task Una_aceptacion_que_no_prospera_no_deja_evento()
+        {
+            var espia = new AuditoriaEspia();
+            var (_, _, token, _) = await InvitacionValida();
+
+            using (var db = _bd.Crear())
+            {
+                var servicio = InvitacionesDePrueba.Servicio(db, _reloj, _correo, _derechos, auditoria: espia);
+                Assert.False((await servicio.AceptarAsync(token, "123456")).Ok);           // clave débil
+                Assert.False((await servicio.AceptarAsync("no-existe", ClaveSegura)).Ok);   // enlace que no existe
+            }
+
+            Assert.Empty(espia.Eventos);
+        }
+
+        [Fact]
         public async Task Aceptar_desde_una_pantalla_sin_sesion_fija_el_tenant_de_la_invitacion_antes_de_escribir()
         {
             // La pantalla de aceptar corre en ámbito de plataforma; la base no deja cambiar de tenant con una transacción abierta, así que

@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
+using eGestion360Web.Models.Auditoria;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Services.Auditoria;
 
 namespace eGestion360Web.Services.Identidad
 {
@@ -69,10 +71,13 @@ namespace eGestion360Web.Services.Identidad
         private readonly OpcionesDeIdentidad _opciones;
         private readonly TimeProvider _tiempo;
         private readonly ILogger<Autenticador> _log;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
 
         public Autenticador(ApplicationDbContext db, IDirectorioDeCuentas directorio, IBloqueoDeCuentas bloqueo, IServicioMfa mfa,
-            IPasswordService claves, IOptions<OpcionesDeIdentidad> opciones, ILogger<Autenticador> log, TimeProvider? tiempo = null)
+            IPasswordService claves, IOptions<OpcionesDeIdentidad> opciones, ILogger<Autenticador> log, TimeProvider? tiempo = null,
+            IAuditoriaDeSeguridad? auditoria = null)
         {
+            _auditoria = auditoria;
             _db = db;
             _directorio = directorio;
             _bloqueo = bloqueo;
@@ -89,20 +94,27 @@ namespace eGestion360Web.Services.Identidad
             if (cuenta == null)
             {
                 SimularVerificacion(clave);
+                // Una cuenta que no existe deja una fila por dirección y por hora, con el nombre enmascarado (D71, D72).
+                await RegistrarFalloAsync(null, EnmascaradoDeAuditoria.Identificador(identificador), "cuenta_inexistente", agregable: true, ct: ct);
                 return new ResultadoDeCredenciales(FalloDeCredenciales.Incorrectas);
             }
 
             if (await _bloqueo.BloqueadaHastaAsync(cuenta.IdCuenta, ct) is { } hasta)
             {
                 _log.LogWarning("Inicio de sesión rechazado: la cuenta {IdCuenta} está bloqueada hasta {Hasta:u}.", cuenta.IdCuenta, hasta);
+                // Quien insiste sobre una cuenta bloqueada no llena la tabla: una fila por dirección y por hora.
+                await RegistrarFalloAsync(cuenta, null, "bloqueada", agregable: true, ct: ct);
                 return new ResultadoDeCredenciales(FalloDeCredenciales.Bloqueada, BloqueadaHasta: hasta);
             }
 
             if (!ClaveCorrecta(clave, cuenta.HashClave))
             {
-                if (cuenta.HashClave.StartsWith("$2", StringComparison.Ordinal) == false)
+                var sinBcrypt = cuenta.HashClave.StartsWith("$2", StringComparison.Ordinal) == false;
+                if (sinBcrypt)
                     _log.LogWarning("Inicio de sesión rechazado: la cuenta {IdCuenta} tiene la clave guardada sin BCrypt.", cuenta.IdCuenta);
 
+                // Cada clave incorrecta de una cuenta que existe queda registrada: son pocas, porque a los fallos seguidos los corta el bloqueo.
+                await RegistrarFalloAsync(cuenta, null, sinBcrypt ? "clave_sin_bcrypt" : "clave_incorrecta", agregable: false, ct: ct);
                 var bloqueada = await _bloqueo.RegistrarFalloAsync(cuenta.IdCuenta, ct);
                 if (bloqueada != null)
                     _log.LogWarning("La cuenta {IdCuenta} quedó bloqueada hasta {Hasta:u} por fallos de clave seguidos.", cuenta.IdCuenta, bloqueada);
@@ -113,6 +125,7 @@ namespace eGestion360Web.Services.Identidad
             if (cuenta.Estado != EstadoCuenta.Activa)
             {
                 _log.LogWarning("Inicio de sesión rechazado: la cuenta {IdCuenta} está {Estado}.", cuenta.IdCuenta, cuenta.Estado);
+                await RegistrarFalloAsync(cuenta, null, "cuenta_" + cuenta.Estado, agregable: false, ct: ct);
                 return new ResultadoDeCredenciales(FalloDeCredenciales.Incorrectas);
             }
 
@@ -123,6 +136,19 @@ namespace eGestion360Web.Services.Identidad
             var nombre = escrito.Contains('@') ? (cuenta.NombreUsuario ?? cuenta.Correo) : escrito;
             return new ResultadoDeCredenciales(FalloDeCredenciales.Ninguno, cuenta, nombre);
         }
+
+        /// <summary>Un inicio de sesión que no entra, con el motivo. La auditoría es de mejor esfuerzo: nunca cambia lo que la persona ve.</summary>
+        private Task RegistrarFalloAsync(Cuenta? cuenta, string? usuarioEnmascarado, string motivo, bool agregable, CancellationToken ct)
+            => _auditoria == null ? Task.CompletedTask : _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.SesionEntrada)
+            {
+                Resultado = ResultadosDeEvento.Fallo,
+                IdCuenta = cuenta?.IdCuenta,
+                Usuario = cuenta != null ? (cuenta.NombreUsuario ?? EnmascaradoDeAuditoria.Identificador(cuenta.Correo)) : usuarioEnmascarado,
+                EsOperador = cuenta?.EsOperador ?? false,
+                Agregable = agregable,
+                ClaveDeAgregado = motivo,
+                Detalle = new { motivo },
+            }, ct);
 
         private bool ClaveCorrecta(string clave, string hash)
         {
@@ -166,6 +192,9 @@ namespace eGestion360Web.Services.Identidad
 
         public async Task EntrarAsync(HttpContext http, Cuenta cuenta, DatosDeIdentidad datos, CancellationToken ct = default)
         {
+            // Si ya había una cuenta con sesión, es un cambio de sitio y no una entrada nueva.
+            var esCambio = AuthHelper.HayCuenta(http);
+
             var principal = ReclamosDeIdentidad.Crear(datos);
             await http.SignInAsync(ReclamosDeIdentidad.Esquema, principal, new AuthenticationProperties { IsPersistent = false, AllowRefresh = true });
             http.User = principal;
@@ -178,10 +207,34 @@ namespace eGestion360Web.Services.Identidad
             AuthHelper.SalirDeSoporte(http);
             _log.LogInformation("Inicio de sesión: cuenta {IdCuenta} en {Sitio} (rol {Rol}).", cuenta.IdCuenta,
                 datos.IdMembresia == null ? "plataforma" : $"tenant {datos.IdTenant}/empresa {datos.IdEmpresa}", datos.Rol);
+
+            // La cookie todavía no lleva el sitio nuevo para esta petición: el evento trae el suyo (ADR-030).
+            if (_auditoria != null)
+            {
+                var sitio = datos.IdMembresia == null ? "plataforma" : "tenant";
+                if (!esCambio)
+                    await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.SesionEntrada)
+                    {
+                        IdCuenta = cuenta.IdCuenta, Usuario = datos.NombreUsuario, EsOperador = cuenta.EsOperador,
+                        IdTenant = datos.IdTenant, IdEmpresa = datos.IdEmpresa,
+                        Detalle = new { sitio, rol = datos.Rol, mfa = datos.MfaVerificada },
+                    }, ct);
+
+                await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.ContextoElegido)
+                {
+                    IdCuenta = cuenta.IdCuenta, Usuario = datos.NombreUsuario, EsOperador = cuenta.EsOperador,
+                    IdTenant = datos.IdTenant, IdEmpresa = datos.IdEmpresa,
+                    Detalle = new { sitio, rol = datos.Rol, cambio = esCambio },
+                }, ct);
+            }
         }
 
         public async Task SalirAsync(HttpContext http)
         {
+            // Con la cookie todavía puesta, el evento sabe quién sale y de qué sitio.
+            if (_auditoria != null && AuthHelper.HayCuenta(http))
+                await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.SesionSalida), http.RequestAborted);
+
             await http.SignOutAsync(ReclamosDeIdentidad.Esquema);
             http.Session.Clear();
         }

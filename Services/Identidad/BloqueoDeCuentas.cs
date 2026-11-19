@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Services.Auditoria;
 
 namespace eGestion360Web.Services.Identidad
 {
@@ -27,12 +28,15 @@ namespace eGestion360Web.Services.Identidad
         private readonly ApplicationDbContext _db;
         private readonly OpcionesDeIdentidad _opciones;
         private readonly TimeProvider _tiempo;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
 
-        public BloqueoDeCuentas(ApplicationDbContext db, IOptions<OpcionesDeIdentidad> opciones, TimeProvider? tiempo = null)
+        public BloqueoDeCuentas(ApplicationDbContext db, IOptions<OpcionesDeIdentidad> opciones, TimeProvider? tiempo = null,
+            IAuditoriaDeSeguridad? auditoria = null)
         {
             _db = db;
             _opciones = opciones.Value;
             _tiempo = tiempo ?? TimeProvider.System;
+            _auditoria = auditoria;
         }
 
         private DateTime Ahora => _tiempo.GetUtcNow().UtcDateTime;
@@ -75,6 +79,14 @@ namespace eGestion360Web.Services.Identidad
             }
 
             await _db.SaveChangesAsync(ct);
+
+            // Un bloqueo se registra donde ocurre, y este servicio lo usan la clave y el segundo factor (F1.8, D71).
+            if (bloqueada != null && _auditoria != null)
+                await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.SesionBloqueo)
+                {
+                    IdCuenta = idCuenta,
+                    Detalle = new { hasta = bloqueada.Value.ToString("u") },
+                }, ct);
             return bloqueada;
         }
 

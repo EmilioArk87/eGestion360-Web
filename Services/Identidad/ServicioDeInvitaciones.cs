@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Models.Plataforma;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Derechos;
 using eGestion360Web.Services.Personas;
 using eGestion360Web.Services.Tenancy;
@@ -82,11 +83,14 @@ namespace eGestion360Web.Services.Identidad
         private readonly IDerechosDeUso? _derechos;
         private readonly TimeProvider _tiempo;
         private readonly ILogger<ServicioDeInvitaciones> _log;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
 
         public ServicioDeInvitaciones(ApplicationDbContext db, IUsuarioPersonaService personas, ISincronizadorDeCuentas cuentas,
             IPasswordService claves, IEmailService correo, ITenantContext tenant, IOptions<OpcionesDeIdentidad> opciones,
-            ILogger<ServicioDeInvitaciones> log, IDerechosDeUso? derechos = null, TimeProvider? tiempo = null, TenantContext? contextoFijable = null)
+            ILogger<ServicioDeInvitaciones> log, IDerechosDeUso? derechos = null, TimeProvider? tiempo = null, TenantContext? contextoFijable = null,
+            IAuditoriaDeSeguridad? auditoria = null)
         {
+            _auditoria = auditoria;
             _db = db;
             _personas = personas;
             _cuentas = cuentas;
@@ -362,6 +366,15 @@ namespace eGestion360Web.Services.Identidad
                 }
 
                 if (transaccion != null) await transaccion.CommitAsync(ct);
+
+                // La invitación aceptada es de la plataforma (la cuenta es global) y lleva el tenant sobre el que se actuó.
+                if (_auditoria != null)
+                    await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.InvitacionAceptada)
+                    {
+                        IdUserLegado = usuario.Id, Usuario = usuario.Username, IdTenant = invitacion.IdTenant, IdEmpresa = invitacion.IdEmpresa,
+                        ObjetoTipo = "invitacion", ObjetoId = id.ToString(),
+                        Detalle = new { rol = usuario.Role },
+                    }, ct);
                 return new ResultadoDeAceptar(true, Array.Empty<string>());
             }
             catch (DbUpdateException ex)

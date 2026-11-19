@@ -14,6 +14,12 @@ namespace eGestion360Web.Services.Auditoria
 
         /// <summary>'app' para la aplicación; los scripts SQL escriben 'script:NNN'.</summary>
         string Origen { get; }
+
+        /// <summary>Cuenta global de quien hace el cambio (F1.8); nulo si no hay sesión o no es una petición.</summary>
+        int? IdCuenta => null;
+
+        /// <summary>Id de la petición (<c>X-Correlation-Id</c>) que hace el cambio (F1.8); nulo si no es una petición.</summary>
+        string? IdCorrelacion => null;
     }
 
     /// <summary>Contexto de auditoría de la aplicación web: usuario y empresa salen de la sesión.</summary>
@@ -36,6 +42,12 @@ namespace eGestion360Web.Services.Auditoria
 
         public string Origen => "app";
 
+        /// <summary>La cuenta sale de la cookie de identidad; sin petición o sin sesión, nulo.</summary>
+        public int? IdCuenta => _http.HttpContext is { } http ? AuthHelper.GetCuentaId(http) : null;
+
+        /// <summary>El mismo valor de <c>X-Correlation-Id</c> y de los logs; sin petición, nulo.</summary>
+        public string? IdCorrelacion => _http.HttpContext?.TraceIdentifier;
+
         /// <summary>Sin petición (servicios en segundo plano) o sin sesión configurada, devuelve nulo en vez de fallar.</summary>
         private string? LeerSesion(string clave)
         {
@@ -56,5 +68,7 @@ namespace eGestion360Web.Services.Auditoria
         public string Usuario { get; set; } = "system";
         public int? IdEmpresa { get; set; }
         public string Origen { get; set; } = "app";
+        public int? IdCuenta { get; set; }
+        public string? IdCorrelacion { get; set; }
     }
 }

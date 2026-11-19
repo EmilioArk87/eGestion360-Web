@@ -89,6 +89,9 @@ namespace eGestion360Web.Data
         public DbSet<PersonaEmpresa> PersonaEmpresas { get; set; }
         public DbSet<Empleado> Empleados { get; set; }
         public DbSet<BitacoraCambio> BitacoraCambios { get; set; }
+        // Auditoría de seguridad y de plataforma (F1.8, script 045)
+        public DbSet<AuditoriaSeguridad> AuditoriaSeguridad { get; set; }
+        public DbSet<AuditoriaPlataforma> AuditoriaPlataforma { get; set; }
 
         // Módulo de Psicología (script 042, esquema psi): pacientes, jornadas, historial de atenciones, impresiones e importaciones
         public DbSet<Jornada> JornadasPsicologia { get; set; }

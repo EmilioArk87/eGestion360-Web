@@ -44,6 +44,7 @@ namespace eGestion360Web.Services.Auditoria
     {
         private const int LargoMaximoValor = 2000;
         private const int LargoMaximoUsuario = 100;
+        private const int LargoMaximoCorrelacion = 64;
 
         private static readonly Dictionary<Type, string> Entidades = new()
         {
@@ -354,7 +355,9 @@ namespace eGestion360Web.Services.Auditoria
             ValorNuevo = Cortar(nuevo, LargoMaximoValor),
             FechaHora = DateTime.UtcNow,
             Usuario = Cortar(_contexto.Usuario, LargoMaximoUsuario) ?? "system",
-            Origen = _contexto.Origen
+            Origen = _contexto.Origen,
+            IdCuenta = _contexto.IdCuenta,
+            IdCorrelacion = Cortar(_contexto.IdCorrelacion, LargoMaximoCorrelacion)
         };
 
         /// <summary>Empresa, persona y número de registro de lo que se audita.</summary>

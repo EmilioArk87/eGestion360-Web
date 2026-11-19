@@ -6,6 +6,7 @@ using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Tests.Infra;
+using eGestion360Web.Tests.Services.Identidad;
 
 namespace eGestion360Web.Tests.Services.Auditoria
 {
@@ -72,6 +73,69 @@ namespace eGestion360Web.Tests.Services.Auditoria
             Assert.Equal(vinculo.IdPersonaEmpresa, filas.Single(f => f.Entidad == "persona_empresa").IdRegistro);
             var empleado = await lectura.Empleados.AsNoTracking().SingleAsync();
             Assert.Equal(empleado.IdEmpleado, filas.Single(f => f.Entidad == "empleados").IdRegistro);
+        }
+
+        // ── Quién y en qué petición (F1.8a, script 045) ─────────────────────────
+
+        [Fact]
+        public async Task Cada_fila_de_la_bitacora_lleva_la_cuenta_y_el_id_de_correlacion_de_la_peticion()
+        {
+            _quien.IdCuenta = 42;
+            _quien.IdCorrelacion = "0HNABC123:00000001";
+            using (var db = ConAuditoria())
+            {
+                db.Personas.Add(NuevaPersona());
+                await db.SaveChangesAsync();
+            }
+
+            using var lectura = SinAuditoria();
+            var filas = await lectura.BitacoraCambios.AsNoTracking().ToListAsync();
+
+            Assert.NotEmpty(filas);
+            Assert.All(filas, f =>
+            {
+                Assert.Equal(42, f.IdCuenta);
+                Assert.Equal("0HNABC123:00000001", f.IdCorrelacion);
+            });
+        }
+
+        [Fact]
+        public async Task Sin_cuenta_ni_peticion_las_columnas_nuevas_quedan_nulas_y_una_correlacion_larga_se_recorta()
+        {
+            using (var db = ConAuditoria())
+            {
+                db.Personas.Add(NuevaPersona());
+                await db.SaveChangesAsync();
+            }
+            using (var lectura = SinAuditoria())
+                Assert.All(await lectura.BitacoraCambios.AsNoTracking().ToListAsync(), f => { Assert.Null(f.IdCuenta); Assert.Null(f.IdCorrelacion); });
+
+            _quien.IdCorrelacion = new string('c', 200);
+            using (var db = ConAuditoria())
+            {
+                db.Personas.Add(NuevaPersona("Ana", "Mora", dni: null));
+                await db.SaveChangesAsync();
+            }
+            using var lectura2 = SinAuditoria();
+            Assert.All(await lectura2.BitacoraCambios.AsNoTracking().Where(f => f.IdCorrelacion != null).ToListAsync(),
+                f => Assert.Equal(64, f.IdCorrelacion!.Length));
+        }
+
+        [Fact]
+        public void El_contexto_de_la_peticion_entrega_la_cuenta_de_la_cookie_y_el_id_de_correlacion()
+        {
+            var http = SesionFalsa.ConIdentidad(DatosDeIdentidadDePrueba.Empresa());
+            http.TraceIdentifier = "traza-77";
+            var contexto = new ContextoAuditoriaHttp(new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = http });
+
+            Assert.Equal(10, contexto.IdCuenta);
+            Assert.Equal("traza-77", contexto.IdCorrelacion);
+
+            // HttpContextAccessor guarda la petición en un AsyncLocal compartido: sin petición es dejar el valor en nulo.
+            var accesor = new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = null };
+            var sinPeticion = new ContextoAuditoriaHttp(accesor);
+            Assert.Null(sinPeticion.IdCuenta);
+            Assert.Null(sinPeticion.IdCorrelacion);
         }
 
         [Fact]

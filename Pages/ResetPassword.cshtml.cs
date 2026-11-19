@@ -17,6 +17,7 @@ namespace eGestion360Web.Pages
         private readonly ApplicationDbContext _context;
         private readonly ILogger<ResetPasswordModel> _logger;
         private readonly eGestion360Web.Services.Identidad.ISincronizadorDeCuentas _cuentas;
+        private readonly eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? _auditoria;
 
         public ResetPasswordModel(
             IPasswordResetService passwordResetService,
@@ -24,8 +25,10 @@ namespace eGestion360Web.Pages
             IEmailService emailService,
             ApplicationDbContext context,
             ILogger<ResetPasswordModel> logger,
-            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas cuentas)
+            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas cuentas,
+            eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? auditoria = null)
         {
+            _auditoria = auditoria;
             _cuentas = cuentas;
             _passwordResetService = passwordResetService;
             _passwordService = passwordService;
@@ -114,6 +117,13 @@ namespace eGestion360Web.Pages
                     // Guardar cambios
                     await _context.SaveChangesAsync();
                     await _cuentas.SincronizarClaveAsync(user.Id);
+
+                    // Sin sesión: la cuenta se busca por el usuario al que se le restableció la clave.
+                    if (_auditoria != null)
+                        await _auditoria.RegistrarAsync(new eGestion360Web.Services.Auditoria.EventoDeSeguridad(eGestion360Web.Services.Auditoria.TiposDeEvento.ClaveRestablecida)
+                        {
+                            IdUserLegado = user.Id, Usuario = user.Username, Detalle = new { por = "codigo" },
+                        });
 
                     // Enviar email de confirmación
                     await _emailService.SendPasswordResetConfirmationAsync(Email, user.Username);
