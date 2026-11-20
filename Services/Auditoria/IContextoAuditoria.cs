@@ -20,6 +20,15 @@ namespace eGestion360Web.Services.Auditoria
 
         /// <summary>Id de la petición (<c>X-Correlation-Id</c>) que hace el cambio (F1.8); nulo si no es una petición.</summary>
         string? IdCorrelacion => null;
+
+        /// <summary>Dirección de red de la petición (F1.8b), en IPv4 cuando viene como IPv4 dentro de IPv6; nulo si no es una petición.</summary>
+        string? Ip => null;
+
+        /// <summary>Agente de la petición, recortado a lo que cabe en la auditoría (F1.8b); nulo si no es una petición.</summary>
+        string? Agente => null;
+
+        /// <summary>Si quien hace el cambio es del personal de la plataforma (F1.8b); sus cambios dentro de un tenant también quedan en la auditoría de la plataforma.</summary>
+        bool EsOperador => false;
     }
 
     /// <summary>Contexto de auditoría de la aplicación web: usuario y empresa salen de la sesión.</summary>
@@ -48,6 +57,21 @@ namespace eGestion360Web.Services.Auditoria
         /// <summary>El mismo valor de <c>X-Correlation-Id</c> y de los logs; sin petición, nulo.</summary>
         public string? IdCorrelacion => _http.HttpContext?.TraceIdentifier;
 
+        public string? Ip => _http.HttpContext?.Connection.RemoteIpAddress is { } direccion
+            ? (direccion.IsIPv4MappedToIPv6 ? direccion.MapToIPv4() : direccion).ToString()
+            : null;
+
+        public string? Agente
+        {
+            get
+            {
+                var agente = _http.HttpContext?.Request.Headers.UserAgent.ToString();
+                return string.IsNullOrEmpty(agente) ? null : agente.Length <= 200 ? agente : agente[..200];
+            }
+        }
+
+        public bool EsOperador => _http.HttpContext is { } http && AuthHelper.EsOperador(http);
+
         /// <summary>Sin petición (servicios en segundo plano) o sin sesión configurada, devuelve nulo en vez de fallar.</summary>
         private string? LeerSesion(string clave)
         {
@@ -70,5 +94,8 @@ namespace eGestion360Web.Services.Auditoria
         public string Origen { get; set; } = "app";
         public int? IdCuenta { get; set; }
         public string? IdCorrelacion { get; set; }
+        public string? Ip { get; set; }
+        public string? Agente { get; set; }
+        public bool EsOperador { get; set; }
     }
 }

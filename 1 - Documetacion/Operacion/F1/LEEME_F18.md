@@ -97,10 +97,48 @@ Sobre copias locales de producción (servidor `localhost,1433`, bases `egestion_
 
 El verificador `verificar_despues_045.sql` dio 14 de 14 OK en la copia de ensayo. En la copia de desarrollo (identidad global, planes y permisos, 038 a 041, con el 045 puesto), `verificar_despues_f17.sql` da 46 OK y `verificar_despues_041.sql` 24 OK: sus cifras de objetos aceptan el 045. `verificar_despues_f15.sql` da 53 OK y 6 FALLA, todas sobre los **datos** de las cuentas de esa copia (cuentas activas e inactivas, claves, membresías), ninguna sobre cifras de objetos. El 2026-11-19 se aplicó en producción tras la línea base de la comprobación diaria; después de aplicar, la comprobación diaria dio lo mismo que antes (solo la alerta conocida de las claves de `verificar_despues_f15.sql`) y los verificadores de F1.7 y F1.6 siguieron en OK.
 
+## F1.8b: administración, soporte y acciones del operador
+
+**Solo código: no hay script ni `/alerta-bd`.** Usa las tablas del 045, que ya están aplicadas. Se publica con el kit de siempre y su reversa (`REVERTIR.bat`) no toca la base: las filas ya escritas se conservan y el código anterior las ignora.
+
+Qué deja ahora una fila (ver [ADR-030](../../Arquitectura/ADR-030-auditoria-de-seguridad.md), sección F1.8b):
+
+| Grupo | Tipos | Tabla |
+|---|---|---|
+| Administración | `usuario.creado`, `usuario.editado`, `usuario.eliminado`, `rol.creado`, `rol.editado`, `rol.eliminado`, `rol.permisos`, `modulo.cambiado`, `acceso.cambiado`, `empresa.creada`, `empresa.editada`, `empresa.eliminada` | Tenant; y plataforma si lo hace el personal de la plataforma o no tiene tenant |
+| Invitaciones y accesos denegados | `invitacion.enviada`, `invitacion.anulada`, `acceso.denegado` | Tenant (plataforma si no hay tenant) |
+| Soporte | `soporte.entrada` (estricta), `soporte.salida` | Las dos |
+| Plataforma | `correo.configurado`, `tasas.configurada`, `tasas.ejecutada`, `tasas.oficial_aprobada`, `tasas.oficial_rechazada`, `cola.reintento`, `cola.procesado_manual` | Plataforma |
+
+Los cambios de administración quedan **en la misma transacción** que el cambio: si la fila de auditoría no se puede dejar, el cambio no se guarda. La entrada al soporte de un tenant también: si no se puede dejar el rastro, no se entra.
+
+### Consultas de ejemplo (solo lectura)
+
+```sql
+-- Qué cambió el personal de la plataforma en un tenant, lo más reciente primero
+SELECT TOP 50 fecha_hora, tipo, usuario, objeto_tipo, objeto_id, detalle
+FROM saas.auditoria_plataforma WHERE id_tenant = 5 AND es_operador = 1 ORDER BY id_evento DESC;
+
+-- Cambios de permisos de roles (lo concedido y lo retirado, por código)
+SELECT fecha_hora, usuario, objeto_id AS id_rol, detalle FROM saas.auditoria_plataforma WHERE tipo = 'rol.permisos' ORDER BY id_evento DESC;
+```
+
+La auditoría de un tenant (`dbo.auditoria_seguridad`) solo la devuelve una conexión con ese tenant fijado, como el resto de las tablas de tenant.
+
+### Qué verificar después de publicar
+
+1. La comprobación diaria igual que antes (solo la alerta conocida de las claves).
+2. Con una sesión de administrador, cambiar el rol de un usuario de prueba y ver su fila `usuario.editado` (con el antes y el después y sin la clave).
+3. Con el operador, entrar a un tenant desde `/Admin/Soporte` y ver `soporte.entrada` en las dos tablas.
+
+### Límites
+
+Solo ve lo que se guarda con EF Core; un script SQL debe dejar su propia fila. `acceso.denegado` cubre las negaciones del filtro de permisos, no las de módulo o derechos del tenant. Las pantallas para consultar todo esto llegan en F1.8c.
+
 ## Límites conocidos
 
 - `TRUNCATE TABLE` no dispara el disparador; solo quien puede modificar el esquema puede hacerlo (igual que en `dbo.bitacora_cambios`). En el hosting nuevo la aplicación entrará con un usuario sin ese permiso (ADR-016).
 - La dirección de red es la de la conexión directa (Somee). Detrás de un proxy (Azure) habrá que configurar los encabezados reenviados en el paso de migración.
 - Las dos tablas contienen datos personales (dirección, nombre) y no se pueden borrar; la conservación es de 24 meses sin purga automática (D75).
-- Lo que **todavía no** se audita llega en F1.8b (cambios de usuarios, roles, módulos, accesos y empresas; `rol.permisos`; soporte; acciones del operador) y las pantallas, en F1.8c.
+- Los cambios de administración, el soporte y las acciones del operador se auditan desde F1.8b (sección de arriba); las pantallas para consultarlo llegan en F1.8c.
 - El script es ASCII (sin tildes ni eñes), como los demás de migración.

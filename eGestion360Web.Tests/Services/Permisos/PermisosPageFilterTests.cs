@@ -119,10 +119,10 @@ namespace eGestion360Web.Tests.Services.Permisos
         private sealed record Resultado(bool Siguio, IActionResult? Respuesta, RegistroEnMemoria<PermisosPageFilter> Log, EvaluadorFalso Evaluador);
 
         private static async Task<Resultado> Correr(Type pagina, string? handler, HttpContext http, EvaluadorFalso evaluador, string? modo = "Registrar",
-            string metodo = "GET", string ruta = "/Flota/Catalogos/Vehiculos/Index")
+            string metodo = "GET", string ruta = "/Flota/Catalogos/Vehiculos/Index", eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? auditoria = null)
         {
             var log = new RegistroEnMemoria<PermisosPageFilter>();
-            var filtro = new PermisosPageFilter(evaluador, new OpcionesFalsas(modo), log);
+            var filtro = new PermisosPageFilter(evaluador, new OpcionesFalsas(modo), log, auditoria);
             var (pageContext, contexto) = Armar(pagina, handler, http, metodo, ruta);
 
             var siguio = false;
@@ -243,6 +243,52 @@ namespace eGestion360Web.Tests.Services.Permisos
                 Assert.False(r.Siguio);
                 Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<ContentResult>(r.Respuesta).StatusCode);
             }
+        }
+
+        // ── Acceso denegado en la auditoría (F1.8b) ───────────────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task Un_acceso_denegado_deja_su_evento_agregable_con_el_permiso_la_ruta_y_el_resultado_denegado()
+        {
+            var auditoria = new AuditoriaEspia();
+
+            var r = await Correr(typeof(PaginaDeVehiculos), "OnPostCrear", Usuario(idRol: 5), new EvaluadorFalso("flota.vehiculos.ver"), "Aplicar", "POST",
+                auditoria: auditoria);
+
+            Assert.False(r.Siguio);
+            var evento = Assert.Single(auditoria.Eventos);
+            Assert.Equal(eGestion360Web.Services.Auditoria.TiposDeEvento.AccesoDenegado, evento.Tipo);
+            Assert.Equal(eGestion360Web.Models.Auditoria.ResultadosDeEvento.Denegado, evento.Resultado);
+            Assert.True(evento.Agregable);
+            Assert.Equal("flota.vehiculos.crear", evento.ClaveDeAgregado);
+            Assert.Equal("permiso", evento.ObjetoTipo);
+            Assert.Equal("flota.vehiculos.crear", evento.ObjetoId);
+            Assert.Equal(2, evento.IdTenant);
+            var detalle = System.Text.Json.JsonSerializer.SerializeToElement(evento.Detalle);
+            Assert.Equal("flota.vehiculos.crear", detalle.GetProperty("permiso").GetString());
+            Assert.Equal("POST", detalle.GetProperty("metodo").GetString());
+            Assert.Equal("/Flota/Catalogos/Vehiculos/Index", detalle.GetProperty("ruta").GetString());
+        }
+
+        [Fact]
+        public async Task Quien_tiene_el_permiso_en_modo_registrar_o_sin_sesion_no_deja_evento_de_acceso_denegado()
+        {
+            var auditoria = new AuditoriaEspia();
+
+            await Correr(typeof(PaginaDeVehiculos), "OnGet", Usuario(idRol: 5), new EvaluadorFalso("flota.vehiculos.ver"), "Aplicar", auditoria: auditoria);      // pasa
+            await Correr(typeof(PaginaDeVehiculos), "OnPostCrear", Usuario(idRol: 5), new EvaluadorFalso(), "Registrar", "POST", auditoria: auditoria);              // solo avisa
+            await Correr(typeof(PaginaDeVehiculos), "OnGet", SinSesion(), new EvaluadorFalso(), "Aplicar", auditoria: auditoria);                                   // va al inicio de sesión
+
+            Assert.Empty(auditoria.Eventos);
+        }
+
+        [Fact]
+        public async Task Sin_servicio_de_auditoria_el_filtro_niega_igual()
+        {
+            var r = await Correr(typeof(PaginaDeVehiculos), "OnPostCrear", Usuario(idRol: 5), new EvaluadorFalso(), "Aplicar", "POST", auditoria: null);
+
+            Assert.False(r.Siguio);
+            Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<ContentResult>(r.Respuesta).StatusCode);
         }
 
         // ── Modo Aplicar: niega ───────────────────────────────────────────────────────────────────────────────────────────────

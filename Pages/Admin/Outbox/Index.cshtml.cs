@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Eventos;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.Outbox
@@ -12,7 +13,13 @@ namespace eGestion360Web.Pages.Admin.Outbox
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _db;
-        public IndexModel(ApplicationDbContext db) => _db = db;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
+
+        public IndexModel(ApplicationDbContext db, IAuditoriaDeSeguridad? auditoria = null)
+        {
+            _db = db;
+            _auditoria = auditoria;
+        }
 
         public List<DomainEvent> Eventos { get; set; } = new();
         public Dictionary<string, int> ConteoPorStatus { get; set; } = new();
@@ -76,6 +83,7 @@ namespace eGestion360Web.Pages.Admin.Outbox
                 e.ProximoIntentoEn = null;
             }
             await _db.SaveChangesAsync();
+            await _auditoria.RegistrarAccionDeLaPlataformaAsync(TiposDeEvento.ColaReintento, "evento_de_dominio", null, new { accion = "reactivar_muertos", cantidad = dead.Count });
 
             TempData["OutboxMessage"] = $"{dead.Count} eventos en estado dead reactivados.";
             return RedirectToPage("Index");

@@ -172,6 +172,86 @@ namespace eGestion360Web.Tests.Services.Auditoria
             Assert.Equal(new[] { true, false, false }, DeLaPlataforma().Select(f => f.EsOperador).ToArray());
         }
 
+        // ── Estricto y «Ambos» (F1.8b) ────────────────────────────────────────
+
+        [Fact]
+        public async Task Un_evento_de_soporte_deja_las_dos_filas_con_el_mismo_tenant_la_misma_correlacion_y_la_misma_hora()
+        {
+            Peticion();
+
+            await Servicio().RegistrarEstrictoAsync(new EventoDeSeguridad(TiposDeEvento.SoporteEntrada)
+            {
+                IdTenant = DatosBase.TenantB, IdEmpresa = DatosBase.EmpresaB, EsOperador = true, ObjetoTipo = "tenant", ObjetoId = "2",
+                Detalle = new { tenant = "TENANT_B", estado = "activo" },
+            });
+
+            var deTenant = Assert.Single(DelTenant());
+            var dePlataforma = Assert.Single(DeLaPlataforma());
+            Assert.Equal(TiposDeEvento.SoporteEntrada, deTenant.Tipo);
+            Assert.Equal(DatosBase.TenantB, deTenant.IdTenant);
+            Assert.Equal(DatosBase.TenantB, dePlataforma.IdTenant);
+            Assert.Equal(deTenant.IdCorrelacion, dePlataforma.IdCorrelacion);
+            Assert.Equal(deTenant.FechaHora, dePlataforma.FechaHora);
+            Assert.Equal(deTenant.Detalle, dePlataforma.Detalle);
+            Assert.True(deTenant.EsOperador);
+        }
+
+        [Fact]
+        public async Task El_modo_estricto_lanza_si_no_se_puede_guardar_y_no_deja_ninguna_de_las_dos_filas()
+        {
+            Peticion();
+            var roto = new ServiceCollection();
+            roto.AddScoped<TenantContext>(_ => new TenantContext(_accesor));
+            roto.AddScoped<ApplicationDbContext>(_ => throw new InvalidOperationException("base caída"));
+            await using var proveedorRoto = roto.BuildServiceProvider();
+            var servicio = Servicio(proveedorRoto.GetRequiredService<IServiceScopeFactory>());
+
+            var ex = await Assert.ThrowsAsync<AuditoriaNoDisponibleException>(() =>
+                servicio.RegistrarEstrictoAsync(new EventoDeSeguridad(TiposDeEvento.SoporteEntrada) { IdTenant = DatosBase.TenantA }));
+
+            Assert.Contains(TiposDeEvento.SoporteEntrada, ex.Message);
+            Assert.IsType<InvalidOperationException>(ex.InnerException);
+            Assert.Empty(DelTenant());
+            Assert.Empty(DeLaPlataforma());
+            Assert.Contains(_log.Mensajes, m => m.Nivel == LogLevel.Error && m.Mensaje.Contains("la acción no se hace"));
+        }
+
+        [Fact]
+        public async Task El_modo_estricto_tambien_rechaza_un_evento_que_no_es_del_catalogo_o_con_un_campo_prohibido()
+        {
+            Peticion();
+
+            await Assert.ThrowsAsync<AuditoriaNoDisponibleException>(() => Servicio().RegistrarEstrictoAsync(new EventoDeSeguridad("cosa.rara")));
+            await Assert.ThrowsAsync<AuditoriaNoDisponibleException>(() => Servicio().RegistrarEstrictoAsync(
+                new EventoDeSeguridad(TiposDeEvento.SoporteEntrada) { IdTenant = DatosBase.TenantA, Detalle = new { password = "x" } }));
+
+            Assert.Empty(DelTenant());
+            Assert.Empty(DeLaPlataforma());
+        }
+
+        [Fact]
+        public async Task El_modo_estricto_propaga_la_cancelacion_sin_envolverla()
+        {
+            Peticion();
+            using var cancelacion = new CancellationTokenSource();
+            cancelacion.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                Servicio().RegistrarEstrictoAsync(new EventoDeSeguridad(TiposDeEvento.SoporteEntrada) { IdTenant = DatosBase.TenantA }, cancelacion.Token));
+        }
+
+        [Fact]
+        public async Task Un_evento_de_administracion_por_el_servicio_va_al_tenant_y_sin_tenant_a_la_plataforma()
+        {
+            Peticion();
+
+            await Servicio().RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.InvitacionEnviada) { IdTenant = DatosBase.TenantA, IdEmpresa = DatosBase.EmpresaA });
+            await Servicio().RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.InvitacionAnulada));
+
+            Assert.Equal(TiposDeEvento.InvitacionEnviada, Assert.Single(DelTenant()).Tipo);
+            Assert.Equal(TiposDeEvento.InvitacionAnulada, Assert.Single(DeLaPlataforma()).Tipo);   // sin tenant no se pierde
+        }
+
         // ── Lo que nunca se guarda y lo que no tumba ──────────────────────────
 
         [Fact]

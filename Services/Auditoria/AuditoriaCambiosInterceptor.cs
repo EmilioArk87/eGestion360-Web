@@ -37,6 +37,11 @@ namespace eGestion360Web.Services.Auditoria
     /// base, así que se registran justo después, en un segundo guardado dentro de la misma transacción
     /// (la interceptora abre una si no hay ninguna): o se guarda el cambio con su registro, o ninguno.
     ///
+    /// Desde F1.8b este interceptor también deja, en el mismo guardado y la misma transacción, las filas de auditoría de seguridad
+    /// (<c>dbo.auditoria_seguridad</c> y <c>saas.auditoria_plataforma</c>) de los cambios de administración: usuarios, roles, permisos de un
+    /// rol, módulos de una empresa, accesos y empresas (<see cref="ConstructorDeEventosDeAdministracion"/>, D73). Si la fila no se puede
+    /// dejar, el cambio tampoco se guarda.
+    ///
     /// Límite: solo ve lo que se guarda con EF Core. Un script SQL o una edición directa no pasan por aquí;
     /// por eso cada script que toca estos datos escribe sus propias filas (origen 'script:NNN').
     /// </summary>
@@ -111,15 +116,24 @@ namespace eGestion360Web.Services.Auditoria
         };
 
         private readonly IContextoAuditoria _contexto;
+        private readonly ConstructorDeEventosDeAdministracion? _administracion;
         private readonly ConditionalWeakTable<DbContext, Estado> _estados = new();
 
-        public AuditoriaCambiosInterceptor(IContextoAuditoria contexto) => _contexto = contexto;
+        public AuditoriaCambiosInterceptor(IContextoAuditoria contexto, ConstructorDeEventosDeAdministracion? administracion = null)
+        {
+            _contexto = contexto;
+            _administracion = administracion;
+        }
 
         /// <summary>Lo que hay que recordar entre el antes y el después de un guardado.</summary>
         private sealed class Estado
         {
             public Guid IdTransaccion { get; } = Guid.NewGuid();
             public List<object> Altas { get; } = new();
+
+            /// <summary>Altas de administración (usuarios, roles, empresas...) cuyo evento necesita el id que genera la base (F1.8b).</summary>
+            public List<object> AltasDeAdministracion { get; } = new();
+
             public IDbContextTransaction? Transaccion { get; set; }
 
             /// <summary>Verdadero mientras se hace el segundo guardado, para no auditar la propia bitácora.</summary>
@@ -147,13 +161,16 @@ namespace eGestion360Web.Services.Auditoria
         {
             if (_estados.TryGetValue(contexto, out var anterior) && anterior.Guardando) return;
 
-            var entradas = contexto.ChangeTracker.Entries()
-                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
-                            && Auditable(e))
+            var cambiadas = contexto.ChangeTracker.Entries()
+                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
                 .ToList();
+            var entradas = cambiadas.Where(Auditable).ToList();
+            var administracion = _administracion == null
+                ? new List<EntityEntry>()
+                : cambiadas.Where(ConstructorDeEventosDeAdministracion.Interesa).ToList();
 
             _estados.Remove(contexto);
-            if (entradas.Count == 0) return;
+            if (entradas.Count == 0 && administracion.Count == 0) return;
 
             var estado = new Estado();
             _estados.Add(contexto, estado);
@@ -178,8 +195,19 @@ namespace eGestion360Web.Services.Auditoria
             if (filas.Count > 0)
                 contexto.Set<BitacoraCambio>().AddRange(filas);
 
+            // F1.8b: lo que ya tiene su id (modificaciones, bajas, permisos de rol) se arma ahora; las altas esperan al primer guardado.
+            if (administracion.Count > 0)
+            {
+                var deAhora = administracion.Where(ConstructorDeEventosDeAdministracion.SeArmaAntesDeGuardar).ToList();
+                var filasDeAhora = await _administracion!.FilasAntesAsync(contexto, deAhora, ct);
+                if (filasDeAhora.Count > 0) contexto.AddRange(filasDeAhora);
+
+                estado.AltasDeAdministracion.AddRange(
+                    administracion.Where(e => !ConstructorDeEventosDeAdministracion.SeArmaAntesDeGuardar(e)).Select(e => e.Entity));
+            }
+
             // Las altas se registran en un segundo guardado: deben ir en la misma transacción que el primero.
-            if (estado.Altas.Count > 0 && contexto.Database.CurrentTransaction == null)
+            if ((estado.Altas.Count > 0 || estado.AltasDeAdministracion.Count > 0) && contexto.Database.CurrentTransaction == null)
                 estado.Transaccion = await contexto.Database.BeginTransactionAsync(ct);
         }
 
@@ -240,13 +268,19 @@ namespace eGestion360Web.Services.Auditoria
 
             try
             {
-                if (estado.Altas.Count > 0)
+                if (estado.Altas.Count > 0 || estado.AltasDeAdministracion.Count > 0)
                 {
                     var filas = new List<BitacoraCambio>();
                     foreach (var entidad in estado.Altas)
                         filas.Add(await AltaAsync(contexto, entidad, estado.IdTransaccion, ct));
 
                     contexto.Set<BitacoraCambio>().AddRange(filas);
+
+                    if (estado.AltasDeAdministracion.Count > 0)
+                    {
+                        var filasDeAdministracion = await _administracion!.FilasDeAltasAsync(contexto, estado.AltasDeAdministracion, ct);
+                        if (filasDeAdministracion.Count > 0) contexto.AddRange(filasDeAdministracion);
+                    }
 
                     estado.Guardando = true;
                     await contexto.SaveChangesAsync(ct);

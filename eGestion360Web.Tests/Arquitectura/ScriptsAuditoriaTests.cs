@@ -223,7 +223,7 @@ namespace eGestion360Web.Tests.Arquitectura
         // ── El catálogo de eventos y su destino ─────────────────────────────────────────────────────────────────────────
 
         [Fact]
-        public void Los_eventos_de_la_cuenta_van_a_la_plataforma_y_el_contexto_elegido_sigue_al_tenant()
+        public void Cada_grupo_del_catalogo_tiene_su_destino_y_no_hay_ningun_tipo_fuera_de_los_grupos()
         {
             var deLaCuenta = new[]
             {
@@ -232,7 +232,27 @@ namespace eGestion360Web.Tests.Arquitectura
             };
             Assert.All(deLaCuenta, t => Assert.Equal(DestinoDeEvento.Plataforma, TiposDeEvento.DestinoDe(t)));
             Assert.Equal(DestinoDeEvento.SegunTenant, TiposDeEvento.DestinoDe(TiposDeEvento.ContextoElegido));
-            Assert.Equal(deLaCuenta.Append(TiposDeEvento.ContextoElegido).Order(StringComparer.Ordinal).ToList(), TiposDeEvento.Todos.Order(StringComparer.Ordinal).ToList());
+
+            // F1.8b: la administración de la empresa va al tenant (a la plataforma si no tiene tenant), el soporte a las dos tablas y las acciones del operador a la plataforma.
+            var deAdministracion = new[]
+            {
+                TiposDeEvento.UsuarioCreado, TiposDeEvento.UsuarioEditado, TiposDeEvento.UsuarioEliminado, TiposDeEvento.RolCreado, TiposDeEvento.RolEditado,
+                TiposDeEvento.RolEliminado, TiposDeEvento.RolPermisos, TiposDeEvento.ModuloCambiado, TiposDeEvento.AccesoCambiado, TiposDeEvento.EmpresaCreada,
+                TiposDeEvento.EmpresaEditada, TiposDeEvento.EmpresaEliminada, TiposDeEvento.InvitacionEnviada, TiposDeEvento.InvitacionAnulada, TiposDeEvento.AccesoDenegado,
+            };
+            var deSoporte = new[] { TiposDeEvento.SoporteEntrada, TiposDeEvento.SoporteSalida };
+            var delOperador = new[]
+            {
+                TiposDeEvento.CorreoConfigurado, TiposDeEvento.TasasConfigurada, TiposDeEvento.TasasEjecutada, TiposDeEvento.TasasOficialAprobada,
+                TiposDeEvento.TasasOficialRechazada, TiposDeEvento.ColaReintento, TiposDeEvento.ColaProcesadoManual,
+            };
+            Assert.All(deAdministracion, t => Assert.Equal(DestinoDeEvento.Tenant, TiposDeEvento.DestinoDe(t)));
+            Assert.All(deSoporte, t => Assert.Equal(DestinoDeEvento.Ambos, TiposDeEvento.DestinoDe(t)));
+            Assert.All(delOperador, t => Assert.Equal(DestinoDeEvento.Plataforma, TiposDeEvento.DestinoDe(t)));
+
+            var todos = deLaCuenta.Append(TiposDeEvento.ContextoElegido).Concat(deAdministracion).Concat(deSoporte).Concat(delOperador).ToList();
+            Assert.Equal(todos.Count, todos.Distinct().Count());
+            Assert.Equal(todos.Order(StringComparer.Ordinal).ToList(), TiposDeEvento.Todos.Order(StringComparer.Ordinal).ToList());
         }
 
         [Fact]

@@ -14,6 +14,7 @@ using Microsoft.Extensions.Primitives;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Catalogos;
 using eGestion360Web.Pages.Catalogos.TiposCambio;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Permisos;
 using eGestion360Web.Services.TasasCambio;
 using eGestion360Web.Tests.Infra;
@@ -39,6 +40,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         private readonly EscenarioTasas _e = new();
         private readonly ColaEjecucionTasasCambio _cola = new();
         private readonly LogQueGuarda<Pantalla> _log = new();
+        private readonly AuditoriaEspia _auditoria = new();
         private readonly List<IDisposable> _desechables = new();
 
         public void Dispose()
@@ -75,7 +77,7 @@ namespace eGestion360Web.Tests.Services.TasasCambio
         {
             var db = _e.Bd.Crear();
             _desechables.Add(db);
-            var modelo = new Pantalla(consultas ?? _e.Consultas(db), _e.Servicio(), _cola, Options.Create(_e.Opciones), _e.Reloj, _log)
+            var modelo = new Pantalla(consultas ?? _e.Consultas(db), _e.Servicio(), _cola, Options.Create(_e.Opciones), _e.Reloj, _log, _auditoria)
             {
                 PageContext = new PageContext(new ActionContext(http, new RouteData(), new CompiledPageActionDescriptor())),
             };
@@ -381,6 +383,64 @@ namespace eGestion360Web.Tests.Services.TasasCambio
             await otraVez.OnPostAprobarAsync(aRechazar);
             Assert.Contains("no está pendiente de revisión", Error(otraVez));
             Assert.Equal(Cat.EstadoTasa.Rechazada, Leer(aRechazar).Estado);
+        }
+
+        [Fact]
+        public async Task Aprobar_y_rechazar_una_tasa_oficial_dejan_su_evento_con_el_resultado_y_sin_el_motivo_escrito()
+        {
+            var aAprobar = PendientePropia(A, Cat.TipoTasa.Venta);
+            var aRechazar = PendientePropia(A, Cat.TipoTasa.Compra);
+            var http = AdminEmpresa(A);
+
+            await Pagina(http).OnPostAprobarAsync(aAprobar);
+            await Pagina(http).OnPostRechazarAsync(aRechazar, "  Motivo escrito a mano que no se guarda.  ");
+
+            var tipos = _auditoria.Eventos.Select(e => e.Tipo).ToArray();
+            Assert.Equal(new[] { TiposDeEvento.TasasOficialAprobada, TiposDeEvento.TasasOficialRechazada }, tipos);
+            Assert.All(_auditoria.Eventos, e => Assert.Equal("ok", e.Resultado));
+            Assert.Equal(aAprobar.ToString(), _auditoria.Eventos[0].ObjetoId);
+            Assert.Equal(aRechazar.ToString(), _auditoria.Eventos[1].ObjetoId);
+            Assert.DoesNotContain("Motivo escrito a mano", _auditoria.Detalles());
+            Assert.Contains("USD", _auditoria.Detalles());
+        }
+
+        [Fact]
+        public async Task Lo_que_la_pantalla_no_llega_a_hacer_no_deja_evento()
+        {
+            var deB = PendientePropia(B);
+            var yaAprobada = PendientePropia(A, Cat.TipoTasa.Venta);
+            var http = AdminEmpresa(A);
+            await Pagina(http).OnPostAprobarAsync(yaAprobada);
+            _auditoria.Eventos.Clear();
+
+            await Pagina(http).OnPostAprobarAsync(yaAprobada);                            // ya no está pendiente
+            await Pagina(http).OnPostAprobarAsync(deB);                                   // es de otra empresa
+            await Pagina(http).OnPostRechazarAsync(PendientePropia(A, Cat.TipoTasa.Compra), "   ");   // sin motivo no se rechaza
+
+            Assert.Empty(_auditoria.Eventos);
+        }
+
+        [Fact]
+        public void Ejecutar_ahora_deja_su_evento_manual_de_la_plataforma()
+        {
+            var pagina = Pagina(AdminSistema());
+
+            pagina.OnPostEjecutar();
+
+            var evento = Assert.Single(_auditoria.Eventos);
+            Assert.Equal(TiposDeEvento.TasasEjecutada, evento.Tipo);
+            Assert.Equal("manual", System.Text.Json.JsonSerializer.SerializeToElement(evento.Detalle).GetProperty("disparador").GetString());
+        }
+
+        [Fact]
+        public void Ejecutar_ahora_sin_sesion_va_al_inicio_de_sesion_y_no_deja_evento()
+        {
+            // El evento solo queda cuando la ejecución sí se pidió.
+            var pagina = Pagina(Sesion(rol: null, empresa: null, conModulo: false, autenticado: false));
+
+            pagina.OnPostEjecutar();
+
+            Assert.Empty(_auditoria.Eventos);
         }
 
         [Fact]

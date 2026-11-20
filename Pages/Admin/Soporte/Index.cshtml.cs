@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin.Soporte
@@ -13,19 +14,22 @@ namespace eGestion360Web.Pages.Admin.Soporte
     /// del tenant del contexto, así que el administrador general (el operador de la plataforma) elige aquí con cuál tenant
     /// trabaja: desde ese momento las pantallas de datos de un tenant (módulos y roles de sus empresas, personas, usuarios) ven y
     /// guardan solo lo de ese tenant. La elección vive en su sesión; salir de soporte la borra. Cada entrada y salida queda en el
-    /// log con quién, a cuál tenant y cuándo. La auditoría persistente, el motivo y el aviso al tenant llegan con la consola del
-    /// operador (F1.9).
+    /// log y, desde F1.8b, en las dos tablas de auditoría (la del tenant y la de la plataforma): la entrada deja su rastro ANTES de
+    /// entrar y, si no se puede dejar, no se entra (D73); la salida lo intenta pero nunca impide salir. El motivo y el aviso al
+    /// tenant llegan con la consola del operador (F1.9).
     /// </summary>
     [RequierePermiso("plataforma.soporte.ver")]
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<IndexModel> _logger;
+        private readonly IAuditoriaDeSeguridad _auditoria;
 
-        public IndexModel(ApplicationDbContext context, ILogger<IndexModel> logger)
+        public IndexModel(ApplicationDbContext context, ILogger<IndexModel> logger, IAuditoriaDeSeguridad auditoria)
         {
             _context = context;
             _logger = logger;
+            _auditoria = auditoria;
         }
 
         /// <summary>Pantalla a la que volver después de elegir (la que mandó al administrador aquí); solo rutas locales.</summary>
@@ -69,7 +73,9 @@ namespace eGestion360Web.Pages.Admin.Soporte
                 return RedirectToPage(new { Volver });
             }
 
-            Entrar(tenant.IdTenant, tenant.Codigo, tenant.Estado);
+            if (!await EntrarAsync(tenant.IdTenant, tenant.Codigo, tenant.Estado, null, ct))
+                return RedirectToPage(new { Volver });
+
             return RedirigirDespuesDeElegir();
         }
 
@@ -94,7 +100,8 @@ namespace eGestion360Web.Pages.Admin.Soporte
                 return RedirectToPage();
             }
 
-            Entrar(tenant.IdTenant, tenant.Codigo, tenant.Estado);
+            if (!await EntrarAsync(tenant.IdTenant, tenant.Codigo, tenant.Estado, empresa.IdEmpresa, ct))
+                return RedirectToPage();
 
             return destino switch
             {
@@ -104,15 +111,22 @@ namespace eGestion360Web.Pages.Admin.Soporte
             };
         }
 
-        public IActionResult OnPostSalir()
+        public async Task<IActionResult> OnPostSalirAsync(CancellationToken ct)
         {
             var bloqueo = Bloqueo();
             if (bloqueo != null) return bloqueo;
 
             if (AuthHelper.GetTenantDeSoporte(HttpContext) is { } actual)
             {
+                var codigo = AuthHelper.GetCodigoTenantDeSoporte(HttpContext);
                 _logger.LogInformation("Soporte: el usuario {Usuario} sale del tenant {IdTenant} ({Codigo}).",
-                    HttpContext.Session.GetString("Username"), actual, AuthHelper.GetCodigoTenantDeSoporte(HttpContext));
+                    HttpContext.Session.GetString("Username"), actual, codigo);
+
+                // De mejor esfuerzo: la salida nunca se impide por un problema de la auditoría.
+                await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.SoporteSalida)
+                {
+                    IdTenant = actual, ObjetoTipo = "tenant", ObjetoId = actual.ToString(), Detalle = new { tenant = codigo },
+                }, ct);
                 AuthHelper.SalirDeSoporte(HttpContext);
             }
 
@@ -120,11 +134,29 @@ namespace eGestion360Web.Pages.Admin.Soporte
             return RedirectToPage();
         }
 
-        private void Entrar(int idTenant, string codigo, string estado)
+        /// <summary>
+        /// Entra al tenant, pero primero deja el rastro en las dos tablas de auditoría en un solo guardado: si no se puede, no se entra (D73).
+        /// </summary>
+        private async Task<bool> EntrarAsync(int idTenant, string codigo, string estado, int? idEmpresa, CancellationToken ct)
         {
+            try
+            {
+                await _auditoria.RegistrarEstrictoAsync(new EventoDeSeguridad(TiposDeEvento.SoporteEntrada)
+                {
+                    IdTenant = idTenant, IdEmpresa = idEmpresa, ObjetoTipo = "tenant", ObjetoId = idTenant.ToString(),
+                    Detalle = new { tenant = codigo, estado },
+                }, ct);
+            }
+            catch (AuditoriaNoDisponibleException)
+            {
+                TempData["SoporteError"] = "No se pudo dejar el rastro de auditoría de la entrada, así que por seguridad no se entró al tenant. Intenta de nuevo.";
+                return false;
+            }
+
             AuthHelper.EntrarEnSoporte(HttpContext, idTenant, codigo);
             _logger.LogInformation("Soporte: el usuario {Usuario} entra al tenant {IdTenant} ({Codigo}, {Estado}).",
                 HttpContext.Session.GetString("Username"), idTenant, codigo, estado);
+            return true;
         }
 
         private IActionResult RedirigirDespuesDeElegir()

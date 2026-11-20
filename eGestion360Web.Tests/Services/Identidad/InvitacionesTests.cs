@@ -390,6 +390,54 @@ namespace eGestion360Web.Tests.Services.Identidad
             Assert.Equal(_reloj.GetUtcNow().UtcDateTime, verificacion.Invitaciones.Single(i => i.IdInvitacion == idInvitacion).UsadaEn);
         }
 
+        // ── Auditoría de las invitaciones enviadas y anuladas (F1.8b) ─────────────
+
+        [Fact]
+        public async Task Invitar_deja_el_evento_de_invitacion_enviada_en_el_tenant_con_el_correo_enmascarado_y_sin_el_enlace()
+        {
+            var espia = new AuditoriaEspia();
+            var idPersona = NuevaPersona();
+            var idRol = NuevoRol();
+            string? token = null;
+
+            ResultadoDeInvitar r;
+            using (var db = _bd.Crear())
+                r = await InvitacionesDePrueba.Servicio(db, _reloj, _correo, _derechos, auditoria: espia)
+                    .InvitarAsync(AdminDeA, Solicitud(idPersona, "maria.lopez@empresa.hn", idRol), t => { token = t; return Enlace(t); });
+
+            Assert.True(r.Ok, string.Join(" | ", r.Errores));
+            var e = Assert.Single(espia.Eventos);
+            Assert.Equal(eGestion360Web.Services.Auditoria.TiposDeEvento.InvitacionEnviada, e.Tipo);
+            Assert.Equal(DatosBase.TenantA, e.IdTenant);
+            Assert.Equal(DatosBase.EmpresaA, e.IdEmpresa);
+            Assert.Equal("invitacion", e.ObjetoTipo);
+            Assert.Equal(r.IdInvitacion!.Value.ToString(), e.ObjetoId);
+            Assert.DoesNotContain("maria.lopez@empresa.hn", espia.Detalles());      // el correo completo no se guarda
+            Assert.Contains("ma***@e***.hn", espia.Detalles());
+            Assert.DoesNotContain(token!, espia.Detalles());                        // ni el enlace de un solo uso
+        }
+
+        [Fact]
+        public async Task Reenviar_y_anular_dejan_su_evento_y_una_invitacion_que_no_prospera_no_deja_ninguno()
+        {
+            var (_, _, _, idInvitacion) = await InvitacionValida();
+            var espia = new AuditoriaEspia();
+
+            using (var db = _bd.Crear())
+            {
+                var servicio = InvitacionesDePrueba.Servicio(db, _reloj, _correo, _derechos, auditoria: espia);
+                Assert.True((await servicio.ReenviarAsync(AdminDeA, idInvitacion, Enlace)).Ok);
+                Assert.True(await servicio.AnularAsync(AdminDeA, idInvitacion));
+                Assert.False(await servicio.AnularAsync(AdminDeA, 987654));                          // no existe
+                Assert.False((await servicio.ReenviarAsync(AdminDeA, 987654, Enlace)).Ok);           // no existe
+            }
+
+            Assert.Equal(new[] { eGestion360Web.Services.Auditoria.TiposDeEvento.InvitacionEnviada, eGestion360Web.Services.Auditoria.TiposDeEvento.InvitacionAnulada },
+                espia.Eventos.Select(e => e.Tipo).ToArray());
+            Assert.True(System.Text.Json.JsonSerializer.SerializeToElement(espia.Eventos[0].Detalle).GetProperty("reenvio").GetBoolean());
+            Assert.All(espia.Eventos, e => Assert.Equal(idInvitacion.ToString(), e.ObjetoId));
+        }
+
         [Fact]
         public async Task Aceptar_deja_un_evento_de_invitacion_aceptada_con_el_tenant_y_sin_la_clave_ni_el_token()
         {

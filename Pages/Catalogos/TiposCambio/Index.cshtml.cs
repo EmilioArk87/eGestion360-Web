@@ -45,6 +45,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         private readonly ITasaCambioSyncService _sync;
         private readonly ColaEjecucionTasasCambio _cola;
         private readonly ILogger<IndexModel> _log;
+        private readonly eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? _auditoria;
 
         public IndexModel(
             ITasaCambioConsultaService consultas,
@@ -52,13 +53,21 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
             ColaEjecucionTasasCambio cola,
             IOptions<TasasCambioOptions> opciones,
             TimeProvider reloj,
-            ILogger<IndexModel> log) : base(opciones, reloj)
+            ILogger<IndexModel> log,
+            eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? auditoria = null) : base(opciones, reloj)
         {
             _consultas = consultas;
             _sync = sync;
             _cola = cola;
             _log = log;
+            _auditoria = auditoria;
         }
+
+        /// <summary>Aprobar o rechazar una tasa oficial deja su rastro, con el resultado; el motivo del rechazo es texto libre y no se guarda.</summary>
+        private Task AuditarRevisionAsync(string tipo, TasaPendienteRevision tasa, ResultadoOperacionTasa resultado, object? extra = null)
+            => eGestion360Web.Services.Auditoria.AuditoriaDeSeguridadExtensiones.RegistrarAccionDeLaPlataformaAsync(_auditoria, tipo, "tasa_cambio",
+                tasa.IdTasaCambio.ToString(), new { moneda = tasa.MonedaOrigen, tipo = tasa.TipoTasa.ToString(), vigencia = tasa.FechaVigencia.ToString("yyyy-MM-dd"), extra },
+                resultado.Exito ? eGestion360Web.Models.Auditoria.ResultadosDeEvento.Ok : eGestion360Web.Models.Auditoria.ResultadosDeEvento.Fallo);
 
         // ── Datos de la pantalla ──────────────────────────────────────────────
         // El histórico y la bitácora del job tienen su propia pantalla (HistoricoModel y BitacoraModel).
@@ -166,6 +175,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
                 if (pendiente == null) return rechazo!;
 
                 var resultado = await _sync.AprobarAsync(pendiente.IdTasaCambio, Usuario, Ct);
+                await AuditarRevisionAsync(eGestion360Web.Services.Auditoria.TiposDeEvento.TasasOficialAprobada, pendiente, resultado);
                 return Resultado(resultado, pendiente);
             }
             catch (Exception ex) when (EsErrorDeBaseDeDatos(ex))
@@ -191,6 +201,7 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
                     return Volver(error: $"El motivo no puede pasar de {LargoMaximoMotivo} caracteres.", seccion: "pendientes");
 
                 var resultado = await _sync.RechazarAsync(pendiente.IdTasaCambio, Usuario, motivo, Ct);
+                await AuditarRevisionAsync(eGestion360Web.Services.Auditoria.TiposDeEvento.TasasOficialRechazada, pendiente, resultado, new { conMotivo = true });
                 return Resultado(resultado, pendiente);
             }
             catch (Exception ex) when (EsErrorDeBaseDeDatos(ex))
@@ -255,6 +266,9 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
                 return Volver(error: "Ya hay varias ejecuciones esperando turno. Intente de nuevo en unos minutos.", seccion: "ejecutar");
 
             _log.LogInformation("Tasas de cambio: {Usuario} pidió ejecutar el job desde la pantalla.", Usuario);
+            // El handler es síncrono (la ejecución corre en segundo plano): la auditoría, de mejor esfuerzo y en su propio ámbito, se espera aquí sin bloquear nada más.
+            eGestion360Web.Services.Auditoria.AuditoriaDeSeguridadExtensiones.RegistrarAccionDeLaPlataformaAsync(_auditoria,
+                eGestion360Web.Services.Auditoria.TiposDeEvento.TasasEjecutada, "tasas_job", null, new { disparador = "manual" }).GetAwaiter().GetResult();
             // El resultado se ve en la bitácora, que es su propia pantalla: se lleva a quien lo pidió hacia allá.
             TempData[ClaveMensaje] = "Ejecución solicitada. Corre en segundo plano: el resultado aparecerá en la bitácora en unos minutos " +
                                      "(puede tardar si las fuentes no responden).";

@@ -22,13 +22,15 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
         private readonly ITasasCambioConfiguracionService _config;
         private readonly TasasCambioOptions _opt;
         private readonly ILogger<ConfiguracionModel> _log;
+        private readonly eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? _auditoria;
 
         public ConfiguracionModel(ITasasCambioConfiguracionService config, IOptions<TasasCambioOptions> opciones,
-            ILogger<ConfiguracionModel> log)
+            ILogger<ConfiguracionModel> log, eGestion360Web.Services.Auditoria.IAuditoriaDeSeguridad? auditoria = null)
         {
             _config = config;
             _opt = opciones.Value;
             _log = log;
+            _auditoria = auditoria;
         }
 
         [BindProperty] public ConfiguracionTasasInput Entrada { get; set; } = new();
@@ -83,6 +85,10 @@ namespace eGestion360Web.Pages.Catalogos.TiposCambio
                 await CargarAuditoriaAsync();
                 return Page();
             }
+
+            // F1.8b: quién cambió el job automático y si quedó habilitado.
+            await eGestion360Web.Services.Auditoria.AuditoriaDeSeguridadExtensiones.RegistrarAccionDeLaPlataformaAsync(_auditoria,
+                eGestion360Web.Services.Auditoria.TiposDeEvento.TasasConfigurada, "tasas_configuracion", null, new { habilitado = fila.Habilitado });
 
             TempData[IndexModel.ClaveMensaje] = fila.Habilitado
                 ? "Configuración guardada. El job automático de tasas de cambio está HABILITADO."

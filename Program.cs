@@ -47,6 +47,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddScoped<IContextoAuditoria, ContextoAuditoriaHttp>();
 // F1.8 (ADR-030): auditoría de seguridad y de plataforma. Es un singleton que escribe cada evento con su propio ámbito de servicios.
 builder.Services.AddSingleton<IAuditoriaDeSeguridad, AuditoriaDeSeguridad>();
+builder.Services.AddScoped<ConstructorDeEventosDeAdministracion>();
 builder.Services.AddScoped<AuditoriaCambiosInterceptor>();
 // El interceptor del tenant va DESPUES del de auditoria: este agrega las filas de la bitacora antes de guardar (F1.2).
 builder.Services.AddScoped<TenantAlGuardarInterceptor>();

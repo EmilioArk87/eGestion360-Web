@@ -1,6 +1,6 @@
 # ADR-030 · Auditoría de seguridad y de plataforma (F1.8)
 
-- **Estado:** Aceptada por Emilio el 2026-11-18 (decisiones D70 a D76 del plan de la etapa F1.8, sin cambios sobre lo recomendado). F1.8a (tablas, servicio y eventos de entrada) en curso.
+- **Estado:** Aceptada por Emilio el 2026-11-18 (decisiones D70 a D76 del plan de la etapa F1.8, sin cambios sobre lo recomendado). F1.8a (tablas, servicio y eventos de entrada) completa y publicada el 2026-11-19; F1.8b (administración, soporte y plataforma, solo código) hecha en el código, sin publicar.
 - **Fecha:** 2026-11-18
 - **Decidió:** Emilio (D70 a D76). Diseño y ejecución de Claude
 - **Fase:** F1.8
@@ -56,6 +56,24 @@ Las dos tablas tienen las mismas columnas y se diferencian en `id_tenant` (oblig
 3. **Escritura aparte**: abre un ámbito de servicios nuevo (`IServiceScopeFactory`, igual que el validador de identidad), fija en él el tenant del evento y guarda con su propio `ApplicationDbContext` y su propia conexión. Así RLS comprueba el tenant del evento (que puede ser distinto del de la petición), un fallo de la auditoría no deja entidades a medias en el contexto de la petición y la auditoría no guarda por accidente otros cambios pendientes.
 4. **Mejor esfuerzo** (D73): captura cualquier excepción menos la cancelación, la anota en el log y sigue.
 5. **Agregación** (D71): los fallos con cuenta inexistente guardan una fila por dirección y hora; el servicio lleva en memoria cuántos omitió y lo anota en el detalle de la siguiente. Un tope por hora protege la tabla de un ataque desde muchas direcciones.
+
+## F1.8b: administración, soporte y plataforma
+
+F1.8b es **solo código**: usa las tablas del 045, no hay script ni `/alerta-bd`. Aplica las decisiones D70 a D73 así:
+
+1. **Los cambios de administración van en el mismo guardado y la misma transacción** (D73). `AuditoriaCambiosInterceptor`, que ya guardaba la bitácora por campo con ese mismo mecanismo, ahora también arma las filas de auditoría de seguridad con `ConstructorDeEventosDeAdministracion` y las agrega al contexto que guarda el cambio. Las modificaciones, las bajas y los permisos de un rol (que no generan clave en la base) se arman antes de guardar; las altas, justo después del primer guardado, cuando ya tienen su id, dentro de la misma transacción. Si la fila no se puede armar o guardar, el cambio se revierte entero.
+2. **Qué se audita ahí**: usuarios (`usuario.creado`, `usuario.editado`, `usuario.eliminado`), roles (`rol.creado`, `rol.editado`, `rol.eliminado`), los permisos de un rol (`rol.permisos`, una sola fila por rol con lo concedido y lo retirado por código), los módulos de una empresa y el catálogo global de módulos (`modulo.cambiado`), los accesos a una empresa (`acceso.cambiado`) y las empresas (`empresa.creada`, `empresa.editada`, `empresa.eliminada`). Cada edición lleva el antes y el después de lo que cambió.
+3. **A qué tabla**: a `dbo.auditoria_seguridad` cuando se sabe de qué tenant es el cambio, y a `saas.auditoria_plataforma` cuando lo hace el personal de la plataforma (D70: lo que el operador hace dentro de un tenant también lo ve la plataforma) o cuando el cambio no tiene tenant (un usuario del personal de la plataforma no tiene empresa; el catálogo global de módulos tampoco).
+4. **Qué nunca se guarda** (D72): de una contraseña solo dice que cambió (`claveCambiada`); de un correo, igual (`correoCambiado`), y en las invitaciones va enmascarado; de la descripción de un rol y del RTN de una empresa, solo que cambiaron; el enlace de una invitación y el motivo de un rechazo de tasa no se guardan.
+5. **Soporte** (`soporte.entrada`, `soporte.salida`): la entrada es **estricta**. `RegistrarEstrictoAsync` guarda las dos filas (tenant y plataforma) en un solo guardado y, si no puede, lanza `AuditoriaNoDisponibleException`: la pantalla no entra al tenant y lo avisa. La salida es de mejor esfuerzo: nunca se impide salir por un problema de la auditoría.
+6. **Acciones del operador sobre la plataforma** (`correo.configurado`, `tasas.configurada`, `tasas.ejecutada`, `tasas.oficial_aprobada`, `tasas.oficial_rechazada`, `cola.reintento`, `cola.procesado_manual`) y las invitaciones (`invitacion.enviada`, `invitacion.anulada`): de mejor esfuerzo, **después** de que la acción se hizo, porque no son cambios de seguridad en el sentido de D73 y sus servicios guardan con su propio contexto. Nunca llevan servidor, usuario ni contraseña de correo.
+7. **Accesos denegados** (`acceso.denegado`): el filtro de permisos deja una fila cuando niega una pantalla por falta de permiso. Es agregable: una fila por dirección, permiso y hora, con el tope por hora de toda la aplicación. No cubre la negación por módulo o por derechos del tenant, que redirige a «Sin acceso» y no es un 403.
+
+**Cobertura (D76)**: `CoberturaDeAuditoriaTests` recorre las pantallas de administración o plataforma que tienen un handler `OnPost*`, `OnPut*` u `OnDelete*` y exige que cada una esté en la lista de las auditadas (con cómo: interceptor, pantalla, servicio o bitácora por campo) o en la de excepciones revisadas, con su motivo. Una pantalla nueva que escribe y no está en ninguna de las dos hace fallar la prueba.
+
+**Una diferencia con el checklist del plan**: el plan decía que la bitácora de cambios cubriría usuarios, roles, módulos, accesos y empresas. Se usaron las tablas de auditoría de seguridad en su lugar, por tres razones: es lo que D70 y D71 definen y lo que mostrarán las pantallas de F1.8c; `bitacora_cambios` está hecha para el historial de una persona y exige un tenant en cada fila, que un usuario del personal de la plataforma no tiene; y los eventos con tipo (`usuario.editado`) se filtran y se cuentan mejor que filas por campo.
+
+**Límites**: solo ve lo que se guarda con EF Core (un script SQL o un `ExecuteUpdate` no pasan por el interceptor; cada script que toque estos datos debe dejar su propia fila); los cambios de la cuenta global y de la membresía que hace el sincronizador siguen a los del usuario y no se auditan aparte; el registro manual de una tasa de cambio es un dato del catálogo con su «creado por».
 
 ## Alternativas consideradas
 

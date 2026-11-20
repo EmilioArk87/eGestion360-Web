@@ -205,6 +205,8 @@ namespace eGestion360Web.Services.Identidad
 
                 if (transaccion != null) await transaccion.CommitAsync(ct);
 
+                await RegistrarInvitacionAsync(TiposDeEvento.InvitacionEnviada, invitacion,
+                    new { correo = EnmascaradoDeAuditoria.Identificador(correo), porOperador = quien.EsAdministradorGeneral, reenvio = false }, ct);
                 var enviado = await EnviarAsync(invitacion, empresa.RazonSocial, quien.Usuario, enlaceDe(token), ct);
                 return new ResultadoDeInvitar(true, Array.Empty<string>(), invitacion.IdInvitacion, enviado);
             }
@@ -237,6 +239,8 @@ namespace eGestion360Web.Services.Identidad
             await _db.SaveChangesAsync(ct);
 
             var empresa = await NombreDeLaEmpresaAsync(invitacion.IdEmpresa, ct);
+            await RegistrarInvitacionAsync(TiposDeEvento.InvitacionEnviada, invitacion,
+                new { correo = EnmascaradoDeAuditoria.Identificador(invitacion.Correo), reenvio = true }, ct);
             var enviado = await EnviarAsync(invitacion, empresa, quien.Usuario, enlaceDe(token), ct);
             return new ResultadoDeInvitar(true, Array.Empty<string>(), invitacion.IdInvitacion, enviado);
         }
@@ -252,8 +256,18 @@ namespace eGestion360Web.Services.Identidad
             // El enlace deja de servir en el acto; la fila queda como rastro.
             invitacion.VenceEn = Ahora;
             await _db.SaveChangesAsync(ct);
+            await RegistrarInvitacionAsync(TiposDeEvento.InvitacionAnulada, invitacion,
+                new { correo = EnmascaradoDeAuditoria.Identificador(invitacion.Correo) }, ct);
             return true;
         }
+
+        /// <summary>Una invitación enviada o anulada deja su rastro en el tenant de la empresa; el correo va enmascarado y el enlace nunca.</summary>
+        private Task RegistrarInvitacionAsync(string tipo, Invitacion invitacion, object detalle, CancellationToken ct)
+            => _auditoria == null ? Task.CompletedTask : _auditoria.RegistrarAsync(new EventoDeSeguridad(tipo)
+            {
+                IdTenant = invitacion.IdTenant, IdEmpresa = invitacion.IdEmpresa, ObjetoTipo = "invitacion",
+                ObjetoId = invitacion.IdInvitacion.ToString(), Detalle = detalle,
+            }, ct);
 
         public async Task<IReadOnlyList<InvitacionListada>> ListarAsync(QuienOperaUsuarios quien, CancellationToken ct = default)
         {

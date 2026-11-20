@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Tests.Infra;
 using SoporteModel = eGestion360Web.Pages.Admin.Soporte.IndexModel;
 
@@ -23,6 +24,7 @@ namespace eGestion360Web.Tests.Paginas
     public class SoporteTests : IDisposable
     {
         private readonly BaseDeDatosDePrueba _bd = new();
+        private readonly AuditoriaEspia _auditoria = new();
 
         public void Dispose() => _bd.Dispose();
 
@@ -37,7 +39,7 @@ namespace eGestion360Web.Tests.Paginas
             var http = SesionFalsa.Contexto(rol, empresa);
             http.Session.SetString("Username", "admin_pruebas");
             var actionContext = new ActionContext(http, new RouteData(), new ActionDescriptor());
-            return new SoporteModel(db, NullLogger<SoporteModel>.Instance)
+            return new SoporteModel(db, NullLogger<SoporteModel>.Instance, _auditoria)
             {
                 PageContext = new PageContext(actionContext)
                 {
@@ -169,14 +171,86 @@ namespace eGestion360Web.Tests.Paginas
         }
 
         [Fact]
-        public void Salir_borra_el_tenant_de_soporte()
+        public async Task Salir_borra_el_tenant_de_soporte()
         {
             using var db = _bd.Crear();
             var pagina = Pagina(db);
             AuthHelper.EntrarEnSoporte(Http(pagina), DatosBase.TenantB, "TENANT_B");
 
-            pagina.OnPostSalir();
+            await pagina.OnPostSalirAsync(CancellationToken.None);
 
+            Assert.Null(AuthHelper.GetTenantDeSoporte(Http(pagina)));
+        }
+
+        [Fact]
+        public async Task Entrar_a_un_tenant_deja_primero_su_rastro_estricto_con_el_tenant_y_sin_empresa()
+        {
+            using var db = _bd.Crear();
+            var pagina = Pagina(db);
+
+            await pagina.OnPostEntrarAsync(DatosBase.TenantB, CancellationToken.None);
+
+            var evento = Assert.Single(_auditoria.Estrictos);
+            Assert.Equal(TiposDeEvento.SoporteEntrada, evento.Tipo);
+            Assert.Equal(DatosBase.TenantB, evento.IdTenant);
+            Assert.Null(evento.IdEmpresa);
+            Assert.Equal("tenant", evento.ObjetoTipo);
+            Assert.Equal(DatosBase.TenantB.ToString(), evento.ObjetoId);
+            Assert.Equal(DatosBase.TenantB, AuthHelper.GetTenantDeSoporte(Http(pagina)));
+        }
+
+        [Fact]
+        public async Task Entrar_desde_una_empresa_deja_el_rastro_con_su_empresa()
+        {
+            using var db = _bd.Crear();
+            var pagina = Pagina(db);
+
+            await pagina.OnPostEntrarEnEmpresaAsync(DatosBase.EmpresaB, "roles", CancellationToken.None);
+
+            var evento = Assert.Single(_auditoria.Estrictos);
+            Assert.Equal(DatosBase.TenantB, evento.IdTenant);
+            Assert.Equal(DatosBase.EmpresaB, evento.IdEmpresa);
+        }
+
+        [Fact]
+        public async Task Si_no_se_puede_dejar_el_rastro_no_se_entra_y_se_avisa_sin_guardar_nada_en_la_sesion()
+        {
+            _auditoria.FallaElModoEstricto = true;
+            using var db = _bd.Crear();
+            var pagina = Pagina(db);
+
+            var resultado = await pagina.OnPostEntrarAsync(DatosBase.TenantB, CancellationToken.None);
+
+            Assert.IsType<RedirectToPageResult>(resultado);
+            Assert.Null(AuthHelper.GetTenantDeSoporte(Http(pagina)));
+            Assert.Contains("no se entró", pagina.TempData["SoporteError"]!.ToString());
+            Assert.Empty(_auditoria.Eventos);
+        }
+
+        [Fact]
+        public async Task Si_no_se_puede_dejar_el_rastro_tampoco_se_entra_desde_una_empresa()
+        {
+            _auditoria.FallaElModoEstricto = true;
+            using var db = _bd.Crear();
+            var pagina = Pagina(db);
+
+            await pagina.OnPostEntrarEnEmpresaAsync(DatosBase.EmpresaB, "modulos", CancellationToken.None);
+
+            Assert.Null(AuthHelper.GetTenantDeSoporte(Http(pagina)));
+        }
+
+        [Fact]
+        public async Task Salir_deja_su_rastro_y_un_fallo_de_la_auditoria_no_impide_salir()
+        {
+            using var db = _bd.Crear();
+            var pagina = Pagina(db);
+            AuthHelper.EntrarEnSoporte(Http(pagina), DatosBase.TenantB, "TENANT_B");
+
+            await pagina.OnPostSalirAsync(CancellationToken.None);
+
+            var evento = Assert.Single(_auditoria.Eventos);
+            Assert.Equal(TiposDeEvento.SoporteSalida, evento.Tipo);
+            Assert.Equal(DatosBase.TenantB, evento.IdTenant);
             Assert.Null(AuthHelper.GetTenantDeSoporte(Http(pagina)));
         }
 
@@ -191,7 +265,7 @@ namespace eGestion360Web.Tests.Paginas
 
             Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await pagina.OnGetAsync(CancellationToken.None)).PageName);
             Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await pagina.OnPostEntrarAsync(DatosBase.TenantA, CancellationToken.None)).PageName);
-            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(pagina.OnPostSalir()).PageName);
+            Assert.Equal("/MainMenu", Assert.IsType<RedirectToPageResult>(await pagina.OnPostSalirAsync(CancellationToken.None)).PageName);
             Assert.Null(AuthHelper.GetTenantDeSoporte(Http(pagina)));
         }
 
@@ -199,7 +273,7 @@ namespace eGestion360Web.Tests.Paginas
         public async Task Sin_sesion_va_al_inicio_de_sesion()
         {
             using var db = _bd.Crear();
-            var pagina = new SoporteModel(db, NullLogger<SoporteModel>.Instance)
+            var pagina = new SoporteModel(db, NullLogger<SoporteModel>.Instance, new AuditoriaEspia())
             {
                 PageContext = new PageContext { HttpContext = SesionFalsa.Contexto("admin", autenticado: false) }
             };

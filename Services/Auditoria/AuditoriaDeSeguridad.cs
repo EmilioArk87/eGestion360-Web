@@ -45,6 +45,37 @@ namespace eGestion360Web.Services.Auditoria
         // Contexto (tenant, o plataforma si el operador entra sin empresa)
         public const string ContextoElegido = "contexto.elegido";
 
+        // Administración de la empresa (F1.8b): los cambios de usuarios, roles, permisos, módulos, accesos y empresas los deja el interceptor
+        // de la bitácora en el mismo guardado; las invitaciones y los accesos denegados, el servicio.
+        public const string UsuarioCreado = "usuario.creado";
+        public const string UsuarioEditado = "usuario.editado";
+        public const string UsuarioEliminado = "usuario.eliminado";
+        public const string RolCreado = "rol.creado";
+        public const string RolEditado = "rol.editado";
+        public const string RolEliminado = "rol.eliminado";
+        public const string RolPermisos = "rol.permisos";
+        public const string ModuloCambiado = "modulo.cambiado";
+        public const string AccesoCambiado = "acceso.cambiado";
+        public const string EmpresaCreada = "empresa.creada";
+        public const string EmpresaEditada = "empresa.editada";
+        public const string EmpresaEliminada = "empresa.eliminada";
+        public const string InvitacionEnviada = "invitacion.enviada";
+        public const string InvitacionAnulada = "invitacion.anulada";
+        public const string AccesoDenegado = "acceso.denegado";
+
+        // Soporte del operador en un tenant: la fila va a las dos tablas (D70).
+        public const string SoporteEntrada = "soporte.entrada";
+        public const string SoporteSalida = "soporte.salida";
+
+        // Acciones del operador sobre la plataforma
+        public const string CorreoConfigurado = "correo.configurado";
+        public const string TasasConfigurada = "tasas.configurada";
+        public const string TasasEjecutada = "tasas.ejecutada";
+        public const string TasasOficialAprobada = "tasas.oficial_aprobada";
+        public const string TasasOficialRechazada = "tasas.oficial_rechazada";
+        public const string ColaReintento = "cola.reintento";
+        public const string ColaProcesadoManual = "cola.procesado_manual";
+
         private static readonly IReadOnlyDictionary<string, DestinoDeEvento> Destinos = new Dictionary<string, DestinoDeEvento>(StringComparer.Ordinal)
         {
             [SesionEntrada] = DestinoDeEvento.Plataforma,
@@ -58,6 +89,33 @@ namespace eGestion360Web.Services.Auditoria
             [ClaveRestablecida] = DestinoDeEvento.Plataforma,
             [InvitacionAceptada] = DestinoDeEvento.Plataforma,
             [ContextoElegido] = DestinoDeEvento.SegunTenant,
+
+            [UsuarioCreado] = DestinoDeEvento.Tenant,
+            [UsuarioEditado] = DestinoDeEvento.Tenant,
+            [UsuarioEliminado] = DestinoDeEvento.Tenant,
+            [RolCreado] = DestinoDeEvento.Tenant,
+            [RolEditado] = DestinoDeEvento.Tenant,
+            [RolEliminado] = DestinoDeEvento.Tenant,
+            [RolPermisos] = DestinoDeEvento.Tenant,
+            [ModuloCambiado] = DestinoDeEvento.Tenant,
+            [AccesoCambiado] = DestinoDeEvento.Tenant,
+            [EmpresaCreada] = DestinoDeEvento.Tenant,
+            [EmpresaEditada] = DestinoDeEvento.Tenant,
+            [EmpresaEliminada] = DestinoDeEvento.Tenant,
+            [InvitacionEnviada] = DestinoDeEvento.Tenant,
+            [InvitacionAnulada] = DestinoDeEvento.Tenant,
+            [AccesoDenegado] = DestinoDeEvento.Tenant,
+
+            [SoporteEntrada] = DestinoDeEvento.Ambos,
+            [SoporteSalida] = DestinoDeEvento.Ambos,
+
+            [CorreoConfigurado] = DestinoDeEvento.Plataforma,
+            [TasasConfigurada] = DestinoDeEvento.Plataforma,
+            [TasasEjecutada] = DestinoDeEvento.Plataforma,
+            [TasasOficialAprobada] = DestinoDeEvento.Plataforma,
+            [TasasOficialRechazada] = DestinoDeEvento.Plataforma,
+            [ColaReintento] = DestinoDeEvento.Plataforma,
+            [ColaProcesadoManual] = DestinoDeEvento.Plataforma,
         };
 
         public static IReadOnlyCollection<string> Todos => Destinos.Keys.ToArray();
@@ -107,6 +165,32 @@ namespace eGestion360Web.Services.Auditoria
         /// persona no se queda sin entrar por un problema de la auditoría.
         /// </summary>
         Task RegistrarAsync(EventoDeSeguridad evento, CancellationToken ct = default);
+
+        /// <summary>
+        /// Como <see cref="RegistrarAsync"/>, pero para lo que no debe hacerse sin dejar rastro (entrar a un tenant en soporte, D73): si el
+        /// evento no se puede guardar, lanza <see cref="AuditoriaNoDisponibleException"/> y quien llama no hace la acción. Un evento que va
+        /// a las dos tablas se guarda en un solo guardado: o quedan las dos filas o ninguna.
+        /// </summary>
+        Task RegistrarEstrictoAsync(EventoDeSeguridad evento, CancellationToken ct = default);
+    }
+
+    public static class AuditoriaDeSeguridadExtensiones
+    {
+        /// <summary>
+        /// Una acción del personal de la plataforma sobre la plataforma (correo, tasas, cola de eventos): de mejor esfuerzo, ya hecha la acción.
+        /// Sin servicio (una prueba de otra pieza) no hace nada.
+        /// </summary>
+        public static Task RegistrarAccionDeLaPlataformaAsync(this IAuditoriaDeSeguridad? auditoria, string tipo, string? objetoTipo = null,
+            string? objetoId = null, object? detalle = null, string resultado = ResultadosDeEvento.Ok, CancellationToken ct = default)
+            => auditoria == null
+                ? Task.CompletedTask
+                : auditoria.RegistrarAsync(new EventoDeSeguridad(tipo) { Resultado = resultado, ObjetoTipo = objetoTipo, ObjetoId = objetoId, Detalle = detalle }, ct);
+    }
+
+    /// <summary>La auditoría estricta no pudo guardar el evento: la acción que lo exigía no se hace.</summary>
+    public sealed class AuditoriaNoDisponibleException : Exception
+    {
+        public AuditoriaNoDisponibleException(string mensaje, Exception? causa = null) : base(mensaje, causa) { }
     }
 
     /// <summary>
@@ -159,41 +243,7 @@ namespace eGestion360Web.Services.Auditoria
         {
             try
             {
-                if (!TiposDeEvento.Existe(evento.Tipo))
-                    throw new ArgumentException($"El tipo de evento «{evento.Tipo}» no está en el catálogo de auditoría.", nameof(evento));
-                if (evento.Resultado is not (ResultadosDeEvento.Ok or ResultadosDeEvento.Fallo or ResultadosDeEvento.Denegado))
-                    throw new ArgumentException($"El resultado «{evento.Resultado}» no es válido.", nameof(evento));
-
-                var ahora = _tiempo.GetUtcNow().UtcDateTime;
-                var http = _http.HttpContext;
-                var datos = Normalizar(evento, http, ahora, out var omitidos);
-                if (datos == null) return;   // agregado: ya hay una fila de esta dirección en esta hora
-
-                // Un evento de la entrada (segundo factor, bloqueo) ocurre antes de que la cookie lleve el nombre, y uno sin sesión (restablecer
-                // la clave) solo conoce al usuario anterior a F1.5: el nombre y la cuenta se leen de la base.
-                if ((datos.Usuario == null && datos.IdCuenta is > 0) || (datos.IdCuenta == null && evento.IdUserLegado is > 0))
-                {
-                    var cuenta = await LeerCuentaAsync(datos.IdCuenta, evento.IdUserLegado, ct);
-                    if (cuenta != null)
-                        datos = datos with
-                        {
-                            IdCuenta = datos.IdCuenta ?? cuenta.Value.IdCuenta,
-                            Usuario = datos.Usuario ?? Cortar(cuenta.Value.Nombre, 100),
-                            // En la entrada la cookie todavía no existe: si el evento no dice si es del personal de la plataforma, lo dice su cuenta.
-                            EsOperador = evento.EsOperador ?? (datos.EsOperador || cuenta.Value.EsOperador),
-                        };
-                }
-
-                var detalle = SerializarDetalle(evento.Detalle, omitidos);
-                var destino = TiposDeEvento.DestinoDe(evento.Tipo);
-                var enTenant = destino is DestinoDeEvento.Tenant or DestinoDeEvento.Ambos
-                               || (destino == DestinoDeEvento.SegunTenant && datos.IdTenant is > 0);
-                var enPlataforma = destino is DestinoDeEvento.Plataforma or DestinoDeEvento.Ambos
-                                   || (destino == DestinoDeEvento.SegunTenant && !enTenant)
-                                   || (destino == DestinoDeEvento.Tenant && datos.IdTenant is not > 0);   // sin tenant no se pierde: queda en la plataforma
-
-                if (enTenant && datos.IdTenant is > 0) await EscribirEnTenantAsync(datos, detalle, ct);
-                if (enPlataforma) await EscribirEnPlataformaAsync(datos, detalle, ct);
+                await GuardarAsync(evento, ct);
             }
             catch (OperationCanceledException)
             {
@@ -204,6 +254,64 @@ namespace eGestion360Web.Services.Auditoria
                 // Mejor esfuerzo (D73): la auditoría que falla no deja a nadie fuera; se avisa en el log para revisarlo.
                 _log.LogError(ex, "Auditoría: no se pudo registrar el evento {Tipo} ({Resultado}).", evento.Tipo, evento.Resultado);
             }
+        }
+
+        public async Task RegistrarEstrictoAsync(EventoDeSeguridad evento, CancellationToken ct = default)
+        {
+            try
+            {
+                await GuardarAsync(evento, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Auditoría: no se pudo registrar el evento {Tipo} ({Resultado}) y la acción no se hace.", evento.Tipo, evento.Resultado);
+                throw new AuditoriaNoDisponibleException($"No se pudo dejar el rastro de auditoría del evento «{evento.Tipo}».", ex);
+            }
+        }
+
+        private async Task GuardarAsync(EventoDeSeguridad evento, CancellationToken ct)
+        {
+            if (!TiposDeEvento.Existe(evento.Tipo))
+                throw new ArgumentException($"El tipo de evento «{evento.Tipo}» no está en el catálogo de auditoría.", nameof(evento));
+            if (evento.Resultado is not (ResultadosDeEvento.Ok or ResultadosDeEvento.Fallo or ResultadosDeEvento.Denegado))
+                throw new ArgumentException($"El resultado «{evento.Resultado}» no es válido.", nameof(evento));
+
+            var ahora = _tiempo.GetUtcNow().UtcDateTime;
+            var http = _http.HttpContext;
+            var datos = Normalizar(evento, http, ahora, out var omitidos);
+            if (datos == null) return;   // agregado: ya hay una fila de esta dirección en esta hora
+
+            // Un evento de la entrada (segundo factor, bloqueo) ocurre antes de que la cookie lleve el nombre, y uno sin sesión (restablecer
+            // la clave) solo conoce al usuario anterior a F1.5: el nombre y la cuenta se leen de la base.
+            if ((datos.Usuario == null && datos.IdCuenta is > 0) || (datos.IdCuenta == null && evento.IdUserLegado is > 0))
+            {
+                var cuenta = await LeerCuentaAsync(datos.IdCuenta, evento.IdUserLegado, ct);
+                if (cuenta != null)
+                    datos = datos with
+                    {
+                        IdCuenta = datos.IdCuenta ?? cuenta.Value.IdCuenta,
+                        Usuario = datos.Usuario ?? Cortar(cuenta.Value.Nombre, 100),
+                        // En la entrada la cookie todavía no existe: si el evento no dice si es del personal de la plataforma, lo dice su cuenta.
+                        EsOperador = evento.EsOperador ?? (datos.EsOperador || cuenta.Value.EsOperador),
+                    };
+            }
+
+            var detalle = SerializarDetalle(evento.Detalle, omitidos);
+            var destino = TiposDeEvento.DestinoDe(evento.Tipo);
+            var enTenant = destino is DestinoDeEvento.Tenant or DestinoDeEvento.Ambos
+                           || (destino == DestinoDeEvento.SegunTenant && datos.IdTenant is > 0);
+            var enPlataforma = destino is DestinoDeEvento.Plataforma or DestinoDeEvento.Ambos
+                               || (destino == DestinoDeEvento.SegunTenant && !enTenant)
+                               || (destino == DestinoDeEvento.Tenant && datos.IdTenant is not > 0);   // sin tenant no se pierde: queda en la plataforma
+
+            var iraAlTenant = enTenant && datos.IdTenant is > 0;
+            if (iraAlTenant && enPlataforma) await EscribirEnAmbasAsync(datos, detalle, ct);   // un solo guardado: las dos filas o ninguna
+            else if (iraAlTenant) await EscribirEnTenantAsync(datos, detalle, ct);
+            else if (enPlataforma) await EscribirEnPlataformaAsync(datos, detalle, ct);
         }
 
         // ── Lo que se guarda ──────────────────────────────────────────────────
@@ -241,7 +349,7 @@ namespace eGestion360Web.Services.Auditoria
             => string.IsNullOrEmpty(texto) ? null : texto.Length <= largo ? texto : texto[..largo];
 
         /// <summary>El detalle como JSON breve; si trae un campo que nunca se guarda, el evento se rechaza (y queda en el log).</summary>
-        private static string? SerializarDetalle(object? detalle, int omitidos)
+        internal static string? SerializarDetalle(object? detalle, int omitidos)
         {
             var campos = new Dictionary<string, object?>(StringComparer.Ordinal);
             if (detalle != null)
@@ -317,6 +425,22 @@ namespace eGestion360Web.Services.Auditoria
 
         // ── Escritura aparte ──────────────────────────────────────────────────
 
+        private static AuditoriaSeguridad FilaDeTenant(Datos d, string? detalle) => new()
+        {
+            IdTenant = d.IdTenant!.Value,
+            FechaHora = d.Fecha, Tipo = d.Tipo, Resultado = d.Resultado, IdCuenta = d.IdCuenta, Usuario = d.Usuario, EsOperador = d.EsOperador,
+            IdEmpresa = d.IdEmpresa, ObjetoTipo = d.ObjetoTipo, ObjetoId = d.ObjetoId, Detalle = detalle, Ip = d.Ip, Agente = d.Agente,
+            IdCorrelacion = d.Correlacion,
+        };
+
+        private static AuditoriaPlataforma FilaDePlataforma(Datos d, string? detalle) => new()
+        {
+            IdTenant = d.IdTenant,
+            FechaHora = d.Fecha, Tipo = d.Tipo, Resultado = d.Resultado, IdCuenta = d.IdCuenta, Usuario = d.Usuario, EsOperador = d.EsOperador,
+            IdEmpresa = d.IdEmpresa, ObjetoTipo = d.ObjetoTipo, ObjetoId = d.ObjetoId, Detalle = detalle, Ip = d.Ip, Agente = d.Agente,
+            IdCorrelacion = d.Correlacion,
+        };
+
         private async Task EscribirEnTenantAsync(Datos d, string? detalle, CancellationToken ct)
         {
             await using var ambito = _ambitos.CreateAsyncScope();
@@ -324,13 +448,7 @@ namespace eGestion360Web.Services.Auditoria
             servicios.GetRequiredService<TenantContext>().Fijar(d.IdTenant, d.IdEmpresa);
             var db = servicios.GetRequiredService<ApplicationDbContext>();
 
-            db.AuditoriaSeguridad.Add(new AuditoriaSeguridad
-            {
-                IdTenant = d.IdTenant!.Value,
-                FechaHora = d.Fecha, Tipo = d.Tipo, Resultado = d.Resultado, IdCuenta = d.IdCuenta, Usuario = d.Usuario, EsOperador = d.EsOperador,
-                IdEmpresa = d.IdEmpresa, ObjetoTipo = d.ObjetoTipo, ObjetoId = d.ObjetoId, Detalle = detalle, Ip = d.Ip, Agente = d.Agente,
-                IdCorrelacion = d.Correlacion,
-            });
+            db.AuditoriaSeguridad.Add(FilaDeTenant(d, detalle));
             await db.SaveChangesAsync(ct);
         }
 
@@ -341,13 +459,20 @@ namespace eGestion360Web.Services.Auditoria
             servicios.GetRequiredService<TenantContext>().FijarPlataforma();
             var db = servicios.GetRequiredService<ApplicationDbContext>();
 
-            db.AuditoriaPlataforma.Add(new AuditoriaPlataforma
-            {
-                IdTenant = d.IdTenant,
-                FechaHora = d.Fecha, Tipo = d.Tipo, Resultado = d.Resultado, IdCuenta = d.IdCuenta, Usuario = d.Usuario, EsOperador = d.EsOperador,
-                IdEmpresa = d.IdEmpresa, ObjetoTipo = d.ObjetoTipo, ObjetoId = d.ObjetoId, Detalle = detalle, Ip = d.Ip, Agente = d.Agente,
-                IdCorrelacion = d.Correlacion,
-            });
+            db.AuditoriaPlataforma.Add(FilaDePlataforma(d, detalle));
+            await db.SaveChangesAsync(ct);
+        }
+
+        /// <summary>Las dos filas de un evento «Ambos» en un solo guardado (una transacción): la de plataforma no lleva RLS, así que cabe en el contexto del tenant.</summary>
+        private async Task EscribirEnAmbasAsync(Datos d, string? detalle, CancellationToken ct)
+        {
+            await using var ambito = _ambitos.CreateAsyncScope();
+            var servicios = ambito.ServiceProvider;
+            servicios.GetRequiredService<TenantContext>().Fijar(d.IdTenant, d.IdEmpresa);
+            var db = servicios.GetRequiredService<ApplicationDbContext>();
+
+            db.AuditoriaSeguridad.Add(FilaDeTenant(d, detalle));
+            db.AuditoriaPlataforma.Add(FilaDePlataforma(d, detalle));
             await db.SaveChangesAsync(ct);
         }
     }

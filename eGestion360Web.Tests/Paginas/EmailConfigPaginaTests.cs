@@ -16,6 +16,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Pages.Admin;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Tests.Infra;
 
 namespace eGestion360Web.Tests.Paginas
@@ -38,6 +39,7 @@ namespace eGestion360Web.Tests.Paginas
 
         private readonly BaseDeDatosDePrueba _bd = new();
         private readonly CorreoEspia _correo = new();
+        private readonly AuditoriaEspia _auditoria = new();
         private readonly IServiceProvider _mvc = new ServiceCollection().AddLogging().AddMvc().Services.BuildServiceProvider();
 
         public void Dispose() => _bd.Dispose();
@@ -73,7 +75,7 @@ namespace eGestion360Web.Tests.Paginas
             var http = new DefaultHttpContext { RequestServices = _mvc };
             var servicio = new EmailConfigurationService(db, Cifrado(), NullLogger<EmailConfigurationService>.Instance);
             var gestor = new EmailManagerService(servicio, _correo, NullLogger<EmailManagerService>.Instance);
-            var pagina = new EmailConfigModel(gestor, NullLogger<EmailConfigModel>.Instance)
+            var pagina = new EmailConfigModel(gestor, NullLogger<EmailConfigModel>.Instance, _auditoria)
             {
                 PageContext = new PageContext(new ActionContext(http, new RouteData(), new ActionDescriptor(), estado ?? new ModelStateDictionary())),
                 TempData = new TempDataDictionary(http, new TempDataEnMemoria())
@@ -152,6 +154,31 @@ namespace eGestion360Web.Tests.Paginas
             Assert.Equal(465, guardado.SmtpPort);
             Assert.True(guardado.IsActive);
             Assert.Contains("guardada exitosamente", pagina.TempData["SuccessMessage"]!.ToString());
+        }
+
+        [Fact]
+        public async Task Guardar_un_perfil_deja_el_evento_de_correo_configurado_sin_la_contrasena_ni_el_servidor()
+        {
+            await Enviar(Formulario());
+
+            var evento = Assert.Single(_auditoria.Eventos);
+            Assert.Equal(TiposDeEvento.CorreoConfigurado, evento.Tipo);
+            Assert.Equal("perfil_correo", evento.ObjetoTipo);
+            var detalle = JsonSerializer.SerializeToElement(evento.Detalle);
+            Assert.Equal("alta", detalle.GetProperty("accion").GetString());
+            Assert.Equal("Notificaciones Somee 2", detalle.GetProperty("perfil").GetString());
+            Assert.True(detalle.GetProperty("contrasenaActualizada").GetBoolean());
+            Assert.DoesNotContain(ClaveDelBuzon, _auditoria.Detalles());
+            Assert.DoesNotContain("mail.ejemplo.test", _auditoria.Detalles());
+            Assert.DoesNotContain("notificaciones@ejemplo.test", _auditoria.Detalles());
+        }
+
+        [Fact]
+        public async Task Un_perfil_que_no_se_guarda_no_deja_evento()
+        {
+            await Enviar(Formulario(nombre: ""));
+
+            Assert.Empty(_auditoria.Eventos);
         }
 
         [Fact]

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
+using eGestion360Web.Models.Auditoria;
+using eGestion360Web.Services.Auditoria;
 
 namespace eGestion360Web.Services.Permisos
 {
@@ -37,12 +39,15 @@ namespace eGestion360Web.Services.Permisos
         private readonly IEvaluadorDePermisos _evaluador;
         private readonly IOptionsMonitor<OpcionesDePermisos> _opciones;
         private readonly ILogger<PermisosPageFilter> _log;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
 
-        public PermisosPageFilter(IEvaluadorDePermisos evaluador, IOptionsMonitor<OpcionesDePermisos> opciones, ILogger<PermisosPageFilter> log)
+        public PermisosPageFilter(IEvaluadorDePermisos evaluador, IOptionsMonitor<OpcionesDePermisos> opciones, ILogger<PermisosPageFilter> log,
+            IAuditoriaDeSeguridad? auditoria = null)
         {
             _evaluador = evaluador;
             _opciones = opciones;
             _log = log;
+            _auditoria = auditoria;
         }
 
         public Task OnPageHandlerSelectionAsync(PageHandlerSelectedContext context) => Task.CompletedTask;
@@ -104,6 +109,17 @@ namespace eGestion360Web.Services.Permisos
 
             _log.LogWarning("Permisos: se niega {Metodo} {Ruta} ({Handler}) por falta de {Permiso}; cuenta {IdCuenta}, rol {RolLegado}/{IdRol}, tenant {IdTenant}.",
                 http.Request.Method, ruta, handler, requisito.Codigo, AuthHelper.GetCuentaId(http), contexto.RolLegado, contexto.IdRol, contexto.IdTenant);
+
+            // F1.8b: el acceso denegado deja su rastro. De mejor esfuerzo (nunca cambia la respuesta) y agregado: quien insiste sobre el mismo
+            // permiso desde la misma dirección deja una sola fila por hora.
+            if (_auditoria != null)
+                await _auditoria.RegistrarAsync(new EventoDeSeguridad(TiposDeEvento.AccesoDenegado)
+                {
+                    Resultado = ResultadosDeEvento.Denegado, Agregable = true, ClaveDeAgregado = requisito.Codigo,
+                    IdTenant = contexto.IdTenant, ObjetoTipo = "permiso", ObjetoId = requisito.Codigo,
+                    Detalle = new { ruta, metodo = http.Request.Method, permiso = requisito.Codigo },
+                }, http.RequestAborted);
+
             return Negar(http, requisito.Codigo);
         }
 

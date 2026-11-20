@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Models;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages.Admin
@@ -11,11 +12,13 @@ namespace eGestion360Web.Pages.Admin
     {
         private readonly EmailManagerService _emailManager;
         private readonly ILogger<EmailConfigModel> _logger;
+        private readonly IAuditoriaDeSeguridad? _auditoria;
 
-        public EmailConfigModel(EmailManagerService emailManager, ILogger<EmailConfigModel> logger)
+        public EmailConfigModel(EmailManagerService emailManager, ILogger<EmailConfigModel> logger, IAuditoriaDeSeguridad? auditoria = null)
         {
             _emailManager = emailManager;
             _logger = logger;
+            _auditoria = auditoria;
         }
 
         [BindProperty]
@@ -107,6 +110,9 @@ namespace eGestion360Web.Pages.Admin
 
                 if (result)
                 {
+                    // F1.8b: el perfil y qué se hizo; nunca el servidor, el usuario ni la contraseña.
+                    await _auditoria.RegistrarAccionDeLaPlataformaAsync(TiposDeEvento.CorreoConfigurado, "perfil_correo", ConfigId == 0 ? null : ConfigId.ToString(),
+                        new { accion = ConfigId == 0 ? "alta" : "edicion", perfil = Configuration.ProfileName, contrasenaActualizada = !string.IsNullOrWhiteSpace(PlainPassword) });
                     TempData["SuccessMessage"] = $"Configuración '{Configuration.ProfileName}' guardada exitosamente para {Configuration.FromEmail}";
                     return RedirectToPage();
                 }
@@ -178,6 +184,7 @@ namespace eGestion360Web.Pages.Admin
             try
             {
                 var result = await _emailManager.MarkAsDefaultAsync(configId);
+                if (result) await _auditoria.RegistrarAccionDeLaPlataformaAsync(TiposDeEvento.CorreoConfigurado, "perfil_correo", configId.ToString(), new { accion = "predeterminado" });
                 return new JsonResult(new { success = result });
             }
             catch (Exception ex)
@@ -193,6 +200,7 @@ namespace eGestion360Web.Pages.Admin
             try
             {
                 var result = await _emailManager.ToggleActiveStatusAsync(configId);
+                if (result) await _auditoria.RegistrarAccionDeLaPlataformaAsync(TiposDeEvento.CorreoConfigurado, "perfil_correo", configId.ToString(), new { accion = "activar_o_desactivar" });
                 return new JsonResult(new { success = result });
             }
             catch (Exception ex)
@@ -208,6 +216,7 @@ namespace eGestion360Web.Pages.Admin
             try
             {
                 var result = await _emailManager.DeleteConfigurationAsync(configId);
+                if (result) await _auditoria.RegistrarAccionDeLaPlataformaAsync(TiposDeEvento.CorreoConfigurado, "perfil_correo", configId.ToString(), new { accion = "eliminar" });
                 return new JsonResult(new { success = result });
             }
             catch (Exception ex)
