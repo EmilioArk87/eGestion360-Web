@@ -96,6 +96,15 @@ por comprobacion (`esperado`, `obtenido`, `OK` o `FALLA`) y un resumen. Cada arc
 Las dos ultimas (F1.5) estan en la misma carpeta y se explican en `1 - Documetacion/Operacion/F1/LEEME_F15.md`: comprueban el estado exacto
 posterior a 038 y 039 con la politica encendida, asi que las cuatro anteriores dejan de dar OK una vez aplicado el 038 (son el historial de la salida de F1).
 
+## Scripts de datos de operacion sin numero
+
+Cambios de datos puntuales de produccion que no tienen pantalla. No forman parte de la cadena de creacion de una BD limpia.
+Traen el interruptor `@confirmar` (0 = ensayo que revierte, 1 = aplicar), PRECHECK y POSTCHECK, y se corren solo tras `/alerta-bd`.
+
+| Archivo | Proposito | Fecha | Estado |
+|---|---|---|---|
+| alta_operador_admin_capae.sql | Da a la cuenta de operador de Emilio (alias `egaray`) acceso de administrador de empresa en el tenant CAPAE: copia su persona de SIP al tenant de CAPAE (nombres, fecha de nacimiento y documento principal), su vinculo `usuario`, la membresia y el acceso `empresa_admin` sin rol. Devuelve `dbo.Users` 1 (`admin`) y 4 (`egaray`) a sus valores del 039, que un intento fallido por Admin/Usuarios/Edit (2026-11-18) dejo apuntando a la empresa de CAPAE. Repetible (si ya esta hecho no hace nada); se detiene si los datos no son los esperados. Ensayado en una copia local (aplicar, repetir, caso de error y entrada real con el paquete de produccion). Aplicado en produccion el 2026-11-19 20:49 (persona 548, membresia 13, acceso 10; `verificar_despues_f15.sql` 58 OK con la FALLA conocida de la clave) | 2026-11-19 | Aplicado 2026-11-19 |
+
 ## Scripts de datos de Demo sin numero
 
 Se ejecutan a mano contra la empresa Demo. No forman parte de la cadena de creacion de una BD limpia y no usan un

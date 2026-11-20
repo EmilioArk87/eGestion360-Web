@@ -13,6 +13,8 @@
 --                4 inactivas, 1 operador), 4 alias, 5 membresias (3 activas, 2 suspendidas) y al menos 5 accesos por empresa; las claves
 --                copiadas iguales a las de dbo.Users. Los usuarios, cuentas y accesos que se dan de alta despues (desde la cuenta CAPAE,
 --                2026-11-16) no cuentan: sin contexto de sesion la RLS no deja separar los accesos, por eso ahi se pide "al menos 5";
+--                tampoco cuentan las membresias que la cuenta de Emilio recibe despues en otros tenants (CAPAE, 2026-11-19): las
+--                membresias se cuentan solo las creadas por el 039 (creado_por = 'script:039');
 --            Es el estado EXACTO de este momento: despues de 038 solamente da FALLA en los datos (no hay cuentas) y antes de 038 da FALLA en casi todo.
 -- Salida   : una fila por comprobacion (comprobacion, esperado, obtenido, estado 'OK' o 'FALLA') y una fila final RESUMEN.
 -- Uso      : ejecutar con ejecutar_verificacion.ps1 (ver LEEME_F15.md). No escribe nada; las filas de las tablas de tenant se cuentan
@@ -295,11 +297,11 @@ d AS (
            (SELECT COUNT(*) FROM saas.cuenta_alias a JOIN saas.cuentas x ON x.id_cuenta = a.id_cuenta
             WHERE x.id_user_legado = 1 AND a.tipo = N'correo' AND a.puede_iniciar_sesion = 0) AS alias_correo,
            (SELECT COUNT(*) FROM saas.membresias m JOIN saas.cuentas x ON x.id_cuenta = m.id_cuenta
-            WHERE x.id_user_legado IN (1, 2, 5, 6, 7, 8)) AS membresias,
+            WHERE x.id_user_legado IN (1, 2, 5, 6, 7, 8) AND m.creado_por = N'script:039') AS membresias,
            (SELECT COUNT(*) FROM saas.membresias m JOIN saas.cuentas x ON x.id_cuenta = m.id_cuenta
-            WHERE x.id_user_legado IN (1, 2, 5, 6, 7, 8) AND m.estado = N'activa') AS mem_activas,
+            WHERE x.id_user_legado IN (1, 2, 5, 6, 7, 8) AND m.creado_por = N'script:039' AND m.estado = N'activa') AS mem_activas,
            (SELECT COUNT(*) FROM saas.membresias m JOIN saas.cuentas x ON x.id_cuenta = m.id_cuenta
-            WHERE x.id_user_legado IN (1, 2, 5, 6, 7, 8) AND m.estado = N'suspendida') AS mem_suspendidas,
+            WHERE x.id_user_legado IN (1, 2, 5, 6, 7, 8) AND m.creado_por = N'script:039' AND m.estado = N'suspendida') AS mem_suspendidas,
            (SELECT COUNT(*) FROM saas.membresias m JOIN saas.cuentas x ON x.id_cuenta = m.id_cuenta JOIN saas.tenants t ON t.id_tenant = m.id_tenant
             WHERE (t.codigo = N'SIP' AND x.id_user_legado = 1 AND m.estado = N'activa' AND m.id_persona = 102)
                OR (t.codigo = N'TRANSGAR' AND x.id_user_legado = 1 AND m.estado = N'activa' AND m.id_persona = 104)
