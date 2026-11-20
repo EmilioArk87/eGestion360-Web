@@ -194,7 +194,7 @@ namespace eGestion360Web.Tests.Services.Identidad
         }
 
         [Fact]
-        public async Task Un_alias_cambia_solo_su_acceso_y_la_clave_no_el_correo_ni_el_estado_de_la_cuenta()
+        public async Task Un_alias_cambia_solo_su_acceso_no_la_clave_el_correo_ni_el_estado_de_la_cuenta()
         {
             using var db = _bd.Crear();
             // La cuenta de Emilio: principal "operador" y un alias "egaray" que trabaja en la empresa A.
@@ -205,8 +205,11 @@ namespace eGestion360Web.Tests.Services.Identidad
             db.CuentaAlias.Add(new CuentaAlias { IdCuenta = cuenta.IdCuenta, Alias = "egaray", Tipo = TipoAlias.Usuario, PuedeIniciarSesion = true, IdUserLegado = egaray.Id, CreadoPor = "p", FechaCreacion = IdentidadDePrueba.Ahora });
             db.SaveChanges();
             var correoAntes = cuenta.Correo;
+            var claveAntes = cuenta.HashClave;
 
-            egaray.Password = IdentidadDePrueba.Hash("Clave-De-Egaray-1");
+            // La fila del alias guarda una clave vieja (la sesión es la del principal y las pantallas de clave escriben en su fila).
+            egaray.Password = IdentidadDePrueba.Hash("Clave-Vieja-De-Egaray-1");
+            egaray.RequirePasswordChange = true;
             egaray.IsActive = false;                     // desactivar el alias NO desactiva la cuenta de Emilio
             db.SaveChanges();
             await Servicio(db).SincronizarAsync(egaray.Id);
@@ -215,8 +218,13 @@ namespace eGestion360Web.Tests.Services.Identidad
             Assert.Equal(correoAntes, despues.Correo);
             Assert.Equal("operador", despues.NombreUsuario);
             Assert.Equal(EstadoCuenta.Activa, despues.Estado);
-            Assert.Equal(egaray.Password, despues.HashClave);
+            Assert.Equal(claveAntes, despues.HashClave);       // editar el alias no devuelve la cuenta a su clave vieja (2026-11-18)
+            Assert.False(despues.DebeCambiarClave);
             Assert.False(db.AccesosEmpresa.Single().Activo);   // el acceso del alias sí se apaga
+
+            // Una clave que se le pone a propósito al alias (restablecerla desde la gestión de usuarios) sí llega a la cuenta.
+            await Servicio(db).SincronizarClaveAsync(egaray.Id);
+            Assert.Equal(egaray.Password, db.Cuentas.Single().HashClave);
         }
 
         [Fact]

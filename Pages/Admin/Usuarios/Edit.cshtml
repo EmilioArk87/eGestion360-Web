@@ -73,6 +73,7 @@
                             <div class="mb-3">
                                 <label asp-for="EmpresaId" class="form-label fw-semibold"></label>
                                 <select asp-for="EmpresaId" asp-items="Model.Empresas" class="form-select"></select>
+                                <span asp-validation-for="EmpresaId" class="text-danger small"></span>
                             </div>
                         }
                         else
@@ -85,6 +86,7 @@
                             <div class="mb-3">
                                 <label asp-for="EmpresaRolId" class="form-label fw-semibold"></label>
                                 <select asp-for="EmpresaRolId" asp-items="Model.EmpresaRoles" class="form-select"></select>
+                                <span asp-validation-for="EmpresaRolId" class="text-danger small"></span>
                             </div>
                         }
 

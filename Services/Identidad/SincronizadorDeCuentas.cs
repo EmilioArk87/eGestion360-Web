@@ -17,7 +17,8 @@ namespace eGestion360Web.Services.Identidad
         /// <summary>
         /// Copia a la cuenta del usuario todo lo que decide su acceso: correo, usuario, clave, estado, membresía, acceso a su empresa, rol y
         /// persona. Crea la cuenta si el usuario aún no tiene. Para el acceso a la empresa (tabla de tenant) fija el tenant de la empresa del
-        /// usuario si la petición aún no lo tiene.
+        /// usuario si la petición aún no lo tiene. Si el usuario es un alias de la cuenta, solo cambia su acceso: la clave, el correo, el
+        /// nombre y el estado de la cuenta los manda su usuario principal.
         /// </summary>
         Task SincronizarAsync(int idUser, CancellationToken ct = default);
 
@@ -114,12 +115,15 @@ namespace eGestion360Web.Services.Identidad
             }
             else
             {
-                cuenta.HashClave = user.Password;
-                cuenta.DebeCambiarClave = user.RequirePasswordChange;
                 if (esPrincipal)
                 {
-                    // Solo el usuario que dio origen a la cuenta manda sobre su correo, su nombre y su estado; un alias (por ejemplo
-                    // egaray y egaray.transgar, que son la cuenta de Emilio) cambia únicamente el acceso a su empresa.
+                    // Solo el usuario que dio origen a la cuenta manda sobre su clave, su correo, su nombre y su estado; un alias (por ejemplo
+                    // egaray y egaray.transgar, que son la cuenta de Emilio) cambia únicamente el acceso a su empresa. La fila de Users de un
+                    // alias guarda la clave de cuando se unificaron las cuentas, porque la sesión es la del usuario principal y las pantallas
+                    // de clave escriben en esa fila: copiarla aquí devolvía la cuenta a una clave vieja cada vez que se editaba el alias (pasó
+                    // el 2026-11-18). Una clave que se pone a propósito en un alias llega por SincronizarClaveAsync.
+                    cuenta.HashClave = user.Password;
+                    cuenta.DebeCambiarClave = user.RequirePasswordChange;
                     cuenta.Correo = correo;
                     cuenta.NombreUsuario = user.Username;
                     cuenta.Estado = puedeEntrar ? EstadoCuenta.Activa : EstadoCuenta.Inactiva;

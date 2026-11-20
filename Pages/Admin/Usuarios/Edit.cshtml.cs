@@ -17,14 +17,27 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         private readonly ApplicationDbContext _context;
         private readonly IUsuarioPersonaService _usuarioPersona;
         private readonly eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? _cuentas;
+        private readonly ILogger<EditModel>? _log;
 
         public EditModel(ApplicationDbContext context, IUsuarioPersonaService usuarioPersona,
-            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? cuentas = null)
+            eGestion360Web.Services.Identidad.ISincronizadorDeCuentas? cuentas = null, ILogger<EditModel>? log = null)
         {
             _context = context;
             _usuarioPersona = usuarioPersona;
             _cuentas = cuentas;
+            _log = log;
         }
+
+        public const string MensajeEmpresaDeOtroTenant =
+            "La empresa elegida es de otro tenant. Un usuario no se pasa de un tenant a otro: su persona y su cuenta son de su tenant. " +
+            "Para darle acceso en otro tenant, créale el usuario desde ese tenant.";
+
+        public const string MensajeRolDeOtraEmpresa =
+            "El rol elegido no es de esa empresa. Deja «Sin rol específico», guarda y luego elige uno de los roles de la empresa.";
+
+        public const string MensajeCuentaNoSincronizada =
+            "No se pudo actualizar el acceso de la cuenta de este usuario, así que no se guardó ningún cambio. " +
+            "Revisa la empresa y el rol, o avisa a soporte.";
 
         [BindProperty] public int    Id                    { get; set; }
         [BindProperty] [Required][StringLength(50)][Display(Name="Usuario")]  public string Username { get; set; } = string.Empty;
@@ -111,7 +124,19 @@ namespace eGestion360Web.Pages.Admin.Usuarios
                 return Page();
             }
 
+            // La empresa y el rol se comprueban ANTES de guardar nada: la cuenta del usuario no se puede llevar a otro tenant desde aquí
+            // (su membresía exige una persona de ese tenant) y, si se guardaba Users primero, el fallo de la cuenta lo dejaba a medias
+            // (pasó el 2026-11-18 con el usuario egaray y la empresa de CAPAE).
+            if (await ErrorDeEmpresaYRolAsync(user) is { } error)
+            {
+                ModelState.AddModelError(error.Campo, error.Mensaje);
+                await CargarListasAsync();
+                await CargarPersonaAsync(buscar: false);
+                return Page();
+            }
+
             var empresaAnterior = user.EmpresaId;
+            var antes = (user.Username, user.Email, user.IsActive, user.RequirePasswordChange, user.Role, user.EmpresaId, user.EmpresaRolId);
 
             user.Username              = Username.Trim();
             user.Email                 = Email.Trim().ToLowerInvariant();
@@ -123,8 +148,22 @@ namespace eGestion360Web.Pages.Admin.Usuarios
 
             await _context.SaveChangesAsync();
 
-            // La cuenta global sigue a Users (F1.5): clave pendiente, estado, empresa y rol llegan a su acceso.
-            if (_cuentas != null) await _cuentas.SincronizarAsync(user.Id);
+            // La cuenta global sigue a Users (F1.5): clave pendiente, estado, empresa y rol llegan a su acceso. Si eso falla, Users vuelve a
+            // como estaba: nunca quedan el usuario con una empresa y la cuenta con otra.
+            if (_cuentas != null)
+            {
+                try
+                {
+                    await _cuentas.SincronizarAsync(user.Id);
+                }
+                catch (Exception ex) when (ex is DbUpdateException or InvalidOperationException)
+                {
+                    _log?.LogError(ex, "No se pudo sincronizar la cuenta del usuario {IdUsuario}: se deshace la edición.", user.Id);
+                    await DeshacerEdicionAsync(user.Id, antes);
+                    TempData["ErrorMessage"] = MensajeCuentaNoSincronizada;
+                    return RedirectToPage(new { id = user.Id });
+                }
+            }
 
             // Si cambió de empresa, su persona tiene que quedar también dentro de la empresa nueva.
             if (user.PersonaId is { } idPersona && empresaAnterior != user.EmpresaId)
@@ -225,6 +264,73 @@ namespace eGestion360Web.Pages.Admin.Usuarios
             => AuthHelper.EsOperador(HttpContext) && empresaDelUsuario is > 0
                && !await _context.Empresas.AsNoTracking().AnyAsync(e => e.IdEmpresa == empresaDelUsuario);
 
+        /// <summary>
+        /// El tenant al que pertenece el usuario: el de su persona (la membresía de la cuenta exige una persona de su mismo tenant) o, si
+        /// no tiene persona, el de su empresa actual. <c>Conocido</c> es falso para un usuario sin persona ni empresa, que puede ir a
+        /// cualquiera. Una persona que no se ve desde este contexto es de otro tenant: queda conocido con tenant nulo.
+        /// </summary>
+        private async Task<(bool Conocido, int? IdTenant)> TenantDelUsuarioAsync(int? idPersona, int? idEmpresa)
+        {
+            if (idPersona is { } persona)
+                return (true, await _context.Personas.AsNoTracking()
+                    .Where(p => p.IdPersona == persona).Select(p => (int?)p.IdTenant).FirstOrDefaultAsync());
+
+            if (idEmpresa is { } empresa)
+            {
+                var tenant = await _context.Empresas.AsNoTracking()
+                    .Where(e => e.IdEmpresa == empresa).Select(e => (int?)e.IdTenant).FirstOrDefaultAsync();
+                return (tenant != null, tenant);
+            }
+            return (false, null);
+        }
+
+        /// <summary>
+        /// Por qué no se puede guardar la empresa y el rol elegidos, o nulo si se puede: la empresa tiene que existir y ser del tenant del
+        /// usuario, y el rol, de esa empresa. La lista de la pantalla ya no ofrece otras, pero esto también ataja un formulario alterado.
+        /// </summary>
+        private async Task<(string Campo, string Mensaje)?> ErrorDeEmpresaYRolAsync(User user)
+        {
+            if (EmpresaId is not { } idEmpresa) return null;
+
+            var empresa = await _context.Empresas.AsNoTracking()
+                .Where(e => e.IdEmpresa == idEmpresa && !e.Eliminado)
+                .Select(e => new { e.IdTenant })
+                .FirstOrDefaultAsync();
+            if (empresa == null) return (nameof(EmpresaId), "La empresa elegida no existe o no se ve desde aquí.");
+
+            var (conocido, tenantDelUsuario) = await TenantDelUsuarioAsync(user.PersonaId, user.EmpresaId);
+            if (conocido && tenantDelUsuario != empresa.IdTenant) return (nameof(EmpresaId), MensajeEmpresaDeOtroTenant);
+
+            if (EmpresaRolId is { } idRol
+                && !await _context.EmpresaRoles.AsNoTracking().AnyAsync(r => r.IdRol == idRol && r.IdEmpresa == idEmpresa))
+                return (nameof(EmpresaRolId), MensajeRolDeOtraEmpresa);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Devuelve el usuario a los datos que tenía antes de esta edición y vuelve a sincronizar su cuenta con ellos, para que nada quede a
+        /// medias cuando la cuenta no se pudo actualizar.
+        /// </summary>
+        private async Task DeshacerEdicionAsync(int idUsuario,
+            (string Username, string Email, bool IsActive, bool RequirePasswordChange, string Role, int? EmpresaId, int? EmpresaRolId) antes)
+        {
+            _context.ChangeTracker.Clear();
+            var user = await _context.Users.FirstAsync(u => u.Id == idUsuario);
+            (user.Username, user.Email, user.IsActive, user.RequirePasswordChange, user.Role, user.EmpresaId, user.EmpresaRolId) = antes;
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _cuentas!.SincronizarAsync(idUsuario);
+            }
+            catch (Exception ex) when (ex is DbUpdateException or InvalidOperationException)
+            {
+                _context.ChangeTracker.Clear();
+                _log?.LogError(ex, "Tampoco se pudo volver a sincronizar la cuenta del usuario {IdUsuario} con sus datos anteriores.", idUsuario);
+            }
+        }
+
         private IActionResult AElegirTenantDelUsuario()
         {
             TempData["SoporteError"] = "El usuario pertenece a otro tenant. Entra al tenant de su empresa y vuelve a abrirlo.";
@@ -266,8 +372,14 @@ namespace eGestion360Web.Pages.Admin.Usuarios
         {
             if (AuthHelper.EsOperador(HttpContext))
             {
+                // Solo las empresas del tenant del usuario: desde aquí no se lo pasa a otro (ver ErrorDeEmpresaYRolAsync).
+                var usuario = await _context.Users.AsNoTracking()
+                    .Where(u => u.Id == Id).Select(u => new { u.PersonaId, u.EmpresaId }).FirstOrDefaultAsync();
+                var (conocido, tenantDelUsuario) = usuario == null ? (false, null) : await TenantDelUsuarioAsync(usuario.PersonaId, usuario.EmpresaId);
+
                 Empresas = await _context.Empresas
                     .Where(e => !e.Eliminado && e.Activa)
+                    .Where(e => !conocido || e.IdTenant == tenantDelUsuario)
                     .OrderBy(e => e.RazonSocial)
                     .Select(e => new SelectListItem(e.RazonSocial, e.IdEmpresa.ToString()))
                     .ToListAsync();
