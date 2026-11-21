@@ -24,7 +24,7 @@ namespace eGestion360Web.Tests.Arquitectura
             "/ChangePassword", "/Logout", "/Mfa", "/MfaAlta", "/SeleccionarContexto",
             // Centros de navegación: cada opción que ofrecen pide su propio permiso.
             "/MainMenu", "/Catalogos/Index", "/Flota/Index", "/Flota/Catalogos/Index", "/Flota/Gastos/Index", "/Flota/Operacion/Index", "/Flota/MantenimientoDatos/Index",
-            "/Psicologia/Index",
+            "/Psicologia/Index", "/Psicologia/Catalogos/Index",
             // Explica por qué Flota no abre sin empresa.
             "/Flota/SinEmpresa",
         };

@@ -14,7 +14,7 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             "Pages/Flota/Index.cshtml", "Pages/Flota/Operacion/Index.cshtml", "Pages/Flota/Gastos/Index.cshtml",
             "Pages/Flota/Catalogos/Index.cshtml", "Pages/Flota/MantenimientoDatos/Index.cshtml", "Pages/Catalogos/Index.cshtml",
-            "Pages/Psicologia/Index.cshtml", "Pages/MainMenu.cshtml",
+            "Pages/Psicologia/Index.cshtml", "Pages/Psicologia/Catalogos/Index.cshtml", "Pages/MainMenu.cshtml",
         };
 
         // Una tarjeta de un centro: el contenedor «col» seguido de la tarjeta «menu-card».

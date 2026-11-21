@@ -1,0 +1,121 @@
+@page
+@model eGestion360Web.Pages.Psicologia.Catalogos.PruebasModel
+@{
+    ViewData["Title"] = "Pruebas psicológicas";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Index">Psicología</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Psicologia/Catalogos/Index">Catálogos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Pruebas psicológicas</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-clipboard-list me-2"></i>Pruebas psicológicas</h2>
+            <p class="text-muted mb-0">Pruebas que aplica el centro: se marcan en cada atención y se declaran en las constancias. Lo que ya se usó no se borra: se desactiva.</p>
+        </div>
+        <a asp-page="/Psicologia/Catalogos/Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Volver</a>
+    </div>
+
+    @if (TempData["CatalogosMensaje"] is string mensaje)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@mensaje
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+    <div class="row g-4">
+        @if (Model.PuedeEditar)
+        {
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">@(Model.Prueba.Id > 0 ? "Editar prueba" : "Agregar prueba")</h5>
+                        <form method="post" asp-page-handler="Guardar" id="form-prueba">
+                            <input type="hidden" asp-for="Prueba.Id" />
+                            <div class="row g-2">
+                                <div class="col-sm-4">
+                                    <label asp-for="Prueba.Codigo" class="form-label small mb-1">Código</label>
+                                    <input asp-for="Prueba.Codigo" class="form-control form-control-sm text-uppercase" placeholder="MMPI-2" autocomplete="off" />
+                                    <span asp-validation-for="Prueba.Codigo" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label asp-for="Prueba.Nombre" class="form-label small mb-1">Nombre</label>
+                                    <input asp-for="Prueba.Nombre" class="form-control form-control-sm" placeholder="Inventario Multifásico de Personalidad de Minnesota-2" autocomplete="off" />
+                                    <span asp-validation-for="Prueba.Nombre" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Prueba.Descripcion" class="form-label small mb-1">Descripción (opcional)</label>
+                                    <input asp-for="Prueba.Descripcion" class="form-control form-control-sm" autocomplete="off" />
+                                    <span asp-validation-for="Prueba.Descripcion" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                @if (Model.Prueba.Id > 0)
+                                {
+                                    <a asp-page="Pruebas" class="btn btn-sm btn-outline-secondary">Cancelar</a>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save me-1"></i>Guardar cambios</button>
+                                }
+                                else
+                                {
+                                    <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-plus me-1"></i>Agregar prueba</button>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="@(Model.PuedeEditar ? "col-lg-7" : "col-12")">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Catálogo <span class="badge bg-light text-secondary border ms-1">@Model.Pruebas.Count</span></h5>
+                    @if (Model.Pruebas.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Todavía no hay pruebas en el catálogo.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var p in Model.Pruebas)
+                            {
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2 @(p.Activo ? "" : "text-muted")">
+                                    <div>
+                                        <span class="badge bg-light text-primary border font-monospace me-1">@p.Codigo</span>
+                                        <span class="fw-semibold">@p.Nombre</span>
+                                        @if (!p.Activo) { <span class="badge bg-secondary ms-1">inactiva</span> }
+                                        @if (p.Descripcion != null) { <div class="small text-muted">@p.Descripcion</div> }
+                                        <div class="small text-muted">@(p.Usos == 0 ? "Sin usar" : $"Usada {p.Usos} vez(ces)")</div>
+                                    </div>
+                                    @if (Model.PuedeEditar)
+                                    {
+                                        <div class="d-flex gap-1 flex-shrink-0">
+                                            <a asp-page="Pruebas" asp-route-editar="@p.Id" asp-fragment="form-prueba" class="btn btn-sm btn-outline-primary" title="Editar"><i class="fas fa-pen"></i></a>
+                                            <form method="post" asp-page-handler="Estado" asp-route-id="@p.Id" asp-route-activo="@(!p.Activo)">
+                                                <button type="submit" class="btn btn-sm @(p.Activo ? "btn-outline-secondary" : "btn-outline-success")" title="@(p.Activo ? "Desactivar" : "Activar")">
+                                                    <i class="fas @(p.Activo ? "fa-eye-slash" : "fa-eye")"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
