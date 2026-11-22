@@ -117,7 +117,8 @@ namespace eGestion360Web.Services.Permisos
             if (contexto.IdRol is not > 0) return PermisosEfectivos.Ninguno;
 
             var concedidos = await ConcedidosAlRolAsync(contexto.IdTenant.Value, contexto.IdRol.Value, ct);
-            return new PermisosEfectivos(catalogo.Where(p => concedidos.Contains(p.Codigo) && Vale(p))
+            // Lo que solo tiene el administrador de la empresa (la auditoría, F1.8c) no lo da un rol, aunque alguien lo hubiera puesto en rol_permisos por SQL.
+            return new PermisosEfectivos(catalogo.Where(p => concedidos.Contains(p.Codigo) && Vale(p) && !CatalogoDePermisos.SoloDelAdministrador.Contains(p.Codigo))
                                                  .Select(p => p.Codigo).ToHashSet(StringComparer.Ordinal));
         }
 

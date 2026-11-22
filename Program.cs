@@ -98,6 +98,7 @@ builder.Services.AddSingleton<eGestion360Web.Services.Permisos.IRequisitosDePagi
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeLaPeticion, eGestion360Web.Services.Permisos.PermisosDeLaPeticion>();
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.DecisorDeVisibilidad>();
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeRol, eGestion360Web.Services.Permisos.PermisosDeRol>();   // F1.6e: la pantalla de roles guarda en rol_permisos y avisa al evaluador
+builder.Services.AddScoped<LectorDeAuditoria>();   // F1.8c: las pantallas de auditoría (solo leen)
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());   // los procesos de fondo fijan su tenant en TenantContext
 

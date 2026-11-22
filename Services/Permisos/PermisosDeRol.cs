@@ -78,7 +78,7 @@ namespace eGestion360Web.Services.Permisos
 
         private static string Capitalizar(string texto) => texto.Length == 0 ? texto : char.ToUpperInvariant(texto[0]) + texto[1..];
 
-        /// <summary>Los permisos que se pueden marcar para un rol: la administración de la empresa y los permisos de los módulos que su empresa tiene activos. Nunca los de plataforma.</summary>
+        /// <summary>Los permisos que se pueden marcar para un rol: la administración de la empresa (menos lo que solo tiene su administrador) y los permisos de los módulos que su empresa tiene activos. Nunca los de plataforma.</summary>
         private async Task<(List<Models.Plataforma.Permiso> Permisos, List<Modulo> Modulos)> OfrecidosAsync(EmpresaRol rol, CancellationToken ct)
         {
             var modulos = await _db.EmpresaModulos.AsNoTracking()
@@ -88,8 +88,11 @@ namespace eGestion360Web.Services.Permisos
                 .ToListAsync(ct);
             var codigos = modulos.Select(m => m.Codigo).ToList();
 
+            // Los permisos que solo tiene el administrador de la empresa (la auditoría, F1.8c) no se ofrecen para un rol.
+            var soloDelAdministrador = CatalogoDePermisos.SoloDelAdministrador.ToList();
             var permisos = await _db.Permisos.AsNoTracking()
                 .Where(p => p.Activo && (p.Ambito == AmbitoDePermiso.Empresa || (p.Ambito == AmbitoDePermiso.Modulo && codigos.Contains(p.Modulo))))
+                .Where(p => !soloDelAdministrador.Contains(p.Codigo))
                 .OrderBy(p => p.Orden)
                 .ToListAsync(ct);
 

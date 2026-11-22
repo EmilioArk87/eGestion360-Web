@@ -2,7 +2,7 @@
 
 Complemento de [`LEEME.md`](LEEME.md). Este archivo cubre el **script 045** (`2 - Script SQL/045_auditoria_seguridad.sql`), su verificación de solo lectura, el orden de publicación y cómo consultar la auditoría mientras no existan las pantallas (F1.8c). Las decisiones están en [ADR-030](../../Arquitectura/ADR-030-auditoria-de-seguridad.md) (D70 a D76, aceptadas el 2026-11-18).
 
-> **Estado:** el script 045 está **aplicado en producción desde el 2026-11-19** (con la aprobación de `/alerta-bd`): PRECHECK correcto, 2 tablas, 5 predicados y 2 columnas nuevas, ninguna fila existente cambió, y `verificar_despues_045.sql` dio 14 de 14 OK. El código de F1.8a se publica después, con su kit.
+> **Estado:** el script 045 está **aplicado en producción desde el 2026-11-19** (con la aprobación de `/alerta-bd`): PRECHECK correcto, 2 tablas, 5 predicados y 2 columnas nuevas, ninguna fila existente cambió, y `verificar_despues_045.sql` dio 14 de 14 OK. El código de F1.8a se publicó el mismo día. F1.8b (solo código) va en el kit de `dev@b50a167`, con los catálogos de Psicología; F1.8c (pantallas y script 046) está en el código, con el 046 sin aplicar (sección al final).
 
 ## Qué crea el script 045
 
@@ -50,7 +50,7 @@ La **comprobación diaria** (`comprobacion_diaria.ps1`) corre este verificador s
 1. `/alerta-bd` y aprobación expresa de Emilio. **Hecho el 2026-11-19.**
 2. Aplicar el 045 con el ejecutor de siempre, **antes** de publicar el código. **Hecho el 2026-11-19.**
 3. `verificar_despues_045.sql` (14 OK) y la comprobación diaria. **Hecho el 2026-11-19: 14 de 14.**
-4. Publicar el código de F1.8a. **Pendiente.**
+4. Publicar el código de F1.8a. **Hecho el 2026-11-19.**
 
 **El 045 va ANTES del código**: el interceptor de la bitácora escribe `id_cuenta` e `id_correlacion` en cada cambio de personas, de modo que sin las columnas ese guardado falla. Al revés (045 aplicado con el código anterior) no pasa nada: el código anterior ignora las tablas y las columnas nuevas.
 
@@ -140,5 +140,43 @@ Solo ve lo que se guarda con EF Core; un script SQL debe dejar su propia fila. `
 - `TRUNCATE TABLE` no dispara el disparador; solo quien puede modificar el esquema puede hacerlo (igual que en `dbo.bitacora_cambios`). En el hosting nuevo la aplicación entrará con un usuario sin ese permiso (ADR-016).
 - La dirección de red es la de la conexión directa (Somee). Detrás de un proxy (Azure) habrá que configurar los encabezados reenviados en el paso de migración.
 - Las dos tablas contienen datos personales (dirección, nombre) y no se pueden borrar; la conservación es de 24 meses sin purga automática (D75).
-- Los cambios de administración, el soporte y las acciones del operador se auditan desde F1.8b (sección de arriba); las pantallas para consultarlo llegan en F1.8c.
+- Los cambios de administración, el soporte y las acciones del operador se auditan desde F1.8b; las pantallas para consultarlo son las de F1.8c (sección de abajo).
 - El script es ASCII (sin tildes ni eñes), como los demás de migración.
+
+## F1.8c: pantallas de auditoría y script 046
+
+Dos pantallas de **solo lectura**, con exportación a Excel y una hoja para imprimir o guardar como PDF (decisiones del 2026-11-21 en [ADR-030](../../Arquitectura/ADR-030-auditoria-de-seguridad.md), sección F1.8c):
+
+| Pantalla | Ruta | Quién la abre |
+|---|---|---|
+| Auditoría | `/Admin/Auditoria` | El administrador de la empresa, solo su tenant (no se puede dar a un rol), y el operador dentro del tenant que eligió en Soporte |
+| Auditoría de la plataforma | `/Admin/AuditoriaPlataforma` | El personal de la plataforma |
+
+El correo sale enmascarado en pantalla y en lo exportado. Cada exportación deja su fila (`auditoria.exportada` o `auditoria.plataforma_exportada`).
+
+### Script 046 (con `/alerta-bd`)
+
+`2 - Script SQL/046_permisos_auditoria.sql` agrega a `saas.permisos` `administracion.auditoria.ver` (empresa, orden 92) y `plataforma.auditoria.ver` (plataforma, orden 93). No toca roles ni plantillas. Se verifica con `verificar_despues_041.sql`, que acepta las cifras con o sin el 046:
+
+| Comprobación | Sin el 046 | Con el 046 |
+|---|---|---|
+| 210 Permisos en el catálogo | 91 | 93 |
+| 230 Por módulo: plataforma / administración / flota / catálogos / facturación | 17 / 9 / 28 / 8 / 10 | 18 / 10 / 28 / 8 / 10 |
+| 240 Por ámbito: plataforma / empresa / módulo | 17 / 9 / 65 | 18 / 10 / 65 |
+
+### Orden de publicación
+
+1. Ensayar el 046 en la copia local de producción: aplicar, repetir («Nada que hacer») y revertir. **Pendiente.**
+2. `/alerta-bd` y aprobación expresa de Emilio; aplicar el 046 con el ejecutor de siempre. **Pendiente.**
+3. `verificar_despues_041.sql` con las cifras de la columna «Con el 046» y la comprobación diaria. **Pendiente.**
+4. Publicar el código de F1.8c. **Pendiente.**
+
+**El 046 va ANTES del código**: el evaluador lee el catálogo de la base, así que sin las filas nadie abre las pantallas nuevas (ni el operador). Al revés (046 aplicado con el código anterior) no pasa nada: el código anterior ignora los permisos nuevos.
+
+### Qué verificar después de publicar
+
+1. Como administrador de una empresa, abrir «Auditoría» desde el menú: se ven los eventos de su tenant de los últimos 7 días.
+2. Exportar a Excel y abrir el archivo; luego «Imprimir o guardar como PDF». Cada uno deja su fila `auditoria.exportada`.
+3. Como operador, abrir «Auditoría de la plataforma» y filtrar por un tenant.
+4. En «Roles y Permisos», el permiso de auditoría no aparece para marcar.
+

@@ -85,6 +85,24 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
+        public async Task La_auditoria_de_la_empresa_no_se_ofrece_ni_se_guarda_para_un_rol()
+        {
+            // F1.8c: la auditoría del tenant la ve solo su administrador (decisión del 2026-11-21).
+            var rol = NuevoRol(DatosBase.EmpresaA, "Supervisor");
+            await using var db = _base.CrearComo(DatosBase.TenantA);
+            var servicio = Servicio(db);
+
+            var codigos = (await servicio.ObtenerAsync(rol))!.Grupos.SelectMany(g => g.Recursos).SelectMany(r => r.Permisos).Select(p => p.Codigo).ToList();
+            Assert.DoesNotContain("administracion.auditoria.ver", codigos);
+            Assert.Contains("administracion.usuarios.ver", codigos);
+
+            var resultado = await servicio.GuardarAsync(rol, new[] { "administracion.auditoria.ver", "administracion.usuarios.ver" }, "emilio");
+
+            Assert.Equal(new ResultadoDeGuardado(Agregados: 1, Quitados: 0, Ignorados: 1), resultado);
+            Assert.Equal(new[] { "administracion.usuarios.ver" }, Guardados(rol));
+        }
+
+        [Fact]
         public async Task Marca_lo_que_el_rol_ya_tiene_y_nada_mas()
         {
             var rol = NuevoRol(DatosBase.EmpresaA, "Consulta", "flota.vehiculos.ver", "catalogos.clientes.ver");

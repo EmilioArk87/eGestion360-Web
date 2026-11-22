@@ -123,6 +123,37 @@ namespace eGestion360Web.Tests.Services.Permisos
         }
 
         [Fact]
+        public async Task La_auditoria_de_la_empresa_la_tiene_su_administrador_y_ningun_rol_aunque_este_en_la_base()
+        {
+            // F1.8c: el administrador de la empresa ve la auditoría de su tenant; un rol no, aunque alguien la haya puesto por SQL en rol_permisos.
+            SembrarCatalogo();
+            int rol;
+            using (var escritura = _base.Crear())
+            {
+                var nuevo = new EmpresaRol { IdEmpresa = DatosBase.EmpresaA, IdTenant = DatosBase.TenantA, Nombre = "Supervisor", Activo = true };
+                escritura.EmpresaRoles.Add(nuevo);
+                escritura.SaveChanges();
+                rol = nuevo.IdRol;
+                Conceder(escritura, rol, DatosBase.TenantA, "administracion.auditoria.ver");
+                Conceder(escritura, rol, DatosBase.TenantA, "administracion.usuarios.ver");
+                escritura.SaveChanges();
+            }
+            await using var db = _base.CrearComo(DatosBase.TenantA);
+            var evaluador = Evaluador(db);
+
+            var administrador = await evaluador.EvaluarAsync(new ContextoDePermisos(false, DatosBase.TenantA, null, AuthHelper.EmpresaAdminRole, Habilitados()));
+            var conRol = await evaluador.EvaluarAsync(ComoUsuario(DatosBase.TenantA, rol));
+            var operador = await evaluador.EvaluarAsync(new ContextoDePermisos(true, DatosBase.TenantA, null, AuthHelper.AdminRole, Habilitados()));
+
+            Assert.True(administrador.Puede("administracion.auditoria.ver"));
+            Assert.False(administrador.Puede("plataforma.auditoria.ver"));
+            Assert.False(conRol.Puede("administracion.auditoria.ver"));
+            Assert.True(conRol.Puede("administracion.usuarios.ver"));
+            Assert.True(operador.Puede("administracion.auditoria.ver"));
+            Assert.True(operador.Puede("plataforma.auditoria.ver"));
+        }
+
+        [Fact]
         public async Task El_rol_de_texto_se_compara_sin_distinguir_mayusculas()
         {
             SembrarCatalogo();

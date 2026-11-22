@@ -5,7 +5,8 @@
 --              * las 4 tablas nuevas (saas.permisos, saas.roles_plantilla, saas.roles_plantilla_permisos y dbo.rol_permisos) con sus
 --                columnas, claves unicas, restricciones CHECK y claves foraneas, todas habilitadas y confiables;
 --              * el catalogo sembrado (valores sembrados: 72 permisos; 17 de plataforma, 9 de administracion, 28 de flota, 8 de catalogos
---                y 10 de facturacion; 44 con casilla legada) y que ningun permiso tiene un ambito que no corresponde a su modulo;
+--                y 10 de facturacion; 44 con casilla legada; el 043 suma 19 de psicologia y el 046 uno de plataforma y uno de
+--                administracion) y que ningun permiso tiene un ambito que no corresponde a su modulo;
 --              * las 9 plantillas de rol (tres por modulo) y sus permisos (valores sembrados: 102);
 --              * dbo.rol_permisos: sus 5 predicados en seg.pol_tenant (1 filtro y 4 bloqueos, todos con seg.fn_tenant_actual), que ninguna
 --                fila es de ambito plataforma, que una conexion SIN tenant ve 0 filas aunque la tabla tenga filas reales (prueba
@@ -26,6 +27,8 @@ DECLARE @hay_tablas BIT = CASE WHEN OBJECT_ID(N'saas.permisos', N'U') IS NOT NUL
                                THEN 1 ELSE 0 END;
 -- El script 043 (modulo de Psicologia) agrega 19 permisos de ambito modulo con casilla legada, 3 plantillas y 42 permisos de plantilla.
 DECLARE @con043 INT = CASE WHEN EXISTS (SELECT 1 FROM dbo.modulos WHERE codigo = 'psicologia') THEN 1 ELSE 0 END;
+-- El script 046 (pantallas de auditoria, F1.8c) agrega 2 permisos sin casilla legada: uno de administracion (empresa) y uno de plataforma.
+DECLARE @con046 INT = 0;   -- se calcula abajo, solo si saas.permisos existe
 
 DECLARE @permisos INT, @unicos INT, @plataforma INT, @administracion INT, @flota INT, @catalogos INT, @facturacion INT,
         @ambito_plat INT, @ambito_emp INT, @ambito_mod INT, @con_casilla INT, @ambito_mal INT, @sin_modulo NVARCHAR(400),
@@ -35,6 +38,8 @@ DECLARE @permisos INT, @unicos INT, @plataforma INT, @administracion INT, @flota
 
 IF @hay_tablas = 1
 BEGIN
+    SET @con046 = CASE WHEN EXISTS (SELECT 1 FROM saas.permisos WHERE codigo IN ('administracion.auditoria.ver', 'plataforma.auditoria.ver')) THEN 1 ELSE 0 END;
+
     SELECT @permisos = COUNT(*), @unicos = COUNT(DISTINCT codigo),
            @plataforma = SUM(CASE WHEN modulo = 'plataforma' THEN 1 ELSE 0 END),
            @administracion = SUM(CASE WHEN modulo = 'administracion' THEN 1 ELSE 0 END),
@@ -147,11 +152,11 @@ r (orden, comprobacion, esperado, obtenido) AS (
               CONCAT((SELECT SUM(ok) FROM fkn), N' de ', (SELECT COUNT(*) FROM fkn))),
         (150, N'Claves unicas de apoyo y de codigo (5)', N'5 de 5', CONCAT((SELECT SUM(ok) FROM uqn), N' de ', (SELECT COUNT(*) FROM uqn))),
         -- 2xx: el catalogo (valores sembrados)
-        (210, N'Permisos en el catalogo (valores sembrados; +19 si ya esta el 043)', CAST(72 + 19 * @con043 AS NVARCHAR(400)), COALESCE(CAST(@permisos AS NVARCHAR(400)), N'no existe')),
+        (210, N'Permisos en el catalogo (valores sembrados; +19 si ya esta el 043; +2 si ya esta el 046)', CAST(72 + 19 * @con043 + 2 * @con046 AS NVARCHAR(400)), COALESCE(CAST(@permisos AS NVARCHAR(400)), N'no existe')),
         (220, N'Codigos de permiso repetidos', N'0', COALESCE(CAST(@permisos - @unicos AS NVARCHAR(400)), N'no existe')),
-        (230, N'Permisos por modulo: plataforma / administracion / flota / catalogos / facturacion (valores sembrados)', N'17 / 9 / 28 / 8 / 10',
+        (230, N'Permisos por modulo: plataforma / administracion / flota / catalogos / facturacion (valores sembrados; +1 y +1 si ya esta el 046)', CONCAT(17 + @con046, N' / ', 9 + @con046, N' / 28 / 8 / 10'),
               CASE WHEN @permisos IS NULL THEN N'no existe' ELSE CONCAT(@plataforma, N' / ', @administracion, N' / ', @flota, N' / ', @catalogos, N' / ', @facturacion) END),
-        (240, N'Permisos por ambito: plataforma / empresa / modulo (valores sembrados; +19 de modulo si ya esta el 043)', CONCAT(N'17 / 9 / ', 46 + 19 * @con043),
+        (240, N'Permisos por ambito: plataforma / empresa / modulo (valores sembrados; +19 de modulo si ya esta el 043; +1 y +1 si ya esta el 046)', CONCAT(17 + @con046, N' / ', 9 + @con046, N' / ', 46 + 19 * @con043),
               CASE WHEN @permisos IS NULL THEN N'no existe' ELSE CONCAT(@ambito_plat, N' / ', @ambito_emp, N' / ', @ambito_mod) END),
         (250, N'Permisos con casilla legada, para migrar los roles (valores sembrados; +19 si ya esta el 043)', CAST(44 + 19 * @con043 AS NVARCHAR(400)), COALESCE(CAST(@con_casilla AS NVARCHAR(400)), N'no existe')),
         (260, N'Permisos cuyo ambito no corresponde a su modulo', N'0', COALESCE(CAST(@ambito_mal AS NVARCHAR(400)), N'no existe')),

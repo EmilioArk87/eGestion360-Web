@@ -250,7 +250,12 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.All(deSoporte, t => Assert.Equal(DestinoDeEvento.Ambos, TiposDeEvento.DestinoDe(t)));
             Assert.All(delOperador, t => Assert.Equal(DestinoDeEvento.Plataforma, TiposDeEvento.DestinoDe(t)));
 
-            var todos = deLaCuenta.Append(TiposDeEvento.ContextoElegido).Concat(deAdministracion).Concat(deSoporte).Concat(delOperador).ToList();
+            // F1.8c: exportar la auditoría deja su fila en la misma tabla que se exportó.
+            Assert.Equal(DestinoDeEvento.Tenant, TiposDeEvento.DestinoDe(TiposDeEvento.AuditoriaExportada));
+            Assert.Equal(DestinoDeEvento.Plataforma, TiposDeEvento.DestinoDe(TiposDeEvento.AuditoriaPlataformaExportada));
+
+            var todos = deLaCuenta.Append(TiposDeEvento.ContextoElegido).Concat(deAdministracion).Concat(deSoporte).Concat(delOperador)
+                .Append(TiposDeEvento.AuditoriaExportada).Append(TiposDeEvento.AuditoriaPlataformaExportada).ToList();
             Assert.Equal(todos.Count, todos.Distinct().Count());
             Assert.Equal(todos.Order(StringComparer.Ordinal).ToList(), TiposDeEvento.Todos.Order(StringComparer.Ordinal).ToList());
         }

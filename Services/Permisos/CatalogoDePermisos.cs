@@ -144,7 +144,18 @@ namespace eGestion360Web.Services.Permisos
             new("psicologia", "constancias", "anular", AmbitoDePermiso.Modulo, "eliminar", "Anular una constancia"),
             new("psicologia", "profesionales", "ver", AmbitoDePermiso.Modulo, "ver", "Ver los profesionales del centro"),
             new("psicologia", "profesionales", "editar", AmbitoDePermiso.Modulo, "editar", "Registrar y editar los profesionales del centro"),
+
+            // Auditoría de seguridad (F1.8c, ADR-030 D74; script 046; orden 92 y 93). De solo lectura.
+            new("administracion", "auditoria", "ver", AmbitoDePermiso.Empresa, null, "Ver y exportar la auditoría de seguridad de la empresa"),
+            new("plataforma", "auditoria", "ver", AmbitoDePermiso.Plataforma, null, "Ver y exportar la auditoría de las cuentas y del operador de toda la plataforma"),
         };
+
+        /// <summary>
+        /// Permisos de la empresa que solo tiene el administrador de la empresa (y el operador): no se ofrecen para marcar en un rol y,
+        /// si un rol los tuviera por otro camino, el evaluador no los concede. La auditoría del tenant la ve solo su administrador
+        /// (decisión de Emilio del 2026-11-21, F1.8c).
+        /// </summary>
+        public static readonly IReadOnlyList<string> SoloDelAdministrador = new[] { "administracion.auditoria.ver" };
 
         private static readonly IReadOnlyDictionary<string, DefinicionDePermiso> PorCodigo
             = Todos.ToDictionary(p => p.Codigo, StringComparer.Ordinal);

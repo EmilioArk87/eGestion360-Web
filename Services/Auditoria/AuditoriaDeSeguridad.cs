@@ -76,6 +76,10 @@ namespace eGestion360Web.Services.Auditoria
         public const string ColaReintento = "cola.reintento";
         public const string ColaProcesadoManual = "cola.procesado_manual";
 
+        // Consulta de la propia auditoría (F1.8c): cada exportación a Excel o impresión deja su fila. Ver la pantalla no deja nada.
+        public const string AuditoriaExportada = "auditoria.exportada";
+        public const string AuditoriaPlataformaExportada = "auditoria.plataforma_exportada";
+
         private static readonly IReadOnlyDictionary<string, DestinoDeEvento> Destinos = new Dictionary<string, DestinoDeEvento>(StringComparer.Ordinal)
         {
             [SesionEntrada] = DestinoDeEvento.Plataforma,
@@ -116,6 +120,9 @@ namespace eGestion360Web.Services.Auditoria
             [TasasOficialRechazada] = DestinoDeEvento.Plataforma,
             [ColaReintento] = DestinoDeEvento.Plataforma,
             [ColaProcesadoManual] = DestinoDeEvento.Plataforma,
+
+            [AuditoriaExportada] = DestinoDeEvento.Tenant,
+            [AuditoriaPlataformaExportada] = DestinoDeEvento.Plataforma,
         };
 
         public static IReadOnlyCollection<string> Todos => Destinos.Keys.ToArray();

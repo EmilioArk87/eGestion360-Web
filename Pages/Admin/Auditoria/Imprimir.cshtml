@@ -1,0 +1,39 @@
+@page
+@using eGestion360Web.Services.Auditoria
+@model eGestion360Web.Pages.Admin.Auditoria.ImprimirModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Auditoría de la empresa @Model.Filtro.Desde?.ToString("yyyy-MM-dd") a @Model.Filtro.Hasta?.ToString("yyyy-MM-dd")</title>
+    <partial name="_HojaDeAuditoria" />
+</head>
+<body>
+    <div class="barra">
+        <button type="button" onclick="window.print()">Imprimir o guardar como PDF</button>
+        <a asp-page="Index" asp-route-desde="@Model.Filtro.Desde?.ToString("yyyy-MM-dd")" asp-route-hasta="@Model.Filtro.Hasta?.ToString("yyyy-MM-dd")"
+           asp-route-tipo="@Model.Filtro.Tipo" asp-route-resultado="@Model.Filtro.Resultado" asp-route-usuario="@Model.Filtro.Usuario">Volver a la auditoría</a>
+    </div>
+
+    <h1>Auditoría de la empresa</h1>
+    <p class="hoja-datos">
+        Del @(Model.Filtro.Desde?.ToString("yyyy-MM-dd") ?? "inicio") al @(Model.Filtro.Hasta?.ToString("yyyy-MM-dd") ?? "día de hoy")
+        @if (Model.Filtro.Tipo != null) { <text> · Evento: @ConsultaDeAuditoria.NombreDeTipo(Model.Filtro.Tipo)</text> }
+        @if (Model.Filtro.Resultado != null) { <text> · Resultado: @ConsultaDeAuditoria.NombreDeResultado(Model.Filtro.Resultado)</text> }
+        @if (Model.Filtro.Usuario != null) { <text> · Usuario: @Model.Filtro.Usuario</text> }
+        · @Model.Exportacion.Filas.Count.ToString("N0") eventos · Generado el @Model.GeneradoLocal.ToString("yyyy-MM-dd HH:mm") (hora de Honduras)
+    </p>
+    @if (Model.Exportacion.Recortada)
+    {
+        <p class="hoja-aviso">Hay @Model.Exportacion.Total.ToString("N0") eventos con estos filtros; la hoja trae los @Model.Exportacion.Filas.Count.ToString("N0") más recientes. Acorte las fechas para ver el resto.</p>
+    }
+
+    <partial name="_TablaDeAuditoria" model="new TablaDeAuditoria(Model.Exportacion.Filas, ConTenant: false, ParaImprimir: true)" />
+
+    <script>window.addEventListener('load', function () { window.print(); });</script>
+</body>
+</html>

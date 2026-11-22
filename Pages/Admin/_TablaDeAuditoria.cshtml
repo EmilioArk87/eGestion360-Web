@@ -1,0 +1,79 @@
+@using eGestion360Web.Services.Auditoria
+@model TablaDeAuditoria
+@*
+    Tabla compartida de «Auditoría» y «Auditoría de la plataforma» (F1.8c), en pantalla y en la hoja para imprimir.
+    El usuario y el detalle ya vienen con el correo enmascarado (ConsultaDeAuditoria.AFila).
+*@
+@{
+    string Insignia(string resultado) => resultado switch
+    {
+        "ok" => "bg-success",
+        "fallo" => "bg-danger",
+        "denegado" => "bg-warning text-dark",
+        _ => "bg-secondary",
+    };
+    var columnas = Model.ConTenant ? 8 : 7;
+}
+<table class="@(Model.ParaImprimir ? "hoja-tabla" : "table table-hover mb-0 align-middle small")">
+    <thead class="@(Model.ParaImprimir ? "" : "table-light")">
+        <tr>
+            <th>Fecha y hora</th>
+            <th>Evento</th>
+            <th>Resultado</th>
+            <th>Usuario</th>
+            @if (Model.ConTenant)
+            {
+                <th>Tenant</th>
+            }
+            <th>Objeto</th>
+            <th>Detalle</th>
+            <th>Dirección IP</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Filas.Count == 0)
+        {
+            <tr><td colspan="@columnas" class="text-center text-muted py-4">No hay eventos que coincidan con el filtro.</td></tr>
+        }
+        @foreach (var f in Model.Filas)
+        {
+            <tr>
+                <td class="text-nowrap">@f.FechaHoraLocal.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>
+                    @ConsultaDeAuditoria.NombreDeTipo(f.Tipo)
+                    <div><code class="small">@f.Tipo</code></div>
+                </td>
+                <td>
+                    @if (Model.ParaImprimir)
+                    {
+                        @ConsultaDeAuditoria.NombreDeResultado(f.Resultado)
+                    }
+                    else
+                    {
+                        <span class="badge @Insignia(f.Resultado)">@ConsultaDeAuditoria.NombreDeResultado(f.Resultado)</span>
+                    }
+                </td>
+                <td>
+                    @(f.Usuario ?? "—")
+                    @if (f.EsOperador)
+                    {
+                        <span class="@(Model.ParaImprimir ? "" : "badge bg-dark ms-1")">operador</span>
+                    }
+                </td>
+                @if (Model.ConTenant)
+                {
+                    <td>@(f.Tenant ?? f.IdTenant?.ToString() ?? "—")</td>
+                }
+                <td>@ConsultaDeAuditoria.Objeto(f)</td>
+                <td class="detalle"><code class="small text-break">@f.Detalle</code></td>
+                <td class="text-nowrap">
+                    @(f.Ip ?? "—")
+                    @if (!Model.ParaImprimir)
+                    {
+                        <div class="text-muted" title="Id de correlación de la petición (el mismo de los logs)"><small>@f.IdCorrelacion</small></div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

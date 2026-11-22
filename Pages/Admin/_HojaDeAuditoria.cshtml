@@ -1,0 +1,23 @@
+@*
+    Estilos de la hoja para imprimir o guardar como PDF de las dos auditorías (F1.8c). Horizontal, tamaño carta, sin menú.
+*@
+<style>
+    @@page { size: letter landscape; margin: 12mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111; margin: 0; padding: 16px; }
+    h1 { font-size: 14pt; margin: 0 0 4px 0; }
+    .hoja-datos { margin: 0 0 10px 0; color: #444; }
+    .hoja-aviso { border: 1px solid #c90; background: #fff8e1; padding: 6px 8px; margin: 0 0 10px 0; }
+    .hoja-tabla { width: 100%; border-collapse: collapse; }
+    .hoja-tabla th, .hoja-tabla td { border: 1px solid #bbb; padding: 3px 5px; vertical-align: top; text-align: left; }
+    .hoja-tabla th { background: #eee; }
+    .hoja-tabla thead { display: table-header-group; }
+    .hoja-tabla tr { page-break-inside: avoid; }
+    .hoja-tabla td.detalle { max-width: 320px; word-break: break-all; }
+    .hoja-tabla code { font-family: Consolas, monospace; font-size: 8pt; }
+    .text-nowrap { white-space: nowrap; }
+    .text-center { text-align: center; }
+    .text-muted { color: #666; }
+    .barra { margin-bottom: 12px; }
+    .barra button, .barra a { font-size: 10pt; margin-right: 8px; }
+    @@media print { .barra { display: none; } body { padding: 0; } }
+</style>

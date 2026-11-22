@@ -1,6 +1,6 @@
 # ADR-030 · Auditoría de seguridad y de plataforma (F1.8)
 
-- **Estado:** Aceptada por Emilio el 2026-11-18 (decisiones D70 a D76 del plan de la etapa F1.8, sin cambios sobre lo recomendado). F1.8a (tablas, servicio y eventos de entrada) completa y publicada el 2026-11-19; F1.8b (administración, soporte y plataforma, solo código) hecha en el código, sin publicar.
+- **Estado:** Aceptada por Emilio el 2026-11-18 (decisiones D70 a D76 del plan de la etapa F1.8, sin cambios sobre lo recomendado). F1.8a (tablas, servicio y eventos de entrada) completa y publicada el 2026-11-19; F1.8b (administración, soporte y plataforma, solo código) hecha en el código, sin publicar. F1.8c (pantallas, exportación y script 046) hecha en el código; el 046 sin aplicar.
 - **Fecha:** 2026-11-18
 - **Decidió:** Emilio (D70 a D76). Diseño y ejecución de Claude
 - **Fase:** F1.8
@@ -74,6 +74,25 @@ F1.8b es **solo código**: usa las tablas del 045, no hay script ni `/alerta-bd`
 **Una diferencia con el checklist del plan**: el plan decía que la bitácora de cambios cubriría usuarios, roles, módulos, accesos y empresas. Se usaron las tablas de auditoría de seguridad en su lugar, por tres razones: es lo que D70 y D71 definen y lo que mostrarán las pantallas de F1.8c; `bitacora_cambios` está hecha para el historial de una persona y exige un tenant en cada fila, que un usuario del personal de la plataforma no tiene; y los eventos con tipo (`usuario.editado`) se filtran y se cuentan mejor que filas por campo.
 
 **Límites**: solo ve lo que se guarda con EF Core (un script SQL o un `ExecuteUpdate` no pasan por el interceptor; cada script que toque estos datos debe dejar su propia fila); los cambios de la cuenta global y de la membresía que hace el sincronizador siguen a los del usuario y no se auditan aparte; el registro manual de una tasa de cambio es un dato del catálogo con su «creado por».
+
+## F1.8c: las pantallas
+
+F1.8c agrega dos pantallas de **solo lectura** sobre lo que ya escriben F1.8a y F1.8b, y los dos permisos de D74 (script **046**, con `/alerta-bd`). No cambia las tablas ni lo que se registra, salvo la fila de cada exportación. Decisiones de Emilio del 2026-11-21:
+
+| Pregunta | Decisión | Cómo queda |
+|---|---|---|
+| ¿Quién ve la auditoría del tenant? | Solo el administrador del tenant | `administracion.auditoria.ver` lo recibe el administrador de la empresa por la regla del evaluador (D60) y el operador por la suya (D66). Está en `CatalogoDePermisos.SoloDelAdministrador`: la pantalla de roles no lo ofrece y el evaluador no lo concede a un rol aunque esté en `rol_permisos` |
+| ¿Exportar desde la primera versión? | Sí, a Excel y a PDF | Excel con ClosedXML (ya estaba en el proyecto). El PDF es una hoja para imprimir que el navegador guarda como PDF, igual que las constancias de Psicología: sin librería nueva |
+| ¿Correo completo o enmascarado? | Enmascarado | En pantalla y en lo exportado, todo correo completo del usuario o del detalle sale como `ma***@e***.hn` (`EnmascaradoDeAuditoria`) |
+
+| Pantalla | Ruta | Permiso | Tabla |
+|---|---|---|---|
+| Auditoría | `/Admin/Auditoria` (y `/Admin/Auditoria/Imprimir`) | `administracion.auditoria.ver` | `dbo.auditoria_seguridad`, siempre filtrada por el tenant de la petición además del filtro de EF y de la RLS: un operador sin tenant ve un aviso, no la de todos |
+| Auditoría de la plataforma | `/Admin/AuditoriaPlataforma` (y `/Imprimir`) | `plataforma.auditoria.ver` | `saas.auditoria_plataforma`, con filtro por el tenant sobre el que se actuó |
+
+- **Filtros**: días de Honduras (por omisión, los últimos 7), evento, resultado, parte del usuario y, en la de plataforma, tenant. 50 filas por página, lo más reciente primero.
+- **Exportar** (Excel o la hoja para imprimir): como mucho 5 000 filas, las más recientes; si hay más, la hoja lo avisa. Cada exportación deja su fila: `auditoria.exportada` en la tabla del tenant y `auditoria.plataforma_exportada` en la de la plataforma, con el formato, las filas y los filtros (el usuario, enmascarado). Ver la pantalla no deja fila.
+- **Orden**: el 046 va **antes** del código, porque el evaluador lee el catálogo de la base: sin las filas, nadie abre las pantallas nuevas. Al revés no pasa nada.
 
 ## Alternativas consideradas
 
