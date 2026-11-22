@@ -4,8 +4,23 @@ using eGestion360Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Secretos locales (contraseñas, claves). Este archivo NO se sube a git.
+// Ver "1 - Documetacion/CONFIGURACION_SECRETOS.md".
+builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
+// Las variables de entorno siguen teniendo prioridad sobre los archivos.
+builder.Configuration.AddEnvironmentVariables();
+
 // Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    // Páginas de mantenimiento: solo administradores
+    var adminFilter = new AdminOnlyPageFilter();
+    foreach (var page in new[] { "/EncryptPasswords", "/ConfigurarHostinger", "/ValidarEmails", "/ResetCodesHistory" })
+    {
+        options.Conventions.AddPageApplicationModelConvention(page, model => model.Filters.Add(adminFilter));
+    }
+    options.Conventions.AddFolderApplicationModelConvention("/Admin", model => model.Filters.Add(adminFilter));
+});
 
 // Add Entity Framework with SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

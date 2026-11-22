@@ -373,3 +373,5 @@ eGestion360.db-wal
 
 # Rider
 .idea/
+# Secretos locales (contraseñas y claves). Nunca se suben a git.
+appsettings.Secrets.json

@@ -21,9 +21,15 @@ namespace eGestion360Web.Services
             _configuration = configuration;
             _logger = logger;
             
-            // Usar una clave base del appsettings o generar una por defecto
-            var keyString = _configuration["Encryption:Key"] ?? "eGestion360-EmailCrypt-2026-SecretKey";
-            var ivString = _configuration["Encryption:IV"] ?? "eGestion360-IV16";
+            // La clave y el IV vienen de appsettings.Secrets.json o de variables de entorno.
+            // No hay valores por defecto: una clave escrita en el código no es secreta.
+            var keyString = _configuration["Encryption:Key"];
+            var ivString = _configuration["Encryption:IV"];
+            if (string.IsNullOrWhiteSpace(keyString) || string.IsNullOrWhiteSpace(ivString))
+            {
+                throw new InvalidOperationException(
+                    "Falta Encryption:Key o Encryption:IV. Configúrelos en appsettings.Secrets.json o en variables de entorno.");
+            }
             
             // Asegurar que la clave tenga 32 bytes (256 bits) y IV tenga 16 bytes
             _key = PadOrTruncate(Encoding.UTF8.GetBytes(keyString), 32);

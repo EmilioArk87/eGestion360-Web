@@ -275,7 +275,6 @@ public async Task<bool> ValidarSistemEmailDiario()
 - 🌐 `/ValidarEmails` - Panel principal de validación
 - 🔧 `/ConfigurarHostinger` - Gestión de configuraciones
 - 🔐 `/EncryptPasswords` - Encriptación de contraseñas
-- 📊 `/DebugUsers` - Información de usuarios (si existe)
 
 ### **Scripts SQL:**
 - 📊 `consultas_email_stats.sql` - Estadísticas completas
