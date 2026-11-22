@@ -18,6 +18,12 @@ Proyecto web de gestión de flota de transporte (ASP.NET Core 8 / Razor Pages / 
 | [Módulo KPI de Costo por Kilómetro — Resumen Funcional.md](Módulo%20KPI%20de%20Costo%20por%20Kilómetro%20—%20Resumen%20Funcional.md) | Resumen ejecutivo del módulo KPI |
 | [Kpi excel documentacion tecnica.md](Kpi%20excel%20documentacion%20tecnica.md) | Especificación técnica detallada del cálculo KPI |
 
+## Seguridad
+
+| Documento | Descripción |
+|-----------|-------------|
+| [CONFIGURACION_SECRETOS.md](CONFIGURACION_SECRETOS.md) | Dónde configurar contraseñas y claves (fuera de git) |
+
 ## Configuración de Email
 
 | Documento | Descripción |

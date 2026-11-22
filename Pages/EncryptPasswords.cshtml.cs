@@ -46,7 +46,7 @@ namespace eGestion360Web.Pages
                     // Hashear la contraseña
                     user.Password = _passwordService.HashPassword(originalPassword);
                     
-                    Messages.Add($"🔐 Usuario '{user.Username}': Contraseña encriptada (era: '{originalPassword}')");
+                    Messages.Add($"🔐 Usuario '{user.Username}': Contraseña encriptada");
                     usersUpdated++;
                 }
 

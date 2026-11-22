@@ -42,9 +42,7 @@ PRINT '   • Los scripts SQL no pueden acceder al servicio .NET de encriptació
 PRINT '   • Necesitas las claves de encriptación desde appsettings.json';
 PRINT '   • Es más seguro usar la aplicación web que maneja todo automáticamente';
 PRINT '';
-PRINT '🔑 CLAVES DE ENCRIPTACIÓN USADAS (desde appsettings.json):';
-PRINT '   Key: eGestion360-EmailCrypt-2026-SecKey'; 
-PRINT '   IV:  eGestion360-IV16';
+PRINT '🔑 Las claves de encriptación están en appsettings.Secrets.json (no se suben a git).';
 PRINT '';
 
 -- Mostrar configuraciones específicas que necesitan atención

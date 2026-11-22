@@ -18,4 +18,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- appsettings.Secrets.json se publica solo (como todo *.json); la plantilla de ejemplo no -->
+    <None Remove="appsettings.Secrets.example.json" />
+    <Content Remove="appsettings.Secrets.example.json" />
+  </ItemGroup>
+
 </Project>
