@@ -76,6 +76,13 @@ namespace eGestion360Web.Services
         /// <summary>Cuenta global (<c>saas.cuentas</c>) de quien tiene la cookie.</summary>
         public static int? GetCuentaId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.Cuenta);
 
+        /// <summary>
+        /// Estilo de menú de quien tiene la cookie (<c>hub</c>, <c>sidebar</c> o <c>topbar</c>). Sale de la cookie, no de la base: el layout lo pide en
+        /// cada pantalla. Si falta o no se reconoce, siempre el hub.
+        /// </summary>
+        public static string GetEstiloMenu(HttpContext context)
+            => Models.Plataforma.EstilosDeMenu.Normalizar(HayCuenta(context) ? Reclamo(context, Identidad.ReclamosDeIdentidad.EstiloMenu) : null);
+
         /// <summary>Id de <c>dbo.Users</c> que usan las pantallas anteriores a F1.5; nulo si la cuenta no viene de un usuario.</summary>
         public static int? GetUserLegadoId(HttpContext context) => ReclamoEntero(context, Identidad.ReclamosDeIdentidad.UserLegado);
 

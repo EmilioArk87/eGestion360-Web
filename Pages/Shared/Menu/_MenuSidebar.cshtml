@@ -1,0 +1,122 @@
+@* Estilo «sidebar»: barra lateral colapsable con acordeones por módulo, agrupada en Operación, Empresa y Plataforma, y una barra superior con
+   la ruta de la pantalla, el buscador Ctrl+K, el indicador del tenant de soporte y el menú de usuario. El colapso se recuerda en el navegador. *@
+@model eGestion360Web.Services.Navegacion.VistaDeMenu
+@using eGestion360Web.Services
+@using eGestion360Web.Services.Navegacion
+@{
+    var activo = Model.ModuloActivo;
+    var pantalla = Model.PantallaActiva;
+    var nombre = AuthHelper.NombreVisible(Context);
+    var enInicio = Model.RutaActual is "/MainMenu" or "/Index";
+}
+<aside class="egm-side" id="egm-side" aria-label="Menú principal">
+    <div class="egm-side-marca">
+        <a asp-page="/MainMenu" title="Menú Principal">
+            <img src="~/img/isotipo.svg" alt="" />
+            <span class="egm-ocultar-colapsado">eGestión360</span>
+        </a>
+        <button type="button" class="egm-side-boton" data-egm-colapsar title="Colapsar o expandir el menú" aria-controls="egm-side">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <nav class="egm-side-nav">
+        <a asp-page="/MainMenu" class="egm-side-item @(enInicio ? "activo" : "")" title="Inicio">
+            <span class="ico"><i class="fas fa-house"></i></span>
+            <span class="texto egm-ocultar-colapsado">Inicio</span>
+        </a>
+
+        @foreach (var grupo in Model.Menu.Grupos)
+        {
+            <div class="egm-side-seccion egm-ocultar-colapsado">@ModeloNavegacion.NombreDelGrupo(grupo)</div>
+            foreach (var modulo in Model.Menu.DelGrupo(grupo))
+            {
+                var esActivo = activo?.Clave == modulo.Clave;
+                var indice = modulo.RutaIndice != null ? Url.Page(modulo.RutaIndice) : null;
+                <div class="egm-side-grupo @(esActivo ? "abierto" : "")">
+                    <button type="button" class="egm-side-item @(esActivo ? "activo" : "")" data-egm-acordeon data-egm-indice="@indice"
+                            aria-expanded="@(esActivo ? "true" : "false")" title="@modulo.Titulo">
+                        <span class="ico"><i class="fas @modulo.Icono"></i></span>
+                        <span class="texto egm-ocultar-colapsado">@modulo.Titulo</span>
+                        <i class="fas fa-chevron-right egm-side-flecha egm-ocultar-colapsado"></i>
+                    </button>
+                    <div class="egm-side-sub">
+                        @if (modulo.Proximamente)
+                        {
+                            <span class="egm-deshabilitado">Sin pantallas todavía <span class="egm-pronto">Pronto</span></span>
+                        }
+                        @if (indice != null)
+                        {
+                            <a href="@indice" class="@(Model.RutaActual == modulo.RutaIndice && pantalla == null ? "activo" : "")">Inicio del módulo</a>
+                        }
+                        @foreach (var seccion in modulo.Secciones)
+                        {
+                            if (seccion.Key != null && modulo.Secciones.Count() > 1)
+                            {
+                                <div class="egm-side-subtitulo">@seccion.Key</div>
+                            }
+                            foreach (var p in seccion)
+                            {
+                                if (p.Proximamente)
+                                {
+                                    <span class="egm-deshabilitado">@p.Titulo <span class="egm-pronto">Pronto</span></span>
+                                }
+                                else
+                                {
+                                    <a href="@Url.Page(p.Ruta)" class="@(p == pantalla ? "activo" : "")" title="@p.Descripcion">@p.Titulo</a>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </nav>
+
+    <div class="egm-side-pie">
+        <span class="egm-avatar" title="@nombre">@VistaDeMenu.Iniciales(nombre)</span>
+        <div class="egm-ocultar-colapsado" style="min-width:0;">
+            <div class="text-white fw-semibold text-truncate" style="font-size:.82rem;">@nombre</div>
+            <div class="text-truncate" style="font-size:.72rem; color:#94a3b8;">@AuthHelper.GetNombreUsuario(Context)</div>
+        </div>
+    </div>
+</aside>
+<div class="egm-side-velo"></div>
+
+<header class="egm-top">
+    <div class="egm-ruta">
+        <button type="button" class="btn btn-sm btn-light border d-lg-none" data-egm-side-abrir title="Abrir el menú" aria-controls="egm-side">
+            <i class="fas fa-bars"></i>
+        </button>
+        <span class="text-muted small d-none d-md-inline">eGestión360</span>
+        @if (activo != null)
+        {
+            <i class="fas fa-chevron-right text-muted d-none d-md-inline" style="font-size:.65rem;"></i>
+            <strong>@activo.Titulo@(pantalla != null ? " › " + pantalla.Titulo : "")</strong>
+        }
+        else
+        {
+            <i class="fas fa-chevron-right text-muted d-none d-md-inline" style="font-size:.65rem;"></i>
+            <strong>@(ViewData["Title"] ?? "Inicio")</strong>
+        }
+    </div>
+    <div class="d-flex align-items-center gap-2 gap-md-3">
+        <button type="button" class="egm-buscar" data-egm-buscar title="Ir a una pantalla (Ctrl+K)">
+            <i class="fas fa-search"></i><span class="texto">Ir a módulo o pantalla…</span><kbd>Ctrl K</kbd>
+        </button>
+        @if (AuthHelper.GetCodigoTenantDeSoporte(Context) is { Length: > 0 } codigoSoporte)
+        {
+            <a class="egm-badge-soporte" asp-page="/Admin/Soporte/Index" title="Estás trabajando en un tenant de soporte; haz clic para cambiar o salir">
+                <i class="fas fa-life-ring"></i><span class="d-none d-sm-inline">Soporte: </span>@codigoSoporte
+            </a>
+        }
+        <div class="dropdown">
+            <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user me-1 text-primary"></i><span class="d-none d-sm-inline">@nombre</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <partial name="~/Pages/Shared/Menu/_OpcionesDeUsuario.cshtml" />
+            </ul>
+        </div>
+    </div>
+</header>

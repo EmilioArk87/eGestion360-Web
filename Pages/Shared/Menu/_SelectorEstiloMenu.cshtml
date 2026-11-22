@@ -1,0 +1,25 @@
+@* Selector «Estilo de menú» dentro del menú de usuario (plan secundario, etapa 4). Cada opción es un POST con su token antifalsificación:
+   el cambio aplica al instante y vuelve a la misma pantalla. *@
+@using eGestion360Web.Models.Plataforma
+@{
+    var actual = eGestion360Web.Services.AuthHelper.GetEstiloMenu(Context);
+    var volver = Context.Request.Path + Context.Request.QueryString;
+}
+<li><h6 class="dropdown-header"><i class="fas fa-palette me-2"></i>Estilo de menú</h6></li>
+@foreach (var estilo in EstilosDeMenu.Todos)
+{
+    <li>
+        <form method="post" asp-page="/Preferencias/EstiloMenu" class="m-0">
+            <input type="hidden" name="Estilo" value="@estilo" />
+            <input type="hidden" name="ReturnUrl" value="@volver" />
+            <button type="submit" class="dropdown-item d-flex align-items-center @(estilo == actual ? "egm-estilo-actual fw-semibold" : "")"
+                    title="@EstilosDeMenu.Descripcion(estilo)" aria-pressed="@(estilo == actual ? "true" : "false")">
+                <i class="fas @EstilosDeMenu.Icono(estilo) me-2" style="width:16px;"></i>@EstilosDeMenu.Nombre(estilo)
+                @if (estilo == actual)
+                {
+                    <i class="fas fa-check ms-auto ps-3"></i>
+                }
+            </button>
+        </form>
+    </li>
+}

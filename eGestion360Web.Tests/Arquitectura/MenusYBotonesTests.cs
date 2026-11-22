@@ -14,7 +14,7 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             "Pages/Flota/Index.cshtml", "Pages/Flota/Operacion/Index.cshtml", "Pages/Flota/Gastos/Index.cshtml",
             "Pages/Flota/Catalogos/Index.cshtml", "Pages/Flota/MantenimientoDatos/Index.cshtml", "Pages/Catalogos/Index.cshtml",
-            "Pages/Psicologia/Index.cshtml", "Pages/MainMenu.cshtml",
+            "Pages/Psicologia/Index.cshtml", "Pages/MainMenu.cshtml", "Pages/Shared/Menu/_TarjetasDeModulo.cshtml",
         };
 
         // Una tarjeta de un centro: el contenedor «col» seguido de la tarjeta «menu-card».
@@ -28,14 +28,12 @@ namespace eGestion360Web.Tests.Arquitectura
             var sinMarca = new List<string>();
             foreach (var archivo in CentrosDeNavegacion)
             {
-                // Las tarjetas de módulo del menú principal se deciden con MostrarModulo (un @if), no con eg-si-puede-abrir.
+                // El menú principal ya no tiene tarjetas propias: salen del catálogo de navegación, que pregunta por el módulo y por el permiso
+                // (CatalogoDeNavegacionTests). Las de los centros de Catálogos y Psicología salen de _TarjetasDeModulo, que repite eg-si-puede-abrir.
                 var texto = Leer(archivo);
                 foreach (Match m in Tarjeta.Matches(texto))
                 {
-                    var antes = texto[..m.Index];
-                    var condicionada = archivo.EndsWith("MainMenu.cshtml", StringComparison.Ordinal)
-                                       && Regex.IsMatch(antes[Math.Max(0, antes.Length - 400)..], @"@if \(Model\.\w+\([^)]*\)\)\s*\{\s*$");
-                    if (!m.Groups["atributos"].Value.Contains("eg-si-puede-abrir", StringComparison.Ordinal) && !condicionada)
+                    if (!m.Groups["atributos"].Value.Contains("eg-si-puede-abrir", StringComparison.Ordinal))
                         sinMarca.Add($"{archivo} (tarjeta en el carácter {m.Index})");
                 }
             }

@@ -1,0 +1,13 @@
+@* Las opciones del menú de usuario, iguales en los tres estilos. *@
+@using eGestion360Web.Services
+<li><span class="dropdown-item-text small text-muted"><i class="fas fa-user-lock me-2"></i>Usuario: @AuthHelper.GetNombreUsuario(Context)</span></li>
+@if (AuthHelper.IsAuthenticated(Context))
+{
+    <li><a class="dropdown-item" asp-page="/Preferencias/EstiloMenu"><i class="fas fa-user-cog me-2"></i>Perfil y preferencias</a></li>
+    <li><a class="dropdown-item" asp-page="/SeleccionarContexto"><i class="fas fa-exchange-alt me-2"></i>Cambiar de sitio</a></li>
+    <li><a class="dropdown-item" asp-page="/MfaAlta"><i class="fas fa-shield-alt me-2"></i>Verificación en dos pasos</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <partial name="~/Pages/Shared/Menu/_SelectorEstiloMenu.cshtml" />
+}
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item text-danger" asp-page="/Logout" asp-page-handler="Logout"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
