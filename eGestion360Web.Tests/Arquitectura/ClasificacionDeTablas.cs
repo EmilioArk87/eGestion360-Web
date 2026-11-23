@@ -40,7 +40,7 @@ namespace eGestion360Web.Tests.Arquitectura
     /// Inventario de todas las tablas, con la regla de aislamiento de cada una (paso F0.6). Cubre las 60 tablas de eBD_SPD
     /// del 2026-10-10, las 6 del módulo contable que solo existen en el modelo de EF (el script 010 está en espera,
     /// ADR-014), las 9 de la identidad global que crea el script 038 (F1.5), las 5 de planes y derechos del 040 (F1.7) y las 4 de
-    /// permisos del 041 (F1.6a) y las 2 de auditoría de seguridad del 045 (F1.8a).<see cref="ArnesAislamientoTests"/> falla si aparece una tabla sin clasificar.
+    /// permisos del 041 (F1.6a) y las 2 de auditoría de seguridad del 045 (F1.8a) y las 4 del motor de reportes del 047.<see cref="ArnesAislamientoTests"/> falla si aparece una tabla sin clasificar.
     /// </summary>
     public static class ClasificacionDeTablas
     {
@@ -189,6 +189,17 @@ namespace eGestion360Web.Tests.Arquitectura
                 "script 045 con 1 filtro y 4 bloqueos.", "045"),
             new("auditoria_plataforma", P, true, false,
                 "Eventos de las cuentas y del operador (esquema saas, ADR-030, D70): plano de control, sin RLS, inmutable; lleva id_tenant como referencia, no filtra.", "045"),
+
+            // ── Motor de reportes versionados (ADR-031, script 047): posteriores a la salida de F1 ─────────────────────
+            new("rep_reportes", M, true, false,
+                "Reportes globales (id_tenant nulo) y propios o personalizados de un tenant (ADR-031, RP4): tabla MIXTA; entra a seg.pol_tenant en el " +
+                "script 047 con fn_mixta_lectura y fn_mixta_escritura (1 filtro y 4 bloqueos).", "047"),
+            new("rep_reporte_versiones", M, true, false,
+                "Versiones de la plantilla de cada reporte, inmutables una vez publicadas (ADR-031, RP5): tabla MIXTA con RLS mixta (script 047).", "047"),
+            new("rep_reporte_bitacora", M, true, false,
+                "Bitácora de acciones sobre reportes y versiones (ADR-031, RP8): tabla MIXTA con RLS mixta, inmutable (script 047).", "047"),
+            new("rep_ejecuciones", T, true, false,
+                "Cada generación o impresión de un reporte con la versión exacta (ADR-031, RP8): tabla de TENANT con RLS, inmutable (script 047).", "047"),
 
             // ── Legado: no las usa el código (paso F0.7, script 023) ──────────────────────────────────────────────
             new("usuarios", L, false, true, "Gemela vieja de Users; 0 filas. El script 023 la mueve al esquema retirado."),

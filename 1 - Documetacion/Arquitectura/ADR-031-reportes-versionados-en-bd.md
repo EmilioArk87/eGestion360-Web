@@ -1,6 +1,6 @@
 # ADR-031 · Reportes versionados en la base de datos por tenant
 
-- **Estado:** Propuesta (pendiente de aprobación de Emilio; RP3 sin PDF nativo ya decidido el 2026-11-22). Sin cambios aplicados en código ni en BD.
+- **Estado:** Propuesta (pendiente de aprobación de Emilio; RP3 sin PDF nativo ya decidido el 2026-11-22). Fase 1 hecha en el código (sin publicar); script 047 sin aplicar en BD.
 - **Fecha:** 2026-11-22
 - **Decide:** Emilio. Diseño de Claude, a partir de [PLAN_MOTOR_REPORTES_BD.md](../PLAN_MOTOR_REPORTES_BD.md)
 - **Fase:** complementaria al roadmap F0–F9 (Fase 1 del plan de reportes: infraestructura y piloto de constancias)
@@ -56,6 +56,14 @@ Reglas que valida la BD (disparadores `AFTER` en reportes y versiones):
 ### Semilla
 
 El script siembra el reporte global `psi_constancia_licencia` con su versión 1 **publicada y activa**, con las mismas medidas, el mismo CSS y la misma redacción que hoy tiene `Imprimir.cshtml` (215 × 275 mm, fecha a 35 mm, cuerpo a 74 mm, pruebas a 204 mm). La semilla se escribe con `ambito = 'plataforma'` en el contexto de sesión solo durante el script, y lo restituye al terminar. Sembrarla no cambia lo que se imprime: la página sigue usando su plantilla en Razor hasta que se conecte el motor.
+
+## Implementación de la Fase 1 (código)
+
+- **Paquete:** `Scriban` 7.6.1.
+- **Modelos:** `Models/Reportes/Reportes.cs` (`Reporte`, `ReporteVersion`, `ReporteBitacora`, `ReporteEjecucion` y las constantes de estado, salida y acción) y `Data/Configuracion/ReportesConfiguracion.cs` (índices únicos filtrados, la huella como columna calculada y los disparadores declarados).
+- **Servicios:** `Services/Reportes/`. `ScribanReporteRenderer` compila y genera con tope de vueltas, de recursión y de salida, sin `include` y con cultura invariable. `MotorReportesService` (`IMotorReportes`) resuelve tenant → global, guarda la plantilla compilada por `id_version` y arma la fila de ejecución. `ConstanciaPsicologiaDataSource` es la fuente `psi.constancia`: da a los datos que ya lee la pantalla la forma que espera la plantilla. Una interfaz común de fuentes (`IReporteDataSource`) queda para cuando haya una segunda fuente.
+- **Constancias:** `Imprimir` usa la versión activa del motor si la hay y, si no (el 047 sin aplicar, el reporte inactivo o una plantilla que falla), la hoja de siempre en Razor. Al registrar, `psi.impresiones.version_plantilla` guarda el número de la versión publicada y `dbo.rep_ejecuciones` recibe su fila en el mismo `SaveChanges`. El orden de publicación es libre: el código funciona con o sin el 047.
+- **Verificadores:** `verificar_despues_f15.sql` y `verificar_despues_f17.sql` suman las tablas, claves y predicados del 047 (`con047`) para que la comprobación diaria no dé FALLA cuando se aplique.
 
 ## Consecuencias
 

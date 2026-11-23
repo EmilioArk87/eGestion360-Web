@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Psicologia;
 using eGestion360Web.Services.Personas;
+using eGestion360Web.Services.Reportes;
 
 namespace eGestion360Web.Services.Psicologia
 {
@@ -13,12 +14,15 @@ namespace eGestion360Web.Services.Psicologia
         private readonly ApplicationDbContext _db;
         private readonly TimeProvider _tiempo;
         private readonly ILogger<ConstanciaService> _log;
+        private readonly IMotorReportes? _motor;
 
-        public ConstanciaService(ApplicationDbContext db, TimeProvider tiempo, ILogger<ConstanciaService> log)
+        /// <param name="motor">Motor de reportes versionados (ADR-031). Sin él, la impresión se registra como siempre, con la versión en código.</param>
+        public ConstanciaService(ApplicationDbContext db, TimeProvider tiempo, ILogger<ConstanciaService> log, IMotorReportes? motor = null)
         {
             _db = db;
             _tiempo = tiempo;
             _log = log;
+            _motor = motor;
         }
 
         private DateTime Ahora() => _tiempo.GetUtcNow().UtcDateTime;
@@ -65,7 +69,8 @@ namespace eGestion360Web.Services.Psicologia
                 .ToList();
         }
 
-        public async Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, CancellationToken ct = default)
+        public async Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, int? idCuenta = null,
+            CancellationToken ct = default)
         {
             var constancia = await _db.Constancias.AsNoTracking().Include(c => c.Tipo)
                 .FirstOrDefaultAsync(c => c.IdConstancia == idConstancia && c.IdEmpresa == idEmpresa, ct);
@@ -82,6 +87,16 @@ namespace eGestion360Web.Services.Psicologia
                 TamanoPapel = plantilla.TamanoPapel, CreadoPor = usuario, FechaCreacion = Ahora()
             };
             _db.ImpresionesPsicologia.Add(impresion);
+
+            // Formato del motor de reportes: la impresión lleva el número de la versión publicada y deja su ejecución en la misma transacción.
+            var version = _motor != null && plantilla.CodigoReporte != null ? await _motor.ResolverAsync(plantilla.CodigoReporte, ct) : null;
+            if (version != null)
+            {
+                impresion.VersionPlantilla = version.NumeroVersion.ToString();
+                _db.ReporteEjecuciones.Add(_motor!.NuevaEjecucion(version, idEmpresa, ConstanciaPsicologiaDataSource.EntidadOrigen, idConstancia,
+                    idCuenta, usuario));
+            }
+
             await _db.SaveChangesAsync(ct);
             return ResultadoPsicologia<Impresion>.Exito(impresion);
         }

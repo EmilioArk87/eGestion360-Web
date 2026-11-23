@@ -9,6 +9,7 @@ using eGestion360Web.Models.Flota;
 using eGestion360Web.Models.Personas;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Models.Psicologia;
+using eGestion360Web.Models.Reportes;
 using eGestion360Web.Services.Tenancy;
 
 namespace eGestion360Web.Data
@@ -92,6 +93,12 @@ namespace eGestion360Web.Data
         // Auditoría de seguridad y de plataforma (F1.8, script 045)
         public DbSet<AuditoriaSeguridad> AuditoriaSeguridad { get; set; }
         public DbSet<AuditoriaPlataforma> AuditoriaPlataforma { get; set; }
+
+        // Motor de reportes versionados (ADR-031) — script 047_motor_reportes_versionados.sql
+        public DbSet<Reporte> Reportes { get; set; }
+        public DbSet<ReporteVersion> ReporteVersiones { get; set; }
+        public DbSet<ReporteBitacora> ReporteBitacora { get; set; }
+        public DbSet<ReporteEjecucion> ReporteEjecuciones { get; set; }
 
         // Módulo de Psicología (script 042, esquema psi): pacientes, jornadas, historial de atenciones, impresiones e importaciones
         public DbSet<Jornada> JornadasPsicologia { get; set; }

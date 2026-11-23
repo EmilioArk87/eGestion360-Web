@@ -100,6 +100,7 @@
         }
         <a asp-page="/Psicologia/Pacientes/Detalle" asp-route-id="@Model.IdPaciente">Volver al expediente</a>
         <span class="dato">Impresa @Model.Impresiones vez(ces)</span>
+        @if (Model.VersionDelMotor is int v) { <span class="dato">Formato: versión @v</span> }
         @if (TempData["ImprimirError"] is string error) { <span class="error">@error</span> }
         @if (Model.Impedimento != null) { <span class="error">@Model.Impedimento</span> }
         else
@@ -109,7 +110,12 @@
         }
     </div>
 
-    @if (Model.Impedimento == null && Model.Texto != null)
+    @if (Model.Impedimento == null && Model.HojaDelMotor != null)
+    {
+        @* La hoja sale del motor de reportes (ADR-031): versión publicada en la BD, con sus propios estilos y medidas. *@
+        @Html.Raw(Model.HojaDelMotor)
+    }
+    else if (Model.Impedimento == null && Model.Texto != null)
     {
         var t = Model.Texto;
         <div class="hoja">
@@ -141,12 +147,18 @@
 
             <div class="pruebas">@t.Pruebas</div>
         </div>
+    }
+
+    @if (Model.Impedimento == null && (Model.HojaDelMotor != null || Model.Texto != null))
+    {
         <script id="ajuste-junto">
-            // Un nombre (o un DNI) que no cabe ni en un renglón entero se achica lo justo para caber, en vez de salirse de la hoja (mínimo 10 pt).
+            // Un nombre (o un DNI) que no cabe ni en un renglón entero se achica lo justo para caber, en vez de salirse de la hoja
+            // (mínimo 10 pt, o el que diga la plantilla del motor en data-minimo-pt).
             document.querySelectorAll('.cuerpo .junto').forEach(s => {
                 const ancho = s.parentElement.clientWidth;
+                const minimo = parseFloat(s.parentElement.dataset.minimoPt) || 10;
                 let pt = parseFloat(getComputedStyle(s).fontSize) * 0.75;
-                while (s.getBoundingClientRect().width > ancho && pt > 10) { pt -= 0.5; s.style.fontSize = pt + 'pt'; }
+                while (s.getBoundingClientRect().width > ancho && pt > minimo) { pt -= 0.5; s.style.fontSize = pt + 'pt'; }
             });
         </script>
     }

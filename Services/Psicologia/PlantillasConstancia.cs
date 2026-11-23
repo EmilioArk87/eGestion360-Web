@@ -4,8 +4,12 @@ namespace eGestion360Web.Services.Psicologia
 {
     /// <summary>Un formato de impresión de constancia (D14): se imprime sobre la hoja del Colegio ya membretada (D15).</summary>
     /// <param name="PideResultado">El formato imprime la conclusión (apto o no apto): se elige al emitir.</param>
-    /// <param name="Version">Sube cuando cambian las posiciones o los textos; queda en cada impresión (psi.impresiones).</param>
-    public sealed record PlantillaConstancia(string Codigo, string Nombre, bool PideResultado, string TamanoPapel, string Version);
+    /// <param name="Version">Sube cuando cambian las posiciones o los textos; queda en cada impresión (psi.impresiones). Cuando el formato sale
+    /// del motor de reportes, la impresión guarda en su lugar el número de la versión publicada en la BD.</param>
+    /// <param name="CodigoReporte">Código del reporte en el motor de reportes versionados (ADR-031, dbo.rep_reportes); nulo si el formato
+    /// solo existe en código.</param>
+    public sealed record PlantillaConstancia(string Codigo, string Nombre, bool PideResultado, string TamanoPapel, string Version,
+        string? CodigoReporte = null);
 
     /// <summary>
     /// Formatos de impresión disponibles. Cada tipo de constancia elige el suyo en Catálogos. Las posiciones están en
@@ -15,11 +19,15 @@ namespace eGestion360Web.Services.Psicologia
     {
         public const string LicenciaConducir = "licencia_conducir";
 
+        /// <summary>El mismo formato en el motor de reportes (semilla del script 047).</summary>
+        public const string CodigoReporteLicenciaConducir = "psi_constancia_licencia";
+
         public static readonly IReadOnlyList<PlantillaConstancia> Todas = new[]
         {
             // Hoja "Constancia de examen psicologico para solicitud de licencia de conducir" del Colegio de Psicologos de Honduras.
             // Tamaño carta provisional: la hoja es parecida a carta; se ajusta con las medidas reales.
-            new PlantillaConstancia(LicenciaConducir, "Licencia de conducir (hoja del Colegio de Psicólogos)", true, TamanosPapel.Carta, "1")
+            new PlantillaConstancia(LicenciaConducir, "Licencia de conducir (hoja del Colegio de Psicólogos)", true, TamanosPapel.Carta, "1",
+                CodigoReporteLicenciaConducir)
         };
 
         public static PlantillaConstancia? Buscar(string? codigo) => Todas.FirstOrDefault(p => p.Codigo == codigo);
@@ -56,6 +64,9 @@ namespace eGestion360Web.Services.Psicologia
         {
             "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
         };
+
+        /// <summary>El mes en letras y en minúsculas (1 = enero).</summary>
+        public static string MesEnLetras(int mes) => Meses[mes - 1];
 
         /// <summary>"el señor", "la señora" o, si no se sabe el sexo, "el (la) señor(a)".</summary>
         public static string Tratamiento(string? sexo) => sexo switch

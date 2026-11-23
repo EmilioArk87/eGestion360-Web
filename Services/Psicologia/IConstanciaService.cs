@@ -27,8 +27,13 @@ namespace eGestion360Web.Services.Psicologia
         /// </summary>
         Task<IReadOnlyDictionary<int, string>> SiguientesNumerosAsync(int idEmpresa, int anio, CancellationToken ct = default);
 
-        /// <summary>Deja constancia de una impresión (psi.impresiones): solo de una constancia emitida cuyo tipo tiene formato.</summary>
-        Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, CancellationToken ct = default);
+        /// <summary>
+        /// Deja constancia de una impresión (psi.impresiones): solo de una constancia emitida cuyo tipo tiene formato. Si el formato sale del
+        /// motor de reportes (ADR-031), guarda además la fila de dbo.rep_ejecuciones en la misma transacción, y la impresión lleva el número
+        /// de la versión publicada que se usó.
+        /// </summary>
+        Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, int? idCuenta = null,
+            CancellationToken ct = default);
     }
 
     public sealed class EmitirConstanciaInput
