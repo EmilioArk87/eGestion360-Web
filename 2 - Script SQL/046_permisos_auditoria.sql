@@ -96,9 +96,9 @@ END
 CREATE TABLE #precheck_046 (ok BIT NOT NULL);
 INSERT INTO #precheck_046 (ok) VALUES (1);
 
-DECLARE @existen INT = (SELECT COUNT(*) FROM saas.permisos p JOIN #catalogo_046 c ON p.codigo = c.modulo + '.' + c.recurso + '.' + c.accion);
+DECLARE @existen INT = (SELECT COUNT(*) FROM saas.permisos p JOIN #catalogo_046 c ON p.codigo = c.modulo + '.' + c.recurso + '.' + c.accion); DECLARE @totalPermisos INT = (SELECT COUNT(*) FROM saas.permisos);
 PRINT CONCAT(N'PRECHECK 046 correcto. Permisos de auditoria ya en el catalogo: ', @existen, N' de 2; permisos en total: ',
-             (SELECT COUNT(*) FROM saas.permisos), N'.');
+             @totalPermisos, N'.');
 GO
 
 -- ------------------------------------------------------------

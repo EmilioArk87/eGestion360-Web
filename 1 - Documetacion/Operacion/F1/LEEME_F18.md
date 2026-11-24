@@ -166,7 +166,7 @@ El correo sale enmascarado en pantalla y en lo exportado. Cada exportación deja
 
 ### Orden de publicación
 
-1. Ensayar el 046 en la copia local de producción: aplicar, repetir («Nada que hacer») y revertir. **Pendiente.**
+1. Ensayar el 046 en la copia local de producción: aplicar, repetir («Nada que hacer») y revertir. **Hecho el 2026-11-23** en una copia con el catálogo de producción (91 permisos): aplicar, repetir, ROLLBACK, PRECHECK que falla, reaplicar, ROLLBACK detenido por la FK y verificadores 24 de 24 y 14 de 14. El ensayo encontró un `PRINT` con subconsulta en el PRECHECK (SQL Server no lo admite) y se corrigió; una prueba lo vigila en los scripts desde el 040.
 2. `/alerta-bd` y aprobación expresa de Emilio; aplicar el 046 con el ejecutor de siempre. **Pendiente.**
 3. `verificar_despues_041.sql` con las cifras de la columna «Con el 046» y la comprobación diaria. **Pendiente.**
 4. Publicar el código de F1.8c. **Pendiente.**

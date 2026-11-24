@@ -169,6 +169,24 @@ namespace eGestion360Web.Tests.Paginas
         }
 
         [Fact]
+        public async Task La_fecha_maxima_no_rompe_el_filtro_y_no_pone_tope_superior()
+        {
+            Sembrar();
+            await using var db = _bd.CrearComo(DatosBase.TenantA);
+            var pagina = PaginaDelTenant(db, DatosBase.TenantA);
+            pagina.Hasta = DateOnly.MaxValue;   // «?Hasta=9999-12-31»: antes desbordaba en AddDays(1) y daba error 500
+
+            await pagina.OnGetAsync(CancellationToken.None);
+
+            Assert.Equal(3, pagina.Resultados.Total);
+
+            var plataforma = PaginaDeLaPlataforma(db);
+            plataforma.Hasta = DateOnly.MaxValue;
+            await plataforma.OnGetAsync(CancellationToken.None);
+            Assert.Equal(3, plataforma.Resultados.Total);
+        }
+
+        [Fact]
         public async Task Filtra_por_evento_resultado_y_usuario()
         {
             Sembrar();

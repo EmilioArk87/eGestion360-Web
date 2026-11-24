@@ -81,8 +81,12 @@ namespace eGestion360Web.Services.Auditoria
             }
             if (filtro.Hasta is { } hasta)
             {
-                var hastaUtc = AUtc(hasta.AddDays(1), zona);
-                consulta = consulta.Where(e => e.FechaHora < hastaUtc);
+                // El último día que existe no tiene «día siguiente» (AddDays desbordaría y la pantalla daría error 500): sin tope superior.
+                if (hasta < DateOnly.MaxValue)
+                {
+                    var hastaUtc = AUtc(hasta.AddDays(1), zona);
+                    consulta = consulta.Where(e => e.FechaHora < hastaUtc);
+                }
             }
             if (filtro.Tipo is { } tipo)
                 consulta = tipo.EndsWith('.') ? consulta.Where(e => e.Tipo.StartsWith(tipo)) : consulta.Where(e => e.Tipo == tipo);
