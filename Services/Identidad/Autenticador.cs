@@ -187,7 +187,7 @@ namespace eGestion360Web.Services.Identidad
             return new DatosDeIdentidad(
                 cuenta.IdCuenta, cuenta.IdUserLegado, nombre, cuenta.Correo, contexto.NombrePersona, contexto.Rol, cuenta.EsOperador,
                 cuenta.DebeCambiarClave, contexto.IdMembresia, contexto.IdTenant, contexto.CodigoTenant, contexto.IdEmpresa,
-                contexto.IdRolEmpresa, mfaVerificada, sello);
+                contexto.IdRolEmpresa, mfaVerificada, sello, EstilosDeMenu.Normalizar(cuenta.EstiloMenu));
         }
 
         public async Task EntrarAsync(HttpContext http, Cuenta cuenta, DatosDeIdentidad datos, CancellationToken ct = default)

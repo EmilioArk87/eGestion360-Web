@@ -1,17 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using eGestion360Web.Services;
+using eGestion360Web.Services.Navegacion;
 using eGestion360Web.Services.Permisos;
 
 namespace eGestion360Web.Pages
 {
+    /// <summary>
+    /// El hub del Menú Principal (estilo «hub» del menú configurable): buscador en vivo, accesos frecuentes, filtros por categoría y una tarjeta por
+    /// módulo con accesos directos a sus pantallas. Todo sale del catálogo de navegación (<see cref="INavegacionService"/>), ya recortado a los
+    /// módulos activos de la empresa y a lo que la persona puede abrir. En los estilos «sidebar» y «topbar» sigue siendo la pantalla de inicio.
+    /// </summary>
     [PaginaSinPermiso("Centro de navegación: cada opción pide su propio permiso")]
     public class MainMenuModel : PageModel
     {
-        private readonly IPermisosDeLaPeticion _permisos;
-        private PermisosEfectivos _efectivos = PermisosEfectivos.Ninguno;
+        private readonly INavegacionService _navegacion;
 
-        public MainMenuModel(IPermisosDeLaPeticion permisos) => _permisos = permisos;
+        public MainMenuModel(INavegacionService navegacion) => _navegacion = navegacion;
 
         public string Username      { get; set; } = string.Empty;
 
@@ -19,6 +24,9 @@ namespace eGestion360Web.Pages
         public string NombrePersona { get; set; } = string.Empty;
         public string Email         { get; set; } = string.Empty;
         public int?   EmpresaId     { get; set; }
+
+        /// <summary>Lo que la persona puede abrir, por módulo.</summary>
+        public MenuDeNavegacion Menu { get; private set; } = MenuDeNavegacion.Vacio;
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -29,29 +37,21 @@ namespace eGestion360Web.Pages
             NombrePersona  = AuthHelper.NombreVisible(HttpContext);
             Email          = HttpContext.Session.GetString("Email") ?? "";
             EmpresaId      = AuthHelper.GetEmpresaId(HttpContext);
-            _efectivos     = await _permisos.ObtenerAsync();
+            Menu           = await _navegacion.ObtenerAsync();
 
             return Page();
         }
 
-        /// <summary>True si el usuario tiene acceso al módulo (superadmin siempre tiene acceso).</summary>
-        public bool TieneModulo(string codigo) => AuthHelper.HasModulo(HttpContext, codigo);
+        /// <summary>Clave de la categoría del filtro del hub para un grupo.</summary>
+        public static string Categoria(GrupoDeNavegacion grupo) => grupo switch
+        {
+            GrupoDeNavegacion.Empresa => "empresa",
+            GrupoDeNavegacion.Plataforma => "sistema",
+            _ => "operacion",
+        };
 
-        /// <summary>True si tiene el permiso del catálogo (la misma pregunta que hace la pantalla a la que lleva la opción).</summary>
-        public bool Puede(string codigo) => _efectivos.Puede(codigo);
-
-        /// <summary>
-        /// La tarjeta de un módulo se muestra si el módulo está activo para la empresa y la persona puede hacer algo en él: una tarjeta que
-        /// lleva a un centro donde no puede abrir nada solo estorba. Un módulo sin permisos en el catálogo (aún sin pantallas) se muestra por el módulo.
-        /// </summary>
-        public bool MostrarModulo(string codigo)
-            => TieneModulo(codigo) && (!CatalogoDePermisos.ModulosConPermisos.Contains(codigo)
-                                       || _efectivos.Codigos.Any(c => c.StartsWith(codigo + ".", StringComparison.Ordinal)));
-
-        /// <summary>True si puede abrir alguna de las pantallas de administración de la plataforma (para mostrar su encabezado).</summary>
-        public bool PuedeAdministrarElSistema => _efectivos.Codigos.Any(c => c.StartsWith("plataforma.", StringComparison.Ordinal));
-
-        /// <summary>True si puede abrir alguna de las pantallas de administración de la empresa (para mostrar su encabezado).</summary>
-        public bool PuedeAdministrarLaEmpresa => _efectivos.Codigos.Any(c => c.StartsWith("administracion.", StringComparison.Ordinal));
+        /// <summary>Todo lo que se puede escribir en el filtro para encontrar la tarjeta del módulo.</summary>
+        public static string TextoDeBusqueda(ModuloDeNavegacion m)
+            => string.Join(' ', new[] { m.Titulo, m.Descripcion }.Concat(m.Pantallas.SelectMany(p => new[] { p.Titulo, p.Palabras ?? string.Empty })));
     }
 }

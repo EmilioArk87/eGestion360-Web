@@ -50,6 +50,11 @@ namespace eGestion360Web.Models.Plataforma
         [Column("id_user_legado")]
         public int? IdUserLegado { get; set; }
 
+        /// <summary>Estilo de menú que eligió la persona (script 048): uno de <see cref="EstilosDeMenu"/>. Por defecto, el hub.</summary>
+        [Required, StringLength(20)]
+        [Column("estilo_menu")]
+        public string EstiloMenu { get; set; } = EstilosDeMenu.Hub;
+
         [Required, StringLength(100)]
         [Column("creado_por")]
         public string CreadoPor { get; set; } = string.Empty;
@@ -375,5 +380,57 @@ namespace eGestion360Web.Models.Plataforma
     {
         public const string Usuario = "usuario";
         public const string Correo = "correo";
+    }
+
+    /// <summary>
+    /// Los estilos de menú que puede elegir cada persona (plan secundario del menú configurable). Es la misma lista que
+    /// <c>CK_cuentas_estilo_menu</c> del script 048: un valor que no está aquí no se guarda ni se usa.
+    /// </summary>
+    public static class EstilosDeMenu
+    {
+        /// <summary>Hub renovado con buscador y accesos frecuentes (el predeterminado).</summary>
+        public const string Hub = "hub";
+
+        /// <summary>Barra lateral colapsable con buscador Ctrl+K.</summary>
+        public const string Sidebar = "sidebar";
+
+        /// <summary>Barra superior con mega-menú y barra del módulo activo.</summary>
+        public const string Topbar = "topbar";
+
+        public static readonly IReadOnlyList<string> Todos = new[] { Hub, Sidebar, Topbar };
+
+        /// <summary>True si el valor es uno de los estilos de la lista (exacto, en minúsculas).</summary>
+        public static bool EsValido(string? valor) => valor != null && Todos.Contains(valor, StringComparer.Ordinal);
+
+        /// <summary>El estilo si es válido; si falta o no se reconoce, siempre el hub.</summary>
+        public static string Normalizar(string? valor)
+        {
+            var limpio = valor?.Trim().ToLowerInvariant();
+            return EsValido(limpio) ? limpio! : Hub;
+        }
+
+        /// <summary>Nombre para mostrar en el selector.</summary>
+        public static string Nombre(string estilo) => estilo switch
+        {
+            Sidebar => "Barra lateral",
+            Topbar => "Barra superior",
+            _ => "Hub con buscador",
+        };
+
+        /// <summary>Descripción corta para el selector.</summary>
+        public static string Descripcion(string estilo) => estilo switch
+        {
+            Sidebar => "Menú lateral colapsable, siempre a mano, con buscador Ctrl+K",
+            Topbar => "Pestañas arriba con mega-menú; deja todo el ancho para las tablas",
+            _ => "El menú principal con buscador, accesos frecuentes y accesos directos",
+        };
+
+        /// <summary>Icono de Font Awesome del estilo.</summary>
+        public static string Icono(string estilo) => estilo switch
+        {
+            Sidebar => "fa-table-columns",
+            Topbar => "fa-window-maximize",
+            _ => "fa-th-large",
+        };
     }
 }

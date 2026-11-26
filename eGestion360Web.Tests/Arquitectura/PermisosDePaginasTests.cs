@@ -21,7 +21,7 @@ namespace eGestion360Web.Tests.Arquitectura
             // Antes de tener sesión o públicas.
             "/About", "/AceptarInvitacion", "/Contact", "/Error", "/ForgotPassword", "/Index", "/Login", "/Products", "/Register", "/ResetPassword", "/SinAcceso",
             // De la propia cuenta.
-            "/ChangePassword", "/Logout", "/Mfa", "/MfaAlta", "/SeleccionarContexto",
+            "/ChangePassword", "/Logout", "/Mfa", "/MfaAlta", "/SeleccionarContexto", "/Preferencias/EstiloMenu",
             // Centros de navegación: cada opción que ofrecen pide su propio permiso.
             "/MainMenu", "/Catalogos/Index", "/Flota/Index", "/Flota/Catalogos/Index", "/Flota/Gastos/Index", "/Flota/Operacion/Index", "/Flota/MantenimientoDatos/Index",
             "/Psicologia/Index", "/Psicologia/Catalogos/Index",

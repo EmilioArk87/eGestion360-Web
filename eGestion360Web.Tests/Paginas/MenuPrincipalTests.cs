@@ -1,27 +1,24 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Pages;
-using eGestion360Web.Services.Derechos;
+using eGestion360Web.Services.Navegacion;
 using eGestion360Web.Services.Permisos;
 using eGestion360Web.Tests.Infra;
 
 namespace eGestion360Web.Tests.Paginas
 {
     /// <summary>
-    /// El menú principal (<c>Pages/MainMenu.cshtml</c>). Hasta el ensayo general de F8 (2026-11-16) tenía una rama aparte para el administrador
-    /// de empresa que escondía las tarjetas de los módulos (hallazgo D22). Desde F1.6e el menú ya no decide por el rol de nadie: cada tarjeta
-    /// pregunta lo que pregunta la pantalla a la que lleva (<c>Puede</c>) y las de módulo, además, que el módulo esté activo. Estas pruebas leen
-    /// la vista y ejercitan el modelo.
+    /// El menú principal (<c>Pages/MainMenu.cshtml</c>), que desde el menú configurable es el hub: buscador, accesos frecuentes, filtros y una tarjeta
+    /// por módulo. Hasta el ensayo general de F8 (2026-11-16) tenía una rama aparte para el administrador de empresa (hallazgo D22); desde F1.6e no
+    /// decide por el rol de nadie. Ahora tampoco decide tarjeta por tarjeta: todo sale del catálogo de navegación, que pregunta por el módulo y por
+    /// el permiso de cada pantalla (sus reglas se prueban en <c>CatalogoDeNavegacionTests</c>).
     /// </summary>
     public class MenuPrincipalTests
     {
-        private static readonly string[] Modulos = { "flota", "catalogos", "facturacion", "psicologia", "bancos", "contabilidad", "inventario", "ventas", "reportes" };
-
         [Fact]
         public void El_menu_ya_no_decide_por_el_rol()
         {
@@ -32,50 +29,30 @@ namespace eGestion360Web.Tests.Paginas
             Assert.Null(typeof(MainMenuModel).GetProperty("IsEmpresaAdmin"));
         }
 
-        [Theory]
-        [InlineData("flota")]
-        [InlineData("catalogos")]
-        [InlineData("facturacion")]
-        [InlineData("psicologia")]
-        public void La_tarjeta_de_cada_modulo_pregunta_por_el_modulo_y_por_los_permisos(string modulo)
-        {
-            Assert.Contains($"@if (Model.MostrarModulo(\"{modulo}\"))", Vista(), StringComparison.Ordinal);
-        }
-
         [Fact]
-        public void Todos_los_modulos_del_menu_pasan_por_la_misma_pregunta()
+        public void Las_tarjetas_salen_del_catalogo_de_navegacion_y_no_de_una_lista_propia()
         {
             var vista = Vista();
 
-            foreach (var modulo in Modulos)
-                Assert.Contains($"Model.MostrarModulo(\"{modulo}\")", vista, StringComparison.Ordinal);
-            Assert.DoesNotContain("Model.TieneModulo(", vista, StringComparison.Ordinal);
+            Assert.Contains("@foreach (var m in Model.Menu.Modulos)", vista, StringComparison.Ordinal);
+            Assert.DoesNotContain("href=\"#\"", vista, StringComparison.Ordinal);                 // nada de enlaces vacíos («Próximamente» no es un enlace)
+            Assert.DoesNotContain("MostrarModulo(", vista, StringComparison.Ordinal);
+            Assert.Null(typeof(MainMenuModel).GetMethod("MostrarModulo"));
         }
 
         [Fact]
-        public void Cada_tarjeta_de_administracion_lleva_la_pantalla_que_decide_si_se_ve()
+        public void El_catalogo_tiene_todos_los_modulos_y_pantallas_de_administracion_que_tenia_el_menu()
         {
-            var vista = Vista();
+            foreach (var modulo in new[] { "flota", "catalogos", "facturacion", "psicologia", "bancos", "contabilidad", "inventario", "ventas", "reportes" })
+                Assert.Equal(modulo, ModeloNavegacion.Modulo(modulo)?.CodigoModulo);
 
+            var rutas = ModeloNavegacion.Modulos.SelectMany(m => m.Pantallas).Select(p => p.Ruta).ToHashSet();
             foreach (var pantalla in new[]
                      {
                          "/Admin/Invitaciones/Index", "/Admin/RolesPermisos/Index", "/Empresas/Index", "/Admin/Soporte/Index", "/Admin/Personas/Index",
                          "/Admin/Modulos/Index", "/Admin/Outbox/Index", "/Admin/EmailConfig", "/UserManagement",
                      })
-                Assert.Contains($"eg-si-puede-abrir=\"{pantalla}\"", vista, StringComparison.Ordinal);
-        }
-
-        [Fact]
-        public void La_administracion_de_la_empresa_tiene_la_tarjeta_de_invitaciones_sin_enlaces_vacios()
-        {
-            var vista = Vista();
-            var inicio = vista.IndexOf("@if (Model.PuedeAdministrarLaEmpresa)", StringComparison.Ordinal);
-
-            Assert.True(inicio >= 0, "El menú no tiene la sección de administración de la empresa.");
-            var fin = vista.IndexOf("@if (Model.PuedeAdministrarElSistema)", inicio, StringComparison.Ordinal);
-            var seccion = vista[inicio..fin];
-            Assert.Contains("asp-page=\"/Admin/Invitaciones/Index\"", seccion, StringComparison.Ordinal);
-            Assert.DoesNotContain("href=\"#\"", seccion, StringComparison.Ordinal);
+                Assert.Contains(pantalla, rutas);
         }
 
         [Fact]
@@ -88,81 +65,52 @@ namespace eGestion360Web.Tests.Paginas
             var permiso = CatalogoDePermisos.Buscar(atributo!.Codigo);
             Assert.NotNull(permiso);
             Assert.Equal(AmbitoDePermiso.Empresa, permiso!.Ambito);
+            Assert.Equal(GrupoDeNavegacion.Empresa, ModeloNavegacion.Modulos.Single(m => m.Pantallas.Any(p => p.Ruta == "/Admin/Invitaciones/Index")).Grupo);
         }
 
         // ── El modelo ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-        private sealed class PermisosFalsos : IPermisosDeLaPeticion
+        private sealed class NavegacionFija : INavegacionService
         {
-            private readonly PermisosEfectivos _permisos;
-            public PermisosFalsos(params string[] codigos) => _permisos = new PermisosEfectivos(new HashSet<string>(codigos, StringComparer.Ordinal));
-            public Task<PermisosEfectivos> ObtenerAsync() => Task.FromResult(_permisos);
+            private readonly MenuDeNavegacion _menu;
+            public NavegacionFija(MenuDeNavegacion menu) => _menu = menu;
+            public Task<MenuDeNavegacion> ObtenerAsync() => Task.FromResult(_menu);
         }
 
-        private static async Task<MainMenuModel> Abrir(string[] permisos, params string[] modulosActivos)
+        [Fact]
+        public async Task El_modelo_entrega_el_menu_del_catalogo()
         {
-            var http = SesionFalsa.Contexto("empresa_user", "1");
-            // Los módulos de la petición, como los deja EstadoDelTenantMiddleware (el plan los concede y la empresa los tiene activos).
-            http.Items[EstadoDelTenantMiddleware.ClaveDerechos] = new DerechosDeLaPeticion(
-                new DerechosDelTenant(1, "T", TipoTenant.Cliente, EstadoTenant.Activo, ModoDeSuspension.Lectura, null, "plan",
-                    new HashSet<string>(modulosActivos.Select(CodigosDeDerecho.DeModulo)), new Dictionary<string, int?>()),
-                new HashSet<string>(modulosActivos));
-            var modelo = new MainMenuModel(new PermisosFalsos(permisos))
+            var menu = new MenuDeNavegacion(new[] { ModeloNavegacion.Modulo("flota")! });
+            var modelo = new MainMenuModel(new NavegacionFija(menu))
             {
-                PageContext = new PageContext(new ActionContext(http, new RouteData(), new Microsoft.AspNetCore.Mvc.RazorPages.CompiledPageActionDescriptor())),
+                PageContext = new PageContext(new ActionContext(SesionFalsa.Contexto("empresa_user", "1"), new RouteData(), new CompiledPageActionDescriptor())),
             };
+
             Assert.IsType<PageResult>(await modelo.OnGetAsync());
-            return modelo;
+            Assert.Same(menu, modelo.Menu);
         }
 
         [Fact]
-        public async Task Un_modulo_activo_se_muestra_a_quien_puede_hacer_algo_en_el_y_se_oculta_a_quien_no()
+        public async Task Sin_sesion_el_menu_manda_a_entrar()
         {
-            var conPermiso = await Abrir(new[] { "flota.vehiculos.ver" }, "flota", "catalogos");
+            var modelo = new MainMenuModel(new NavegacionFija(MenuDeNavegacion.Vacio))
+            {
+                PageContext = new PageContext(new ActionContext(SesionFalsa.Contexto(autenticado: false), new RouteData(), new CompiledPageActionDescriptor())),
+            };
 
-            Assert.True(conPermiso.MostrarModulo("flota"));
-            Assert.False(conPermiso.MostrarModulo("catalogos"));   // el módulo está activo, pero su rol no hace nada en él
+            Assert.Equal("/Login", Assert.IsType<RedirectToPageResult>(await modelo.OnGetAsync()).PageName);
         }
 
         [Fact]
-        public async Task Un_modulo_inactivo_no_se_muestra_aunque_la_persona_tenga_permisos_de_el()
+        public void El_filtro_del_hub_encuentra_un_modulo_por_sus_pantallas_y_sus_palabras()
         {
-            var modelo = await Abrir(new[] { "facturacion.factura.ver" }, "flota");
+            var texto = MainMenuModel.TextoDeBusqueda(ModeloNavegacion.Modulo("flota")!);
 
-            Assert.False(modelo.MostrarModulo("facturacion"));
-        }
-
-        [Fact]
-        public async Task Un_modulo_sin_permisos_en_el_catalogo_se_muestra_por_estar_activo()
-        {
-            // Bancos, contabilidad… todavía no tienen pantallas ni permisos: su tarjeta («Próximamente») depende solo del módulo.
-            var modelo = await Abrir(Array.Empty<string>(), "bancos");
-
-            Assert.True(modelo.MostrarModulo("bancos"));
-        }
-
-        [Fact]
-        public async Task Los_encabezados_de_administracion_salen_solo_a_quien_tiene_permisos_de_ese_ambito()
-        {
-            var deEmpresa = await Abrir(new[] { "administracion.roles.ver" });
-            var deSistema = await Abrir(new[] { "plataforma.soporte.ver" });
-            var ninguno = await Abrir(new[] { "flota.vehiculos.ver" }, "flota");
-
-            Assert.True(deEmpresa.PuedeAdministrarLaEmpresa);
-            Assert.False(deEmpresa.PuedeAdministrarElSistema);
-            Assert.True(deSistema.PuedeAdministrarElSistema);
-            Assert.False(deSistema.PuedeAdministrarLaEmpresa);
-            Assert.False(ninguno.PuedeAdministrarLaEmpresa);
-            Assert.False(ninguno.PuedeAdministrarElSistema);
-        }
-
-        [Fact]
-        public async Task El_modelo_responde_la_misma_pregunta_que_el_filtro_de_permisos()
-        {
-            var modelo = await Abrir(new[] { "plataforma.usuarios.ver" });
-
-            Assert.True(modelo.Puede("plataforma.usuarios.ver"));
-            Assert.False(modelo.Puede("plataforma.empresas.ver"));
+            Assert.Contains("Control de salidas", texto, StringComparison.Ordinal);
+            Assert.Contains("garita", texto, StringComparison.Ordinal);
+            Assert.Equal("empresa", MainMenuModel.Categoria(GrupoDeNavegacion.Empresa));
+            Assert.Equal("sistema", MainMenuModel.Categoria(GrupoDeNavegacion.Plataforma));
+            Assert.Equal("operacion", MainMenuModel.Categoria(GrupoDeNavegacion.Operacion));
         }
 
         private static string Vista() => File.ReadAllText(Path.Combine(RaizDelRepositorio(), "Pages", "MainMenu.cshtml"));

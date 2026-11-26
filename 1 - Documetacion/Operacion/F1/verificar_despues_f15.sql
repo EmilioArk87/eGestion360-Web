@@ -238,7 +238,7 @@ fkn AS (
 c AS (
     SELECT (SELECT COUNT(*) FROM sys.schemas WHERE name = N'saas') AS esq_saas,
            (SELECT COUNT(*) FROM sys.schemas WHERE name = N'seg') AS esq_seg,
-           (SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID(N'saas')) AS tablas_saas, (SELECT CASE WHEN OBJECT_ID(N'saas.planes', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con040, (SELECT CASE WHEN OBJECT_ID(N'dbo.rol_permisos', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con041, (SELECT CASE WHEN OBJECT_ID(N'psi.pacientes', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con042, (SELECT CASE WHEN OBJECT_ID(N'dbo.auditoria_seguridad', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con045, (SELECT CASE WHEN OBJECT_ID(N'dbo.rep_reportes', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con047,
+           (SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID(N'saas')) AS tablas_saas, (SELECT CASE WHEN OBJECT_ID(N'saas.planes', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con040, (SELECT CASE WHEN OBJECT_ID(N'dbo.rol_permisos', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con041, (SELECT CASE WHEN OBJECT_ID(N'psi.pacientes', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con042, (SELECT CASE WHEN OBJECT_ID(N'dbo.auditoria_seguridad', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con045, (SELECT CASE WHEN OBJECT_ID(N'dbo.rep_reportes', N'U') IS NOT NULL THEN 1 ELSE 0 END) AS con047, (SELECT CASE WHEN COL_LENGTH(N'saas.cuentas', N'estilo_menu') IS NOT NULL THEN 1 ELSE 0 END) AS con048,
            (SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID(N'dbo')) AS tablas_dbo,
            (SELECT SUM(existe) FROM pt) AS nuevas_existen,
            (SELECT SUM(de_mas) FROM pt) AS cols_de_mas,
@@ -329,7 +329,7 @@ r (orden, comprobacion, esperado, obtenido) AS (
         (130, N'Tablas del esquema saas (tenants y las 8 nuevas; +5 si ya esta el 040; +3 si ya esta el 041; +1 si ya esta el 045)',  CAST(9 + 5 * c.con040 + 3 * c.con041 + c.con045 AS NVARCHAR(400)), CAST(c.tablas_saas AS NVARCHAR(400))),
         (140, N'Tablas del esquema dbo (las 56 anteriores y accesos_empresa; +1 si ya esta el 041; +1 si ya esta el 045; +4 si ya esta el 047)', CAST(57 + c.con041 + c.con045 + 4 * c.con047 AS NVARCHAR(400)), CAST(c.tablas_dbo AS NVARCHAR(400))),
         (150, N'Las 9 tablas de la identidad global existen',                            N'9',  CAST(c.nuevas_existen AS NVARCHAR(400))),
-        (170, N'Columnas no previstas en las 9 tablas',                                  N'0',  CAST(c.cols_de_mas AS NVARCHAR(400))),
+        (170, N'Columnas no previstas en las 9 tablas (+1 si ya esta el 048: saas.cuentas.estilo_menu)', CAST(c.con048 AS NVARCHAR(400)), CAST(c.cols_de_mas AS NVARCHAR(400))),
         (180, N'Restricciones e indices esperados (PK, UQ, CHECK, FK, DEFAULT, indices)', N'60 de 60',
               CONCAT(c.obj_ok, N' de ', c.obj_n, CASE WHEN c.obj_ok < c.obj_n THEN CONCAT(N' (faltan: ', c.obj_mal, N')') ELSE N'' END)),
         (190, N'Claves foraneas nuevas habilitadas y confiables',                        N'13 de 13', CONCAT(c.fk_buenas, N' de ', c.fk_n)),

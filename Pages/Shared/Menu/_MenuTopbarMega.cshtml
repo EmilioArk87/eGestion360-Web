@@ -1,0 +1,117 @@
+@* Estilo «topbar»: barra superior horizontal con una pestaña por módulo que abre un mega-menú por columnas, y una barra secundaria con las
+   pantallas del módulo activo. Deja todo el ancho de la pantalla para tablas anchas (facturas, KPIs, salidas). *@
+@model eGestion360Web.Services.Navegacion.VistaDeMenu
+@using eGestion360Web.Services
+@using eGestion360Web.Services.Navegacion
+@{
+    var activo = Model.ModuloActivo;
+    var pantalla = Model.PantallaActiva;
+    var nombre = AuthHelper.NombreVisible(Context);
+}
+<header class="egm-mega-nav">
+    <div class="egm-mega-nav-int">
+        <a asp-page="/MainMenu" class="egm-mega-marca" title="Menú Principal">
+            <img src="~/img/isotipo.svg" alt="" width="28" height="28" />
+            <span>eGestión360</span>
+        </a>
+        <nav class="egm-mega-pestanas" aria-label="Módulos">
+            @foreach (var modulo in Model.Menu.Modulos)
+            {
+                <button type="button" class="egm-mega-pestana @(activo?.Clave == modulo.Clave ? "activo" : "")"
+                        data-egm-mega="@modulo.Clave" aria-expanded="false" aria-controls="egm-mega-panel">
+                    <i class="fas @modulo.Icono"></i>@modulo.Titulo
+                    <i class="fas fa-chevron-down" style="font-size:.65rem;"></i>
+                </button>
+            }
+        </nav>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-light border" data-egm-buscar title="Ir a una pantalla (Ctrl+K)">
+                <i class="fas fa-search"></i>
+            </button>
+            @if (AuthHelper.GetCodigoTenantDeSoporte(Context) is { Length: > 0 } codigoSoporte)
+            {
+                <a class="egm-badge-soporte" asp-page="/Admin/Soporte/Index" title="Estás trabajando en un tenant de soporte; haz clic para cambiar o salir">
+                    <i class="fas fa-life-ring"></i>@codigoSoporte
+                </a>
+            }
+            <div class="dropdown">
+                <button class="btn btn-sm p-0 border-0 bg-transparent" data-bs-toggle="dropdown" aria-expanded="false" title="@nombre">
+                    <span class="egm-avatar">@VistaDeMenu.Iniciales(nombre)</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><span class="dropdown-item-text fw-semibold">@nombre</span></li>
+                    <partial name="~/Pages/Shared/Menu/_OpcionesDeUsuario.cshtml" />
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="egm-mega-panel" id="egm-mega-panel">
+        <div class="egm-mega-panel-int">
+            @foreach (var modulo in Model.Menu.Modulos)
+            {
+                var secciones = modulo.Secciones.ToList();
+                <div data-egm-mega-contenido="@modulo.Clave" hidden>
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="egm-mega-ico" style="background:@modulo.Color;"><i class="fas @modulo.Icono"></i></span>
+                            <div>
+                                <strong>@modulo.Titulo</strong>
+                                <div class="small text-muted">@modulo.Descripcion</div>
+                            </div>
+                        </div>
+                        @if (modulo.RutaIndice != null)
+                        {
+                            <a href="@Url.Page(modulo.RutaIndice)" class="btn btn-sm btn-outline-primary">Ir al inicio del módulo <i class="fas fa-arrow-right ms-1"></i></a>
+                        }
+                    </div>
+                    @if (modulo.Proximamente)
+                    {
+                        <p class="text-muted small mb-0"><span class="egm-pronto me-2">Pronto</span>Este módulo todavía no tiene pantallas.</p>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @foreach (var seccion in secciones)
+                            {
+                                <div class="col-md-6 col-lg-3 egm-mega-col">
+                                    <h6>@(seccion.Key ?? modulo.Titulo)</h6>
+                                    @foreach (var p in seccion)
+                                    {
+                                        if (p.Proximamente)
+                                        {
+                                            <div class="egm-mega-item egm-deshabilitado">
+                                                <span class="egm-mega-ico" style="background:#94a3b8;"><i class="fas @p.Icono"></i></span>
+                                                <div><strong>@p.Titulo <span class="egm-pronto">Pronto</span></strong><small>@p.Descripcion</small></div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Page(p.Ruta)" class="egm-mega-item">
+                                                <span class="egm-mega-ico" style="background:@modulo.Color;"><i class="fas @p.Icono"></i></span>
+                                                <div><strong>@p.Titulo</strong><small>@p.Descripcion</small></div>
+                                            </a>
+                                        }
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</header>
+
+@if (activo != null && activo.PantallasListas.Any())
+{
+    <div class="egm-subbarra">
+        <nav class="egm-subbarra-int" aria-label="Pantallas de @activo.Titulo">
+            <span class="small fw-bold text-muted me-2 text-nowrap"><i class="fas @activo.Icono me-1" style="color:@activo.Color;"></i>@activo.Titulo</span>
+            @foreach (var p in activo.PantallasListas)
+            {
+                <a href="@Url.Page(p.Ruta)" class="egm-pildora @(p == pantalla ? "activo" : "")">@p.Titulo</a>
+            }
+        </nav>
+    </div>
+}

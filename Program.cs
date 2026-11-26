@@ -97,6 +97,7 @@ builder.Services.AddScoped<eGestion360Web.Services.Permisos.IEvaluadorDePermisos
 builder.Services.AddSingleton<eGestion360Web.Services.Permisos.IRequisitosDePaginas, eGestion360Web.Services.Permisos.RequisitosDePaginas>();   // F1.6e-2: qué exige cada pantalla, para ocultar lo que no se puede abrir
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeLaPeticion, eGestion360Web.Services.Permisos.PermisosDeLaPeticion>();
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.DecisorDeVisibilidad>();
+builder.Services.AddScoped<eGestion360Web.Services.Navegacion.INavegacionService, eGestion360Web.Services.Navegacion.CatalogoDeNavegacion>();   // Menú configurable: catálogo único de navegación recortado por módulos y permisos
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeRol, eGestion360Web.Services.Permisos.PermisosDeRol>();   // F1.6e: la pantalla de roles guarda en rol_permisos y avisa al evaluador
 builder.Services.AddScoped<LectorDeAuditoria>();   // F1.8c: las pantallas de auditoría (solo leen)
 builder.Services.AddScoped<TenantContext>();

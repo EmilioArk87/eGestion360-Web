@@ -43,56 +43,6 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        @{
-            var cards = new[]
-            {
-                new { Page = "/Psicologia/Pacientes/Index", Title = "Pacientes",           Desc = "Expedientes, datos del paciente y su historial de atenciones", Icon = "fa-user-injured",  Color = "#0d6efd", Ready = true },
-                new { Page = "/Psicologia/Jornadas/Index",  Title = "Jornadas y brigadas", Desc = "Eventos de atención grupal y su responsable",                Icon = "fa-users",  Color = "#198754", Ready = true },
-                new { Page = "/Psicologia/Importar/Subir",  Title = "Importar pacientes",  Desc = "Cargar el listado de una brigada desde Excel en tres pasos",  Icon = "fa-file-import",   Color = "#fd7e14", Ready = true },
-                new { Page = "/Psicologia/Constancias/Index", Title = "Constancias",     Desc = "Libro de constancias de examen psicológico por número",       Icon = "fa-file-signature", Color = "#d63384", Ready = true },
-                new { Page = "/Psicologia/Catalogos/Index", Title = "Catálogos",          Desc = "Pruebas psicológicas y tipos de constancia del centro",       Icon = "fa-clipboard-list", Color = "#20c997", Ready = true },
-                new { Page = "/Psicologia/Profesionales/Index", Title = "Profesionales",   Desc = "Psicólogos con su usuario, responsables de las brigadas",    Icon = "fa-user-doctor",   Color = "#6f42c1", Ready = true },
-            };
-            // La tarjeta de un subcentro se muestra si se puede abrir alguna de sus pantallas.
-            var pantallasDelSubcentro = new Dictionary<string, string>
-            {
-                ["/Psicologia/Catalogos/Index"] = "/Psicologia/Catalogos/Pruebas;/Psicologia/Catalogos/TiposConstancia",
-            };
-        }
-        @foreach (var c in cards)
-        {
-            <div class="col-md-6 col-lg-4" eg-si-puede-abrir="@(pantallasDelSubcentro.GetValueOrDefault(c.Page) ?? c.Page)">
-                <div class="card h-100 shadow-sm border-0 menu-card">
-                    <div class="card-body text-center p-4">
-                        <div class="menu-icon text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width: 4.5rem; height: 4.5rem; background-color: @c.Color;">
-                            <i class="fas @c.Icon fa-2x"></i>
-                        </div>
-                        <h5 class="card-title fw-bold mb-2">@c.Title</h5>
-                        <p class="card-text text-muted small mb-4">@c.Desc</p>
-                        @if (c.Ready)
-                        {
-                            <a asp-page="@c.Page" class="btn w-100 text-white" style="background-color: @c.Color;">
-                                <i class="fas fa-arrow-right me-2"></i>Acceder
-                            </a>
-                        }
-                        else
-                        {
-                            <button type="button" class="btn btn-outline-secondary w-100" disabled>
-                                <i class="fas fa-clock me-2"></i>Próximamente
-                            </button>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+    @* Las tarjetas salen del catálogo único de navegación (Services/Navegacion/ModeloNavegacion.cs): agregar una pantalla se hace allí. *@
+    <partial name="~/Pages/Shared/Menu/_TarjetasDeModulo.cshtml" model="@("psicologia")" />
 </div>
-
-@section Scripts {
-    <style>
-        .menu-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-        .menu-card:hover { transform: translateY(-4px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12) !important; }
-    </style>
-}

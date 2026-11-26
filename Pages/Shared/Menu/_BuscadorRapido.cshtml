@@ -1,0 +1,22 @@
+@* Buscador rápido Ctrl+K (plan secundario, etapa 2). Los datos son solo las pantallas que la persona puede abrir: salen del menú ya recortado
+   por módulos activos y permisos, así que el buscador no ofrece nada que la pantalla negaría. *@
+@model eGestion360Web.Services.Navegacion.VistaDeMenu
+@{
+    var entradas = Model.Menu.Busqueda()
+        .Select(e => new { m = e.Modulo, t = e.Titulo, u = Url.Page(e.Ruta), i = e.Icono, c = e.Color, x = e.Texto })
+        .Where(e => !string.IsNullOrEmpty(e.u))
+        .ToList();
+    var cuenta = eGestion360Web.Services.AuthHelper.GetCuentaId(Context);
+}
+<script type="application/json" id="egm-datos" data-cuenta="@cuenta">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(entradas))</script>
+<div class="egm-cmd" id="egm-cmd" role="dialog" aria-modal="true" aria-label="Ir a una pantalla">
+    <div class="egm-cmd-caja">
+        <div class="egm-cmd-entrada">
+            <i class="fas fa-search text-primary"></i>
+            <input type="text" id="egm-cmd-entrada" autocomplete="off" aria-label="Buscar pantalla"
+                   placeholder="Escribe para ir a cualquier pantalla (facturas, salidas, pacientes, roles…)" />
+            <kbd class="bg-light text-muted border rounded px-2" style="font-size:.7rem;">ESC</kbd>
+        </div>
+        <div class="egm-cmd-resultados" id="egm-cmd-resultados"></div>
+    </div>
+</div>

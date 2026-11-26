@@ -1,5 +1,19 @@
+@using eGestion360Web.Models.Plataforma
+@using eGestion360Web.Services
+@using eGestion360Web.Services.Navegacion
+@inject INavegacionService Navegacion
+@{
+    // Menú configurable por usuario: cada persona con sesión ve el estilo que eligió (claim de la cookie, sin ir a la base); sin sesión, la
+    // barra de siempre. Los tres estilos salen del mismo catálogo de navegación, ya recortado por módulos activos y permisos.
+    var conSesion = AuthHelper.IsAuthenticated(Context);
+    var estiloMenu = conSesion ? AuthHelper.GetEstiloMenu(Context) : EstilosDeMenu.Hub;
+    var vistaMenu = new VistaDeMenu(
+        conSesion ? await Navegacion.ObtenerAsync() : MenuDeNavegacion.Vacio,
+        (ViewContext.ActionDescriptor as Microsoft.AspNetCore.Mvc.RazorPages.PageActionDescriptor)?.ViewEnginePath,
+        estiloMenu);
+}
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-eg-menu="@estiloMenu">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +21,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/password-checklist.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Iconos de la app: pestaña del navegador, barra de tareas y app instalada -->
     <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
@@ -15,12 +30,30 @@
     <link rel="manifest" href="~/site.webmanifest" />
     <meta name="application-name" content="eGestión360" />
     <meta name="theme-color" content="#1B63C9" />
+    @if (estiloMenu == EstilosDeMenu.Sidebar)
+    {
+        @* Antes de pintar: la barra lateral arranca colapsada si así la dejó la persona (sin parpadeo). *@
+        <script>try { if (localStorage.getItem('eg360.menu.colapsado') === '1') document.documentElement.classList.add('egm-colapsado'); } catch (e) { }</script>
+    }
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body>
-    <header>
-        @await Html.PartialAsync("_NavigationPartial")
-    </header>
+<body class="egm-@estiloMenu">
+    @if (estiloMenu == EstilosDeMenu.Sidebar)
+    {
+        <partial name="~/Pages/Shared/Menu/_MenuSidebar.cshtml" model="vistaMenu" />
+    }
+    else if (estiloMenu == EstilosDeMenu.Topbar)
+    {
+        <partial name="~/Pages/Shared/Menu/_MenuTopbarMega.cshtml" model="vistaMenu" />
+    }
+    else
+    {
+        <partial name="~/Pages/Shared/Menu/_MenuHub.cshtml" model="vistaMenu" />
+    }
+    @if (conSesion)
+    {
+        <partial name="~/Pages/Shared/Menu/_BuscadorRapido.cshtml" model="vistaMenu" />
+    }
     <div class="container-fluid">
         <main role="main" class="py-4">
             @RenderBody()
@@ -47,6 +80,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/menu.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

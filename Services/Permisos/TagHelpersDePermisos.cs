@@ -31,6 +31,18 @@ namespace eGestion360Web.Services.Permisos
             if (string.IsNullOrEmpty(actual) && string.IsNullOrWhiteSpace(destino)) return false;
 
             var ruta = string.IsNullOrWhiteSpace(destino) ? actual! : DestinoDePagina.Resolver(destino, actual ?? "/");
+            return await DebeOcultarRutaAsync(ruta, handler, verbo);
+        }
+
+        /// <summary>
+        /// True si quien mira puede abrir (GET) la pantalla de ruta absoluta <paramref name="rutaAbsoluta"/>. Es la pregunta del menú
+        /// configurable (<see cref="Navegacion.CatalogoDeNavegacion"/>), que arma sus enlaces fuera de una vista.
+        /// </summary>
+        public async Task<bool> PuedeAbrirAsync(string rutaAbsoluta)
+            => !await DebeOcultarRutaAsync(DestinoDePagina.Resolver(rutaAbsoluta, "/"), null, "Get");
+
+        private async Task<bool> DebeOcultarRutaAsync(string ruta, string? handler, string verbo)
+        {
             var requisito = await _requisitos.ObtenerAsync(ruta, verbo, handler);
 
             // Sin pantalla conocida, sin permiso declarado o de las que no piden uno: se muestra (no hay nada que asegurar).

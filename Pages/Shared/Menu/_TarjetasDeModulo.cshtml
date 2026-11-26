@@ -1,0 +1,47 @@
+@* Las tarjetas de un centro de módulo (Catálogos, Psicología…), sacadas del catálogo único de navegación: la misma lista que ven los tres
+   estilos de menú y el buscador. El modelo es la clave del módulo en ModeloNavegacion. Cada tarjeta repite la pregunta de su pantalla con
+   eg-si-puede-abrir (el catálogo ya la recortó; el tag helper es la misma guarda que el resto de los centros). *@
+@model string
+@using eGestion360Web.Services.Navegacion
+@inject INavegacionService Navegacion
+@{
+    var menu = await Navegacion.ObtenerAsync();
+    var modulo = menu.Modulos.FirstOrDefault(m => m.Clave == Model);
+}
+@if (modulo != null)
+{
+    <div class="row g-4">
+        @foreach (var p in modulo.Pantallas)
+        {
+            var color = p.Color ?? modulo.Color;
+            <div class="col-md-6 col-lg-4" eg-si-puede-abrir="@(p.RutasQueLaMuestran is { } destinos ? string.Join(";", destinos) : p.Ruta)">
+                <div class="card h-100 shadow-sm border-0 menu-card egm-centro-card">
+                    <div class="card-body text-center p-4">
+                        <div class="text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 4.5rem; height: 4.5rem; background-color: @color;">
+                            <i class="fas @p.Icono fa-2x"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-2">@p.Titulo</h5>
+                        <p class="card-text text-muted small mb-4">@p.Descripcion</p>
+                        @if (p.Proximamente)
+                        {
+                            <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                                <i class="fas fa-clock me-2"></i>Próximamente
+                            </button>
+                        }
+                        else
+                        {
+                            <a href="@Url.Page(p.Ruta)" class="btn w-100 text-white" style="background-color: @color;">
+                                <i class="fas fa-arrow-right me-2"></i>Acceder
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-light border">No tienes pantallas disponibles en este módulo.</div>
+}

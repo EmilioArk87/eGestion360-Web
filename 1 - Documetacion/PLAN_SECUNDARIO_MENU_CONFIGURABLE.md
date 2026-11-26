@@ -1,9 +1,9 @@
 # Plan Secundario — Menú Configurable por Usuario (`eGestión360`)
 
 > **Tipo:** Subplan independiente del roadmap principal F0–F9 ([Arquitectura/README.md](Arquitectura/README.md)).  
-> **Estado:** Borrador aprobado para planificación (sin cambios aplicados en código ni en BD).  
+> **Estado:** Implementado en código (rama `claude/project-thread-i9gplk`). Script `048_cuentas_estilo_menu.sql` **pendiente de aplicar** en `eBD_SPD` (requiere `/alerta-bd`); `dotnet test` pendiente de correr.  
 > **Fecha:** 2026-11-21  
-> **Referencia visual:** `wwwroot/preview/menu-prototipos.html`
+> **Referencia visual:** `1 - Documetacion/Prototipos/menu-prototipos.html` (no se publica con el sitio)
 
 ---
 
@@ -49,33 +49,33 @@ Así, al agregar un módulo nuevo (Bancos, Contabilidad, Inventario, Ventas, Rep
 ## 4. Etapas de implementación
 
 ### Etapa 1 — Base de datos y capa de identidad
-- [ ] Crear script de migración en `2 - Script SQL/` (siguiente correlativo libre, p. ej. `046_cuentas_estilo_menu.sql`) + actualizar `1 - Documetacion/INDICE_SCRIPTS_SQL.md`.
+- [x] Crear script de migración en `2 - Script SQL/`: `048_cuentas_estilo_menu.sql` (el 046 es de F1.8c y el 047 del motor de reportes) + fila en `1 - Documetacion/INDICE_SCRIPTS_SQL.md` + `verificar_despues_f15.sql` acepta la columna nueva (`con048`).
 - [ ] Ejecutar `/alerta-bd` antes de aplicar el script en `eBD_SPD`.
-- [ ] Agregar `EstiloMenu` a `Cuenta` (`Models/Plataforma/Identidad.cs`) con valor por defecto `"hub"`.
-- [ ] Agregar el claim de estilo de menú en `ReclamosDeIdentidad`, emisión de cookie en login/cambio de contexto y helper `AuthHelper.GetEstiloMenu(HttpContext)`.
+- [x] Agregar `EstiloMenu` a `Cuenta` (`Models/Plataforma/Identidad.cs`) con valor por defecto `"hub"`.
+- [x] Agregar el claim de estilo de menú en `ReclamosDeIdentidad`, emisión de cookie en login/cambio de contexto y helper `AuthHelper.GetEstiloMenu(HttpContext)`.
 
 ### Etapa 2 — Servicio central de navegación y buscador `Ctrl+K`
-- [ ] Crear `Services/Navegacion/ModeloNavegacion.cs`, `INavegacionService.cs` y `CatalogoDeNavegacion.cs`.
-- [ ] Migrar las definiciones actuales de `Pages/MainMenu.cshtml`, `Pages/Flota/Index.cshtml`, `Pages/Catalogos/Index.cshtml`, `Pages/Facturacion/Index.cshtml` y `Pages/Psicologia/Index.cshtml` al catálogo central (sin eliminar las páginas índice existentes para mantener compatibilidad con enlaces y bookmarks).
-- [ ] Exponer los datos filtrados para el buscador rápido (`Ctrl+K`) respetando los permisos del usuario.
+- [x] Crear `Services/Navegacion/ModeloNavegacion.cs`, `INavegacionService.cs` y `CatalogoDeNavegacion.cs`.
+- [x] Migrar las definiciones actuales de `Pages/MainMenu.cshtml`, `Pages/Flota/Index.cshtml`, `Pages/Catalogos/Index.cshtml`, `Pages/Facturacion/Index.cshtml` y `Pages/Psicologia/Index.cshtml` al catálogo central (sin eliminar las páginas índice existentes para mantener compatibilidad con enlaces y bookmarks).
+- [x] Exponer los datos filtrados para el buscador rápido (`Ctrl+K`) respetando los permisos del usuario.
 
 ### Etapa 3 — Vistas parciales por estilo y `_Layout.cshtml`
-- [ ] Crear estilos dedicados en `wwwroot/css/menu.css` y comportamiento en `wwwroot/js/menu.js` (colapsado del sidebar en `localStorage`, apertura de mega-menú, atajo `Ctrl+K`, cierre con `ESC`), usando la paleta oficial de eGestión360 (`#1B63C9`, `#12B8C6`, `#F5A524`).
-- [ ] Implementar vistas parciales en `Pages/Shared/Menu/`:
+- [x] Crear estilos dedicados en `wwwroot/css/menu.css` y comportamiento en `wwwroot/js/menu.js` (colapsado del sidebar en `localStorage`, apertura de mega-menú, atajo `Ctrl+K`, cierre con `ESC`), usando la paleta oficial de eGestión360 (`#1B63C9`, `#12B8C6`, `#F5A524`).
+- [x] Implementar vistas parciales en `Pages/Shared/Menu/`:
   - `_MenuHub.cshtml` (barra superior limpia + renovación de `Pages/MainMenu.cshtml` con buscador en vivo, chips de frecuentes, filtros por categoría y tarjetas con sub-enlaces directos).
   - `_MenuSidebar.cshtml` (sidebar colapsable, acordeones por módulo, topbar con breadcrumb y `Ctrl+K`).
   - `_MenuTopbarMega.cshtml` (topbar horizontal con mega-menú por columnas y barra secundaria del módulo activo).
-- [ ] Adaptar `Pages/Shared/_Layout.cshtml` para renderizar el parcial según `AuthHelper.GetEstiloMenu(Context)`.
+- [x] Adaptar `Pages/Shared/_Layout.cshtml` para renderizar el parcial según `AuthHelper.GetEstiloMenu(Context)`.
 
 ### Etapa 4 — Selector de estilo de menú para el usuario
-- [ ] Crear endpoint/página handler protegido con `[ValidateAntiForgeryToken]` (ej. `Pages/Preferencias/EstiloMenu.cshtml.cs` o handler POST en un endpoint dedicado).
-- [ ] Validar que el usuario esté autenticado y actualizar **únicamente** su propia cuenta (`AuthHelper.GetCuentaId(HttpContext)`).
-- [ ] Validar el valor recibido contra la lista blanca (`hub`, `sidebar`, `topbar`).
-- [ ] Persistir en `saas.cuentas.estilo_menu`, re-emitir la cookie de autenticación con el nuevo claim (sin cerrar sesión) y redirigir a `ReturnUrl` (validado con `Url.IsLocalUrl`).
-- [ ] Agregar el selector **"Estilo de menú"** dentro del menú desplegable de usuario en `_NavigationPartial.cshtml` (y en la vista de Perfil cuando se habilite).
+- [x] Crear endpoint/página handler protegido con `[ValidateAntiForgeryToken]` (ej. `Pages/Preferencias/EstiloMenu.cshtml.cs` o handler POST en un endpoint dedicado).
+- [x] Validar que el usuario esté autenticado y actualizar **únicamente** su propia cuenta (`AuthHelper.GetCuentaId(HttpContext)`).
+- [x] Validar el valor recibido contra la lista blanca (`hub`, `sidebar`, `topbar`).
+- [x] Persistir en `saas.cuentas.estilo_menu`, re-emitir la cookie de autenticación con el nuevo claim (sin cerrar sesión) y redirigir a `ReturnUrl` (validado con `Url.IsLocalUrl`).
+- [x] Agregar el selector **"Estilo de menú"** dentro del menú desplegable de usuario en `_NavigationPartial.cshtml` (y en la vista de Perfil cuando se habilite).
 
 ### Etapa 5 — Pruebas y verificación
-- [ ] Pruebas unitarias en `eGestion360Web.Tests`:
+- [x] Pruebas unitarias en `eGestion360Web.Tests` (escritas; falta correr `dotnet test`):
   - `CatalogoDeNavegacion` solo devuelve módulos activos y pantallas permitidas por `ADR-029`.
   - Fallback a `hub` ante valores nulos o inválidos.
   - Cambio de `estilo_menu` actualiza solo la cuenta del usuario autenticado y rechaza valores fuera de catálogo.
@@ -84,6 +84,14 @@ Así, al agregar un módulo nuevo (Bancos, Contabilidad, Inventario, Ventas, Rep
   - Verificar que las vistas existentes (`container` y `container-fluid`, tablas paginadas, Control de Salidas, Facturas) se vean correctamente en los 3 estilos y en móvil/tablet.
 
 ---
+
+## 4b. Notas de la implementación
+
+- **Ejecutar 048 antes de publicar.** El modelo `Cuenta` mapea `estilo_menu`; sin la columna, el inicio de sesión falla.
+- **Migración de centros:** `Pages/Catalogos/Index.cshtml` y `Pages/Psicologia/Index.cshtml` pintan sus tarjetas desde el catálogo (`Pages/Shared/Menu/_TarjetasDeModulo.cshtml`). `Pages/Flota/Index.cshtml` se dejó igual (sus tarjetas llevan a subcentros, no a pantallas) y `Pages/Facturacion/Index.cshtml` es la lista de facturas, no un menú.
+- **Buscador Ctrl+K:** no hay endpoint; el layout escribe en la página (`#egm-datos`) solo las pantallas que la persona puede abrir.
+- **Frecuentes del hub:** `localStorage` por cuenta (`eg360.frecuentes.<id_cuenta>`), cruzado siempre con la lista permitida; sin tabla nueva.
+- **Perfil:** el enlace «Perfil y preferencias» del menú de usuario abre `/Preferencias/EstiloMenu`.
 
 ## 5. Riesgos y cuidados técnicos
 

@@ -24,6 +24,7 @@ namespace eGestion360Web.Services.Identidad
     /// <param name="IdRolEmpresa">Rol de la empresa (<c>empresa_roles</c>); nulo en un administrador de empresa.</param>
     /// <param name="MfaVerificada">Verdadero si en este inicio de sesión probó un segundo factor.</param>
     /// <param name="Sello">Huella de lo que se leyó de la base al entrar; si cambia, la cookie se renueva con lo nuevo.</param>
+    /// <param name="EstiloMenu">Estilo de menú de la cuenta (script 048); se lee de la cookie para no ir a la base en cada pantalla.</param>
     public sealed record DatosDeIdentidad(
         int IdCuenta,
         int? IdUserLegado,
@@ -39,7 +40,8 @@ namespace eGestion360Web.Services.Identidad
         int? IdEmpresa,
         int? IdRolEmpresa,
         bool MfaVerificada,
-        string Sello);
+        string Sello,
+        string EstiloMenu = eGestion360Web.Models.Plataforma.EstilosDeMenu.Hub);
 
     /// <summary>Nombres de las reclamaciones (claims) de la cookie de autenticación.</summary>
     public static class ReclamosDeIdentidad
@@ -59,6 +61,7 @@ namespace eGestion360Web.Services.Identidad
         public const string RolEmpresa = "eg360:rol_empresa";
         public const string MfaVerificada = "eg360:mfa";
         public const string Sello = "eg360:sello";
+        public const string EstiloMenu = "eg360:estilo_menu";
 
         /// <summary>Arma la identidad de la cookie. Los valores nulos no generan reclamación.</summary>
         public static ClaimsPrincipal Crear(DatosDeIdentidad d)
@@ -71,7 +74,8 @@ namespace eGestion360Web.Services.Identidad
                 new(ClaimTypes.Email, d.Correo),
                 new(ClaimTypes.Role, d.Rol),
                 new(NombrePersona, d.NombrePersona),
-                new(Sello, d.Sello)
+                new(Sello, d.Sello),
+                new(EstiloMenu, eGestion360Web.Models.Plataforma.EstilosDeMenu.Normalizar(d.EstiloMenu))
             };
             if (d.IdUserLegado is { } legado) reclamos.Add(new Claim(UserLegado, Texto(legado)));
             if (d.EsOperador) reclamos.Add(new Claim(Operador, "1"));
@@ -107,7 +111,8 @@ namespace eGestion360Web.Services.Identidad
                 Entero(principal, Empresa),
                 Entero(principal, RolEmpresa),
                 principal.FindFirstValue(MfaVerificada) == "1",
-                principal.FindFirstValue(Sello) ?? string.Empty);
+                principal.FindFirstValue(Sello) ?? string.Empty,
+                eGestion360Web.Models.Plataforma.EstilosDeMenu.Normalizar(principal.FindFirstValue(EstiloMenu)));
         }
 
         /// <summary>
