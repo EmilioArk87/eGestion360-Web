@@ -167,11 +167,11 @@ El correo sale enmascarado en pantalla y en lo exportado. Cada exportación deja
 ### Orden de publicación
 
 1. Ensayar el 046 en la copia local de producción: aplicar, repetir («Nada que hacer») y revertir. **Hecho el 2026-11-23** en una copia con el catálogo de producción (91 permisos): aplicar, repetir, ROLLBACK, PRECHECK que falla, reaplicar, ROLLBACK detenido por la FK y verificadores 24 de 24 y 14 de 14. El ensayo encontró un `PRINT` con subconsulta en el PRECHECK (SQL Server no lo admite) y se corrigió; una prueba lo vigila en los scripts desde el 040.
-2. `/alerta-bd` y aprobación expresa de Emilio; aplicar el 046 con el ejecutor de siempre. **Pendiente.**
-3. `verificar_despues_041.sql` con las cifras de la columna «Con el 046» y la comprobación diaria. **Pendiente.**
-4. Publicar el código de F1.8c. **Pendiente.**
+2. `/alerta-bd` y aprobación expresa de Emilio; aplicar el 046 con el ejecutor de siempre. **Hecho el 2026-11-23** (4 lotes sin error; el catálogo pasó de 91 a 93 permisos, ids 92 y 93, `creado_por` = `script:046`).
+3. `verificar_despues_041.sql` con las cifras de la columna «Con el 046» y la comprobación diaria. **Verificador hecho el 2026-11-23: 24 de 24 OK** (93 permisos; plataforma 18, administración 10, flota 28, catálogos 8, facturación 10, psicología 19). La comprobación diaria se corrió ese día antes y después de publicar: solo las 4 fallas ya conocidas de `verificar_despues_f15.sql` (la membresía 1 de SIP está suspendida desde el 2026-11-20).
+4. Publicar el código de F1.8c. **Hecho el 2026-11-23 a las 21:05** desde `dev` `2edb621` (unos 5 minutos de mantenimiento). Sin sesión, las cuatro rutas de auditoría responden 302 al Login. Ningún rol de ningún tenant tenía un permiso de auditoría, ni antes ni después de publicar.
 
-**El 046 va ANTES del código**: el evaluador lee el catálogo de la base, así que sin las filas nadie abre las pantallas nuevas (ni el operador). Al revés (046 aplicado con el código anterior) no pasa nada: el código anterior ignora los permisos nuevos.
+**El 046 va ANTES del código**: el evaluador lee el catálogo de la base, así que sin las filas nadie abre las pantallas nuevas (ni el operador). Al revés (046 aplicado con el código anterior) hay una ventana: la pantalla de roles del código anterior arma su lista con el catálogo de la base y ofrecería `administracion.auditoria.ver` como casilla de rol; el código nuevo no la ofrece ni la concede a un rol, pero una fila marcada en ese lapso quedaría inerte y la clave foránea frenaría el ROLLBACK. Por eso se aplica el 046 y se publica en la misma sesión, y después se comprueba en solo lectura (tenant por tenant, por la RLS) que ningún rol tiene el permiso.
 
 ### Qué verificar después de publicar
 
@@ -179,4 +179,6 @@ El correo sale enmascarado en pantalla y en lo exportado. Cada exportación deja
 2. Exportar a Excel y abrir el archivo; luego «Imprimir o guardar como PDF». Cada uno deja su fila `auditoria.exportada`.
 3. Como operador, abrir «Auditoría de la plataforma» y filtrar por un tenant.
 4. En «Roles y Permisos», el permiso de auditoría no aparece para marcar.
+
+**Resultado de la prueba con sesión (lectura del 2026-11-24 03:44 UTC):** el punto 2 quedó registrado en el tenant de CAPAE (filas `auditoria.exportada` de PDF y de Excel, ids 16 a 18, con el rango por defecto de 7 días). El punto 3 está **sin verificar**: no hay ninguna fila `auditoria.plataforma_exportada`. El punto 4 no deja rastro en la base y no está confirmado.
 
