@@ -1,7 +1,7 @@
 # Plan — Motor de Reportes Versionados en Base de Datos por Tenant (`eGestión360`)
 
 > **Tipo:** Plan de arquitectura e implementación (complementario al roadmap principal F0–F9 en [Arquitectura/README.md](Arquitectura/README.md)).  
-> **Estado:** Borrador listo para revisión y aprobación (sin cambios aplicados en código ni en BD).  
+> **Estado:** Fase 1 (infraestructura y piloto de la constancia de licencia) en producción desde el 2026-11-25: script `047_motor_reportes_versionados.sql` aplicado y código publicado desde `dev` `f222fc1`. Las fases siguientes están sin empezar. Detalle en [ADR-031](Arquitectura/ADR-031-reportes-versionados-en-bd.md).  
 > **Fecha:** 2026-11-21  
 > **ADR propuesto:** `ADR-031-reportes-versionados-en-bd.md`
 

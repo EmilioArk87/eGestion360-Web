@@ -56,7 +56,8 @@
 --   * ASCII puro: los acentos de la plantilla van como entidades HTML (&Oacute;) y los del JSON como \u00fa.
 --   * Limite conocido: TRUNCATE TABLE no dispara los disparadores; solo quien puede modificar el esquema puede hacerlo (ADR-016).
 --   * Antes de ejecutar contra eBD_SPD se requiere aprobacion (/alerta-bd).
---   * NO ENSAYADO todavia en una copia local: ensayar antes de pedir la aprobacion para produccion.
+--   * Ensayado el 2026-11-25 en una copia local (aplicar, repetir, ROLLBACK, reaplicar y ROLLBACK detenido por las ejecuciones) y
+--     APLICADO en eBD_SPD ese mismo dia, con aprobacion.
 -- ============================================================
 
 SET NOCOUNT ON;

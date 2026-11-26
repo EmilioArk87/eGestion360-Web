@@ -1,7 +1,7 @@
 # Plan Secundario — Menú Configurable por Usuario (`eGestión360`)
 
 > **Tipo:** Subplan independiente del roadmap principal F0–F9 ([Arquitectura/README.md](Arquitectura/README.md)).  
-> **Estado:** Implementado en código (rama `claude/project-thread-i9gplk`). Script `048_cuentas_estilo_menu.sql` **pendiente de aplicar** en `eBD_SPD` (requiere `/alerta-bd`); `dotnet test` pendiente de correr.  
+> **Estado:** En producción desde el 2026-11-25 (`dev` `f222fc1`), con el script `048_cuentas_estilo_menu.sql` aplicado ese día en `eBD_SPD`. Suite de pruebas: 1768 de 1768. Queda abierta la verificación visual completa de la etapa 5.  
 > **Fecha:** 2026-11-21  
 > **Referencia visual:** `1 - Documetacion/Prototipos/menu-prototipos.html` (no se publica con el sitio)
 
@@ -50,7 +50,7 @@ Así, al agregar un módulo nuevo (Bancos, Contabilidad, Inventario, Ventas, Rep
 
 ### Etapa 1 — Base de datos y capa de identidad
 - [x] Crear script de migración en `2 - Script SQL/`: `048_cuentas_estilo_menu.sql` (el 046 es de F1.8c y el 047 del motor de reportes) + fila en `1 - Documetacion/INDICE_SCRIPTS_SQL.md` + `verificar_despues_f15.sql` acepta la columna nueva (`con048`).
-- [ ] Ejecutar `/alerta-bd` antes de aplicar el script en `eBD_SPD`.
+- [x] Ejecutar `/alerta-bd` antes de aplicar el script en `eBD_SPD` (aplicado el 2026-11-25).
 - [x] Agregar `EstiloMenu` a `Cuenta` (`Models/Plataforma/Identidad.cs`) con valor por defecto `"hub"`.
 - [x] Agregar el claim de estilo de menú en `ReclamosDeIdentidad`, emisión de cookie en login/cambio de contexto y helper `AuthHelper.GetEstiloMenu(HttpContext)`.
 
@@ -75,13 +75,14 @@ Así, al agregar un módulo nuevo (Bancos, Contabilidad, Inventario, Ventas, Rep
 - [x] Agregar el selector **"Estilo de menú"** dentro del menú desplegable de usuario en `_NavigationPartial.cshtml` (y en la vista de Perfil cuando se habilite).
 
 ### Etapa 5 — Pruebas y verificación
-- [x] Pruebas unitarias en `eGestion360Web.Tests` (escritas; falta correr `dotnet test`):
+- [x] Pruebas unitarias en `eGestion360Web.Tests` (corridas el 2026-11-25, suite completa 1768 de 1768):
   - `CatalogoDeNavegacion` solo devuelve módulos activos y pantallas permitidas por `ADR-029`.
   - Fallback a `hub` ante valores nulos o inválidos.
   - Cambio de `estilo_menu` actualiza solo la cuenta del usuario autenticado y rechaza valores fuera de catálogo.
 - [ ] Verificación visual y funcional:
   - Probar con `operador` (plataforma y con tenant de soporte activo), `empresa_admin` y `empresa_user`.
   - Verificar que las vistas existentes (`container` y `container-fluid`, tablas paginadas, Control de Salidas, Facturas) se vean correctamente en los 3 estilos y en móvil/tablet.
+  - Avance al 2026-11-25: en una copia local, recorrido en navegador de los 3 estilos, buscador, auditoría, permisos, operador y móvil, sin errores de JavaScript. En producción, la cuenta del operador quedó con el estilo `sidebar` guardado. No se anota como completa: falta confirmar las vistas listadas arriba una por una y la barra superior entre 992 y 1199 px, que no se ajustó ni se midió.
 
 ---
 

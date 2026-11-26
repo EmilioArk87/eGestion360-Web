@@ -1,6 +1,6 @@
 # ADR-031 · Reportes versionados en la base de datos por tenant
 
-- **Estado:** Propuesta (pendiente de aprobación de Emilio; RP3 sin PDF nativo ya decidido el 2026-11-22). Fase 1 hecha en el código (sin publicar); script 047 sin aplicar en BD.
+- **Estado:** Propuesta (pendiente de aprobación de Emilio; RP3 sin PDF nativo ya decidido el 2026-11-22). Fase 1: script 047 aplicado en `eBD_SPD` y código publicado el 2026-11-25 (`dev` `f222fc1`); ese día se verificó en producción con impresiones reales de la constancia de licencia (versión 1, con su fila en `dbo.rep_ejecuciones`).
 - **Fecha:** 2026-11-22
 - **Decide:** Emilio. Diseño de Claude, a partir de [PLAN_MOTOR_REPORTES_BD.md](../PLAN_MOTOR_REPORTES_BD.md)
 - **Fase:** complementaria al roadmap F0–F9 (Fase 1 del plan de reportes: infraestructura y piloto de constancias)

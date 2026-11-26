@@ -2,7 +2,7 @@
 
 Complemento de [`LEEME.md`](LEEME.md). Este archivo cubre el **script 045** (`2 - Script SQL/045_auditoria_seguridad.sql`), su verificación de solo lectura, el orden de publicación y cómo consultar la auditoría mientras no existan las pantallas (F1.8c). Las decisiones están en [ADR-030](../../Arquitectura/ADR-030-auditoria-de-seguridad.md) (D70 a D76, aceptadas el 2026-11-18).
 
-> **Estado:** el script 045 está **aplicado en producción desde el 2026-11-19** (con la aprobación de `/alerta-bd`): PRECHECK correcto, 2 tablas, 5 predicados y 2 columnas nuevas, ninguna fila existente cambió, y `verificar_despues_045.sql` dio 14 de 14 OK. El código de F1.8a se publicó el mismo día. F1.8b (solo código) va en el kit de `dev@b50a167`, con los catálogos de Psicología; F1.8c (pantallas y script 046) está en el código, con el 046 sin aplicar (sección al final).
+> **Estado:** el script 045 está **aplicado en producción desde el 2026-11-19** (con la aprobación de `/alerta-bd`): PRECHECK correcto, 2 tablas, 5 predicados y 2 columnas nuevas, ninguna fila existente cambió, y `verificar_despues_045.sql` dio 14 de 14 OK. El código de F1.8a se publicó el mismo día. F1.8b (solo código) se publicó el 2026-11-23 desde `dev` `b50a167`, con los catálogos de Psicología, y se probó en producción ese día. F1.8c (pantallas y script 046) está aplicada y publicada desde el 2026-11-23 (sección al final).
 
 ## Qué crea el script 045
 
@@ -180,5 +180,7 @@ El correo sale enmascarado en pantalla y en lo exportado. Cada exportación deja
 3. Como operador, abrir «Auditoría de la plataforma» y filtrar por un tenant.
 4. En «Roles y Permisos», el permiso de auditoría no aparece para marcar.
 
-**Resultado de la prueba con sesión (lectura del 2026-11-24 03:44 UTC):** el punto 2 quedó registrado en el tenant de CAPAE (filas `auditoria.exportada` de PDF y de Excel, ids 16 a 18, con el rango por defecto de 7 días). El punto 3 está **sin verificar**: no hay ninguna fila `auditoria.plataforma_exportada`. El punto 4 no deja rastro en la base y no está confirmado.
+**Resultado de la prueba con sesión (lectura del 2026-11-24 03:44 UTC):** el punto 2 quedó registrado en el tenant de CAPAE (filas `auditoria.exportada` de PDF y de Excel, ids 16 a 18, con el rango por defecto de 7 días). El punto 3 quedó sin verificar ese día. El punto 4 no deja rastro en la base y no está confirmado.
+
+**Exportaciones del punto 3 verificadas (lectura del 2026-11-26 04:12 UTC, 25/11 en Honduras), ya con la versión `f222fc1` publicada:** tres exportaciones a Excel y una impresión de la auditoría de la plataforma dejaron sus filas `auditoria.plataforma_exportada` (ids 63 a 66), con la cuenta del operador, el rango por defecto de 7 días y sin datos personales en el detalle. Ninguna llevaba filtro por tenant, así que ese filtro no está confirmado en producción.
 

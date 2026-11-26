@@ -1,6 +1,6 @@
 # ADR-030 · Auditoría de seguridad y de plataforma (F1.8)
 
-- **Estado:** Aceptada por Emilio el 2026-11-18 (decisiones D70 a D76 del plan de la etapa F1.8, sin cambios sobre lo recomendado). F1.8a (tablas, servicio y eventos de entrada) completa y publicada el 2026-11-19; F1.8b (administración, soporte y plataforma, solo código) hecha en el código, sin publicar. F1.8c (pantallas, exportación y script 046) hecha en el código; el 046 sin aplicar.
+- **Estado:** Aceptada por Emilio el 2026-11-18 (decisiones D70 a D76 del plan de la etapa F1.8, sin cambios sobre lo recomendado). F1.8a (tablas, servicio y eventos de entrada) completa y publicada el 2026-11-19; F1.8b (administración, soporte y plataforma, solo código) publicada y probada en producción el 2026-11-23. F1.8c (pantallas, exportación y script 046): 046 aplicado y código publicado el 2026-11-23; exportaciones verificadas con sesión (empresa el 2026-11-23, plataforma el 2026-11-25).
 - **Fecha:** 2026-11-18
 - **Decidió:** Emilio (D70 a D76). Diseño y ejecución de Claude
 - **Fase:** F1.8
