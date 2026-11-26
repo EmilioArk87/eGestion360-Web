@@ -1,11 +1,16 @@
 # ADR-029 · Anexo: permiso que pide cada pantalla (F1.6b)
 
 Complementa el [ADR-029](ADR-029-permisos-por-accion.md). Lista, pantalla por pantalla, el permiso del catálogo (`saas.permisos`) que declara
-`[RequierePermiso("…")]` en su clase y los handlers que piden otro. Lo vigila `eGestion360Web.Tests/Arquitectura/PermisosDePaginasTests.cs`:
-si una pantalla nueva no declara su permiso, o declara uno que no está en el catálogo, la prueba falla. Para cambiar un permiso se cambia el atributo
-de la clase; esta tabla se rehace desde el código.
+`[RequierePermiso("…")]` en su clase y los handlers que piden otro. La prueba `eGestion360Web.Tests/Arquitectura/PermisosDePaginasTests.cs`
+vigila el código: si una pantalla nueva no declara su permiso, o declara uno que no está en el catálogo, falla. Esa prueba no revisa esta tabla,
+así que se rehace desde el código cuando se agregan o cambian pantallas. Para cambiar un permiso se cambia el atributo de la clase o del handler.
 
-**86 pantallas piden un permiso y 24 no piden ninguno** (públicas, de la propia cuenta y centros de navegación). En total, 110 pantallas.
+**Actualizado el 2026-11-25** desde el código de `dev` (`986936d`).
+
+**104 pantallas piden un permiso y 27 no piden ninguno** (públicas, de la propia cuenta, centros de navegación y el aviso de Flota sin empresa).
+En total, 131 pantallas.
+
+`administracion.auditoria.ver` no se puede dar a un rol: la tiene el administrador de la empresa ([ADR-030](ADR-030-auditoria-de-seguridad.md)).
 
 ## Raíz
 
@@ -20,6 +25,10 @@ de la clase; esta tabla se rehace desde el código.
 
 | Pantalla | Permiso de la pantalla | Handlers que piden otro permiso |
 |---|---|---|
+| `/Admin/Auditoria/Imprimir` | `administracion.auditoria.ver` |  |
+| `/Admin/Auditoria/Index` | `administracion.auditoria.ver` |  |
+| `/Admin/AuditoriaPlataforma/Imprimir` | `plataforma.auditoria.ver` |  |
+| `/Admin/AuditoriaPlataforma/Index` | `plataforma.auditoria.ver` |  |
 | `/Admin/EmailConfig` | `plataforma.correo.ver` | `OnPostAsync` → `plataforma.correo.editar`<br>`OnPostTestAsync` → `plataforma.correo.editar`<br>`OnPostSetDefaultAsync` → `plataforma.correo.editar`<br>`OnPostToggleActiveAsync` → `plataforma.correo.editar`<br>`OnPostDeleteAsync` → `plataforma.correo.editar` |
 | `/Admin/EmpresaModulos/Index` | `plataforma.modulos.ver` | `OnPostAsync` → `plataforma.modulos.editar` |
 | `/Admin/EmpresaRoles/Index` | `administracion.roles.ver` | `OnPostCrearAsync` → `administracion.roles.crear`<br>`OnPostToggleAsync` → `administracion.roles.editar` |
@@ -123,6 +132,25 @@ de la clase; esta tabla se rehace desde el código.
 | `/Flota/Operacion/SalariosDiarios/Create` | `flota.salarios.crear` |  |
 | `/Flota/Operacion/SalariosDiarios/Index` | `flota.salarios.ver` |  |
 
+## Psicología
+
+| Pantalla | Permiso de la pantalla | Handlers que piden otro permiso |
+|---|---|---|
+| `/Psicologia/Atenciones/Detalle` | `psicologia.atenciones.ver` | `OnPostGuardarAsync` → `psicologia.atenciones.registrar`<br>`OnPostCerrarAsync` → `psicologia.atenciones.cerrar`<br>`OnPostAnularAsync` → `psicologia.atenciones.anular` |
+| `/Psicologia/Catalogos/Pruebas` | `psicologia.catalogos.ver` | `OnPostGuardarAsync` → `psicologia.catalogos.editar`<br>`OnPostEstadoAsync` → `psicologia.catalogos.editar` |
+| `/Psicologia/Catalogos/TiposConstancia` | `psicologia.catalogos.ver` | `OnPostGuardarAsync` → `psicologia.catalogos.editar`<br>`OnPostEstadoAsync` → `psicologia.catalogos.editar` |
+| `/Psicologia/Constancias/Emitir` | `psicologia.constancias.emitir` |  |
+| `/Psicologia/Constancias/Imprimir` | `psicologia.documentos.imprimir` |  |
+| `/Psicologia/Constancias/Index` | `psicologia.constancias.ver` |  |
+| `/Psicologia/Importar/Revisar` | `psicologia.pacientes.importar` |  |
+| `/Psicologia/Importar/Subir` | `psicologia.pacientes.importar` |  |
+| `/Psicologia/Jornadas/Index` | `psicologia.jornadas.ver` | `OnPostCrearAsync` → `psicologia.jornadas.crear`<br>`OnPostResponsableAsync` → `psicologia.jornadas.editar` |
+| `/Psicologia/Pacientes/Create` | `psicologia.pacientes.crear` |  |
+| `/Psicologia/Pacientes/Detalle` | `psicologia.pacientes.ver` | `OnPostAnularConstanciaAsync` → `psicologia.constancias.anular`<br>`OnPostCorregirFechaConstanciaAsync` → `psicologia.constancias.anular` |
+| `/Psicologia/Pacientes/Editar` | `psicologia.pacientes.editar` |  |
+| `/Psicologia/Pacientes/Index` | `psicologia.pacientes.ver` |  |
+| `/Psicologia/Profesionales/Index` | `psicologia.profesionales.ver` | `OnPostGuardarAsync` → `psicologia.profesionales.editar`<br>`OnPostEstadoAsync` → `psicologia.profesionales.editar` |
+
 ## Pantallas que no piden permiso
 
 | Pantalla | Motivo |
@@ -151,10 +179,13 @@ de la clase; esta tabla se rehace desde el código.
 | `/Flota/MantenimientoDatos/Index` | Centro de navegación del módulo: cada opción pide su propio permiso |
 | `/Flota/Operacion/Index` | Centro de navegación del módulo: cada opción pide su propio permiso |
 | `/Flota/SinEmpresa` | Explica por qué Flota no abre sin empresa |
+| `/Preferencias/EstiloMenu` | Preferencias de la propia cuenta |
+| `/Psicologia/Catalogos/Index` | Centro de navegación del módulo: cada opción pide su propio permiso |
+| `/Psicologia/Index` | Centro de navegación del módulo: cada opción pide su propio permiso |
 
 Un centro de navegación no pide permiso porque solo ofrece enlaces: cada pantalla a la que lleva pide el suyo. `/Products` está hoy oculta (no tiene ruta) y queda marcada para que, si se vuelve a mostrar, ya tenga decidido su permiso.
 
 ## Dos huecos del catálogo que esta lista deja a la vista
 
-- **Eliminar un peaje** (`OnPostDeleteAsync` de `/Flota/Operacion/Peajes/Edit`) no tiene permiso propio en el catálogo: hoy cuelga de `flota.peajes.editar`. Si se quiere separar, hace falta un permiso nuevo y un script.
-- **Ver los usuarios de la empresa** (`administracion.usuarios.ver`) no lo pide ninguna pantalla: el directorio de usuarios con todas las cuentas es `/UserManagement`, que es de la plataforma. Se decide cuando se revisen las pantallas de administración (F1.6c).
+- **Eliminar un peaje** (`OnPostDeleteAsync` de `/Flota/Operacion/Peajes/Edit`) no tiene permiso propio en el catálogo: cuelga de `flota.peajes.editar`. Si se quiere separar, hace falta un permiso nuevo y un script.
+- **Ver los usuarios de la empresa** (`administracion.usuarios.ver`) no lo pide ninguna pantalla: es el único de los 93 permisos del catálogo en esa situación. El directorio con todas las cuentas es `/UserManagement`, que es de la plataforma.
