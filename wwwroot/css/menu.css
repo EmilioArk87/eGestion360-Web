@@ -46,6 +46,15 @@
 .egm-buscar-claro { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.25); color: #fff; min-width: 0; }
 .egm-buscar-claro:hover { background: rgba(255,255,255,.22); color: #fff; border-color: rgba(255,255,255,.4); }
 .egm-buscar-claro kbd { background: rgba(255,255,255,.2); color: #fff; border-color: transparent; }
+/* La barra superior del estilo hub lleva hasta cinco enlaces (y, para el operador, el aviso del tenant de soporte): por debajo de
+   1400 px el buscador se queda en su icono y, entre 1200 y 1399 px, los enlaces se compactan para que no se parta en dos renglones. */
+@media (min-width: 992px) and (max-width: 1399.98px) {
+    .navbar .egm-buscar { min-width: 0; }
+    .navbar .egm-buscar .texto, .navbar .egm-buscar kbd { display: none; }
+}
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+    .navbar .navbar-nav .nav-link { font-size: .9rem; padding-left: .4rem; padding-right: .4rem; white-space: nowrap; }
+}
 .egm-estilo-actual { color: var(--eg-blue); }
 
 /* ---------- Buscador rápido (Ctrl+K) ---------- */
@@ -211,13 +220,20 @@ a.egm-mega-item:hover { background: #f1f5f9; color: var(--eg-ink); }
 /* ======================================================================
    Estilo «hub»: Menú Principal renovado
    ====================================================================== */
-.egm-hub-cabecera { background: var(--eg-grad); color: #fff; padding: 1.75rem 0 2.75rem; border-radius: 0 0 18px 18px; }
+.egm-hub-cabecera { background: var(--eg-grad); color: #fff; padding: 1.75rem 0; border-radius: 0 0 18px 18px; }
 .egm-hub-caja {
     background: #fff; border-radius: 12px; padding: .45rem .65rem;
     display: flex; align-items: center; gap: .6rem; box-shadow: 0 10px 26px rgba(15, 23, 42, .16);
 }
 .egm-hub-caja input { border: none; outline: none; flex: 1; font-size: .94rem; color: var(--eg-ink); min-width: 0; }
-.egm-hub-cuerpo { margin-top: -1.6rem; }
+.egm-hub-cuerpo { margin-top: 1rem; }
+/* «Frecuentes»: la etiqueta y los accesos en el mismo renglón (los que no caben siguen debajo de los accesos, no de la etiqueta). */
+#egm-frecuentes-bloque { align-items: flex-start !important; }
+#egm-frecuentes-bloque[hidden] { display: none !important; }   /* d-flex de Bootstrap pisaría el atributo hidden */
+#egm-frecuentes { flex: 1 1 0; min-width: 0; }
+@media (max-width: 575.98px) {
+    #egm-frecuentes { flex-basis: 100%; }
+}
 .egm-chip {
     display: inline-flex; align-items: center; gap: .45rem; background: #fff;
     border: 1px solid var(--eg-border); border-radius: 999px; padding: .4rem .85rem;

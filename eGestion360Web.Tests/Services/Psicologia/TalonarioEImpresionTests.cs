@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using eGestion360Web.Data;
 using eGestion360Web.Models.Psicologia;
+using eGestion360Web.Pages.Psicologia.Constancias;
 using eGestion360Web.Services.Auditoria;
 using eGestion360Web.Services.Personas;
 using eGestion360Web.Services.Psicologia;
@@ -261,6 +264,56 @@ namespace eGestion360Web.Tests.Services.Psicologia
 
             using var leer = _bd.Crear();
             Assert.Empty(await leer.ReporteEjecuciones.ToListAsync());
+        }
+
+        [Theory]
+        // Compila, pero al generarse pasa el tope de vueltas: la pantalla imprime la hoja de siempre.
+        [InlineData("{{ for i in 1..100000 }}x{{ end }}", "1", 0)]
+        // Se genera bien: la impresión lleva la versión publicada y deja su ejecución.
+        [InlineData("<div class=\"hoja\">{{ paciente.nombre_completo | html.escape }}</div>", "2", 1)]
+        public async Task La_impresion_se_anota_con_la_hoja_que_la_pantalla_de_verdad_genera(string plantilla, string versionAnotada, int ejecuciones)
+        {
+            var tipo = await TipoLicencia();
+            var (paciente, prueba) = await PacienteYPrueba();
+            var c = (await Emitir(paciente, tipo, prueba)).Valor!;
+
+            using (var db = _bd.Crear())
+            {
+                var reporte = new eGestion360Web.Models.Reportes.Reporte
+                {
+                    Codigo = PlantillasConstancia.CodigoReporteLicenciaConducir, Nombre = "Constancia", Modulo = "psicologia",
+                    FuenteDatos = eGestion360Web.Services.Reportes.ConstanciaPsicologiaDataSource.Fuente, CreadoPor = "prueba"
+                };
+                db.Reportes.Add(reporte);
+                await db.SaveChangesAsync();
+                var version = new eGestion360Web.Models.Reportes.ReporteVersion
+                {
+                    IdReporte = reporte.IdReporte, NumeroVersion = 2, Estado = eGestion360Web.Models.Reportes.EstadosVersionReporte.Publicada,
+                    ContenidoPlantilla = plantilla, CreadoPor = "prueba", FechaPublicacion = DateTime.UtcNow
+                };
+                db.ReporteVersiones.Add(version);
+                await db.SaveChangesAsync();
+                reporte.IdVersionActiva = version.IdVersion;
+                await db.SaveChangesAsync();
+            }
+
+            using (var db = Contexto())
+            {
+                var motor = new eGestion360Web.Services.Reportes.MotorReportesService(db, _bd.Tenant,
+                    new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()), _reloj,
+                    NullLogger<eGestion360Web.Services.Reportes.MotorReportesService>.Instance);
+                var pagina = new ImprimirModel(db, new ConstanciaService(db, _reloj, NullLogger<ConstanciaService>.Instance, motor), motor,
+                    NullLogger<ImprimirModel>.Instance)
+                {
+                    PageContext = new PageContext { HttpContext = SesionFalsa.Contexto("empresa_user", DatosBase.EmpresaA.ToString()) }
+                };
+                var respuesta = Assert.IsType<RedirectToPageResult>(await pagina.OnPostRegistrarAsync(c.IdConstancia));
+                Assert.Equal(true, respuesta.RouteValues!["imprimir"]);
+            }
+
+            using var leer = _bd.Crear();
+            Assert.Equal(versionAnotada, (await leer.ImpresionesPsicologia.SingleAsync()).VersionPlantilla);
+            Assert.Equal(ejecuciones, await leer.ReporteEjecuciones.CountAsync());
         }
 
         // ── Redacción ───────────────────────────────────────────────────────

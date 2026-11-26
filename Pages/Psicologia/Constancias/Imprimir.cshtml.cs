@@ -67,8 +67,10 @@ namespace eGestion360Web.Pages.Psicologia.Constancias
         public async Task<IActionResult> OnPostRegistrarAsync(int id)
         {
             if (!AuthHelper.IsAuthenticated(HttpContext)) return RedirectToPage("/Login");
+            // La hoja se genera igual que al mostrarla: si la del motor falla se imprime la de siempre, y así tiene que quedar anotado.
+            await CargarAsync(id);
             var r = await _constancias.RegistrarImpresionAsync(AuthHelper.GetEmpresaId(HttpContext) ?? 0, id, AuthHelper.GetNombreUsuario(HttpContext) ?? "system",
-                AuthHelper.GetCuentaId(HttpContext));
+                AuthHelper.GetCuentaId(HttpContext), conElMotor: HojaDelMotor != null);
             if (!r.Ok)
             {
                 TempData["ImprimirError"] = r.Errores[0].Mensaje;

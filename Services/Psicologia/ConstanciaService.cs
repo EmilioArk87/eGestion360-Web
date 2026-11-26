@@ -70,7 +70,7 @@ namespace eGestion360Web.Services.Psicologia
         }
 
         public async Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, int? idCuenta = null,
-            CancellationToken ct = default)
+            bool conElMotor = true, CancellationToken ct = default)
         {
             var constancia = await _db.Constancias.AsNoTracking().Include(c => c.Tipo)
                 .FirstOrDefaultAsync(c => c.IdConstancia == idConstancia && c.IdEmpresa == idEmpresa, ct);
@@ -89,7 +89,7 @@ namespace eGestion360Web.Services.Psicologia
             _db.ImpresionesPsicologia.Add(impresion);
 
             // Formato del motor de reportes: la impresión lleva el número de la versión publicada y deja su ejecución en la misma transacción.
-            var version = _motor != null && plantilla.CodigoReporte != null ? await _motor.ResolverAsync(plantilla.CodigoReporte, ct) : null;
+            var version = conElMotor && _motor != null && plantilla.CodigoReporte != null ? await _motor.ResolverAsync(plantilla.CodigoReporte, ct) : null;
             if (version != null)
             {
                 impresion.VersionPlantilla = version.NumeroVersion.ToString();

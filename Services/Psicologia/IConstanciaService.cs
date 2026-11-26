@@ -32,8 +32,10 @@ namespace eGestion360Web.Services.Psicologia
         /// motor de reportes (ADR-031), guarda además la fila de dbo.rep_ejecuciones en la misma transacción, y la impresión lleva el número
         /// de la versión publicada que se usó.
         /// </summary>
+        /// <param name="conElMotor">Falso cuando la pantalla no pudo generar la hoja del motor y va a imprimir la de siempre: la impresión se
+        /// anota con esa hoja y sin ejecución.</param>
         Task<ResultadoPsicologia<Impresion>> RegistrarImpresionAsync(int idEmpresa, int idConstancia, string usuario, int? idCuenta = null,
-            CancellationToken ct = default);
+            bool conElMotor = true, CancellationToken ct = default);
     }
 
     public sealed class EmitirConstanciaInput
