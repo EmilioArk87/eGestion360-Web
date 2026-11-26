@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prototipos de Menú — eGestión360</title>
+    <link rel="stylesheet" href="../lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <style>
+        :root {
+            --eg-blue: #1B63C9;
+            --eg-blue-dark: #134999;
+            --eg-cyan: #12B8C6;
+            --eg-amber: #F5A524;
+            --eg-ink: #0f172a;
+            --eg-slate: #475569;
+            --eg-muted: #64748b;
+            --eg-border: #e2e8f0;
+            --eg-bg: #f4f6fa;
+            --eg-surface: #ffffff;
+            --eg-grad: linear-gradient(135deg, #1B63C9 0%, #12B8C6 100%);
+            --switcher-h: 58px;
+        }
+
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; background: var(--eg-bg); color: var(--eg-ink); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+
+        /* ========== BARRA SUPERIOR SELECTORA DE PROTOTIPOS ========== */
+        .proto-bar {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--switcher-h); z-index: 2000;
+            background: #0b1220; color: #e2e8f0;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            display: flex; align-items: center; gap: .75rem; padding: 0 1rem;
+            box-shadow: 0 4px 18px rgba(2, 6, 23, .35);
+        }
+        .proto-bar-title {
+            display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: .88rem;
+            white-space: nowrap; color: #fff; padding-right: .5rem;
+            border-right: 1px solid rgba(255,255,255,.14);
+        }
+        .proto-bar-title .dot {
+            width: 9px; height: 9px; border-radius: 50%; background: var(--eg-cyan);
+            box-shadow: 0 0 0 3px rgba(18,184,198,.25);
+        }
+        .proto-tabs {
+            display: flex; gap: .35rem; overflow-x: auto; scrollbar-width: none; flex: 1;
+        }
+        .proto-tabs::-webkit-scrollbar { display: none; }
+        .proto-tab {
+            border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04);
+            color: #cbd5e1; border-radius: 8px; padding: .38rem .75rem; font-size: .8rem;
+            font-weight: 600; cursor: pointer; white-space: nowrap; transition: all .18s ease;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .proto-tab:hover { background: rgba(255,255,255,.1); color: #fff; }
+        .proto-tab.active {
+            background: var(--eg-grad); border-color: transparent; color: #fff;
+            box-shadow: 0 3px 12px rgba(27, 99, 201, .45);
+        }
+        .proto-tab .num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; border-radius: 5px; font-size: .7rem;
+            background: rgba(255,255,255,.18);
+        }
+        .proto-bar-right { display: flex; align-items: center; gap: .5rem; }
+        .proto-info-btn {
+            border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06);
+            color: #e2e8f0; border-radius: 8px; padding: .35rem .65rem; font-size: .78rem;
+            cursor: pointer; white-space: nowrap;
+        }
+        .proto-info-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+        /* Panel informativo desplegable */
+        .proto-notes {
+            position: fixed; top: var(--switcher-h); right: 1rem; width: 390px; max-width: calc(100vw - 2rem);
+            z-index: 1990; background: #0f172a; color: #e2e8f0; border: 1px solid rgba(255,255,255,.14);
+            border-radius: 0 0 12px 12px; padding: 1rem 1.15rem; box-shadow: 0 16px 36px rgba(0,0,0,.4);
+            display: none;
+        }
+        .proto-notes.open { display: block; }
+        .proto-notes h6 { color: #fff; font-weight: 700; margin-bottom: .35rem; }
+        .proto-notes p { font-size: .83rem; color: #cbd5e1; margin-bottom: .65rem; }
+        .proto-notes ul { padding-left: 1.1rem; margin: 0; font-size: .8rem; color: #94a3b8; }
+        .proto-notes li { margin-bottom: .25rem; }
+
+        /* Contenedor de cada prototipo */
+        .proto-stage {
+            padding-top: var(--switcher-h);
+            min-height: 100vh;
+        }
+        .proto-view { display: none; min-height: calc(100vh - var(--switcher-h)); }
+        .proto-view.active { display: block; }
+
+        /* ========== UTILIDADES COMPARTIDAS DE CONTENIDO SIMULADO ========== */
+        .demo-card {
+            background: #fff; border: 1px solid var(--eg-border); border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .04);
+        }
+        .kpi-tile {
+            background: #fff; border: 1px solid var(--eg-border); border-radius: 12px;
+            padding: 1rem 1.15rem; display: flex; align-items: center; justify-content: space-between;
+        }
+        .kpi-tile .lbl { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--eg-muted); font-weight: 600; }
+        .kpi-tile .val { font-size: 1.55rem; font-weight: 700; color: var(--eg-ink); line-height: 1.2; margin-top: .15rem; }
+        .kpi-tile .ico {
+            width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.05rem;
+        }
+        .badge-soporte {
+            background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+            font-size: .73rem; font-weight: 600; padding: .28rem .6rem; border-radius: 999px;
+            display: inline-flex; align-items: center; gap: .35rem;
+        }
+        .badge-soon {
+            font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+            padding: .15rem .42rem; border-radius: 999px; background: #e2e8f0; color: #475569;
+        }
+        .avatar-circle {
+            width: 32px; height: 32px; border-radius: 50%; background: var(--eg-grad);
+            color: #fff; font-weight: 700; font-size: .78rem;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+
+        /* ======================================================================
+           PROTOTIPO 1: SIDEBAR LATERAL COLAPSABLE (ERP MODERNO)
+           ====================================================================== */
+        .p1-shell { display: flex; min-height: calc(100vh - var(--switcher-h)); }
+        .p1-sidebar {
+            width: 268px; flex-shrink: 0; background: #0f172a; color: #cbd5e1;
+            display: flex; flex-direction: column; transition: width .22s ease;
+            border-right: 1px solid #1e293b;
+        }
+        .p1-sidebar.collapsed { width: 72px; }
+        .p1-brand {
+            height: 60px; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+        }
+        .p1-brand-left { display: flex; align-items: center; gap: .6rem; overflow: hidden; }
+        .p1-brand-left img { width: 28px; height: 28px; flex-shrink: 0; }
+        .p1-brand-left span { font-weight: 700; font-size: 1.08rem; color: #fff; white-space: nowrap; }
+        .p1-sidebar.collapsed .p1-brand-left span,
+        .p1-sidebar.collapsed .p1-sec-label,
+        .p1-sidebar.collapsed .p1-link-text,
+        .p1-sidebar.collapsed .p1-caret,
+        .p1-sidebar.collapsed .p1-sub,
+        .p1-sidebar.collapsed .p1-tenant-info { display: none !important; }
+        .p1-collapse-btn {
+            border: none; background: rgba(255,255,255,.06); color: #94a3b8;
+            width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .p1-collapse-btn:hover { background: rgba(255,255,255,.14); color: #fff; }
+        .p1-nav { flex: 1; overflow-y: auto; padding: .75rem .6rem; }
+        .p1-sec-label {
+            font-size: .67rem; text-transform: uppercase; letter-spacing: .08em;
+            color: #64748b; font-weight: 700; padding: .85rem .65rem .35rem;
+        }
+        .p1-item {
+            display: flex; align-items: center; gap: .7rem; width: 100%; border: none;
+            background: transparent; color: #cbd5e1; padding: .55rem .7rem; border-radius: 8px;
+            font-size: .86rem; font-weight: 500; cursor: pointer; text-align: left;
+            transition: background .15s, color .15s;
+        }
+        .p1-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+        .p1-item.active { background: rgba(27, 99, 201, .28); color: #fff; font-weight: 600; }
+        .p1-item .ico { width: 20px; text-align: center; font-size: .92rem; color: #94a3b8; flex-shrink: 0; }
+        .p1-item.active .ico { color: #38bdf8; }
+        .p1-caret { margin-left: auto; font-size: .7rem; transition: transform .18s; color: #64748b; }
+        .p1-group.open .p1-caret { transform: rotate(90deg); }
+        .p1-sub { display: none; padding: .2rem 0 .35rem 2.25rem; }
+        .p1-group.open .p1-sub { display: block; }
+        .p1-sub a {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: .36rem .55rem; border-radius: 6px; color: #94a3b8; text-decoration: none;
+            font-size: .81rem; transition: all .15s;
+        }
+        .p1-sub a:hover { color: #fff; background: rgba(255,255,255,.05); }
+        .p1-sub a.active { color: #38bdf8; font-weight: 600; background: rgba(56, 189, 248, .08); }
+        .p1-footer {
+            padding: .75rem; border-top: 1px solid rgba(255,255,255,.08);
+            display: flex; align-items: center; gap: .6rem;
+        }
+        .p1-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .p1-topbar {
+            height: 60px; background: #fff; border-bottom: 1px solid var(--eg-border);
+            padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        }
+        .p1-search-trigger {
+            display: flex; align-items: center; gap: .5rem; background: #f1f5f9;
+            border: 1px solid var(--eg-border); border-radius: 8px; padding: .38rem .75rem;
+            color: var(--eg-muted); font-size: .82rem; cursor: pointer; min-width: 240px;
+        }
+        .p1-search-trigger kbd {
+            margin-left: auto; background: #fff; color: #475569; border: 1px solid #cbd5e1;
+            font-size: .68rem; padding: .1rem .35rem; border-radius: 4px;
+        }
+
+        /* ======================================================================
+           PROTOTIPO 2: DOBLE RAIL (MÓDULOS + PANEL CONTEXTUAL)
+           ====================================================================== */
+        .p2-shell { display: flex; min-height: calc(100vh - var(--switcher-h)); }
+        .p2-rail {
+            width: 68px; background: #102a56; display: flex; flex-direction: column;
+            align-items: center; padding: .75rem 0; gap: .4rem; flex-shrink: 0;
+        }
+        .p2-rail-logo { margin-bottom: .75rem; }
+        .p2-rail-btn {
+            width: 44px; height: 44px; border-radius: 12px; border: none;
+            background: transparent; color: #93c5fd; font-size: 1.05rem;
+            cursor: pointer; position: relative; transition: all .18s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .p2-rail-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+        .p2-rail-btn.active {
+            background: #fff; color: var(--eg-blue);
+            box-shadow: 0 4px 12px rgba(0,0,0,.22);
+        }
+        .p2-rail-btn[data-tip]:hover::after {
+            content: attr(data-tip); position: absolute; left: 56px; top: 50%; transform: translateY(-50%);
+            background: #0f172a; color: #fff; font-size: .74rem; font-weight: 600;
+            padding: .28rem .55rem; border-radius: 6px; white-space: nowrap; z-index: 30;
+            box-shadow: 0 4px 10px rgba(0,0,0,.25);
+        }
+        .p2-rail-divider { width: 32px; height: 1px; background: rgba(255,255,255,.15); margin: .35rem 0; }
+        .p2-panel {
+            width: 248px; background: #fff; border-right: 1px solid var(--eg-border);
+            display: flex; flex-direction: column; flex-shrink: 0;
+        }
+        .p2-panel-head {
+            padding: 1rem 1.1rem; border-bottom: 1px solid var(--eg-border);
+        }
+        .p2-panel-head h6 { margin: 0; font-weight: 700; font-size: .95rem; }
+        .p2-panel-head small { color: var(--eg-muted); font-size: .76rem; }
+        .p2-panel-body { padding: .75rem; flex: 1; overflow-y: auto; }
+        .p2-cat { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--eg-muted); font-weight: 700; padding: .6rem .55rem .25rem; }
+        .p2-link {
+            display: flex; align-items: center; gap: .6rem; padding: .5rem .65rem;
+            border-radius: 8px; color: #334155; text-decoration: none; font-size: .85rem;
+            font-weight: 500; transition: all .15s; margin-bottom: 2px;
+        }
+        .p2-link:hover { background: #f1f5f9; color: var(--eg-blue); }
+        .p2-link.active { background: #eff6ff; color: var(--eg-blue); font-weight: 600; }
+        .p2-link i { width: 18px; text-align: center; opacity: .8; }
+        .p2-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+        /* ======================================================================
+           PROTOTIPO 3: TOPBAR CON MEGA-MENÚ DESPLEGABLE (ANCHO COMPLETO)
+           ====================================================================== */
+        .p3-nav {
+            background: #fff; border-bottom: 1px solid var(--eg-border);
+            position: relative; z-index: 50;
+        }
+        .p3-nav-inner {
+            max-width: 1380px; margin: 0 auto; padding: 0 1.25rem; height: 62px;
+            display: flex; align-items: center; gap: 1.25rem;
+        }
+        .p3-brand { display: flex; align-items: center; gap: .55rem; font-weight: 800; font-size: 1.1rem; color: var(--eg-ink); text-decoration: none; }
+        .p3-tabs { display: flex; align-items: center; gap: .25rem; height: 100%; }
+        .p3-tab {
+            border: none; background: transparent; height: 100%; padding: 0 .85rem;
+            font-size: .87rem; font-weight: 600; color: var(--eg-slate); cursor: pointer;
+            display: flex; align-items: center; gap: .45rem; border-bottom: 3px solid transparent;
+            transition: all .15s;
+        }
+        .p3-tab:hover { color: var(--eg-blue); }
+        .p3-tab.active, .p3-tab.open { color: var(--eg-blue); border-bottom-color: var(--eg-blue); }
+        .p3-mega {
+            display: none; position: absolute; left: 0; right: 0; top: 62px;
+            background: #fff; border-bottom: 1px solid var(--eg-border);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, .12); padding: 1.5rem 0; z-index: 60;
+        }
+        .p3-mega.open { display: block; }
+        .p3-mega-inner { max-width: 1380px; margin: 0 auto; padding: 0 1.5rem; }
+        .p3-mega-col h6 {
+            font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+            color: var(--eg-muted); font-weight: 700; margin-bottom: .65rem;
+        }
+        .p3-mega-item {
+            display: flex; align-items: flex-start; gap: .7rem; padding: .55rem .65rem;
+            border-radius: 10px; text-decoration: none; color: var(--eg-ink); transition: background .15s;
+        }
+        .p3-mega-item:hover { background: #f1f5f9; }
+        .p3-mega-ico {
+            width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: .88rem; flex-shrink: 0;
+        }
+        .p3-mega-item strong { display: block; font-size: .86rem; line-height: 1.2; }
+        .p3-mega-item small { color: var(--eg-muted); font-size: .75rem; }
+        .p3-subbar {
+            background: #f8fafc; border-bottom: 1px solid var(--eg-border);
+        }
+        .p3-subbar-inner {
+            max-width: 1380px; margin: 0 auto; padding: .45rem 1.25rem;
+            display: flex; align-items: center; gap: .4rem; overflow-x: auto;
+        }
+        .p3-pill {
+            font-size: .8rem; font-weight: 600; color: var(--eg-slate); text-decoration: none;
+            padding: .3rem .75rem; border-radius: 999px; white-space: nowrap;
+        }
+        .p3-pill:hover { background: #e2e8f0; color: var(--eg-ink); }
+        .p3-pill.active { background: var(--eg-blue); color: #fff; }
+
+        /* ======================================================================
+           PROTOTIPO 4: HUB DE TARJETAS RENOVADO + BUSCADOR Y ACCESOS DIRECTOS
+           ====================================================================== */
+        .p4-top {
+            background: var(--eg-grad); color: #fff; padding: 1.25rem 0 2.75rem;
+        }
+        .p4-search-box {
+            background: #fff; border-radius: 12px; padding: .45rem .65rem;
+            display: flex; align-items: center; gap: .6rem;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, .16);
+        }
+        .p4-search-box input {
+            border: none; outline: none; flex: 1; font-size: .94rem; color: var(--eg-ink);
+        }
+        .p4-hub-wrap { margin-top: -1.6rem; }
+        .p4-quick-chip {
+            display: inline-flex; align-items: center; gap: .45rem; background: #fff;
+            border: 1px solid var(--eg-border); border-radius: 999px; padding: .4rem .85rem;
+            font-size: .82rem; font-weight: 600; color: var(--eg-ink); text-decoration: none;
+            box-shadow: 0 2px 6px rgba(15,23,42,.05); transition: all .15s;
+        }
+        .p4-quick-chip:hover { border-color: var(--eg-blue); color: var(--eg-blue); transform: translateY(-1px); }
+        .p4-filter-btn {
+            border: 1px solid var(--eg-border); background: #fff; color: var(--eg-slate);
+            border-radius: 8px; padding: .38rem .85rem; font-size: .82rem; font-weight: 600; cursor: pointer;
+        }
+        .p4-filter-btn.active { background: var(--eg-ink); color: #fff; border-color: var(--eg-ink); }
+        .p4-card {
+            background: #fff; border: 1px solid var(--eg-border); border-radius: 14px;
+            padding: 1.15rem; height: 100%; display: flex; flex-direction: column;
+            transition: transform .18s, box-shadow .18s, border-color .18s;
+        }
+        .p4-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(15,23,42,.08); border-color: #cbd5e1; }
+        .p4-card-head { display: flex; align-items: center; gap: .8rem; margin-bottom: .75rem; }
+        .p4-card-ico {
+            width: 44px; height: 44px; border-radius: 12px; color: #fff; font-size: 1.15rem;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .p4-sublinks { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: auto; padding-top: .75rem; border-top: 1px solid #f1f5f9; }
+        .p4-sublink {
+            font-size: .75rem; font-weight: 600; color: var(--eg-slate); background: #f8fafc;
+            border: 1px solid #e2e8f0; border-radius: 6px; padding: .22rem .55rem; text-decoration: none;
+        }
+        .p4-sublink:hover { background: #eff6ff; border-color: #bfdbfe; color: var(--eg-blue); }
+
+        /* ======================================================================
+           PROTOTIPO 5: APP LAUNCHER (9 PUNTOS) + DOCK FLOTANTE + DRAWER
+           ====================================================================== */
+        .p5-header {
+            background: rgba(255,255,255,.88); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--eg-border); height: 60px;
+            padding: 0 1.25rem; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: var(--switcher-h); z-index: 40;
+        }
+        .p5-launcher-btn {
+            width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--eg-border);
+            background: #fff; color: var(--eg-ink); cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; transition: all .15s;
+        }
+        .p5-launcher-btn:hover, .p5-launcher-btn.open { background: var(--eg-blue); color: #fff; border-color: var(--eg-blue); }
+        .p5-launcher-pop {
+            display: none; position: fixed; top: calc(var(--switcher-h) + 68px); left: 1.25rem;
+            width: 420px; max-width: calc(100vw - 2.5rem); background: #fff;
+            border: 1px solid var(--eg-border); border-radius: 16px;
+            box-shadow: 0 24px 48px rgba(15,23,42,.18); padding: 1rem; z-index: 100;
+        }
+        .p5-launcher-pop.open { display: block; }
+        .p5-app-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; margin-top: .75rem; }
+        .p5-app-tile {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: .75rem .4rem; border-radius: 12px; text-decoration: none; color: var(--eg-ink);
+            border: 1px solid transparent; transition: all .15s; cursor: pointer; background: transparent;
+        }
+        .p5-app-tile:hover { background: #f8fafc; border-color: var(--eg-border); }
+        .p5-app-tile.active { background: #eff6ff; border-color: #93c5fd; }
+        .p5-app-tile .ico {
+            width: 42px; height: 42px; border-radius: 12px; color: #fff; font-size: 1.05rem;
+            display: flex; align-items: center; justify-content: center; margin-bottom: .4rem;
+        }
+        .p5-app-tile span { font-size: .78rem; font-weight: 600; line-height: 1.15; }
+        .p5-dock {
+            position: fixed; bottom: 1.15rem; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, .92); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.14); border-radius: 16px;
+            padding: .45rem .6rem; display: flex; align-items: center; gap: .35rem;
+            box-shadow: 0 14px 32px rgba(2,6,23,.35); z-index: 80;
+        }
+        .p5-dock-btn {
+            border: none; background: transparent; color: #cbd5e1; border-radius: 10px;
+            padding: .45rem .75rem; font-size: .8rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: .4rem; white-space: nowrap; transition: all .15s;
+        }
+        .p5-dock-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+        .p5-dock-btn.active { background: var(--eg-grad); color: #fff; }
+
+        /* ========== COMMAND PALETTE MODAL (Ctrl+K) ========== */
+        .cmd-backdrop {
+            display: none; position: fixed; inset: 0; background: rgba(15,23,42,.5);
+            backdrop-filter: blur(3px); z-index: 2500; align-items: flex-start; justify-content: center;
+            padding-top: 12vh;
+        }
+        .cmd-backdrop.open { display: flex; }
+        .cmd-box {
+            width: 560px; max-width: calc(100vw - 2rem); background: #fff; border-radius: 14px;
+            box-shadow: 0 24px 60px rgba(2,6,23,.35); overflow: hidden; border: 1px solid var(--eg-border);
+        }
+        .cmd-input-row {
+            display: flex; align-items: center; gap: .65rem; padding: .85rem 1rem;
+            border-bottom: 1px solid var(--eg-border);
+        }
+        .cmd-input-row input { border: none; outline: none; flex: 1; font-size: .95rem; }
+        .cmd-results { max-height: 340px; overflow-y: auto; padding: .5rem; }
+        .cmd-row {
+            display: flex; align-items: center; gap: .7rem; padding: .55rem .7rem;
+            border-radius: 8px; cursor: pointer; text-decoration: none; color: var(--eg-ink);
+        }
+        .cmd-row:hover { background: #eff6ff; color: var(--eg-blue); }
+        .cmd-row small { margin-left: auto; color: var(--eg-muted); font-size: .74rem; }
+
+        @media (max-width: 900px) {
+            .p2-panel { width: 200px; }
+            .p1-search-trigger { min-width: 140px; }
+            .p5-dock { max-width: calc(100vw - 1.5rem); overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================================
+         BARRA SELECTORA DE LOS 5 PROTOTIPOS
+         ========================================================== -->
+    <div class="proto-bar">
+        <div class="proto-bar-title">
+            <span class="dot"></span>
+            <span>Prototipos de Menú</span>
+        </div>
+        <div class="proto-tabs" id="protoTabs">
+            <button class="proto-tab active" data-proto="1"><span class="num">1</span> Sidebar Colapsable</button>
+            <button class="proto-tab" data-proto="2"><span class="num">2</span> Doble Rail</button>
+            <button class="proto-tab" data-proto="3"><span class="num">3</span> Topbar + Mega-Menú</button>
+            <button class="proto-tab" data-proto="4"><span class="num">4</span> Hub Renovado + Búsqueda</button>
+            <button class="proto-tab" data-proto="5"><span class="num">5</span> App Launcher + Dock</button>
+        </div>
+        <div class="proto-bar-right">
+            <button class="proto-info-btn" id="btnToggleNotes"><i class="fas fa-circle-info me-1"></i>Pros / Ideal para</button>
+        </div>
+    </div>
+
+    <div class="proto-notes" id="protoNotes"></div>
+
+    <!-- ==========================================================
+         ESCENARIO PRINCIPAL
+         ========================================================== -->
+    <div class="proto-stage">
+
+        <!-- ======================================================
+             PROTOTIPO 1: SIDEBAR LATERAL COLAPSABLE
+             ====================================================== -->
+        <section class="proto-view active" id="proto-1">
+            <div class="p1-shell">
+                <aside class="p1-sidebar" id="p1Sidebar">
+                    <div class="p1-brand">
+                        <div class="p1-brand-left">
+                            <img src="../img/isotipo.svg" alt="eGestión360" />
+                            <span>eGestión360</span>
+                        </div>
+                        <button class="p1-collapse-btn" id="p1Toggle" title="Colapsar / expandir menú">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+
+                    <div class="p1-nav">
+                        <button class="p1-item active" data-nav="Inicio / Resumen">
+                            <span class="ico"><i class="fas fa-house"></i></span>
+                            <span class="p1-link-text">Inicio</span>
+                        </button>
+
+                        <div class="p1-sec-label">Operación</div>
+
+                        <div class="p1-group open">
+                            <button class="p1-item p1-acc-btn">
+                                <span class="ico"><i class="fas fa-truck"></i></span>
+                                <span class="p1-link-text">Control de Flota</span>
+                                <i class="fas fa-chevron-right p1-caret"></i>
+                            </button>
+                            <div class="p1-sub">
+                                <a href="#" class="active" data-nav="Flota › Dashboard KPI">Dashboard KPI</a>
+                                <a href="#" data-nav="Flota › Control de Salidas">Control de Salidas</a>
+                                <a href="#" data-nav="Flota › Combustible y Peajes">Combustible y Peajes</a>
+                                <a href="#" data-nav="Flota › Gastos Periódicos">Gastos Periódicos</a>
+                                <a href="#" data-nav="Flota › Vehículos y Personal">Vehículos y Personal</a>
+                            </div>
+                        </div>
+
+                        <div class="p1-group">
+                            <button class="p1-item p1-acc-btn">
+                                <span class="ico"><i class="fas fa-file-invoice-dollar"></i></span>
+                                <span class="p1-link-text">Facturación</span>
+                                <i class="fas fa-chevron-right p1-caret"></i>
+                            </button>
+                            <div class="p1-sub">
+                                <a href="#" data-nav="Facturación › Facturas">Facturas</a>
+                                <a href="#" data-nav="Facturación › Pagos">Pagos recibidos</a>
+                                <a href="#" data-nav="Facturación › Cuentas por Cobrar">Cuentas por Cobrar</a>
+                                <a href="#" data-nav="Facturación › Notas C/D">Notas de Crédito/Débito</a>
+                            </div>
+                        </div>
+
+                        <div class="p1-group">
+                            <button class="p1-item p1-acc-btn">
+                                <span class="ico"><i class="fas fa-book"></i></span>
+                                <span class="p1-link-text">Catálogos</span>
+                                <i class="fas fa-chevron-right p1-caret"></i>
+                            </button>
+                            <div class="p1-sub">
+                                <a href="#" data-nav="Catálogos › Clientes">Clientes</a>
+                                <a href="#" data-nav="Catálogos › Tipos de Cambio">Tipos de Cambio</a>
+                                <a href="#" data-nav="Catálogos › Productos">Productos <span class="badge-soon">Pronto</span></a>
+                                <a href="#" data-nav="Catálogos › Impuestos">Impuestos <span class="badge-soon">Pronto</span></a>
+                            </div>
+                        </div>
+
+                        <div class="p1-group">
+                            <button class="p1-item p1-acc-btn">
+                                <span class="ico"><i class="fas fa-brain"></i></span>
+                                <span class="p1-link-text">Psicología</span>
+                                <i class="fas fa-chevron-right p1-caret"></i>
+                            </button>
+                            <div class="p1-sub">
+                                <a href="#" data-nav="Psicología › Pacientes">Pacientes</a>
+                                <a href="#" data-nav="Psicología › Jornadas y Brigadas">Jornadas y Brigadas</a>
+                                <a href="#" data-nav="Psicología › Importar Excel">Importar Pacientes</a>
+                                <a href="#" data-nav="Psicología › Constancias">Constancias</a>
+                            </div>
+                        </div>
+
+                        <div class="p1-sec-label">Empresa</div>
+                        <button class="p1-item" data-nav="Empresa › Invitaciones">
+                            <span class="ico"><i class="fas fa-envelope"></i></span>
+                            <span class="p1-link-text">Invitaciones</span>
+                        </button>
+                        <button class="p1-item" data-nav="Empresa › Roles y Permisos">
+                            <span class="ico"><i class="fas fa-user-tag"></i></span>
+                            <span class="p1-link-text">Roles y Permisos</span>
+                        </button>
+
+                        <div class="p1-sec-label">Plataforma</div>
+                        <div class="p1-group">
+                            <button class="p1-item p1-acc-btn">
+                                <span class="ico"><i class="fas fa-tools"></i></span>
+                                <span class="p1-link-text">Admin. Sistema</span>
+                                <i class="fas fa-chevron-right p1-caret"></i>
+                            </button>
+                            <div class="p1-sub">
+                                <a href="#" data-nav="Sistema › Empresas">Empresas</a>
+                                <a href="#" data-nav="Sistema › Soporte por Tenant">Soporte por Tenant</a>
+                                <a href="#" data-nav="Sistema › Personas">Personas del Sistema</a>
+                                <a href="#" data-nav="Sistema › Módulos">Catálogo de Módulos</a>
+                                <a href="#" data-nav="Sistema › Outbox">Outbox / Eventos</a>
+                                <a href="#" data-nav="Sistema › Email SMTP">Email Corporativo</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p1-footer">
+                        <div class="avatar-circle">EM</div>
+                        <div class="p1-tenant-info" style="min-width:0;">
+                            <div class="text-white fw-semibold text-truncate" style="font-size:.82rem;">Emilio Mejía</div>
+                            <div class="text-truncate" style="font-size:.72rem; color:#94a3b8;">Transgar S.A.</div>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="p1-main">
+                    <header class="p1-topbar">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">eGestión360</span>
+                            <i class="fas fa-chevron-right text-muted" style="font-size:.65rem;"></i>
+                            <strong id="p1Breadcrumb" style="font-size:.9rem;">Flota › Dashboard KPI</strong>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="p1-search-trigger" data-open-cmd>
+                                <i class="fas fa-search"></i>
+                                <span>Ir a módulo o pantalla…</span>
+                                <kbd>Ctrl K</kbd>
+                            </button>
+                            <span class="badge-soporte"><i class="fas fa-life-ring"></i>Soporte: DEMO</span>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-building me-1 text-primary"></i>Transgar S.A.
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-exchange-alt me-2"></i>Cambiar de sitio</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-shield-alt me-2"></i>Verificación en dos pasos</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main class="p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h4 class="fw-bold mb-0" id="p1PageTitle">Flota › Dashboard KPI</h4>
+                                <small class="text-muted">Vista de ejemplo — el menú lateral permanece siempre accesible sin volver al Menú Principal.</small>
+                            </div>
+                            <button class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Nuevo registro</button>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3"><div class="kpi-tile"><div><div class="lbl">Vehículos activos</div><div class="val">24</div></div><div class="ico bg-primary bg-opacity-10 text-primary"><i class="fas fa-truck"></i></div></div></div>
+                            <div class="col-md-3"><div class="kpi-tile"><div><div class="lbl">Costo / Km mes</div><div class="val">L 14.80</div></div><div class="ico bg-success bg-opacity-10 text-success"><i class="fas fa-gauge-high"></i></div></div></div>
+                            <div class="col-md-3"><div class="kpi-tile"><div><div class="lbl">Facturas emitidas</div><div class="val">118</div></div><div class="ico bg-info bg-opacity-10 text-info"><i class="fas fa-file-invoice"></i></div></div></div>
+                            <div class="col-md-3"><div class="kpi-tile"><div><div class="lbl">Tipo cambio USD</div><div class="val">L 25.12</div></div><div class="ico bg-warning bg-opacity-10 text-warning"><i class="fas fa-dollar-sign"></i></div></div></div>
+                        </div>
+                        <div class="demo-card p-4 text-muted small">
+                            <i class="fas fa-hand-pointer me-2 text-primary"></i>
+                            Prueba colapsar el sidebar con el botón <strong><i class="fas fa-bars"></i></strong>, abrir distintos acordeones de módulos o presionar <kbd>Ctrl</kbd>+<kbd>K</kbd> para saltar a cualquier pantalla.
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================
+             PROTOTIPO 2: DOBLE RAIL (MÓDULOS + PANEL CONTEXTUAL)
+             ====================================================== -->
+        <section class="proto-view" id="proto-2">
+            <div class="p2-shell">
+                <nav class="p2-rail" aria-label="Módulos">
+                    <img src="../img/isotipo.svg" alt="eGestión360" width="32" height="32" class="p2-rail-logo" />
+                    <button class="p2-rail-btn active" data-p2-mod="flota" data-tip="Control de Flota"><i class="fas fa-truck"></i></button>
+                    <button class="p2-rail-btn" data-p2-mod="facturacion" data-tip="Facturación"><i class="fas fa-file-invoice-dollar"></i></button>
+                    <button class="p2-rail-btn" data-p2-mod="catalogos" data-tip="Catálogos"><i class="fas fa-book"></i></button>
+                    <button class="p2-rail-btn" data-p2-mod="psicologia" data-tip="Psicología"><i class="fas fa-brain"></i></button>
+                    <div class="p2-rail-divider"></div>
+                    <button class="p2-rail-btn" data-p2-mod="empresa" data-tip="Admin. Empresa"><i class="fas fa-building"></i></button>
+                    <button class="p2-rail-btn" data-p2-mod="sistema" data-tip="Admin. Sistema"><i class="fas fa-tools"></i></button>
+                    <div style="margin-top:auto;">
+                        <button class="p2-rail-btn" data-open-cmd data-tip="Buscar (Ctrl+K)"><i class="fas fa-search"></i></button>
+                    </div>
+                </nav>
+
+                <aside class="p2-panel">
+                    <div class="p2-panel-head">
+                        <h6 id="p2ModTitle">Control de Flota</h6>
+                        <small id="p2ModDesc">Vehículos, operación, gastos y KPIs</small>
+                    </div>
+                    <div class="p2-panel-body" id="p2PanelLinks"></div>
+                </aside>
+
+                <div class="p2-main">
+                    <header class="p1-topbar">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold" id="p2ModPill">Flota</span>
+                            <strong id="p2ActiveScreen" style="font-size:.92rem;">Dashboard KPI</strong>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge-soporte"><i class="fas fa-life-ring"></i>Soporte: DEMO</span>
+                            <span class="small text-muted"><i class="fas fa-user-circle me-1"></i>Emilio Mejía</span>
+                        </div>
+                    </header>
+                    <main class="p-4">
+                        <div class="demo-card p-4 mb-3">
+                            <h5 class="fw-bold mb-1" id="p2MainTitle">Dashboard KPI</h5>
+                            <p class="text-muted small mb-0">
+                                El rail izquierdo mantiene visibles todos los módulos de eGestión360 (incluso cuando crezca a Bancos, Contabilidad, Inventario y Ventas), mientras el panel blanco muestra únicamente las pantallas del módulo activo sin saturar la vista.
+                            </p>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4"><div class="kpi-tile"><div><div class="lbl">Nivel de jerarquía</div><div class="val">Máx. 2 clics</div></div><div class="ico bg-primary bg-opacity-10 text-primary"><i class="fas fa-bolt"></i></div></div></div>
+                            <div class="col-md-4"><div class="kpi-tile"><div><div class="lbl">Escalabilidad</div><div class="val">10+ módulos</div></div><div class="ico bg-success bg-opacity-10 text-success"><i class="fas fa-layer-group"></i></div></div></div>
+                            <div class="col-md-4"><div class="kpi-tile"><div><div class="lbl">Enfoque visual</div><div class="val">Alto</div></div><div class="ico bg-info bg-opacity-10 text-info"><i class="fas fa-eye"></i></div></div></div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================================================
+             PROTOTIPO 3: TOPBAR CON MEGA-MENÚ DESPLEGABLE
+             ====================================================== -->
+        <section class="proto-view" id="proto-3">
+            <header class="p3-nav">
+                <div class="p3-nav-inner">
+                    <a href="#" class="p3-brand">
+                        <img src="../img/isotipo.svg" alt="eGestión360" width="28" height="28" />
+                        <span>eGestión360</span>
+                    </a>
+                    <div class="p3-tabs" id="p3Tabs">
+                        <button class="p3-tab active" data-mega="flota"><i class="fas fa-truck"></i>Flota <i class="fas fa-chevron-down" style="font-size:.65rem;"></i></button>
+                        <button class="p3-tab" data-mega="facturacion"><i class="fas fa-file-invoice-dollar"></i>Facturación <i class="fas fa-chevron-down" style="font-size:.65rem;"></i></button>
+                        <button class="p3-tab" data-mega="catalogos"><i class="fas fa-book"></i>Catálogos <i class="fas fa-chevron-down" style="font-size:.65rem;"></i></button>
+                        <button class="p3-tab" data-mega="psicologia"><i class="fas fa-brain"></i>Psicología <i class="fas fa-chevron-down" style="font-size:.65rem;"></i></button>
+                        <button class="p3-tab" data-mega="admin"><i class="fas fa-sliders"></i>Administración <i class="fas fa-chevron-down" style="font-size:.65rem;"></i></button>
+                    </div>
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-light border" data-open-cmd title="Buscar (Ctrl+K)"><i class="fas fa-search"></i></button>
+                        <span class="badge-soporte"><i class="fas fa-life-ring"></i>DEMO</span>
+                        <div class="avatar-circle" title="Emilio Mejía">EM</div>
+                    </div>
+                </div>
+
+                <!-- Panel Mega-Menú -->
+                <div class="p3-mega" id="p3Mega">
+                    <div class="p3-mega-inner" id="p3MegaContent"></div>
+                </div>
+            </header>
+
+            <!-- Barra contextual de sub-secciones del módulo activo -->
+            <div class="p3-subbar">
+                <div class="p3-subbar-inner" id="p3Subbar">
+                    <a href="#" class="p3-pill active">Dashboard KPI</a>
+                    <a href="#" class="p3-pill">Control de Salidas</a>
+                    <a href="#" class="p3-pill">Combustible</a>
+                    <a href="#" class="p3-pill">Gastos Periódicos</a>
+                    <a href="#" class="p3-pill">Vehículos y Personal</a>
+                    <a href="#" class="p3-pill">Mantenimiento de Datos</a>
+                </div>
+            </div>
+
+            <main class="container-fluid px-4 py-4" style="max-width:1380px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-0" id="p3Title">Flota › Dashboard KPI</h4>
+                        <small class="text-muted">100% del ancho de pantalla libre para tablas anchas, facturas y gráficas KPI. Haz clic en cualquier pestaña superior para abrir el Mega-Menú.</small>
+                    </div>
+                    <button class="btn btn-primary btn-sm"><i class="fas fa-download me-1"></i>Exportar Excel</button>
+                </div>
+                <div class="demo-card p-3">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr><th>Placa</th><th>Vehículo</th><th>Km Mes</th><th>Combustible</th><th>Mantenimiento</th><th>Peajes</th><th>Costo / Km</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="fw-bold">HAA-4821</td><td>Hino 300 Furgo</td><td>4,210 km</td><td>L 28,450</td><td>L 6,200</td><td>L 1,400</td><td class="fw-bold text-success">L 8.56</td><td><span class="badge bg-success">En ruta</span></td></tr>
+                                <tr><td class="fw-bold">HBC-1904</td><td>Isuzu NPR</td><td>3,890 km</td><td>L 31,120</td><td>L 11,800</td><td>L 980</td><td class="fw-bold text-warning">L 11.29</td><td><span class="badge bg-primary">En patio</span></td></tr>
+                                <tr><td class="fw-bold">HDE-7732</td><td>Freightliner M2</td><td>6,150 km</td><td>L 54,900</td><td>L 14,500</td><td>L 2,650</td><td class="fw-bold text-success">L 11.71</td><td><span class="badge bg-success">En ruta</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- ======================================================
+             PROTOTIPO 4: HUB DE TARJETAS RENOVADO + ACCESOS DIRECTOS
+             ====================================================== -->
+        <section class="proto-view" id="proto-4">
+            <div class="p4-top">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="../img/isotipo.svg" alt="" width="30" height="30" style="filter:brightness(0) invert(1);" />
+                            <span class="fw-bold fs-5">eGestión360</span>
+                            <span class="badge bg-white bg-opacity-25 ms-2">Transgar S.A.</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-warning text-dark"><i class="fas fa-life-ring me-1"></i>Soporte: DEMO</span>
+                            <button class="btn btn-sm btn-outline-light"><i class="fas fa-exchange-alt me-1"></i>Cambiar sitio</button>
+                            <button class="btn btn-sm btn-light text-primary fw-semibold"><i class="fas fa-user me-1"></i>Emilio</button>
+                        </div>
+                    </div>
+                    <div class="row align-items-center g-3">
+                        <div class="col-lg-6">
+                            <h3 class="fw-bold mb-1">Hola, Emilio</h3>
+                            <p class="mb-0 opacity-75 small">Accede directo a tus módulos o escribe el nombre de cualquier pantalla para ir sin rodeos.</p>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="p4-search-box">
+                                <i class="fas fa-search text-muted ms-1"></i>
+                                <input type="text" id="p4FilterInput" placeholder="Buscar módulo o pantalla (ej. salidas, facturas, pacientes, roles)…" />
+                                <kbd class="bg-light text-muted border rounded px-2 py-1" style="font-size:.7rem;">Filtrar</kbd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container p4-hub-wrap pb-5">
+                <!-- Accesos fijados / recientes -->
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-4">
+                    <span class="badge bg-dark py-2 px-3 rounded-pill"><i class="fas fa-star text-warning me-1"></i>Frecuentes</span>
+                    <a href="#" class="p4-quick-chip"><i class="fas fa-door-open text-primary"></i>Control de Salidas</a>
+                    <a href="#" class="p4-quick-chip"><i class="fas fa-plus-circle text-success"></i>Nueva Factura</a>
+                    <a href="#" class="p4-quick-chip"><i class="fas fa-chart-line" style="color:#6610f2;"></i>Dashboard KPI Flota</a>
+                    <a href="#" class="p4-quick-chip"><i class="fas fa-user-injured" style="color:#6f42c1;"></i>Pacientes Psicología</a>
+                    <a href="#" class="p4-quick-chip"><i class="fas fa-exchange-alt text-secondary"></i>Tipos de Cambio</a>
+                </div>
+
+                <!-- Filtros por categoría -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div class="d-flex gap-2 flex-wrap" id="p4CatBtns">
+                        <button class="p4-filter-btn active" data-cat="all">Todos</button>
+                        <button class="p4-filter-btn" data-cat="operacion">Módulos de Operación</button>
+                        <button class="p4-filter-btn" data-cat="empresa">Admin. Empresa</button>
+                        <button class="p4-filter-btn" data-cat="sistema">Admin. Sistema</button>
+                    </div>
+                    <small class="text-muted" id="p4CountLabel">Mostrando 8 módulos</small>
+                </div>
+
+                <div class="row g-3" id="p4Grid"></div>
+            </div>
+        </section>
+
+        <!-- ======================================================
+             PROTOTIPO 5: APP LAUNCHER (9 PUNTOS) + DOCK FLOTANTE
+             ====================================================== -->
+        <section class="proto-view" id="proto-5">
+            <header class="p5-header">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="p5-launcher-btn" id="p5LauncherBtn" title="Abrir selector de módulos">
+                        <i class="fas fa-grip"></i>
+                    </button>
+                    <img src="../img/isotipo.svg" alt="" width="26" height="26" />
+                    <span class="fw-bold">eGestión360</span>
+                    <span class="text-muted mx-1">/</span>
+                    <span class="fw-semibold text-primary" id="p5HeaderMod">Control de Flota</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-light border rounded-pill px-3" data-open-cmd>
+                        <i class="fas fa-search me-1 text-muted"></i><span class="small text-muted">Buscar…</span>
+                    </button>
+                    <span class="badge-soporte"><i class="fas fa-life-ring"></i>DEMO</span>
+                    <div class="avatar-circle">EM</div>
+                </div>
+            </header>
+
+            <!-- Popover App Launcher -->
+            <div class="p5-launcher-pop" id="p5LauncherPop">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong class="small text-uppercase text-muted" style="letter-spacing:.06em;">Aplicaciones de eGestión360</strong>
+                    <button class="btn-close btn-sm" id="p5LauncherClose"></button>
+                </div>
+                <div class="p5-app-grid" id="p5AppGrid"></div>
+            </div>
+
+            <main class="container py-4 pb-5 mb-5">
+                <div class="demo-card p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mb-2" id="p5Tag">Módulo activo</span>
+                            <h4 class="fw-bold mb-1" id="p5Title">Control de Flota — Dashboard KPI</h4>
+                            <p class="text-muted small mb-0">
+                                Interfaz limpia y espaciosa: usa el botón de cuadrícula <strong><i class="fas fa-grip"></i></strong> arriba a la izquierda para cambiar de aplicación (estilo Google Workspace / Microsoft 365) y el <strong>Dock inferior</strong> para moverte entre las vistas del módulo actual.
+                            </p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="p5OpenDemoBtn"><i class="fas fa-grip me-1"></i>Abrir App Launcher</button>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="kpi-tile"><div><div class="lbl">Ideal en móvil/tablet</div><div class="val">100%</div></div><div class="ico bg-primary bg-opacity-10 text-primary"><i class="fas fa-mobile-screen"></i></div></div></div>
+                    <div class="col-md-4"><div class="kpi-tile"><div><div class="lbl">Área útil de trabajo</div><div class="val">Máxima</div></div><div class="ico bg-success bg-opacity-10 text-success"><i class="fas fa-expand"></i></div></div></div>
+                    <div class="col-md-4"><div class="kpi-tile"><div><div class="lbl">Estilo visual</div><div class="val">Ejecutivo</div></div><div class="ico bg-warning bg-opacity-10 text-warning"><i class="fas fa-sparkles"></i></div></div></div>
+                </div>
+            </main>
+
+            <!-- Dock flotante inferior contextual -->
+            <div class="p5-dock" id="p5Dock"></div>
+        </section>
+
+    </div>
+
+    <!-- ==========================================================
+         COMMAND PALETTE GLOBAL (Ctrl + K)
+         ========================================================== -->
+    <div class="cmd-backdrop" id="cmdModal">
+        <div class="cmd-box">
+            <div class="cmd-input-row">
+                <i class="fas fa-search text-primary"></i>
+                <input type="text" id="cmdInput" placeholder="Escribe para ir a cualquier pantalla (ej. facturas, salidas, pacientes, roles)…" />
+                <kbd class="bg-light text-muted border rounded px-2" style="font-size:.7rem;">ESC</kbd>
+            </div>
+            <div class="cmd-results" id="cmdResults"></div>
+        </div>
+    </div>
+
+    <script src="../lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // ========== CATÁLOGO DE RUTAS REALES DE eGestión360 ==========
+        const MODULES = {
+            flota: {
+                name: 'Control de Flota', desc: 'Vehículos, operación, gastos y KPIs', icon: 'fa-truck', color: '#6610f2', cat: 'operacion',
+                groups: [
+                    { title: 'Análisis', items: [
+                        { label: 'Dashboard KPI', desc: 'Costo por kilómetro y período', icon: 'fa-chart-bar' },
+                        { label: 'Gráficos de Flota', desc: 'Tendencias y comparativos', icon: 'fa-chart-line' }
+                    ]},
+                    { title: 'Operación Diaria', items: [
+                        { label: 'Control de Salidas', desc: 'Garita: salidas y entradas', icon: 'fa-door-open' },
+                        { label: 'Cargas de Combustible', desc: 'Registro de galones y odómetro', icon: 'fa-gas-pump' },
+                        { label: 'Salarios Diarios', desc: 'Motoristas y ayudantes', icon: 'fa-money-bill-wave' },
+                        { label: 'Peajes', desc: 'Control de casetas por ruta', icon: 'fa-road' }
+                    ]},
+                    { title: 'Gastos y Catálogos', items: [
+                        { label: 'Gastos Periódicos', desc: 'Repuestos, mantenimiento y seguros', icon: 'fa-wrench' },
+                        { label: 'Vehículos y Personal', desc: 'Flota activa y conductores', icon: 'fa-list-alt' }
+                    ]}
+                ]
+            },
+            facturacion: {
+                name: 'Facturación', desc: 'Facturas, notas, pagos y CxC', icon: 'fa-file-invoice-dollar', color: '#1B63C9', cat: 'operacion',
+                groups: [
+                    { title: 'Emisión y Cobro', items: [
+                        { label: 'Facturas', desc: 'Contado y crédito, filtros por estado', icon: 'fa-file-invoice' },
+                        { label: 'Nueva Factura', desc: 'Emitir documento fiscal', icon: 'fa-plus-circle' },
+                        { label: 'Pagos', desc: 'Recibos y abonos aplicados', icon: 'fa-hand-holding-usd' },
+                        { label: 'Cuentas por Cobrar', desc: 'Saldos y antigüedad de cartera', icon: 'fa-balance-scale' },
+                        { label: 'Notas Crédito / Débito', desc: 'Ajustes sobre facturas emitidas', icon: 'fa-file-medical' }
+                    ]}
+                ]
+            },
+            catalogos: {
+                name: 'Catálogos', desc: 'Maestros compartidos del ERP', icon: 'fa-book', color: '#1e293b', cat: 'operacion',
+                groups: [
+                    { title: 'Activos', items: [
+                        { label: 'Clientes', desc: 'Información fiscal y RTN', icon: 'fa-user-tie' },
+                        { label: 'Tipos de Cambio', desc: 'USD/EUR en lempiras e histórico', icon: 'fa-exchange-alt' }
+                    ]},
+                    { title: 'Próximamente', items: [
+                        { label: 'Proveedores', desc: 'Datos de pago', icon: 'fa-truck-loading', soon: true },
+                        { label: 'Productos / Servicios', desc: 'Precios e impuestos', icon: 'fa-boxes-stacked', soon: true },
+                        { label: 'Impuestos y Pagos', desc: 'ISV, retenciones y condiciones', icon: 'fa-percent', soon: true }
+                    ]}
+                ]
+            },
+            psicologia: {
+                name: 'Psicología', desc: 'Pacientes, brigadas y constancias', icon: 'fa-brain', color: '#6f42c1', cat: 'operacion',
+                groups: [
+                    { title: 'Atención Clínica', items: [
+                        { label: 'Pacientes', desc: 'Expedientes e historial clínico', icon: 'fa-user-injured' },
+                        { label: 'Jornadas y Brigadas', desc: 'Eventos de atención grupal', icon: 'fa-users' },
+                        { label: 'Importar Pacientes', desc: 'Carga desde Excel en 3 pasos', icon: 'fa-file-import' },
+                        { label: 'Constancias', desc: 'Libro y emisión de exámenes', icon: 'fa-file-signature' }
+                    ]},
+                    { title: 'Configuración', items: [
+                        { label: 'Catálogos', desc: 'Pruebas y tipos de constancia', icon: 'fa-clipboard-list' },
+                        { label: 'Profesionales', desc: 'Psicólogos responsables', icon: 'fa-user-doctor' }
+                    ]}
+                ]
+            },
+            empresa: {
+                name: 'Admin. de la Empresa', desc: 'Accesos internos de tu empresa', icon: 'fa-building', color: '#0ea5e9', cat: 'empresa',
+                groups: [
+                    { title: 'Seguridad de Empresa', items: [
+                        { label: 'Invitaciones', desc: 'Invitar personal por correo', icon: 'fa-envelope' },
+                        { label: 'Roles y Permisos', desc: 'Definir roles por empresa', icon: 'fa-user-tag' }
+                    ]}
+                ]
+            },
+            sistema: {
+                name: 'Admin. del Sistema', desc: 'Operación de plataforma multitenant', icon: 'fa-tools', color: '#475569', cat: 'sistema',
+                groups: [
+                    { title: 'Plataforma', items: [
+                        { label: 'Empresas', desc: 'Alta, baja y modificación', icon: 'fa-building' },
+                        { label: 'Soporte por Tenant', desc: 'Cambiar contexto de soporte', icon: 'fa-life-ring' },
+                        { label: 'Personas del Sistema', desc: 'Directorio maestro', icon: 'fa-address-book' },
+                        { label: 'Módulos', desc: 'Catálogo de módulos contratables', icon: 'fa-puzzle-piece' },
+                        { label: 'Outbox / Eventos', desc: 'Bus de eventos de dominio', icon: 'fa-stream' },
+                        { label: 'Email Corporativo', desc: 'Configuración SMTP', icon: 'fa-envelope-open-text' },
+                        { label: 'Gestión de Usuarios', desc: 'Usuarios globales y seguridad', icon: 'fa-users' }
+                    ]}
+                ]
+            }
+        };
+
+        const PROTO_META = {
+            1: {
+                title: 'Prototipo 1 — Sidebar Lateral Colapsable',
+                desc: 'El estándar de oro para ERPs modernos. Mantiene la navegación siempre a mano y se puede colapsar a iconos.',
+                pros: [
+                    'Elimina tener que volver al Menú Principal cada vez que cambias de módulo.',
+                    'Agrupa limpiamente Operación, Empresa y Plataforma.',
+                    'Incluye buscador rápido Ctrl+K y breadcrumb contextual.'
+                ]
+            },
+            2: {
+                title: 'Prototipo 2 — Doble Rail (Módulos + Panel Contextual)',
+                desc: 'Inspirado en Slack, VS Code y sistemas ERP modulares. Separa los módulos globales de las pantallas internas.',
+                pros: [
+                    'Escala perfecto cuando se activen Bancos, Contabilidad, Inventario y Ventas.',
+                    'Evita listas infinitas de acordeones abiertos al mismo tiempo.',
+                    'Permite cambiar de módulo en 1 clic desde el rail izquierdo.'
+                ]
+            },
+            3: {
+                title: 'Prototipo 3 — Topbar con Mega-Menú Desplegable',
+                desc: 'Navegación horizontal superior con mega-menús por columnas y barra secundaria del módulo activo.',
+                pros: [
+                    'Deja el 100% del ancho disponible para tablas anchas (Facturas, KPIs, Salidas).',
+                    'Muy parecido en estructura al layout actual, fácil de adaptar en _Layout.cshtml.',
+                    'Muestra descripciones claras de cada pantalla antes de entrar.'
+                ]
+            },
+            4: {
+                title: 'Prototipo 4 — Hub de Tarjetas Renovado + Buscador',
+                desc: 'Evolución directa de tu MainMenu.cshtml actual, más compacto, con búsqueda en vivo y accesos directos.',
+                pros: [
+                    'Cero fricción para usuarios ya acostumbrados al menú de tarjetas.',
+                    'Reduce de 3 clics a 1 clic gracias a los chips de Frecuentes y sub-enlaces en cada tarjeta.',
+                    'Filtros instantáneos por categoría (Operación, Empresa, Sistema).'
+                ]
+            },
+            5: {
+                title: 'Prototipo 5 — App Launcher (9 puntos) + Dock Flotante',
+                desc: 'Estética SaaS ejecutiva al estilo Google Workspace / Microsoft 365 con dock inferior contextual.',
+                pros: [
+                    'Sensación ultra limpia y moderna, sin barras pesadas.',
+                    'Excelente en pantallas pequeñas, tablets de portería o brigadas de psicología.',
+                    'El dock inferior permite saltar entre pantallas del módulo activo al instante.'
+                ]
+            }
+        };
+
+        // ========== CAMBIO ENTRE PROTOTIPOS ==========
+        let currentProto = 1;
+        const notesEl = document.getElementById('protoNotes');
+
+        function renderNotes(id) {
+            const m = PROTO_META[id];
+            notesEl.innerHTML = `
+                <h6>${m.title}</h6>
+                <p>${m.desc}</p>
+                <ul>${m.pros.map(p => `<li>${p}</li>`).join('')}</ul>
+            `;
+        }
+        renderNotes(1);
+
+        document.querySelectorAll('.proto-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = Number(btn.dataset.proto);
+                currentProto = id;
+                document.querySelectorAll('.proto-tab').forEach(b => b.classList.toggle('active', b === btn));
+                document.querySelectorAll('.proto-view').forEach(v => v.classList.toggle('active', v.id === 'proto-' + id));
+                renderNotes(id);
+            });
+        });
+
+        document.getElementById('btnToggleNotes').addEventListener('click', () => {
+            notesEl.classList.toggle('open');
+        });
+
+        // ========== PROTOTIPO 1 INTERACCIÓN ==========
+        document.getElementById('p1Toggle').addEventListener('click', () => {
+            document.getElementById('p1Sidebar').classList.toggle('collapsed');
+        });
+        document.querySelectorAll('.p1-acc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sb = document.getElementById('p1Sidebar');
+                if (sb.classList.contains('collapsed')) sb.classList.remove('collapsed');
+                btn.parentElement.classList.toggle('open');
+            });
+        });
+        document.querySelectorAll('#proto-1 [data-nav]').forEach(el => {
+            el.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelectorAll('#proto-1 .p1-item, #proto-1 .p1-sub a').forEach(x => x.classList.remove('active'));
+                el.classList.add('active');
+                const txt = el.dataset.nav;
+                document.getElementById('p1Breadcrumb').textContent = txt;
+                document.getElementById('p1PageTitle').textContent = txt;
+            });
+        });
+
+        // ========== PROTOTIPO 2 INTERACCIÓN ==========
+        function renderP2Module(key) {
+            const m = MODULES[key];
+            document.getElementById('p2ModTitle').textContent = m.name;
+            document.getElementById('p2ModDesc').textContent = m.desc;
+            document.getElementById('p2ModPill').textContent = m.name;
+            const host = document.getElementById('p2PanelLinks');
+            let first = true;
+            host.innerHTML = m.groups.map(g => `
+                <div class="p2-cat">${g.title}</div>
+                ${g.items.map(it => {
+                    const cls = first ? 'p2-link active' : 'p2-link';
+                    if (first) {
+                        document.getElementById('p2ActiveScreen').textContent = it.label;
+                        document.getElementById('p2MainTitle').textContent = m.name + ' › ' + it.label;
+                        first = false;
+                    }
+                    return `<a href="#" class="${cls}" data-label="${it.label}"><i class="fas ${it.icon}"></i><span>${it.label}</span>${it.soon ? '<span class="badge-soon ms-auto">Pronto</span>' : ''}</a>`;
+                }).join('')}
+            `).join('');
+            host.querySelectorAll('.p2-link').forEach(a => {
+                a.addEventListener('click', e => {
+                    e.preventDefault();
+                    host.querySelectorAll('.p2-link').forEach(x => x.classList.remove('active'));
+                    a.classList.add('active');
+                    document.getElementById('p2ActiveScreen').textContent = a.dataset.label;
+                    document.getElementById('p2MainTitle').textContent = m.name + ' › ' + a.dataset.label;
+                });
+            });
+        }
+        renderP2Module('flota');
+        document.querySelectorAll('.p2-rail-btn[data-p2-mod]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.p2-rail-btn[data-p2-mod]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderP2Module(btn.dataset.p2Mod);
+            });
+        });
+
+        // ========== PROTOTIPO 3 MEGA-MENÚ ==========
+        const p3Mega = document.getElementById('p3Mega');
+        const p3MegaContent = document.getElementById('p3MegaContent');
+        let openMegaKey = null;
+
+        function buildMegaHtml(key) {
+            const keys = key === 'admin' ? ['empresa', 'sistema'] : [key];
+            const cols = [];
+            keys.forEach(k => {
+                const m = MODULES[k];
+                m.groups.forEach(g => {
+                    cols.push({ title: (keys.length > 1 ? m.name + ' · ' : '') + g.title, color: m.color, items: g.items, modName: m.name });
+                });
+            });
+            const colSize = cols.length === 1 ? 'col-md-6' : cols.length === 2 ? 'col-md-6' : 'col-md-4';
+            return `<div class="row g-4">${cols.map(c => `
+                <div class="${colSize} p3-mega-col">
+                    <h6>${c.title}</h6>
+                    ${c.items.map(it => `
+                        <a href="#" class="p3-mega-item" data-p3-select="${c.modName} › ${it.label}">
+                            <div class="p3-mega-ico" style="background:${c.color};"><i class="fas ${it.icon}"></i></div>
+                            <div>
+                                <strong>${it.label} ${it.soon ? '<span class="badge-soon ms-1">Pronto</span>' : ''}</strong>
+                                <small>${it.desc}</small>
+                            </div>
+                        </a>
+                    `).join('')}
+                </div>
+            `).join('')}</div>`;
+        }
+
+        document.querySelectorAll('.p3-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const key = tab.dataset.mega;
+                if (openMegaKey === key) {
+                    p3Mega.classList.remove('open');
+                    tab.classList.remove('open');
+                    openMegaKey = null;
+                    return;
+                }
+                openMegaKey = key;
+                document.querySelectorAll('.p3-tab').forEach(t => t.classList.toggle('open', t === tab));
+                p3MegaContent.innerHTML = buildMegaHtml(key);
+                p3Mega.classList.add('open');
+
+                p3MegaContent.querySelectorAll('[data-p3-select]').forEach(a => {
+                    a.addEventListener('click', e => {
+                        e.preventDefault();
+                        document.getElementById('p3Title').textContent = a.dataset.p3Select;
+                        document.querySelectorAll('.p3-tab').forEach(t => t.classList.toggle('active', t === tab));
+                        p3Mega.classList.remove('open');
+                        tab.classList.remove('open');
+                        openMegaKey = null;
+                    });
+                });
+            });
+        });
+
+        document.querySelectorAll('#p3Subbar .p3-pill').forEach(p => {
+            p.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelectorAll('#p3Subbar .p3-pill').forEach(x => x.classList.remove('active'));
+                p.classList.add('active');
+                document.getElementById('p3Title').textContent = 'Flota › ' + p.textContent;
+            });
+        });
+
+        // ========== PROTOTIPO 4 HUB RENOVADO ==========
+        const p4CardsData = [
+            { name: 'Control de Flota', desc: 'Vehículos, operación diaria, gastos periódicos y costo/km', icon: 'fa-truck', color: '#6610f2', cat: 'operacion', links: ['Dashboard KPI', 'Control Salidas', 'Combustible', 'Gastos'] },
+            { name: 'Facturación', desc: 'Facturas contado/crédito, notas, pagos y cuentas por cobrar', icon: 'fa-file-invoice-dollar', color: '#1B63C9', cat: 'operacion', links: ['Facturas', 'Nueva Factura', 'Pagos', 'CxC'] },
+            { name: 'Catálogos', desc: 'Clientes, proveedores, productos, impuestos y tasas de cambio', icon: 'fa-book', color: '#1e293b', cat: 'operacion', links: ['Clientes', 'Tipos de Cambio', 'Impuestos'] },
+            { name: 'Psicología', desc: 'Pacientes, jornadas y brigadas, historial clínico y constancias', icon: 'fa-brain', color: '#6f42c1', cat: 'operacion', links: ['Pacientes', 'Jornadas', 'Importar Excel', 'Constancias'] },
+            { name: 'Bancos y Contabilidad', desc: 'Conciliación bancaria, plan de cuentas y estados financieros', icon: 'fa-calculator', color: '#0891b2', cat: 'operacion', soon: true, links: ['Próximamente'] },
+            { name: 'Invitaciones', desc: 'Invita por correo a las personas de tu empresa', icon: 'fa-envelope', color: '#0284c7', cat: 'empresa', links: ['Enviar invitación', 'Pendientes'] },
+            { name: 'Roles y Permisos', desc: 'Crea y administra roles y permisos por empresa', icon: 'fa-user-tag', color: '#d97706', cat: 'empresa', links: ['Gestionar roles'] },
+            { name: 'Administración del Sistema', desc: 'Empresas, soporte por tenant, módulos, outbox y SMTP', icon: 'fa-tools', color: '#475569', cat: 'sistema', links: ['Empresas', 'Soporte Tenant', 'Módulos', 'Outbox', 'Email SMTP'] }
+        ];
+
+        let p4Cat = 'all';
+        function renderP4Grid() {
+            const q = (document.getElementById('p4FilterInput').value || '').toLowerCase().trim();
+            const filtered = p4CardsData.filter(c => {
+                const matchCat = p4Cat === 'all' || c.cat === p4Cat;
+                const hay = (c.name + ' ' + c.desc + ' ' + c.links.join(' ')).toLowerCase();
+                return matchCat && (!q || hay.includes(q));
+            });
+            document.getElementById('p4CountLabel').textContent = `Mostrando ${filtered.length} módulo${filtered.length === 1 ? '' : 's'}`;
+            document.getElementById('p4Grid').innerHTML = filtered.map(c => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="p4-card">
+                        <div class="p4-card-head">
+                            <div class="p4-card-ico" style="background:${c.color};"><i class="fas ${c.icon}"></i></div>
+                            <div>
+                                <div class="fw-bold d-flex align-items-center gap-2">${c.name} ${c.soon ? '<span class="badge-soon">Pronto</span>' : ''}</div>
+                                <small class="text-muted">${c.desc}</small>
+                            </div>
+                        </div>
+                        <div class="p4-sublinks">
+                            ${c.links.map(l => `<a href="#" class="p4-sublink">${l}</a>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        renderP4Grid();
+        document.getElementById('p4FilterInput').addEventListener('input', renderP4Grid);
+        document.querySelectorAll('#p4CatBtns .p4-filter-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                p4Cat = b.dataset.cat;
+                document.querySelectorAll('#p4CatBtns .p4-filter-btn').forEach(x => x.classList.toggle('active', x === b));
+                renderP4Grid();
+            });
+        });
+
+        // ========== PROTOTIPO 5 APP LAUNCHER + DOCK ==========
+        const p5Pop = document.getElementById('p5LauncherPop');
+        const p5Btn = document.getElementById('p5LauncherBtn');
+        const p5Grid = document.getElementById('p5AppGrid');
+        const p5Dock = document.getElementById('p5Dock');
+
+        function setP5Module(key) {
+            const m = MODULES[key];
+            document.getElementById('p5HeaderMod').textContent = m.name;
+            const flatItems = m.groups.flatMap(g => g.items).slice(0, 5);
+            document.getElementById('p5Title').textContent = `${m.name} — ${flatItems[0].label}`;
+            p5Dock.innerHTML = flatItems.map((it, idx) => `
+                <button class="p5-dock-btn ${idx === 0 ? 'active' : ''}" data-label="${it.label}">
+                    <i class="fas ${it.icon}"></i><span>${it.label}</span>
+                </button>
+            `).join('');
+            p5Dock.querySelectorAll('.p5-dock-btn').forEach(b => {
+                b.addEventListener('click', () => {
+                    p5Dock.querySelectorAll('.p5-dock-btn').forEach(x => x.classList.remove('active'));
+                    b.classList.add('active');
+                    document.getElementById('p5Title').textContent = `${m.name} — ${b.dataset.label}`;
+                });
+            });
+            p5Grid.querySelectorAll('.p5-app-tile').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+        }
+
+        p5Grid.innerHTML = Object.entries(MODULES).map(([k, m]) => `
+            <button class="p5-app-tile ${k === 'flota' ? 'active' : ''}" data-key="${k}">
+                <div class="ico" style="background:${m.color};"><i class="fas ${m.icon}"></i></div>
+                <span>${m.name}</span>
+            </button>
+        `).join('');
+        p5Grid.querySelectorAll('.p5-app-tile').forEach(t => {
+            t.addEventListener('click', () => {
+                setP5Module(t.dataset.key);
+                p5Pop.classList.remove('open');
+                p5Btn.classList.remove('open');
+            });
+        });
+        setP5Module('flota');
+
+        function toggleP5Launcher() {
+            p5Pop.classList.toggle('open');
+            p5Btn.classList.toggle('open');
+        }
+        p5Btn.addEventListener('click', toggleP5Launcher);
+        document.getElementById('p5OpenDemoBtn').addEventListener('click', toggleP5Launcher);
+        document.getElementById('p5LauncherClose').addEventListener('click', () => {
+            p5Pop.classList.remove('open');
+            p5Btn.classList.remove('open');
+        });
+
+        // ========== COMMAND PALETTE (Ctrl + K) ==========
+        const allRoutes = Object.entries(MODULES).flatMap(([k, m]) =>
+            m.groups.flatMap(g => g.items.map(it => ({ mod: m.name, label: it.label, icon: it.icon, color: m.color })))
+        );
+        const cmdModal = document.getElementById('cmdModal');
+        const cmdInput = document.getElementById('cmdInput');
+        const cmdResults = document.getElementById('cmdResults');
+
+        function renderCmd(q) {
+            const term = (q || '').toLowerCase().trim();
+            const list = allRoutes.filter(r => !term || (r.mod + ' ' + r.label).toLowerCase().includes(term));
+            cmdResults.innerHTML = list.map(r => `
+                <a href="#" class="cmd-row" data-cmd="${r.mod} › ${r.label}">
+                    <i class="fas ${r.icon}" style="color:${r.color}; width:18px; text-align:center;"></i>
+                    <span class="fw-semibold">${r.label}</span>
+                    <small>${r.mod}</small>
+                </a>
+            `).join('') || '<div class="p-3 text-center text-muted small">Sin resultados</div>';
+            cmdResults.querySelectorAll('.cmd-row').forEach(a => {
+                a.addEventListener('click', e => {
+                    e.preventDefault();
+                    if (currentProto === 1) {
+                        document.getElementById('p1Breadcrumb').textContent = a.dataset.cmd;
+                        document.getElementById('p1PageTitle').textContent = a.dataset.cmd;
+                    } else if (currentProto === 3) {
+                        document.getElementById('p3Title').textContent = a.dataset.cmd;
+                    } else if (currentProto === 5) {
+                        document.getElementById('p5Title').textContent = a.dataset.cmd;
+                    }
+                    cmdModal.classList.remove('open');
+                });
+            });
+        }
+
+        function openCmd() {
+            cmdModal.classList.add('open');
+            cmdInput.value = '';
+            renderCmd('');
+            setTimeout(() => cmdInput.focus(), 30);
+        }
+        document.querySelectorAll('[data-open-cmd]').forEach(el => el.addEventListener('click', openCmd));
+        cmdInput.addEventListener('input', () => renderCmd(cmdInput.value));
+        cmdModal.addEventListener('click', e => { if (e.target === cmdModal) cmdModal.classList.remove('open'); });
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCmd(); }
+            if (e.key === 'Escape') { cmdModal.classList.remove('open'); p3Mega.classList.remove('open'); p5Pop.classList.remove('open'); }
+        });
+    })();
+    </script>
+</body>
+</html>

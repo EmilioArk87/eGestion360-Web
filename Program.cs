@@ -137,6 +137,7 @@ builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IEdicionPacienteSe
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IImportacionPsicologiaService, eGestion360Web.Services.Psicologia.ImportacionPsicologiaService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.ICatalogoPsicologiaService, eGestion360Web.Services.Psicologia.CatalogoPsicologiaService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IAtencionService, eGestion360Web.Services.Psicologia.AtencionService>();
+builder.Services.AddScoped<eGestion360Web.Services.Reportes.IMotorReportes, eGestion360Web.Services.Reportes.MotorReportesService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IConstanciaService, eGestion360Web.Services.Psicologia.ConstanciaService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IProfesionalService, eGestion360Web.Services.Psicologia.ProfesionalService>();
 builder.Services.AddScoped<eGestion360Web.Services.Psicologia.IJornadaService, eGestion360Web.Services.Psicologia.ProfesionalService>();

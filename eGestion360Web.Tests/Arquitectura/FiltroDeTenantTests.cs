@@ -80,7 +80,9 @@ namespace eGestion360Web.Tests.Arquitectura
 
                         if (EsMixta(tipo))
                         {
-                            var global = Fabricar(entidad, DatosBase.TenantA, DatosBase.EmpresaA, "G");
+                            // Sus claves foráneas enteras apuntan a otro valor (99) para no chocar con la fila de A en una clave única que las incluya
+                            // (por ejemplo, reporte y número de versión).
+                            var global = Fabricar(entidad, DatosBase.TenantA, DatosBase.EmpresaA, "G", valorForaneas: 99);
                             ((ITenantOpcionalEntity)global).IdTenant = null;
                             tipo.GetProperty("IdEmpresa")?.SetValue(global, null);
                             FijarClavesSinGenerar(entidad, global, 99);

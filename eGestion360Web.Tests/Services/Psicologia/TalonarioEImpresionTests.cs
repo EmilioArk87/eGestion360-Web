@@ -195,6 +195,74 @@ namespace eGestion360Web.Tests.Services.Psicologia
             Assert.Equal("psi.ana", i.CreadoPor);
         }
 
+        [Fact]
+        public async Task Con_el_formato_en_el_motor_de_reportes_la_impresion_lleva_su_version_y_deja_la_ejecucion()
+        {
+            var tipo = await TipoLicencia();
+            var (paciente, prueba) = await PacienteYPrueba();
+            var c = (await Emitir(paciente, tipo, prueba)).Valor!;
+
+            // La semilla global del 047, con la versión 3 publicada y activa.
+            int idVersion;
+            using (var db = _bd.Crear())
+            {
+                var reporte = new eGestion360Web.Models.Reportes.Reporte
+                {
+                    Codigo = PlantillasConstancia.CodigoReporteLicenciaConducir, Nombre = "Constancia", Modulo = "psicologia",
+                    FuenteDatos = eGestion360Web.Services.Reportes.ConstanciaPsicologiaDataSource.Fuente, CreadoPor = "prueba"
+                };
+                db.Reportes.Add(reporte);
+                await db.SaveChangesAsync();
+                var version = new eGestion360Web.Models.Reportes.ReporteVersion
+                {
+                    IdReporte = reporte.IdReporte, NumeroVersion = 3, Estado = eGestion360Web.Models.Reportes.EstadosVersionReporte.Publicada,
+                    ContenidoPlantilla = "hoja", CreadoPor = "prueba", FechaPublicacion = DateTime.UtcNow
+                };
+                db.ReporteVersiones.Add(version);
+                await db.SaveChangesAsync();
+                reporte.IdVersionActiva = idVersion = version.IdVersion;
+                await db.SaveChangesAsync();
+            }
+
+            using (var db = Contexto())
+            {
+                var motor = new eGestion360Web.Services.Reportes.MotorReportesService(db, _bd.Tenant,
+                    new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()), _reloj,
+                    NullLogger<eGestion360Web.Services.Reportes.MotorReportesService>.Instance);
+                var r = await new ConstanciaService(db, _reloj, NullLogger<ConstanciaService>.Instance, motor)
+                    .RegistrarImpresionAsync(DatosBase.EmpresaA, c.IdConstancia, "psi.ana", idCuenta: 5);
+                Assert.True(r.Ok, Mensajes(r.Errores));
+                Assert.Equal("3", r.Valor!.VersionPlantilla);
+            }
+
+            using var leer = _bd.Crear();
+            var e = await leer.ReporteEjecuciones.SingleAsync();
+            Assert.Equal((idVersion, 3, (long?)c.IdConstancia, "psi.constancias", (int?)5), (e.IdVersion, e.NumeroVersion, e.IdRegistroOrigen, e.EntidadOrigen, e.IdCuenta));
+            Assert.Equal((DatosBase.TenantA, DatosBase.EmpresaA), (e.IdTenant, e.IdEmpresa));
+        }
+
+        [Fact]
+        public async Task Sin_el_formato_en_el_motor_la_impresion_se_registra_como_siempre()
+        {
+            var tipo = await TipoLicencia();
+            var (paciente, prueba) = await PacienteYPrueba();
+            var c = (await Emitir(paciente, tipo, prueba)).Valor!;
+
+            using (var db = Contexto())
+            {
+                var motor = new eGestion360Web.Services.Reportes.MotorReportesService(db, _bd.Tenant,
+                    new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()), _reloj,
+                    NullLogger<eGestion360Web.Services.Reportes.MotorReportesService>.Instance);
+                var r = await new ConstanciaService(db, _reloj, NullLogger<ConstanciaService>.Instance, motor)
+                    .RegistrarImpresionAsync(DatosBase.EmpresaA, c.IdConstancia, "psi.ana");
+                Assert.True(r.Ok, Mensajes(r.Errores));
+                Assert.Equal("1", r.Valor!.VersionPlantilla);
+            }
+
+            using var leer = _bd.Crear();
+            Assert.Empty(await leer.ReporteEjecuciones.ToListAsync());
+        }
+
         // ── Redacción ───────────────────────────────────────────────────────
 
         [Fact]
