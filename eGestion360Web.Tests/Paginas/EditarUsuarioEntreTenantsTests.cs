@@ -40,6 +40,7 @@ namespace eGestion360Web.Tests.Paginas
             }
 
             public Task SincronizarClaveAsync(int idUser, CancellationToken ct = default) => _real.SincronizarClaveAsync(idUser, ct);
+            public Task FijarTenantDelUsuarioAsync(User user, CancellationToken ct = default) => _real.FijarTenantDelUsuarioAsync(user, ct);
         }
 
         private readonly BaseDeDatosDePrueba _bd = new();

@@ -4,6 +4,7 @@ using eGestion360Web.Data;
 using eGestion360Web.Models;
 using eGestion360Web.Models.Plataforma;
 using eGestion360Web.Services.Identidad;
+using eGestion360Web.Services.Tenancy;
 using eGestion360Web.Tests.Infra;
 
 namespace eGestion360Web.Tests.Services.Identidad
@@ -24,8 +25,36 @@ namespace eGestion360Web.Tests.Services.Identidad
 
         public void Dispose() => _bd.Dispose();
 
-        private SincronizadorDeCuentas Servicio(ApplicationDbContext db)
-            => new(db, IdentidadDePrueba.Tenant(), _validador, NullLogger<SincronizadorDeCuentas>.Instance, _reloj);
+        private SincronizadorDeCuentas Servicio(ApplicationDbContext db, TenantContext? tenant = null)
+            => new(db, tenant ?? IdentidadDePrueba.Tenant(), _validador, _bd.Resolvedor, NullLogger<SincronizadorDeCuentas>.Instance, _reloj);
+
+        [Fact]
+        public async Task Antes_de_cambiar_una_clave_la_peticion_queda_en_el_tenant_de_la_empresa_del_usuario()
+        {
+            using var db = _bd.Crear();
+            var tenant = IdentidadDePrueba.Tenant();
+            tenant.FijarPlataforma();   // como una pantalla sin sesión o del operador
+
+            await Servicio(db, tenant).FijarTenantDelUsuarioAsync(NuevoUsuario(db, "con.empresa"));
+
+            Assert.Equal(DatosBase.TenantA, tenant.IdTenant);
+            Assert.Equal(DatosBase.EmpresaA, tenant.IdEmpresa);
+            Assert.False(tenant.EsPlataforma);
+        }
+
+        [Fact]
+        public async Task Un_usuario_sin_empresa_o_con_una_que_ya_no_existe_no_cambia_el_tenant_de_la_peticion()
+        {
+            using var db = _bd.Crear();
+            var tenant = IdentidadDePrueba.Tenant();
+            tenant.FijarPlataforma();
+
+            await Servicio(db, tenant).FijarTenantDelUsuarioAsync(new User { Username = "plataforma", EmpresaId = null });
+            await Servicio(db, tenant).FijarTenantDelUsuarioAsync(new User { Username = "huerfano", EmpresaId = 987654 });
+
+            Assert.Null(tenant.IdTenant);
+            Assert.True(tenant.EsPlataforma);
+        }
 
         private static User NuevoUsuario(ApplicationDbContext db, string nombre, string rol = "empresa_user", int? idEmpresa = DatosBase.EmpresaA,
             int? idRol = null, bool conPersona = true, bool activo = true, string? correo = null, bool cambiarClave = false)

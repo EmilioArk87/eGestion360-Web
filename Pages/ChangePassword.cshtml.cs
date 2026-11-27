@@ -117,6 +117,8 @@ namespace eGestion360Web.Pages
                 return Page();
             }
 
+            // La sesión puede estar en otro tenant que el de este usuario; la auditoría del cambio es del suyo.
+            await _cuentas.FijarTenantDelUsuarioAsync(user);
             user.Password = BCrypt.Net.BCrypt.HashPassword(NewPassword);
             var wasForced = user.RequirePasswordChange;
             user.RequirePasswordChange = false;

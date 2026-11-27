@@ -40,6 +40,7 @@ namespace eGestion360Web.Tests.Paginas
         {
             public Task SincronizarAsync(int idUser, CancellationToken ct = default) => Task.CompletedTask;
             public Task SincronizarClaveAsync(int idUser, CancellationToken ct = default) => Task.CompletedTask;
+            public Task FijarTenantDelUsuarioAsync(User user, CancellationToken ct = default) => Task.CompletedTask;
         }
 
         private sealed class AutenticadorSinEfectos : IAutenticador

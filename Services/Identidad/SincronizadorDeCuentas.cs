@@ -24,6 +24,14 @@ namespace eGestion360Web.Services.Identidad
 
         /// <summary>Solo la clave y el cambio de clave pendiente. No toca tablas de tenant: sirve sin sesión (restablecer una clave olvidada).</summary>
         Task SincronizarClaveAsync(int idUser, CancellationToken ct = default);
+
+        /// <summary>
+        /// Deja la petición en el tenant de la empresa del usuario. Lo llama una pantalla que cambia su clave ANTES de guardar: ese
+        /// guardado escribe la fila de auditoría <c>usuario.editado</c> en el tenant del usuario (ADR-030) y la política RLS la rechaza
+        /// desde una petición sin tenant (sin sesión, o el operador) o con otro. Un usuario sin empresa no cambia nada. Va fuera de una
+        /// transacción: con la conexión abierta la base no deja cambiar de tenant.
+        /// </summary>
+        Task FijarTenantDelUsuarioAsync(User user, CancellationToken ct = default);
     }
 
     public sealed class SincronizadorDeCuentas : ISincronizadorDeCuentas
@@ -31,15 +39,17 @@ namespace eGestion360Web.Services.Identidad
         private readonly ApplicationDbContext _db;
         private readonly TenantContext _tenant;
         private readonly IValidadorDeIdentidad _validador;
+        private readonly IResolvedorDeTenant _resolvedor;
         private readonly TimeProvider _tiempo;
         private readonly ILogger<SincronizadorDeCuentas> _log;
 
         public SincronizadorDeCuentas(ApplicationDbContext db, TenantContext tenant, IValidadorDeIdentidad validador,
-            ILogger<SincronizadorDeCuentas> log, TimeProvider? tiempo = null)
+            IResolvedorDeTenant resolvedor, ILogger<SincronizadorDeCuentas> log, TimeProvider? tiempo = null)
         {
             _db = db;
             _tenant = tenant;
             _validador = validador;
+            _resolvedor = resolvedor;
             _log = log;
             _tiempo = tiempo ?? TimeProvider.System;
         }
@@ -57,6 +67,17 @@ namespace eGestion360Web.Services.Identidad
                 .Select(a => (int?)a.IdCuenta)
                 .FirstOrDefaultAsync(ct);
             return idCuenta == null ? (null, false) : (await _db.Cuentas.FirstOrDefaultAsync(c => c.IdCuenta == idCuenta, ct), false);
+        }
+
+        public async Task FijarTenantDelUsuarioAsync(User user, CancellationToken ct = default)
+        {
+            if (user.EmpresaId is not { } idEmpresa) return;
+
+            // El mismo resolvedor que usa la auditoría para saber de qué tenant es la fila. Si la empresa ya no resuelve (eliminada),
+            // la fila va solo a la auditoría de la plataforma y no hay nada que fijar.
+            var idTenant = await _resolvedor.ResolverPorEmpresaAsync(idEmpresa, ct);
+            if (idTenant != null && (_tenant.IdTenant != idTenant || _tenant.EsPlataforma))
+                _tenant.Fijar(idTenant, idEmpresa);
         }
 
         public async Task SincronizarClaveAsync(int idUser, CancellationToken ct = default)

@@ -99,6 +99,7 @@ namespace eGestion360Web.Pages
                 return Page();
             }
 
+            await _cuentas.FijarTenantDelUsuarioAsync(user);   // la auditoría de este cambio es del tenant del usuario
             user.Password = _passwordService.HashPassword(NewPassword);
             user.RequirePasswordChange = RequireChange;
             _context.Users.Update(user);

@@ -107,6 +107,9 @@ namespace eGestion360Web.Pages
                         return Page();
                     }
 
+                    // Sin sesión no hay tenant: la auditoría de este cambio es del tenant del usuario.
+                    await _cuentas.FijarTenantDelUsuarioAsync(user);
+
                     // Actualizar contraseña
                     user.Password = _passwordService.HashPassword(NewPassword);
                     _context.Users.Update(user);

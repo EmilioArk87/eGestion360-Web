@@ -57,10 +57,18 @@ namespace eGestion360Web.Tests.Infra
         public void Invalidar(int idTenant, int? idEmpresa = null) { }
     }
 
+    /// <summary>Para lo que construye el sincronizador sin cambiar claves: si alguien le pregunta un tenant, la prueba falla.</summary>
+    public sealed class ResolvedorSinUso : IResolvedorDeTenant
+    {
+        public Task<int?> ResolverPorEmpresaAsync(int idEmpresa, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<int?> ResolverPorPersonaAsync(int idPersona, CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<int?> ResolverInternoAsync(CancellationToken ct = default) => throw new NotSupportedException();
+    }
+
     public static class InvitacionesDePrueba
     {
         public static SincronizadorDeCuentas Sincronizador(ApplicationDbContext db, TimeProvider reloj)
-            => new(db, IdentidadDePrueba.Tenant(), new ValidadorDeIdentidadInerte(), NullLogger<SincronizadorDeCuentas>.Instance, reloj);
+            => new(db, IdentidadDePrueba.Tenant(), new ValidadorDeIdentidadInerte(), new ResolvedorSinUso(), NullLogger<SincronizadorDeCuentas>.Instance, reloj);
 
         /// <summary>El servicio real que vincula usuarios con personas, ya conectado a las cuentas globales.</summary>
         public static UsuarioPersonaService Personas(ApplicationDbContext db, TimeProvider reloj)
