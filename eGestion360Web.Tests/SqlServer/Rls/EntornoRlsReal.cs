@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using eGestion360Web.Data;
@@ -8,9 +9,10 @@ using static eGestion360Web.Tests.Infra.FilasDePrueba;
 namespace eGestion360Web.Tests.SqlServer.Rls
 {
     /// <summary>
-    /// Base desechable con el esquema que crea EF, las tablas de la base real que EF no mapea y los scripts 036 y 037 aplicados,
-    /// con filas de dos tenants (A y B) en cada tabla de tenant y una global en las mixtas. La usan las pruebas de la política
-    /// (<see cref="RlsRealSqlServerTests"/>) y las de la aplicación con la política encendida.
+    /// Base desechable con el esquema que crea EF, las tablas de la base real que EF no mapea, los scripts 036 y 037 aplicados y las
+    /// altas en la política que hacen los scripts posteriores, con filas de dos tenants (A y B) en cada tabla de tenant y una global
+    /// en las mixtas. La usan las pruebas de la política (<see cref="RlsRealSqlServerTests"/>) y las de la aplicación con la política
+    /// encendida.
     /// </summary>
     public static class EntornoRlsReal
     {
@@ -24,13 +26,29 @@ CREATE TABLE dbo.precios_combustible (id INT IDENTITY PRIMARY KEY, id_empresa IN
 CREATE TABLE dbo.sen_boletines (id INT IDENTITY PRIMARY KEY, id_empresa INT NOT NULL, id_tenant INT NULL);
 GO";
 
-        internal static string LeerScript(string nombre)
+        internal static string LeerScript(string nombre) => File.ReadAllText(Path.Combine(CarpetaDeScripts(), nombre));
+
+        private static string CarpetaDeScripts()
         {
             var carpeta = new DirectoryInfo(AppContext.BaseDirectory);
             while (carpeta != null && !Directory.Exists(Path.Combine(carpeta.FullName, "2 - Script SQL"))) carpeta = carpeta.Parent;
             if (carpeta == null) throw new FileNotFoundException("No se encontró la carpeta '2 - Script SQL'.");
-            return File.ReadAllText(Path.Combine(carpeta.FullName, "2 - Script SQL", nombre));
+            return Path.Combine(carpeta.FullName, "2 - Script SQL");
         }
+
+        /// <summary>
+        /// Las sentencias con las que los scripts numerados desde el 038 agregan sus tablas a <c>seg.pol_tenant</c>, tomadas de su texto
+        /// y en orden. Así la base de pruebas tiene la misma política que producción sin repetirla aquí, y un script nuevo entra solo.
+        /// Se ejecutan sobre las tablas que crea EF: los scripts completos exigen el esquema real (restricciones, disparadores, datos).
+        /// </summary>
+        internal static IReadOnlyList<string> AltasEnLaPoliticaPosterioresAF1()
+            => Directory.EnumerateFiles(CarpetaDeScripts(), "*.sql")
+                .Select(ruta => (Ruta: ruta, Numero: Regex.Match(Path.GetFileName(ruta), @"^(\d{3})_")))
+                .Where(s => s.Numero.Success && int.Parse(s.Numero.Groups[1].Value) >= 38)
+                .OrderBy(s => s.Numero.Groups[1].Value, StringComparer.Ordinal)
+                .SelectMany(s => Regex.Matches(File.ReadAllText(s.Ruta), @"N'(ALTER SECURITY POLICY seg\.pol_tenant\s+ADD [^']+)'"))
+                .Select(m => m.Groups[1].Value)
+                .ToList();
 
         /// <summary>Corre un lote con el contexto de sesión fijado como lo hará la aplicación (de solo lectura).</summary>
         internal static async Task<object?> ConContexto(string cadena, int? tenant, string ambito, string sql)
@@ -59,6 +77,7 @@ GO";
             await comando.ExecuteNonQueryAsync();
         }
 
+        /// <param name="TablasConFiltro">Con su esquema (<c>dbo.cargos</c>, <c>psi.pacientes</c>).</param>
         public sealed record Entorno(string Base, string Cadena, List<string> TablasConFiltro);
 
         internal const string QuitarRestricciones = @"
@@ -79,7 +98,8 @@ EXEC (@s);";
                 {
                     var literal = Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType;
                     if (literal != typeof(decimal) && literal != typeof(int) && literal != typeof(long) && literal != typeof(double)) continue;
-                    await db.Database.ExecuteSqlRawAsync($"ALTER TABLE dbo.[{entidad.GetTableName()}] ADD DEFAULT 0 FOR [{p.GetColumnName()}]");
+                    await db.Database.ExecuteSqlRawAsync(
+                        $"ALTER TABLE [{entidad.GetSchema() ?? "dbo"}].[{entidad.GetTableName()}] ADD DEFAULT 0 FOR [{p.GetColumnName()}]");
                 }
             }
         }
@@ -97,11 +117,13 @@ EXEC (@s);";
             var cadena = ServidorSqlDePrueba.Cadena(nombre);
             var opciones = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlServer(cadena).Options;
 
+            // Las de la salida de F1 y las que crean scripts posteriores. Quedan fuera las que ningún script de eBD_SPD crea todavía.
             var tablas = ClasificacionDeTablas.Todas
-                .Where(t => t.EnBaseReal && ClasificacionDeTablas.LlevaIdTenant(t.Categoria))
+                .Where(t => (t.EnBaseReal || t.CreadaPorScript != null) && ClasificacionDeTablas.LlevaIdTenant(t.Categoria))
                 .ToList();
             var conEf = tablas.Where(t => t.EnModeloEf).Select(t => t.Tabla).ToHashSet();
             var mixtas = tablas.Where(t => t.Categoria == CategoriaTabla.Mixta).Select(t => t.Tabla).ToHashSet();
+            var esquemas = new Dictionary<string, string>();
             var fallos = new List<string>();
 
             await using (var db = new ApplicationDbContext(opciones))
@@ -116,6 +138,7 @@ EXEC (@s);";
                     .Where(e => !e.IsOwned() && e.BaseType == null && conEf.Contains(e.GetTableName() ?? "")).ToList();
                 foreach (var entidad in entidades)
                 {
+                    esquemas[entidad.GetTableName()!] = entidad.GetSchema() ?? "dbo";
                     try
                     {
                         await InsertarFilasAsync(db, entidad, mixtas.Contains(entidad.GetTableName()!));
@@ -132,8 +155,10 @@ EXEC (@s);";
             await EjecutarAsync(cadena, FilasFueraDeEf);
             await ServidorSqlDePrueba.EjecutarScriptAsync(cadena, LeerScript("036_rls_politicas_apagadas.sql"));
             await ServidorSqlDePrueba.EjecutarScriptAsync(cadena, LeerScript("037_rls_encender.sql"));
+            foreach (var alta in AltasEnLaPoliticaPosterioresAF1()) await EjecutarAsync(cadena, alta);
 
-            var conFiltro = tablas.Where(t => t.Tabla is not ("empresas" or "domain_events")).Select(t => t.Tabla).ToList();
+            var conFiltro = tablas.Where(t => t.Tabla is not ("empresas" or "domain_events"))
+                .Select(t => esquemas.GetValueOrDefault(t.Tabla, "dbo") + "." + t.Tabla).ToList();
             return new Entorno(nombre, cadena, conFiltro);
         }
 

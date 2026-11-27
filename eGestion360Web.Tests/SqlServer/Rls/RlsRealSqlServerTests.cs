@@ -8,10 +8,11 @@ using static eGestion360Web.Tests.SqlServer.Rls.EntornoRlsReal;
 namespace eGestion360Web.Tests.SqlServer.Rls
 {
     /// <summary>
-    /// Paso F1.4a contra SQL Server (LocalDB): los scripts 036 y 037, aplicados sobre el esquema que crea el modelo de EF, hacen que la
-    /// base entregue a cada conexión solo las filas de su tenant, TABLA POR TABLA y por SQL directo (sin pasar por EF ni por sus
-    /// filtros). La política ya probada con datos inventados en <see cref="RlsPocTests"/> (F0.5) se repite aquí con las tablas
-    /// reales. Los scripts sobre la copia real de eBD_SPD se ensayan aparte.
+    /// Paso F1.4a contra SQL Server (LocalDB): los scripts 036 y 037, y las altas en la política de los scripts posteriores, aplicados
+    /// sobre el esquema que crea el modelo de EF, hacen que la base entregue a cada conexión solo las filas de su tenant, TABLA POR
+    /// TABLA y por SQL directo (sin pasar por EF ni por sus filtros). La política ya probada con datos inventados en
+    /// <see cref="RlsPocTests"/> (F0.5) se repite aquí con las tablas reales. Los scripts sobre la copia real de eBD_SPD se ensayan
+    /// aparte.
     /// </summary>
     [Trait("Categoria", "SqlServer")]
     public class RlsRealSqlServerTests
@@ -33,21 +34,28 @@ namespace eGestion360Web.Tests.SqlServer.Rls
                 {
                     foreach (var tenant in new[] { TenantA, TenantB })
                     {
-                        var ajenas = await Contar(entorno.Cadena, tenant, "tenant", $"SELECT COUNT(*) FROM dbo.{tabla} WHERE id_tenant IS NOT NULL AND id_tenant <> {tenant}");
-                        var propias = await Contar(entorno.Cadena, tenant, "tenant", $"SELECT COUNT(*) FROM dbo.{tabla} WHERE id_tenant = {tenant}");
+                        var ajenas = await Contar(entorno.Cadena, tenant, "tenant", $"SELECT COUNT(*) FROM {tabla} WHERE id_tenant IS NOT NULL AND id_tenant <> {tenant}");
+                        var propias = await Contar(entorno.Cadena, tenant, "tenant", $"SELECT COUNT(*) FROM {tabla} WHERE id_tenant = {tenant}");
                         if (ajenas != 0) problemas.Add($"{tabla}: el tenant {tenant} ve {ajenas} fila(s) de otro");
                         if (propias == 0) problemas.Add($"{tabla}: el tenant {tenant} no ve las suyas");
                     }
 
-                    var sinContexto = await Contar(entorno.Cadena, null, "tenant", $"SELECT COUNT(*) FROM dbo.{tabla}");
-                    var globales = mixtas.Contains(tabla)
-                        ? await Contar(entorno.Cadena, null, "plataforma", $"SELECT COUNT(*) FROM dbo.{tabla} WHERE id_tenant IS NULL")
+                    var sinContexto = await Contar(entorno.Cadena, null, "tenant", $"SELECT COUNT(*) FROM {tabla}");
+                    var globales = mixtas.Contains(tabla[(tabla.IndexOf('.') + 1)..])
+                        ? await Contar(entorno.Cadena, null, "plataforma", $"SELECT COUNT(*) FROM {tabla} WHERE id_tenant IS NULL")
                         : 0;
                     if (sinContexto != globales) problemas.Add($"{tabla}: sin contexto ve {sinContexto} fila(s) y debería ver {globales}");
+
+                    var predicados = await Contar(entorno.Cadena, null, "plataforma",
+                        $"SELECT COUNT(*) FROM sys.security_predicates WHERE object_id = OBJECT_ID(N'seg.pol_tenant') AND target_object_id = OBJECT_ID(N'{tabla}')");
+                    if (predicados != 5) problemas.Add($"{tabla}: tiene {predicados} predicados en la política y se esperaban 5");
                 }
 
                 Assert.True(problemas.Count == 0, string.Join(Environment.NewLine, problemas));
                 Assert.True(entorno.TablasConFiltro.Count >= 39, $"Solo se comprobaron {entorno.TablasConFiltro.Count} tablas.");
+                var comprobadas = entorno.TablasConFiltro.Select(t => t[(t.IndexOf('.') + 1)..]).ToHashSet();
+                Assert.Empty(ClasificacionDeTablas.PosterioresASalidaDeF1
+                    .Where(t => ClasificacionDeTablas.LlevaIdTenant(t.Categoria)).Select(t => t.Tabla).Where(t => !comprobadas.Contains(t)));
             }
             finally { await ServidorSqlDePrueba.BorrarBaseAsync(entorno.Base); }
         }

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -21,27 +20,6 @@ using PaginaDeRestablecer = eGestion360Web.Pages.Admin.ResetPasswordModel;
 
 namespace eGestion360Web.Tests.SqlServer.Rls
 {
-    /// <summary>La base con la política encendida, también sobre la auditoría de seguridad (script 045).</summary>
-    public sealed class BaseRlsConAuditoria : IAsyncLifetime
-    {
-        private readonly BaseRlsReal _base = new();
-
-        public Entorno? Entorno => _base.Entorno;
-
-        public async Task InitializeAsync()
-        {
-            await _base.InitializeAsync();
-            if (Entorno == null) return;
-
-            // Los mismos predicados que pone el script 045, tomados de su texto.
-            var predicados = Regex.Match(LeerScript("045_auditoria_seguridad.sql"), @"N'(ALTER SECURITY POLICY seg\.pol_tenant\s+ADD [^']+)'");
-            Assert.True(predicados.Success, "No se encontró en el script 045 el alta de dbo.auditoria_seguridad en la política.");
-            await EjecutarAsync(Entorno.Cadena, predicados.Groups[1].Value);
-        }
-
-        public Task DisposeAsync() => _base.DisposeAsync();
-    }
-
     /// <summary>
     /// Cambiar la clave de un usuario de empresa con la política RLS ENCENDIDA. El guardado deja la fila <c>usuario.editado</c> en la
     /// auditoría del tenant del usuario (ADR-030), así que la petición tiene que estar en ese tenant aunque la pantalla no tenga
@@ -50,14 +28,14 @@ namespace eGestion360Web.Tests.SqlServer.Rls
     /// </summary>
     [Trait("Categoria", "SqlServer")]
     [Collection(ColeccionRlsReal.Nombre)]
-    public class ClavesConRlsSqlServerTests : IClassFixture<BaseRlsConAuditoria>
+    public class ClavesConRlsSqlServerTests
     {
         private const string ClaveVieja = "Clave-Vigente-2026!";
         private const string ClaveNueva = "Clave-Nueva-Segura-2027!";
 
-        private readonly BaseRlsConAuditoria _bd;
+        private readonly BaseRlsReal _bd;
 
-        public ClavesConRlsSqlServerTests(BaseRlsConAuditoria bd) => _bd = bd;
+        public ClavesConRlsSqlServerTests(BaseRlsReal bd) => _bd = bd;
 
         private Entorno Entorno => _bd.Entorno ?? throw new InvalidOperationException("Sin servidor de pruebas.");
 
