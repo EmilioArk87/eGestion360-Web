@@ -183,6 +183,7 @@ namespace eGestion360Web.Services.Navegacion
             new ModuloDeNavegacion("sistema", "Administración del sistema", "Operación de la plataforma multitenant", "fa-tools", "#475569", GrupoDeNavegacion.Plataforma,
                 new[]
                 {
+                    new PantallaDeNavegacion("/Admin/Suscriptores/Index", "Suscriptores", "Estado y plan de cada cliente de la plataforma", "fa-id-card", Palabras: "tenant cliente plan suspender"),
                     new PantallaDeNavegacion("/Empresas/Index", "Empresas", "Alta, baja y modificación de empresas", "fa-building"),
                     new PantallaDeNavegacion("/Admin/Soporte/Index", "Soporte por tenant", "Elige el tenant con el que trabajas", "fa-life-ring", Palabras: "tenant soporte"),
                     new PantallaDeNavegacion("/Admin/Personas/Index", "Personas del sistema", "Las personas del tenant de soporte, con sus empresas y roles", "fa-address-book"),

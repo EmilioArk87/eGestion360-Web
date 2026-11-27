@@ -28,7 +28,8 @@ namespace eGestion360Web.Tests.Services.Tenancy
                 new[]
                 {
                     "/Empresas", "/UserManagement", "/Catalogos/TiposCambio",
-                    "/Admin/Soporte", "/Admin/Modulos", "/Admin/Outbox", "/Admin/EmailConfig", "/Admin/ResetPassword"
+                    "/Admin/Soporte", "/Admin/Modulos", "/Admin/Outbox", "/Admin/EmailConfig", "/Admin/ResetPassword",
+                    "/Admin/Suscriptores"
                 },
                 AmbitoDePlataformaPageFilter.RutasDelAdministradorGeneral);
 

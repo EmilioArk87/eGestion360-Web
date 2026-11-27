@@ -93,6 +93,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IResolvedorDeTenant, ResolvedorDeTenantEf>();
 builder.Services.AddScoped<IDerechosDeUso, DerechosDeUso>();   // F1.7: derechos de uso y estado del tenant (caché de 30 s)
+builder.Services.AddScoped<eGestion360Web.Services.Plataforma.IServicioDeSuscriptores, eGestion360Web.Services.Plataforma.ServicioDeSuscriptores>();   // F1.9a: consola del operador (estado y plan de cada suscriptor)
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IEvaluadorDePermisos, eGestion360Web.Services.Permisos.EvaluadorDePermisos>();   // F1.6a: permisos efectivos (caché de 30 s); nada lo llama hasta F1.6b
 builder.Services.AddSingleton<eGestion360Web.Services.Permisos.IRequisitosDePaginas, eGestion360Web.Services.Permisos.RequisitosDePaginas>();   // F1.6e-2: qué exige cada pantalla, para ocultar lo que no se puede abrir
 builder.Services.AddScoped<eGestion360Web.Services.Permisos.IPermisosDeLaPeticion, eGestion360Web.Services.Permisos.PermisosDeLaPeticion>();

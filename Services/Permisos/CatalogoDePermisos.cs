@@ -148,6 +148,14 @@ namespace eGestion360Web.Services.Permisos
             // Auditoría de seguridad (F1.8c, ADR-030 D74; script 046; orden 92 y 93). De solo lectura.
             new("administracion", "auditoria", "ver", AmbitoDePermiso.Empresa, null, "Ver y exportar la auditoría de seguridad de la empresa"),
             new("plataforma", "auditoria", "ver", AmbitoDePermiso.Plataforma, null, "Ver y exportar la auditoría de las cuentas y del operador de toda la plataforma"),
+
+            // Consola del operador (F1.9, ADR-032; script 049; orden 94 a 99). Los de «crear» y los de accesos esperan sus pantallas (F1.9b y F1.9d).
+            new("plataforma", "suscriptores", "ver", AmbitoDePermiso.Plataforma, null, "Ver los suscriptores de la plataforma, su estado y su plan"),
+            new("plataforma", "suscriptores", "crear", AmbitoDePermiso.Plataforma, null, "Dar de alta un suscriptor"),
+            new("plataforma", "suscriptores", "estado", AmbitoDePermiso.Plataforma, null, "Suspender, reactivar y cancelar un suscriptor"),
+            new("plataforma", "suscriptores", "plan", AmbitoDePermiso.Plataforma, null, "Cambiar el plan de un suscriptor"),
+            new("plataforma", "accesos", "ver", AmbitoDePermiso.Plataforma, null, "Ver las cuentas y los accesos de cada suscriptor"),
+            new("plataforma", "accesos", "editar", AmbitoDePermiso.Plataforma, null, "Suspender, reactivar y conceder accesos a un suscriptor"),
         };
 
         /// <summary>

@@ -67,6 +67,10 @@ namespace eGestion360Web.Services.Auditoria
         public const string SoporteEntrada = "soporte.entrada";
         public const string SoporteSalida = "soporte.salida";
 
+        // Consola del operador (F1.9a, ADR-032): estado y plan de un suscriptor, en las dos tablas. Los deja el interceptor.
+        public const string TenantEstado = "tenant.estado";
+        public const string TenantPlanCambiado = "tenant.plan";
+
         // Acciones del operador sobre la plataforma
         public const string CorreoConfigurado = "correo.configurado";
         public const string TasasConfigurada = "tasas.configurada";
@@ -112,6 +116,9 @@ namespace eGestion360Web.Services.Auditoria
 
             [SoporteEntrada] = DestinoDeEvento.Ambos,
             [SoporteSalida] = DestinoDeEvento.Ambos,
+
+            [TenantEstado] = DestinoDeEvento.Ambos,
+            [TenantPlanCambiado] = DestinoDeEvento.Ambos,
 
             [CorreoConfigurado] = DestinoDeEvento.Plataforma,
             [TasasConfigurada] = DestinoDeEvento.Plataforma,

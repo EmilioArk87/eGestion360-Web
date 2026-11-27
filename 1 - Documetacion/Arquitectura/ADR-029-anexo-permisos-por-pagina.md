@@ -5,10 +5,10 @@ Complementa el [ADR-029](ADR-029-permisos-por-accion.md). Lista, pantalla por pa
 vigila el código: si una pantalla nueva no declara su permiso, o declara uno que no está en el catálogo, falla. Esa prueba no revisa esta tabla,
 así que se rehace desde el código cuando se agregan o cambian pantallas. Para cambiar un permiso se cambia el atributo de la clase o del handler.
 
-**Actualizado el 2026-11-25** desde el código de `dev` (`986936d`).
+**Actualizado el 2026-11-25** desde el código de la etapa F1.9a.
 
-**104 pantallas piden un permiso y 27 no piden ninguno** (públicas, de la propia cuenta, centros de navegación y el aviso de Flota sin empresa).
-En total, 131 pantallas.
+**106 pantallas piden un permiso y 27 no piden ninguno** (públicas, de la propia cuenta, centros de navegación y el aviso de Flota sin empresa).
+En total, 133 pantallas.
 
 `administracion.auditoria.ver` no se puede dar a un rol: la tiene el administrador de la empresa ([ADR-030](ADR-030-auditoria-de-seguridad.md)).
 
@@ -44,6 +44,8 @@ En total, 131 pantallas.
 | `/Admin/ResetPassword` | `plataforma.usuarios.restablecer_clave` |  |
 | `/Admin/RolesPermisos/Index` | `administracion.roles.ver` | `OnPostCrearAsync` → `administracion.roles.crear`<br>`OnPostEditarAsync` → `administracion.roles.editar`<br>`OnPostToggleAsync` → `administracion.roles.editar` |
 | `/Admin/Soporte/Index` | `plataforma.soporte.ver` | `OnPostEntrarAsync` → `plataforma.soporte.entrar`<br>`OnPostEntrarEnEmpresaAsync` → `plataforma.soporte.entrar` |
+| `/Admin/Suscriptores/Detalle` | `plataforma.suscriptores.ver` | `OnPostEstadoAsync` → `plataforma.suscriptores.estado`<br>`OnPostPlanAsync` → `plataforma.suscriptores.plan` |
+| `/Admin/Suscriptores/Index` | `plataforma.suscriptores.ver` |  |
 | `/Admin/Usuarios/Create` | `administracion.usuarios.crear` |  |
 | `/Admin/Usuarios/Edit` | `administracion.usuarios.editar` |  |
 
@@ -185,7 +187,8 @@ En total, 131 pantallas.
 
 Un centro de navegación no pide permiso porque solo ofrece enlaces: cada pantalla a la que lleva pide el suyo. `/Products` está hoy oculta (no tiene ruta) y queda marcada para que, si se vuelve a mostrar, ya tenga decidido su permiso.
 
-## Dos huecos del catálogo que esta lista deja a la vista
+## Huecos del catálogo que esta lista deja a la vista
 
 - **Eliminar un peaje** (`OnPostDeleteAsync` de `/Flota/Operacion/Peajes/Edit`) no tiene permiso propio en el catálogo: cuelga de `flota.peajes.editar`. Si se quiere separar, hace falta un permiso nuevo y un script.
-- **Ver los usuarios de la empresa** (`administracion.usuarios.ver`) no lo pide ninguna pantalla: es el único de los 93 permisos del catálogo en esa situación. El directorio con todas las cuentas es `/UserManagement`, que es de la plataforma.
+- **Ver los usuarios de la empresa** (`administracion.usuarios.ver`) no lo pide ninguna pantalla. El directorio con todas las cuentas es `/UserManagement`, que es de la plataforma.
+- **Consola del operador:** `plataforma.suscriptores.crear`, `plataforma.accesos.ver` y `plataforma.accesos.editar` esperan sus pantallas (F1.9b y F1.9d). Con el anterior, son los 4 permisos de los 99 del catálogo que hoy ninguna pantalla pide.

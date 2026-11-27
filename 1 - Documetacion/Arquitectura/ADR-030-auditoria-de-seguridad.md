@@ -94,6 +94,17 @@ F1.8c agrega dos pantallas de **solo lectura** sobre lo que ya escriben F1.8a y 
 - **Exportar** (Excel o la hoja para imprimir): como mucho 5 000 filas, las más recientes; si hay más, la hoja lo avisa. Cada exportación deja su fila: `auditoria.exportada` en la tabla del tenant y `auditoria.plataforma_exportada` en la de la plataforma, con el formato, las filas y los filtros (el usuario, enmascarado). Ver la pantalla no deja fila.
 - **Orden**: el 046 va **antes** del código, porque el evaluador lee el catálogo de la base: sin las filas, nadie abre las pantallas nuevas. Al revés no pasa nada.
 
+## F1.9a: suscriptores
+
+La consola del operador ([ADR-032](ADR-032-consola-del-operador.md)) suma dos tipos de evento. Los deja el interceptor en la misma transacción que el cambio, y van a las **dos** tablas, para que el suscriptor también los vea:
+
+| Evento | Cuándo | Detalle |
+|---|---|---|
+| `tenant.estado` | Suspender, cambiar el modo, reactivar, cancelar o recuperar un suscriptor | Código del suscriptor, estado y modo (antes y después) y el motivo |
+| `tenant.plan` | Cambiar el plan de un suscriptor | Código del suscriptor, plan anterior y nuevo y el motivo |
+
+A diferencia del resto de la auditoría, el **motivo** que escribe el operador sí se guarda, porque es parte del hecho (D80). Los correos que contenga se enmascaran.
+
 ## Alternativas consideradas
 
 | # | Alternativa | Por qué no |

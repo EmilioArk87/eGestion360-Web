@@ -217,6 +217,8 @@ namespace eGestion360Web.Services.Auditoria
             [TiposDeEvento.AccesoDenegado] = "Acceso denegado",
             [TiposDeEvento.SoporteEntrada] = "Entrada de soporte",
             [TiposDeEvento.SoporteSalida] = "Salida de soporte",
+            [TiposDeEvento.TenantEstado] = "Suscriptor: cambio de estado",
+            [TiposDeEvento.TenantPlanCambiado] = "Suscriptor: cambio de plan",
             [TiposDeEvento.CorreoConfigurado] = "Correo configurado",
             [TiposDeEvento.TasasConfigurada] = "Proceso de tasas configurado",
             [TiposDeEvento.TasasEjecutada] = "Proceso de tasas ejecutado",

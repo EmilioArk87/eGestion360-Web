@@ -107,15 +107,23 @@ namespace eGestion360Web.Tests.Arquitectura
             return sb.ToString();
         }
 
-        /// <summary>El catálogo que siembran los scripts: el 041 (órdenes 1 a 72), el módulo de Psicología del 043 (73 a 91) y la auditoría del 046 (92 y 93).</summary>
+        /// <summary>El catálogo que siembran los scripts: el 041 (órdenes 1 a 72), Psicología del 043 (73 a 91), la auditoría del 046 (92 y 93) y la consola del operador del 049 (94 a 99).</summary>
         private static List<FilaDelCatalogo> CatalogoDelScript()
             => CatalogoDe(S041(), "#catalogo_041")
                 .Concat(CatalogoDe(Leer("2 - Script SQL", "043_psicologia_modulo_permisos.sql"), "#catalogo_043"))
                 .Concat(CatalogoDe(Leer("2 - Script SQL", "046_permisos_auditoria.sql"), "#catalogo_046"))
+                .Concat(CatalogoDe(Leer("2 - Script SQL", "049_permisos_consola_operador.sql"), "#catalogo_049"))
                 .ToList();
 
         /// <summary>Los 2 permisos de las pantallas de auditoría que agrega el 046 (F1.8c).</summary>
         private static readonly string[] Del046 = { "administracion.auditoria.ver", "plataforma.auditoria.ver" };
+
+        /// <summary>Los 6 permisos de plataforma de la consola del operador que agrega el 049 (F1.9a).</summary>
+        private static readonly string[] Del049 =
+        {
+            "plataforma.suscriptores.ver", "plataforma.suscriptores.crear", "plataforma.suscriptores.estado", "plataforma.suscriptores.plan",
+            "plataforma.accesos.ver", "plataforma.accesos.editar",
+        };
 
         private static List<FilaDelCatalogo> CatalogoDe(string script, string tablaTemporal)
         {
@@ -152,7 +160,7 @@ namespace eGestion360Web.Tests.Arquitectura
         {
             var todos = CatalogoDePermisos.Todos;
 
-            Assert.Equal(72 + 19 + 2, todos.Count);   // 72 del 041, 19 de psicologia del 043 y 2 de auditoria del 046
+            Assert.Equal(72 + 19 + 2 + 6, todos.Count);   // 72 del 041, 19 de psicologia del 043, 2 de auditoria del 046 y 6 de la consola del 049
             Assert.Equal(todos.Count, todos.Select(p => p.Codigo).Distinct(StringComparer.Ordinal).Count());
             Assert.All(todos, p =>
             {
@@ -169,11 +177,11 @@ namespace eGestion360Web.Tests.Arquitectura
             });
 
             // Las cifras que repite el verificador salen de aqui: las del 041, lo que suma el 043 (19 permisos de modulo con casilla legada)
-            // y lo que suma el 046 (uno de plataforma y uno de administracion, sin casilla legada).
-            Assert.Equal(new[] { 17 + 1, 9 + 1, 28, 8, 10, 19 },
+            // lo que suma el 046 (uno de plataforma y uno de administracion) y el 049 (seis de plataforma), los dos sin casilla legada.
+            Assert.Equal(new[] { 17 + 1 + 6, 9 + 1, 28, 8, 10, 19 },
                 new[] { "plataforma", "administracion", "flota", "catalogos", "facturacion", "psicologia" }.Select(m => todos.Count(p => p.Modulo == m)));
             Assert.Equal(44 + 19, todos.Count(p => p.CasillaLegada != null));
-            Assert.Equal(new[] { 17 + 1, 9 + 1, 46 + 19 }, new[] { AmbitoDePermiso.Plataforma, AmbitoDePermiso.Empresa, AmbitoDePermiso.Modulo }.Select(a => todos.Count(p => p.Ambito == a)));
+            Assert.Equal(new[] { 17 + 1 + 6, 9 + 1, 46 + 19 }, new[] { AmbitoDePermiso.Plataforma, AmbitoDePermiso.Empresa, AmbitoDePermiso.Modulo }.Select(a => todos.Count(p => p.Ambito == a)));
         }
 
         [Fact]
@@ -201,7 +209,7 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.Contains("p.accion_legada = 'ver'", s);
 
             // Lo que sembro el 041; el modulo de psicologia lo agrega el 043 y el verificador lo suma con @con043.
-            var del041 = CatalogoDePermisos.Todos.Where(p => p.Modulo != "psicologia" && !Del046.Contains(p.Codigo)).ToList();
+            var del041 = CatalogoDePermisos.Todos.Where(p => p.Modulo != "psicologia" && !Del046.Contains(p.Codigo) && !Del049.Contains(p.Codigo)).ToList();
             var modulos = CatalogoDePermisos.ModulosConPermisos.Where(m => m != "psicologia").ToList();
             int Administrador(string m) => del041.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m);
             int Operador(string m) => del041.Count(p => p.Ambito == AmbitoDePermiso.Modulo && p.Modulo == m && p.CasillaLegada is "ver" or "crear" or "editar");
@@ -221,10 +229,11 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.Contains("DECLARE @con043 INT", verificador);
             Assert.Contains($"CAST({total} + {plantillasPsi} * @con043 AS NVARCHAR(400))", verificador);           // permisos de plantilla
             Assert.Contains($"CAST({modulos.Count * 3} + 3 * @con043 AS NVARCHAR(400))", verificador);          // plantillas
-            Assert.Contains($"CAST({del041.Count} + {psi.Count} * @con043 + {Del046.Length} * @con046 AS NVARCHAR(400))", verificador);     // permisos en el catalogo
+            Assert.Contains($"CAST({del041.Count} + {psi.Count} * @con043 + {Del046.Length} * @con046 + {Del049.Length} * @con049 AS NVARCHAR(400))", verificador);     // permisos en el catalogo
             Assert.Contains("DECLARE @con046 INT", verificador);
-            Assert.Contains("CONCAT(17 + @con046, N' / ', 9 + @con046, N' / 28 / 8 / 10')", verificador);
-            Assert.Contains($"CONCAT(17 + @con046, N' / ', 9 + @con046, N' / ', 46 + {psi.Count} * @con043)", verificador);
+            Assert.Contains("DECLARE @con049 INT", verificador);
+            Assert.Contains($"CONCAT(17 + @con046 + {Del049.Length} * @con049, N' / ', 9 + @con046, N' / 28 / 8 / 10')", verificador);
+            Assert.Contains($"CONCAT(17 + @con046 + {Del049.Length} * @con049, N' / ', 9 + @con046, N' / ', 46 + {psi.Count} * @con043)", verificador);
             Assert.Contains($"CAST({del041.Count(p => p.CasillaLegada != null)} + {psi.Count} * @con043 AS NVARCHAR(400))", verificador);
         }
 

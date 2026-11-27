@@ -38,7 +38,7 @@ namespace eGestion360Web.Services.Auditoria
 
         /// <summary>Si la entidad es de las que se auditan como administración.</summary>
         public static bool Interesa(EntityEntry entrada) =>
-            entrada.Entity is User or EmpresaRol or RolPermiso or EmpresaModulo or AccesoEmpresa or Empresa or Modulo;
+            entrada.Entity is User or EmpresaRol or RolPermiso or EmpresaModulo or AccesoEmpresa or Empresa or Modulo or Tenant or TenantPlan;
 
         /// <summary>Los permisos de un rol no generan clave en la base: se arman antes de guardar, con el resto de las modificaciones y las bajas.</summary>
         public static bool SeArmaAntesDeGuardar(EntityEntry entrada) => entrada.State != EntityState.Added || entrada.Entity is RolPermiso;
@@ -73,8 +73,70 @@ namespace eGestion360Web.Services.Auditoria
             AccesoEmpresa a => AccesoAsync(entrada, a, operacion, ct),
             Empresa e => EmpresaAsync(entrada, e, operacion, ct),
             Modulo catalogo => Task.FromResult(ModuloDelCatalogo(entrada, catalogo, operacion)),
+            Tenant t => Task.FromResult(SuscriptorEstado(entrada, t, operacion)),
+            TenantPlan p => PlanDelSuscriptorAsync(contexto, p, operacion, ct),
             _ => Task.FromResult(new List<object>())
         };
+
+        // ── Suscriptores: estado y plan (F1.9a, ADR-032) ────────────────────
+
+        private static readonly Dictionary<string, string> CamposDeEstado = new()
+        {
+            [nameof(Tenant.Estado)] = "estado",
+            [nameof(Tenant.ModoSuspension)] = "modo",
+        };
+
+        /// <summary>
+        /// El cambio de estado de un suscriptor, con quién y por qué. El motivo lo escribe el operador: se guarda porque es parte del hecho
+        /// (D80), con los correos enmascarados. El alta de un suscriptor se audita desde F1.9b.
+        /// </summary>
+        private List<object> SuscriptorEstado(EntityEntry entrada, Tenant t, Operacion operacion)
+        {
+            if (operacion != Operacion.Cambio) return new List<object>();
+            var detalle = Cambios(entrada, CamposDeEstado);
+            if (detalle.Count == 0) return new List<object>();
+
+            if (t.Estado == EstadoTenant.Suspendido) detalle["modoDeSuspension"] = t.ModoSuspension;
+            detalle["suscriptor"] = t.Codigo;
+            detalle["motivo"] = ConsultaDeAuditoria.EnmascararCorreos(t.MotivoEstado);
+            return Crear(TiposDeEvento.TenantEstado, "tenant", t.IdTenant.ToString(), t.IdTenant, null, detalle);
+        }
+
+        /// <summary>
+        /// El cambio de plan: la fila nueva de <c>tenant_planes</c> dice a cuál pasa; la anterior, ya cerrada en la misma transacción, de cuál
+        /// venía. Cerrar una fila no deja evento por sí solo.
+        /// </summary>
+        private async Task<List<object>> PlanDelSuscriptorAsync(DbContext contexto, TenantPlan nuevo, Operacion operacion, CancellationToken ct)
+        {
+            if (operacion != Operacion.Alta) return new List<object>();
+
+            var anterior = await contexto.Set<TenantPlan>().AsNoTracking()
+                .Where(x => x.IdTenant == nuevo.IdTenant && x.VigenteHasta != null && x.IdTenantPlan != nuevo.IdTenantPlan)
+                .OrderByDescending(x => x.VigenteHasta).ThenByDescending(x => x.IdTenantPlan)
+                .Select(x => (int?)x.IdPlanVersion)
+                .FirstOrDefaultAsync(ct);
+            var codigo = await contexto.Set<Tenant>().AsNoTracking()
+                .Where(x => x.IdTenant == nuevo.IdTenant).Select(x => x.Codigo).FirstOrDefaultAsync(ct);
+
+            return Crear(TiposDeEvento.TenantPlanCambiado, "tenant", nuevo.IdTenant.ToString(), nuevo.IdTenant, null, new Dictionary<string, object?>
+            {
+                ["suscriptor"] = codigo,
+                ["planAntes"] = await NombreDeVersionAsync(contexto, anterior, ct),
+                ["planDespues"] = await NombreDeVersionAsync(contexto, nuevo.IdPlanVersion, ct),
+                ["motivo"] = ConsultaDeAuditoria.EnmascararCorreos(nuevo.Motivo),
+            });
+        }
+
+        /// <summary>Una versión de plan como «flota v1».</summary>
+        private static async Task<string?> NombreDeVersionAsync(DbContext contexto, int? idPlanVersion, CancellationToken ct)
+        {
+            if (idPlanVersion == null) return null;
+            var fila = await (from v in contexto.Set<PlanVersion>().AsNoTracking()
+                              join p in contexto.Set<Plan>().AsNoTracking() on v.IdPlan equals p.IdPlan
+                              where v.IdPlanVersion == idPlanVersion
+                              select new { p.Codigo, v.Numero }).FirstOrDefaultAsync(ct);
+            return fila == null ? "version-" + idPlanVersion : fila.Codigo + " v" + fila.Numero;
+        }
 
         // ── Usuarios ────────────────────────────────────────────────────────
 

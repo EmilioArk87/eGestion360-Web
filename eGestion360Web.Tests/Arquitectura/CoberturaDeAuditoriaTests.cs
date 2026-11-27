@@ -62,6 +62,9 @@ namespace eGestion360Web.Tests.Arquitectura
             ["eGestion360Web.Pages.Empresas.EditModel"] = new(Como.Interceptor, "empresa.editada con el antes y el después; el RTN solo dice que cambió"),
             ["eGestion360Web.Pages.Empresas.DeleteModel"] = new(Como.Interceptor, "empresa.eliminada"),
 
+            // Consola del operador (F1.9a)
+            ["eGestion360Web.Pages.Admin.Suscriptores.DetalleModel"] = new(Como.Interceptor, "tenant.estado y tenant.plan, con el motivo, en las dos tablas"),
+
             // Invitaciones: las manda y las anula el servicio
             ["eGestion360Web.Pages.Admin.Invitaciones.CreateModel"] = new(Como.Servicio, "invitacion.enviada (y usuario.creado por el interceptor)", "Services/Identidad/ServicioDeInvitaciones.cs"),
             ["eGestion360Web.Pages.Admin.Invitaciones.IndexModel"] = new(Como.Servicio, "invitacion.enviada (reenvío) e invitacion.anulada", "Services/Identidad/ServicioDeInvitaciones.cs"),

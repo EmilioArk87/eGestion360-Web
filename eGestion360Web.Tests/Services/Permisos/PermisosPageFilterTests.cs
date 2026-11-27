@@ -868,6 +868,12 @@ namespace eGestion360Web.Tests.Services.Permisos
             SeNiega(await CorrerConConfiguracionReal("/Admin/Soporte/Index", "OnPostEntrarAsync", Admin(), "POST"), "Soporte entrar");
             SeNiega(await CorrerConConfiguracionReal("/Admin/ResetPassword", "OnPostAsync", Admin(), "POST"), "Admin/ResetPassword");
             SeNiega(await CorrerConConfiguracionReal("/ValidarEmails", "OnPostPruebaCompleteAsync", Admin(), "POST"), "ValidarEmails");
+
+            // F1.9a: la consola del operador. Ningún administrador de empresa ve ni cambia suscriptores.
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Suscriptores/Index", "OnGetAsync", Admin()), "Suscriptores lista");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Suscriptores/Detalle", "OnGetAsync", Admin()), "Suscriptores detalle");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Suscriptores/Detalle", "OnPostEstadoAsync", Admin(), "POST"), "Suscriptores estado");
+            SeNiega(await CorrerConConfiguracionReal("/Admin/Suscriptores/Detalle", "OnPostPlanAsync", Admin(), "POST"), "Suscriptores plan");
         }
 
         [Fact]
@@ -880,6 +886,9 @@ namespace eGestion360Web.Tests.Services.Permisos
             Pasa(await CorrerConConfiguracionReal("/Admin/Soporte/Index", "OnPostEntrarAsync", Operador(), "POST"), "Soporte entrar");
             Pasa(await CorrerConConfiguracionReal("/Admin/Outbox/Index", "OnPostResetDeadAsync", Operador(), "POST"), "Outbox gestionar");
             Pasa(await CorrerConConfiguracionReal("/Admin/Usuarios/Create", "OnGetAsync", Operador()), "Usuarios/Create");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Suscriptores/Index", "OnGetAsync", Operador()), "Suscriptores lista");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Suscriptores/Detalle", "OnPostEstadoAsync", Operador(), "POST"), "Suscriptores estado");
+            Pasa(await CorrerConConfiguracionReal("/Admin/Suscriptores/Detalle", "OnPostPlanAsync", Operador(), "POST"), "Suscriptores plan");
         }
 
         [Fact]

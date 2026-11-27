@@ -240,8 +240,8 @@ namespace eGestion360Web.Tests.Arquitectura
             var sinPantalla = new[]
             {
                 "administracion.usuarios.ver",
-                // Módulo de Psicología (script 043): cada permiso se quita de aquí cuando su página existe (F4 a F6 del plan).
-                "psicologia.pacientes.editar",
+                // Consola del operador (script 049): cada uno se quita de aquí cuando su pantalla existe (F1.9b y F1.9d).
+                "plataforma.suscriptores.crear", "plataforma.accesos.ver", "plataforma.accesos.editar",
             };
 
             var huerfanos = CatalogoDePermisos.Todos.Select(p => p.Codigo).Where(c => !pedidos.Contains(c) && !sinPantalla.Contains(c)).ToList();

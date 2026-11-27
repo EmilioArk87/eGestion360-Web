@@ -1,0 +1,261 @@
+@page
+@using eGestion360Web.Models.Plataforma
+@using eGestion360Web.Services.Plataforma
+@model eGestion360Web.Pages.Admin.Suscriptores.DetalleModel
+@{
+    var d = Model.Detalle;
+    var s = d.Resumen;
+    ViewData["Title"] = "Suscriptor " + s.Codigo;
+    var zona = eGestion360Web.Services.ZonaHorariaHonduras.Obtener();
+    string Fecha(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), zona).ToString("dd/MM/yyyy HH:mm");
+    var administrable = ReglasDeSuscriptor.SePuedeAdministrar(s.Tipo);
+    var acciones = ReglasDeSuscriptor.AccionesDesde(s.Estado);
+    var otrosPlanes = d.PlanesDisponibles.Where(v => v.IdPlanVersion != d.PlanActual?.IdPlanVersion).ToList();
+    // Al suspender se propone solo lectura (D53); el modo de hoy solo se propone si ya está suspendido. El bloqueo se elige a propósito.
+    var modoMarcado = Model.ModoElegido ?? (s.Estado == EstadoTenant.Suspendido ? s.ModoSuspension : ModoDeSuspension.Lectura);
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="/MainMenu">Menú Principal</a></li>
+            <li class="breadcrumb-item"><a asp-page="/Admin/Suscriptores/Index">Suscriptores</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@s.Codigo</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-0">@s.Nombre</h2>
+            <p class="text-muted mb-0"><code>@s.Codigo</code> · @s.Tipo</p>
+        </div>
+        <a asp-page="/Admin/Suscriptores/Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    @if (TempData["SuscriptoresMensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuscriptoresMensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="small text-muted">Estado</div>
+                    <span class="badge @(s.Estado == EstadoTenant.Activo ? "bg-success" : s.Estado == EstadoTenant.Cancelado ? "bg-danger" : "bg-warning text-dark")" id="estado-actual">@s.Estado</span>
+                    @if (s.Estado == EstadoTenant.Suspendido)
+                    {
+                        <span class="ms-1">@ReglasDeSuscriptor.NombreDelModo(s.ModoSuspension)</span>
+                    }
+                    <div class="small text-muted">desde @Fecha(s.FechaEstado)</div>
+                    @if (!string.IsNullOrEmpty(d.MotivoEstado))
+                    {
+                        <div class="small">Motivo: @d.MotivoEstado</div>
+                    }
+                </div>
+                <div class="col-md-4">
+                    <div class="small text-muted">Plan vigente</div>
+                    @if (d.PlanActual == null)
+                    {
+                        <span class="badge bg-danger">sin plan</span>
+                    }
+                    else
+                    {
+                        <strong id="plan-actual">@d.PlanActual.Etiqueta</strong>
+                        <div class="small text-muted">@d.PlanActual.Nombre</div>
+                    }
+                </div>
+                <div class="col-md-4">
+                    <div class="small text-muted">Uso</div>
+                    <div>Empresas: @s.Empresas / @(s.TopeDeEmpresas?.ToString() ?? "sin tope")</div>
+                    <div>Usuarios activos: @s.Usuarios / @(s.TopeDeUsuarios?.ToString() ?? "sin tope")</div>
+                </div>
+            </div>
+            @if (d.PlanActual != null)
+            {
+                <hr />
+                <div class="small text-muted mb-1">El plan incluye</div>
+                <ul class="mb-0 small">
+                    @foreach (var derecho in d.PlanActual.Derechos)
+                    {
+                        <li>@derecho.Nombre@(derecho.Tipo == TipoDerecho.Limite ? ": " + (derecho.Tope?.ToString() ?? "sin tope") : "")</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    @if (!administrable)
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>Este es el suscriptor interno, la propia plataforma. Su estado y su plan no se cambian desde la consola.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header"><strong>Cambiar el estado</strong></div>
+                    <div class="card-body">
+                        @if (Model.ErrorDeEstado != null)
+                        {
+                            <div class="alert alert-danger" role="alert">@Model.ErrorDeEstado</div>
+                        }
+                        <form method="post" asp-page-handler="Estado" asp-route-id="@Model.Id">
+                            <input type="hidden" name="token" value="@d.Token" />
+                            <div class="mb-3">
+                                <label class="form-label" for="accion">Qué hacer</label>
+                                <select class="form-select" id="accion" name="accion" required>
+                                    @foreach (var accion in acciones)
+                                    {
+                                        <option value="@accion" selected="@(Model.AccionElegida == accion)">@ReglasDeSuscriptor.Nombre(accion)</option>
+                                    }
+                                </select>
+                            </div>
+                            @if (acciones.Any(ReglasDeSuscriptor.PideModo))
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label" for="modo">Si queda suspendido, cómo</label>
+                                    <select class="form-select" id="modo" name="modo">
+                                        <option value="@ModoDeSuspension.Lectura" selected="@(modoMarcado == ModoDeSuspension.Lectura)">Solo lectura: ve, no guarda</option>
+                                        <option value="@ModoDeSuspension.Bloqueo" selected="@(modoMarcado == ModoDeSuspension.Bloqueo)">Bloqueo total: no entra</option>
+                                    </select>
+                                </div>
+                            }
+                            <div class="mb-3">
+                                <label class="form-label" for="motivo-estado">Motivo</label>
+                                <textarea class="form-control" id="motivo-estado" name="motivo" rows="2" maxlength="@ReglasDeSuscriptor.LargoMaximoDelMotivo" required>@Model.MotivoDeEstado</textarea>
+                                <div class="form-text">Queda en la auditoría. No escribas datos personales.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="confirmacion-estado">Escribe <code>@s.Codigo</code> para confirmar</label>
+                                <input class="form-control" id="confirmacion-estado" name="confirmacion" autocomplete="off" required />
+                            </div>
+                            <button type="submit" class="btn btn-warning">Cambiar el estado</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header"><strong>Cambiar el plan</strong></div>
+                    <div class="card-body">
+                        @if (Model.ErrorDePlan != null)
+                        {
+                            <div class="alert alert-danger" role="alert">@Model.ErrorDePlan</div>
+                        }
+                        @if (s.Estado == EstadoTenant.Cancelado)
+                        {
+                            <p class="text-muted mb-0">Está cancelado. Recupéralo antes de cambiar su plan.</p>
+                        }
+                        else if (otrosPlanes.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No hay otro plan disponible.</p>
+                        }
+                        else
+                        {
+                            <form method="get" class="mb-3">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <label class="form-label" for="plan">Pasar a</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="plan" name="plan">
+                                        @foreach (var v in otrosPlanes)
+                                        {
+                                            <option value="@v.IdPlanVersion" selected="@(Model.PlanARevisar == v.IdPlanVersion)">@v.Etiqueta (@v.Nombre)</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-outline-primary">Revisar cambio</button>
+                                </div>
+                            </form>
+
+                            @if (Model.Previsto is { } previsto)
+                            {
+                                <div class="border rounded p-3 mb-3" id="cambio-previsto">
+                                    <div class="fw-bold mb-2">Al pasar a @previsto.Nuevo.Etiqueta</div>
+                                    @if (previsto.Gana.Count > 0)
+                                    {
+                                        <div class="small text-success">Gana</div>
+                                        <ul class="small">
+                                            @foreach (var g in previsto.Gana)
+                                            {
+                                                <li>@g</li>
+                                            }
+                                        </ul>
+                                    }
+                                    @if (previsto.Pierde.Count > 0)
+                                    {
+                                        <div class="small text-danger">Pierde</div>
+                                        <ul class="small">
+                                            @foreach (var p in previsto.Pierde)
+                                            {
+                                                <li>@p</li>
+                                            }
+                                        </ul>
+                                    }
+                                    @if (previsto.Gana.Count == 0 && previsto.Pierde.Count == 0)
+                                    {
+                                        <p class="small text-muted mb-0">Los dos planes incluyen lo mismo.</p>
+                                    }
+                                    @foreach (var aviso in previsto.Avisos)
+                                    {
+                                        <div class="alert alert-warning small py-2 mt-2 mb-0">@aviso</div>
+                                    }
+                                </div>
+                                <form method="post" asp-page-handler="Plan" asp-route-id="@Model.Id">
+                                    <input type="hidden" name="idPlanVersion" value="@previsto.Nuevo.IdPlanVersion" />
+                                    <input type="hidden" name="idPlanVersionActual" value="@(d.PlanActual?.IdPlanVersion ?? 0)" />
+                                    <div class="mb-3">
+                                        <label class="form-label" for="motivo-plan">Motivo</label>
+                                        <textarea class="form-control" id="motivo-plan" name="motivo" rows="2" maxlength="@ReglasDeSuscriptor.LargoMaximoDelMotivo" required>@Model.MotivoDePlan</textarea>
+                                        <div class="form-text">Queda en la auditoría. No escribas datos personales.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="confirmacion-plan">Escribe <code>@s.Codigo</code> para confirmar</label>
+                                        <input class="form-control" id="confirmacion-plan" name="confirmacion" autocomplete="off" required />
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Cambiar a @previsto.Nuevo.Etiqueta</button>
+                                </form>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header"><strong>Historial de planes</strong></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Plan</th><th>Desde</th><th>Hasta</th><th>Motivo</th><th>Por</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in d.Historial)
+                        {
+                            <tr>
+                                <td><code>@h.Plan</code></td>
+                                <td>@Fecha(h.Desde)</td>
+                                <td>@(h.Hasta == null ? "vigente" : Fecha(h.Hasta.Value))</td>
+                                <td>@h.Motivo</td>
+                                <td>@h.CreadoPor</td>
+                            </tr>
+                        }
+                        @if (d.Historial.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-muted">Nunca tuvo un plan.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

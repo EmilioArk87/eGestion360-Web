@@ -241,6 +241,7 @@ namespace eGestion360Web.Tests.Arquitectura
                 TiposDeEvento.EmpresaEditada, TiposDeEvento.EmpresaEliminada, TiposDeEvento.InvitacionEnviada, TiposDeEvento.InvitacionAnulada, TiposDeEvento.AccesoDenegado,
             };
             var deSoporte = new[] { TiposDeEvento.SoporteEntrada, TiposDeEvento.SoporteSalida };
+            var deSuscriptores = new[] { TiposDeEvento.TenantEstado, TiposDeEvento.TenantPlanCambiado };   // F1.9a: el suscriptor también las ve
             var delOperador = new[]
             {
                 TiposDeEvento.CorreoConfigurado, TiposDeEvento.TasasConfigurada, TiposDeEvento.TasasEjecutada, TiposDeEvento.TasasOficialAprobada,
@@ -248,6 +249,7 @@ namespace eGestion360Web.Tests.Arquitectura
             };
             Assert.All(deAdministracion, t => Assert.Equal(DestinoDeEvento.Tenant, TiposDeEvento.DestinoDe(t)));
             Assert.All(deSoporte, t => Assert.Equal(DestinoDeEvento.Ambos, TiposDeEvento.DestinoDe(t)));
+            Assert.All(deSuscriptores, t => Assert.Equal(DestinoDeEvento.Ambos, TiposDeEvento.DestinoDe(t)));
             Assert.All(delOperador, t => Assert.Equal(DestinoDeEvento.Plataforma, TiposDeEvento.DestinoDe(t)));
 
             // F1.8c: exportar la auditoría deja su fila en la misma tabla que se exportó.
@@ -255,7 +257,7 @@ namespace eGestion360Web.Tests.Arquitectura
             Assert.Equal(DestinoDeEvento.Plataforma, TiposDeEvento.DestinoDe(TiposDeEvento.AuditoriaPlataformaExportada));
 
             var todos = deLaCuenta.Append(TiposDeEvento.ContextoElegido).Concat(deAdministracion).Concat(deSoporte).Concat(delOperador)
-                .Append(TiposDeEvento.AuditoriaExportada).Append(TiposDeEvento.AuditoriaPlataformaExportada).ToList();
+                .Concat(deSuscriptores).Append(TiposDeEvento.AuditoriaExportada).Append(TiposDeEvento.AuditoriaPlataformaExportada).ToList();
             Assert.Equal(todos.Count, todos.Distinct().Count());
             Assert.Equal(todos.Order(StringComparer.Ordinal).ToList(), TiposDeEvento.Todos.Order(StringComparer.Ordinal).ToList());
         }

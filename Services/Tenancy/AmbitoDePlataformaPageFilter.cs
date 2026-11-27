@@ -36,7 +36,7 @@ namespace eGestion360Web.Services.Tenancy
         public static readonly string[] RutasDelAdministradorGeneral =
         {
             "/Empresas", "/UserManagement", "/Catalogos/TiposCambio",
-            "/Admin/Soporte", "/Admin/Modulos", "/Admin/Outbox", "/Admin/EmailConfig", "/Admin/ResetPassword",
+            "/Admin/Soporte", "/Admin/Modulos", "/Admin/Outbox", "/Admin/EmailConfig", "/Admin/ResetPassword", "/Admin/Suscriptores",
         };
 
         public static bool EsRutaSinSesion(string? ruta) => Coincide(ruta, RutasSinSesion);
